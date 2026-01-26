@@ -11,7 +11,6 @@ import onlyWarn from "eslint-plugin-only-warn";
  * */
 export const config = [
   js.configs.recommended,
-  eslintConfigPrettier,
   ...tseslint.configs.recommended,
   {
     plugins: {
@@ -23,10 +22,11 @@ export const config = [
   },
   {
     plugins: {
-      onlyWarn,
+      "only-warn": onlyWarn,
     },
   },
   {
-    ignores: ["dist/**"],
+    ignores: ["dist/**", "node_modules/**", ".turbo/**"],
   },
+  eslintConfigPrettier,
 ];
