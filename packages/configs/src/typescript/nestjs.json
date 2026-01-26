@@ -3,6 +3,7 @@
   "display": "NestJS 11",
   "extends": "./base.json",
   "compilerOptions": {
+    "noEmit": false,
     "module": "CommonJS",
     "moduleResolution": "Node",
     "target": "ES2021",
