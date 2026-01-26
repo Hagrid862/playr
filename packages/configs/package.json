@@ -1,0 +1,16 @@
+{
+  "name": "@repo/configs",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./typescript/base.json": "./src/typescript/base.json",
+    "./typescript/react.json": "./src/typescript/react.json",
+    "./typescript/nestjs.json": "./src/typescript/nestjs.json",
+    "./typescript/packages.json": "./src/typescript/packages.json",
+    "./eslint/base": "./src/eslint/base.js",
+    "./eslint/react": "./src/eslint/react.js",
+    "./eslint/nestjs": "./src/eslint/nestjs.js",
+    "./eslint/packages": "./src/eslint/packages.js",
+    "./prettier": "./src/prettier/base.json"
+  }
+}
