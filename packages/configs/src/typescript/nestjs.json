@@ -5,8 +5,8 @@
   "compilerOptions": {
     "noEmit": false,
     "outDir": "./dist",
-    "module": "commonjs",
-    "moduleResolution": "Node",
+    "module": "nodenext",
+    "moduleResolution": "NodeNext",
     "target": "esnext",
     "incremental": true,
     "skipLibCheck": true,
