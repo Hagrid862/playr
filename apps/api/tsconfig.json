@@ -3,9 +3,9 @@
   "compilerOptions": {
     "noEmit": false,
     "outDir": "./dist",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
+    "module": "commonjs",
+    "moduleResolution": "Node",
+    "target": "esnext",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
