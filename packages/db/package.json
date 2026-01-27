@@ -11,11 +11,14 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^7.3.0"
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "pg": "^8.17.2"
   },
   "devDependencies": {
     "@repo/configs": "workspace:*",
     "@types/node": "^22.10.7",
+    "@types/pg": "^8.16.0",
     "dotenv": "^17.2.3",
     "prisma": "^7.3.0",
     "ts-node": "^10.9.2"
