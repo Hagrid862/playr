@@ -1,20 +1,7 @@
 {
   "extends": "@repo/configs/typescript/nestjs.json",
   "compilerOptions": {
-    "noEmit": false,
-    "outDir": "./dist",
-    "module": "commonjs",
-    "moduleResolution": "Node",
-    "target": "esnext",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true,
-    "types": ["node", "jest"]
+    "baseUrl": "./"
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]
