@@ -1,15 +1,24 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "NestJS 11",
+  "display": "NestJS",
   "extends": "./base.json",
   "compilerOptions": {
-    "module": "CommonJS",
+    "noEmit": false,
+    "outDir": "./dist",
+    "module": "commonjs",
     "moduleResolution": "Node",
-    "target": "ES2021",
+    "target": "esnext",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node", "jest"],
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
-    "outDir": "./dist"
+    "sourceMap": true
   }
 }

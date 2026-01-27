@@ -1,4 +1,33 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
-  "tasks": {}
+  "globalEnv": ["PORT", "DATABASE_URL"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "prisma:generate": {
+      "cache": true
+    },
+    "prisma:migrate": {
+      "cache": false
+    },
+    "prisma:push": {
+      "cache": false
+    },
+    "prisma:studio": {
+      "cache": false,
+      "persistent": true
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    }
+  }
 }
