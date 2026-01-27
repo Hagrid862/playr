@@ -6,7 +6,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private prisma: PrismaClient;
 
   constructor() {
-    this.prisma = createPrismaClient(process.env.DATABASE_URL!);
+    const databaseUrl = process.env.DATABASE_URL;
+
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+
+    this.prisma = createPrismaClient(databaseUrl);
   }
 
   async onModuleInit() {
