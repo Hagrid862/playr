@@ -7,6 +7,6 @@ import { SharedModule } from './shared/shared.module';
   imports: [SharedModule],
   controllers: [AppController],
   providers: [AppService],
-  exports: [SharedModule],
+  exports: [],
 })
 export class AppModule {}
