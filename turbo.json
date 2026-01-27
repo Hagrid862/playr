@@ -12,6 +12,19 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "prisma:generate": {
+      "cache": true
+    },
+    "prisma:migrate": {
+      "cache": false
+    },
+    "prisma:push": {
+      "cache": false
+    },
+    "prisma:studio": {
+      "cache": false,
+      "persistent": true
+    },
     "check-types": {
       "dependsOn": ["^check-types"]
     }
