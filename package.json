@@ -13,12 +13,12 @@
     "prisma:studio": "turbo run prisma:studio"
   },
   "devDependencies": {
-    "prettier": "^3.7.4",
-    "turbo": "^2.7.4",
-    "typescript": "5.9.2"
+    "prettier": "catalog:",
+    "turbo": "^2.7.6",
+    "typescript": "catalog:"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.4",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   }
 }
