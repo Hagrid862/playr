@@ -1,3 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+catalogs:
+  default:
+    typescript: "5.9.3"
+    prettier: "^3.8.1"
+    eslint: "^9.39.2"
+    "@types/node": "^22.19.7"
+    react: "^19.2.4"
+    react-dom: "^19.2.4"
