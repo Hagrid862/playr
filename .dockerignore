@@ -1,0 +1,15 @@
+node_modules
+.git
+.npm
+.turbo
+apps/*/dist
+apps/*/build
+apps/*/.next
+packages/*/dist
+packages/*/node_modules
+pnpm-debug.log
+.vscode
+.idea
+.DS_Store
+*.md
+LICENSE
