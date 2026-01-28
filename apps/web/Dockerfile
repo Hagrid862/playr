@@ -21,6 +21,10 @@ RUN pnpm install --frozen-lockfile
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 
+# Set build arguments for Vite
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build the project
 RUN pnpm turbo build --filter=@repo/web...
 

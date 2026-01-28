@@ -87,10 +87,10 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     ports:
       - "3000:80"
-    environment:
-      VITE_API_URL: http://api:8000
     depends_on:
       - api
     networks:
@@ -100,10 +100,10 @@ services:
     build:
       context: .
       dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     ports:
       - "3002:80"
-    environment:
-      VITE_API_URL: http://api:8000
     depends_on:
       - api
     networks:
@@ -113,10 +113,10 @@ services:
     build:
       context: .
       dockerfile: apps/artist/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     ports:
       - "3001:80"
-    environment:
-      VITE_API_URL: http://api:8000
     depends_on:
       - api
     networks:

@@ -95,7 +95,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      VITE_API_URL: http://api:8000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     command: /bin/sh -c "corepack enable && pnpm install && pnpm turbo run dev:host --filter=@repo/web"
     depends_on:
       - api
@@ -111,7 +111,7 @@ services:
     ports:
       - "3002:3000"
     environment:
-      VITE_API_URL: http://api:8000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     command: /bin/sh -c "corepack enable && pnpm install && pnpm turbo run dev:host --filter=@repo/admin"
     depends_on:
       - api
@@ -127,7 +127,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      VITE_API_URL: http://api:8000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     command: /bin/sh -c "corepack enable && pnpm install && pnpm turbo run dev:host --filter=@repo/artist"
     depends_on:
       - api
