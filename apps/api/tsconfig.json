@@ -1,6 +1,9 @@
 {
   "extends": "@repo/configs/typescript/nestjs.json",
 
-  "include": ["src/**/*", "test/**/*"],
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src/**/*", "integration/**/*"],
   "exclude": ["node_modules", "dist"]
 }
