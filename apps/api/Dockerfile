@@ -46,12 +46,9 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 USER nestjs
 
-# Copy only necessary files
-COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=installer --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=installer --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/package.json
-COPY --from=installer --chown=nestjs:nodejs /app/packages ./packages
+# Copy everything from installer stage
+COPY --from=installer --chown=nestjs:nodejs /app .
 
-EXPOSE 3000
+EXPOSE 8000
 
 CMD ["node", "apps/api/dist/main"]
