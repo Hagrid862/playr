@@ -13,6 +13,15 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "test:unit": {
+      "dependsOn": ["^test:unit"]
+    },
+    "test:integration": {
+      "dependsOn": ["^test:integration"]
+    },
+    "test:e2e": {
+      "dependsOn": ["^test:watch"]
+    },
     "prisma:generate": {
       "cache": true
     },
