@@ -25,11 +25,9 @@ COPY turbo.json turbo.json
 RUN pnpm turbo build --filter=@repo/web...
 
 FROM nginx:alpine AS runner
-# Copy built files from installer
 COPY --from=installer /app/apps/web/dist /usr/share/nginx/html
-
-# Custom nginx config might be needed for SPA routing (handled by user if needed)
-# For now, standard serving.
+RUN rm /etc/nginx/conf.d/default.conf \
+    && printf 'server {\n  listen 80;\n  server_name _;\n  root /usr/share/nginx/html;\n  index index.html;\n  location / {\n    try_files $uri $uri/ /index.html;\n  }\n}\n' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
