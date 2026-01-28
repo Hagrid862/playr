@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000",
+    "dev:host": "vite --port 3000 --host",
     "build": "vite build && tsc",
     "preview": "vite preview",
     "test:unit": "vitest run",
