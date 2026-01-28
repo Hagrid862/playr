@@ -67,7 +67,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      - /app/node_modules
+      - api_node_modules:/app/node_modules
     ports:
       - "8000:8000"
     environment:
@@ -91,7 +91,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      - /app/node_modules
+      - web_node_modules:/app/node_modules
     ports:
       - "3000:3000"
     environment:
@@ -107,7 +107,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      - /app/node_modules
+      - admin_node_modules:/app/node_modules
     ports:
       - "3002:3000"
     environment:
@@ -123,7 +123,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      - /app/node_modules
+      - artist_node_modules:/app/node_modules
     ports:
       - "3001:3000"
     environment:
@@ -141,3 +141,7 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  api_node_modules:
+  web_node_modules:
+  admin_node_modules:
+  artist_node_modules:
