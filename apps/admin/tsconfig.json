@@ -2,9 +2,6 @@
   "extends": "@repo/configs/typescript/react.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "types": ["vite/client"],
     "allowImportingTsExtensions": true
   },
