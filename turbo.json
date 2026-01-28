@@ -24,7 +24,11 @@
       "dependsOn": ["^test:integration"]
     },
     "test:e2e": {
-      "dependsOn": ["^test:watch"]
+      "dependsOn": ["^test:e2e"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
     },
     "prisma:generate": {
       "cache": true
