@@ -10,7 +10,7 @@
     "format": "prettier",
     "lint": "eslint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
