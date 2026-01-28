@@ -3,7 +3,7 @@ FROM node:22-alpine AS base
 FROM base AS builder
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-RUN npm install turbo --global
+RUN npm install turbo@2.7.6 --global
 COPY . .
 RUN turbo prune @repo/web --docker
 

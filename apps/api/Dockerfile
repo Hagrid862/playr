@@ -6,7 +6,7 @@ RUN apk add --no-cache libc6-compat openssl
 # Set working directory
 WORKDIR /app
 # Install turbo global
-RUN npm install turbo --global
+RUN npm install turbo@2.7.6 --global
 COPY . .
 RUN turbo prune @repo/api --docker
 
