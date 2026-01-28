@@ -1,3 +1,5 @@
+# This docker compose file is not for run in production environemnt, it is for running locally for testing purposes only, build production-ready images instead of running that on development servers and environments
+
 services:
   db:
     image: postgres:15-alpine

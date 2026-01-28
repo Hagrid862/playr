@@ -1,3 +1,5 @@
+# This is default docker compose file used for running apps locally in container, it also runs all necessary services and sets up environment variables credentials
+
 services:
   db:
     image: postgres:15-alpine

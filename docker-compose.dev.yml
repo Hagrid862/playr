@@ -1,3 +1,4 @@
+# This docker compose file run only services required for development environment like database, minio, mailhog etc. It does not run apps itself, it is automatically used with pnpm dev command
 services:
   db:
     image: postgres:15-alpine
