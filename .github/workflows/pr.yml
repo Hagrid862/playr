@@ -1,0 +1,859 @@
+name: PR Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9.15.4"
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get PNPM store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache PNPM store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: pnpm run prisma:generate
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          path: |
+            apps/*/dist
+            packages/*/dist
+          retention-days: 1
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+  check-types:
+    name: Type Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Check types
+        run: pnpm run check-types
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+  deprecated-check:
+    name: Deprecated Packages Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for deprecated packages
+        run: pnpm outdated --format json | jq -e 'if . == {} then true else "Deprecated packages found" | halt_error(1) end' || true
+
+  dedupe-check:
+    name: Dedupe Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for duplicate dependencies
+        run: pnpm dedupe --check
+
+  license-check:
+    name: License Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Install license-checker
+        run: pnpm add -g license-checker
+
+      - name: Check licenses
+        run: |
+          license-checker --failOn "GPL;GPL-2.0;GPL-3.0;AGPL;AGPL-3.0" --summary
+
+  circular-deps:
+    name: Circular Dependencies
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Install madge
+        run: pnpm add -g madge
+
+      - name: Check circular dependencies
+        run: |
+          madge --circular --extensions ts,tsx apps/web/src || true
+          madge --circular --extensions ts,tsx apps/admin/src || true
+          madge --circular --extensions ts,tsx apps/artist/src || true
+          madge --circular --extensions ts apps/api/src || true
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+
+      - name: Run unit tests
+        run: pnpm run test:unit
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+
+      - name: Run integration tests
+        run: pnpm run test:integration
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @repo/e2e exec playwright install chromium --with-deps
+
+      - name: Debug - List Artifacts
+        run: ls -R apps/api/dist apps/web/dist || echo "Artifacts missing"
+
+      - name: Download Docker Images
+        uses: actions/download-artifact@v4
+        with:
+          pattern: docker-image-*
+          merge-multiple: true
+
+      - name: Load Docker Images
+        run: |
+          for file in *.tar; do
+            docker load -i "$file"
+          done
+
+      - name: Start Full Stack
+        run: |
+          IMAGE_TAG=ci docker compose -f docker-compose.prod.yml up -d --no-build
+
+      - name: Wait for Services
+        run: |
+          echo "Waiting for services to be ready..."
+          max_retries=60
+          counter=0
+
+          check_service() {
+            url=$1
+            name=$2
+            if curl -s --head --request GET "$url" | grep "200 OK" > /dev/null; then 
+              echo "$name is up!"
+              return 0
+            else
+              return 1
+            fi
+          }
+
+          while [ $counter -lt $max_retries ]; do
+            if check_service "http://localhost:8000/health" "API" && \
+               check_service "http://localhost:3000/" "Web" && \
+               check_service "http://localhost:3001/" "Artist" && \
+               check_service "http://localhost:3002/" "Admin"; then
+               echo "All services are ready!"
+               exit 0
+            fi
+            echo "Waiting for services... ($counter/$max_retries)"
+            sleep 5
+            counter=$((counter+1))
+          done
+
+          echo "Services failed to start in time."
+          docker compose -f docker-compose.prod.yml logs
+          exit 1
+
+      - name: Run Migrations
+        run: pnpm run prisma:push
+        env:
+          DATABASE_URL: "postgresql://hagrid:hagrid@localhost:5435/playr?schema=public"
+
+      - name: Run E2E tests
+        run: pnpm run test:e2e
+        env:
+          CI: "true"
+          DATABASE_URL: "postgresql://hagrid:hagrid@localhost:5435/playr?schema=public"
+          MINIO_ENDPOINT: "localhost"
+          MINIO_PORT: "9000"
+          MINIO_ACCESS_KEY: "minioadmin"
+          MINIO_SECRET_KEY: "minioadmin"
+          MAIL_HOST: "localhost"
+          MAIL_PORT: "1025"
+          PORT: "8000"
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report
+          retention-days: 7
+
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+
+      - name: Run tests with coverage
+        run: |
+          # Run tests and strip ANSI color codes for easier parsing
+          pnpm run test:coverage | sed 's/\x1b\[[0-9;]*m//g' > coverage.txt
+          cat coverage.txt
+
+      - name: Coverage Check
+        run: |
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+
+          # Function to extract and format coverage table for a specific package
+          extract_coverage() {
+            package_name=$1
+            # Find the section for the package in the log
+            # We look for the package execution line and then the table
+            echo "### Coverage for $package_name" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Simple extraction: grep the table lines roughly belonging to this package context
+            # Since the output is interleaved, we'll try to grep the specific VITEST coverage table structure
+            # A more robust way is to parse the specific blocks if possible, but for now let's format what we assume is there.
+            
+            # Actually, because Turbo makes it interleaved and hard to parse as one block per app easily with simple grep,
+            # and we see ::group:: in the user output, we can try to rely on that structure if we were in a matrix.
+            # But here we are running all at once.
+            
+            # Let's try to just output the raw tables found in the text file, expecting standard Vitest output
+            # We will look for "Coverage report from" and the following table
+            
+            # Note: The user wants a nice formatted table. The raw output has 
+            # File | % Stmts ...
+            # lines.
+            
+            # Let's extract all lines that look like table rows
+            cat coverage.txt | grep -E "^(File|All files|[-]+|.*\|.*\|)" | grep -v "::" | grep -v "Uncovered Line" > tables.txt
+            
+            if [ -s tables.txt ]; then
+              echo "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |" >> $GITHUB_STEP_SUMMARY
+              echo "| --- | --- | --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+              
+              # Process the file to make it markdown table compatible
+              # Replace multiple spaces with nothing (heuristic) isn't great.
+              # Vitest output is fixed width.
+              # Let's try to convert the pipes and dashes.
+              
+              cat tables.txt | \
+              grep -v "\-\-\-\-\-" | \
+              grep -v "File" | \
+              sed 's/^/| /; s/$/ |/' | \
+              sed 's/|/ | /g' | \
+              tr -s ' ' >> $GITHUB_STEP_SUMMARY
+            else
+               echo "No coverage data found." >> $GITHUB_STEP_SUMMARY
+            fi
+          }
+
+          # Since the output is one big stream, we will just format all tables found.
+          echo "### Combined Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|---|---|---|" >> $GITHUB_STEP_SUMMARY
+
+          # Filter for table lines:
+          # 1. Matches table separators (start with ---) -> exclude
+          # 2. Matches Header line (File | % Stmts) -> exclude (we added our own)
+          # 3. Matches data lines (contain |)
+          # 4. Remove ANSI codes (already done)
+
+          grep -E "\|.*\|.*\|" coverage.txt | grep -v "File               |" | grep -v "\-\-\-" | while read -r line; do
+             # Convert fixed width text table to markdown
+             # 1. Trim whitespace
+             # 2. Ensure pipe at start and end
+             echo "$line" | sed 's/|/ | /g' | tr -s ' ' | sed 's/^/| /' | sed 's/$/ |/' >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: apps/api/coverage
+          retention-days: 7
+
+  bundle-size:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/db/src/generated
+            packages/db/dist
+          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (cache miss fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+
+      - name: Check bundle sizes
+        run: |
+          echo "Checking bundle sizes..."
+          for app in web admin artist; do
+            if [ -d "apps/$app/dist" ]; then
+              size=$(du -sk "apps/$app/dist" | cut -f1)
+              echo "$app bundle size: ${size}KB"
+              # Fail if bundle exceeds 5MB (5120KB)
+              if [ $size -gt 5120 ]; then
+                echo "::error::$app bundle size exceeds 5MB limit"
+                exit 1
+              fi
+            fi
+          done
+
+  docker-build:
+    name: Docker Build - ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    strategy:
+      matrix:
+        app: [api, web, admin, artist]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.app }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          load: true
+          push: false
+          tags: playr-${{ matrix.app }}:ci
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+      - name: Save Docker Image
+        run: |
+          docker save -o ${{ matrix.app }}.tar playr-${{ matrix.app }}:ci
+
+      - name: Upload Docker Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ matrix.app }}
+          path: ${{ matrix.app }}.tar
+          retention-days: 1
+
+  docker-run:
+    name: Production Simulation
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Docker Images
+        uses: actions/download-artifact@v4
+        with:
+          pattern: docker-image-*
+          merge-multiple: true
+
+      - name: Load Docker Images
+        run: |
+          for file in *.tar; do
+            docker load -i "$file"
+          done
+
+      - name: Start services
+        run: |
+          IMAGE_TAG=ci docker compose -f docker-compose.prod.yml up -d --no-build
+          echo "Waiting for services to start..."
+          sleep 30
+
+      - name: Health check - API
+        run: |
+          echo "Checking API health..."
+          curl --fail --retry 5 --retry-delay 5 http://localhost:8000/docs || exit 1
+
+      - name: Health check - Web
+        run: |
+          echo "Checking Web health..."
+          curl --fail --retry 5 --retry-delay 5 http://localhost:3000/ || exit 1
+
+      - name: Health check - Admin
+        run: |
+          echo "Checking Admin health..."
+          curl --fail --retry 5 --retry-delay 5 http://localhost:3002/ || exit 1
+
+      - name: Health check - Artist
+        run: |
+          echo "Checking Artist health..."
+          curl --fail --retry 5 --retry-delay 5 http://localhost:3001/ || exit 1
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml logs
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v

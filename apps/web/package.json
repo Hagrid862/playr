@@ -11,6 +11,8 @@
     "format": "prettier",
     "lint": "eslint",
     "preview": "vite preview",
+    "start": "vite preview --port 3000",
+    "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run"
   },
   "dependencies": {
@@ -41,6 +43,7 @@
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.18",
     "jsdom": "^27.4.0",
     "prettier": "catalog:",
     "typescript": "catalog:",

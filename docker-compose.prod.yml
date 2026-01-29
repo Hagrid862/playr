@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hagrid}
       POSTGRES_DB: ${POSTGRES_DB:-playr}
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -66,6 +66,7 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    image: playr-api:${IMAGE_TAG:-latest}
     ports:
       - "8000:8000"
     environment:
@@ -89,6 +90,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    image: playr-web:${IMAGE_TAG:-latest}
     ports:
       - "3000:80"
     depends_on:
@@ -102,6 +104,7 @@ services:
       dockerfile: apps/admin/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    image: playr-admin:${IMAGE_TAG:-latest}
     ports:
       - "3002:80"
     depends_on:
@@ -115,6 +118,7 @@ services:
       dockerfile: apps/artist/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    image: playr-artist:${IMAGE_TAG:-latest}
     ports:
       - "3001:80"
     depends_on:

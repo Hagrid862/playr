@@ -1,6 +1,14 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
-  "globalEnv": ["PORT", "DATABASE_URL", "VITE_API_URL"],
+  "globalEnv": [
+    "PORT",
+    "DATABASE_URL",
+    "VITE_API_URL",
+    "VITE_WEB_URL",
+    "VITE_ARTIST_URL",
+    "VITE_ADMIN_URL",
+    "CI"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -26,6 +34,9 @@
     "test:e2e": {
       "dependsOn": ["^test:e2e"]
     },
+    "test:coverage": {
+      "dependsOn": ["^test:coverage"]
+    },
     "test:watch": {
       "cache": false,
       "persistent": true
@@ -45,6 +56,10 @@
     },
     "check-types": {
       "dependsOn": ["^check-types"]
+    },
+    "start": {
+      "dependsOn": ["build", "^build"],
+      "persistent": true
     }
   }
 }
