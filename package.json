@@ -17,6 +17,8 @@
     "prisma:studio": "turbo run prisma:studio"
   },
   "devDependencies": {
+    "license-checker": "^25.0.1",
+    "madge": "^8.0.0",
     "prettier": "catalog:",
     "turbo": "^2.7.6",
     "typescript": "catalog:"
