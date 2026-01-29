@@ -636,15 +636,78 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pnpm run test:coverage > coverage.txt
+          # Run tests and strip ANSI color codes for easier parsing
+          pnpm run test:coverage | sed 's/\x1b\[[0-9;]*m//g' > coverage.txt
           cat coverage.txt
 
       - name: Coverage Check
         run: |
           echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat coverage.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          # Function to extract and format coverage table for a specific package
+          extract_coverage() {
+            package_name=$1
+            # Find the section for the package in the log
+            # We look for the package execution line and then the table
+            echo "### Coverage for $package_name" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Simple extraction: grep the table lines roughly belonging to this package context
+            # Since the output is interleaved, we'll try to grep the specific VITEST coverage table structure
+            # A more robust way is to parse the specific blocks if possible, but for now let's format what we assume is there.
+            
+            # Actually, because Turbo makes it interleaved and hard to parse as one block per app easily with simple grep,
+            # and we see ::group:: in the user output, we can try to rely on that structure if we were in a matrix.
+            # But here we are running all at once.
+            
+            # Let's try to just output the raw tables found in the text file, expecting standard Vitest output
+            # We will look for "Coverage report from" and the following table
+            
+            # Note: The user wants a nice formatted table. The raw output has 
+            # File | % Stmts ...
+            # lines.
+            
+            # Let's extract all lines that look like table rows
+            cat coverage.txt | grep -E "^(File|All files|[-]+|.*\|.*\|)" | grep -v "::" | grep -v "Uncovered Line" > tables.txt
+            
+            if [ -s tables.txt ]; then
+              echo "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |" >> $GITHUB_STEP_SUMMARY
+              echo "| --- | --- | --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+              
+              # Process the file to make it markdown table compatible
+              # Replace multiple spaces with nothing (heuristic) isn't great.
+              # Vitest output is fixed width.
+              # Let's try to convert the pipes and dashes.
+              
+              cat tables.txt | \
+              grep -v "\-\-\-\-\-" | \
+              grep -v "File" | \
+              sed 's/^/| /; s/$/ |/' | \
+              sed 's/|/ | /g' | \
+              tr -s ' ' >> $GITHUB_STEP_SUMMARY
+            else
+               echo "No coverage data found." >> $GITHUB_STEP_SUMMARY
+            fi
+          }
+
+          # Since the output is one big stream, we will just format all tables found.
+          echo "### Combined Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|---|---|---|" >> $GITHUB_STEP_SUMMARY
+
+          # Filter for table lines:
+          # 1. Matches table separators (start with ---) -> exclude
+          # 2. Matches Header line (File | % Stmts) -> exclude (we added our own)
+          # 3. Matches data lines (contain |)
+          # 4. Remove ANSI codes (already done)
+
+          grep -E "\|.*\|.*\|" coverage.txt | grep -v "File               |" | grep -v "\-\-\-" | while read -r line; do
+             # Convert fixed width text table to markdown
+             # 1. Trim whitespace
+             # 2. Ensure pipe at start and end
+             echo "$line" | sed 's/|/ | /g' | tr -s ' ' | sed 's/^/| /' | sed 's/$/ |/' >> $GITHUB_STEP_SUMMARY
+          done
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
