@@ -359,11 +359,11 @@ jobs:
 
           while [ $counter -lt $max_retries ]; do
             if check_service "http://localhost:8000/health" "API" && \
-               check_service "http://localhost:3000/" "Web" && \
-               check_service "http://localhost:3001/" "Artist" && \
-               check_service "http://localhost:3002/" "Admin"; then
-               echo "All services are ready!"
-               exit 0
+              check_service "http://localhost:3000/" "Web" && \
+              check_service "http://localhost:3001/" "Artist" && \
+              check_service "http://localhost:3002/" "Admin"; then
+              echo "All services are ready!"
+              exit 0
             fi
             echo "Waiting for services... ($counter/$max_retries)"
             sleep 5
