@@ -635,7 +635,16 @@ jobs:
           name: build-outputs
 
       - name: Run tests with coverage
-        run: pnpm --filter @repo/api run test:coverage
+        run: |
+          pnpm run test:coverage > coverage.txt
+          cat coverage.txt
+
+      - name: Coverage Check
+        run: |
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat coverage.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
