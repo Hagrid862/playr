@@ -26,6 +26,9 @@
     "test:e2e": {
       "dependsOn": ["^test:e2e"]
     },
+    "test:coverage": {
+      "dependsOn": ["^test:coverage"]
+    },
     "test:watch": {
       "cache": false,
       "persistent": true
