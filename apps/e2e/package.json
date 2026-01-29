@@ -4,7 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:codegen": "playwright codegen",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --fix"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
