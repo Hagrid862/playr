@@ -138,7 +138,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: pnpm prettier --check "**/*.{ts,tsx,md}"
+        run: pnpm format:check
 
   check-types:
     name: Type Check
