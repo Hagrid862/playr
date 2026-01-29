@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "dev": "docker compose -f docker-compose.dev.yml up -d && turbo run dev",
     "dev:host": "turbo run dev:host",
+    "start": "turbo run start",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
