@@ -8,6 +8,10 @@ export default defineConfig({
     root: './',
     include: ['**/*.spec.ts'],
     environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
   },
   plugins: [
     tsconfigPaths(),
