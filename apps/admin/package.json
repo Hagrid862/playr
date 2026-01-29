@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "start": "vite preview --port 3002",
     "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint",
     "format": "prettier",
     "check": "prettier --write . && eslint --fix"
