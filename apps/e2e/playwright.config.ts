@@ -68,12 +68,8 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: process.env.CI
-    ? {
-        command: "pnpm turbo run start", // Validation: Adjust this command if 'start' is not the correct one to run all apps
-        url: "http://localhost:8000/health", // Wait for API to be up using explicit health check
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
-      }
-    : undefined,
+  /* Run your local dev server before starting the tests */
+  // In CI, we use docker-compose to start the full architecture.
+  // Locally, you can use `webServer` if needed, but for now we disable it to match CI strategy or require manual start.
+  webServer: undefined,
 });
