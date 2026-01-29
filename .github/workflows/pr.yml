@@ -481,7 +481,7 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: docker-build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -521,9 +521,17 @@ jobs:
       - name: Debug - List Artifacts
         run: ls -R apps/api/dist apps/web/dist || echo "Artifacts missing"
 
+      - name: Download Docker Images
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+
+      - name: Load Docker Images
+        run: docker load -i images.tar
+
       - name: Start Full Stack
         run: |
-          docker compose -f docker-compose.prod.yml up -d --build
+          IMAGE_TAG=ci docker compose -f docker-compose.prod.yml up -d --no-build
 
       - name: Wait for Services
         run: |
@@ -687,7 +695,7 @@ jobs:
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, e2e-tests]
+    needs: [unit-tests, integration-tests]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -700,8 +708,10 @@ jobs:
         with:
           context: .
           file: apps/api/Dockerfile
+          file: apps/api/Dockerfile
+          load: true
           push: false
-          tags: playr-api:pr-${{ github.event.pull_request.number }}
+          tags: playr-api:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -710,8 +720,10 @@ jobs:
         with:
           context: .
           file: apps/web/Dockerfile
+          file: apps/web/Dockerfile
+          load: true
           push: false
-          tags: playr-web:pr-${{ github.event.pull_request.number }}
+          tags: playr-web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -720,8 +732,10 @@ jobs:
         with:
           context: .
           file: apps/admin/Dockerfile
+          file: apps/admin/Dockerfile
+          load: true
           push: false
-          tags: playr-admin:pr-${{ github.event.pull_request.number }}
+          tags: playr-admin:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -731,9 +745,23 @@ jobs:
           context: .
           file: apps/artist/Dockerfile
           push: false
-          tags: playr-artist:pr-${{ github.event.pull_request.number }}
+          file: apps/artist/Dockerfile
+          load: true
+          push: false
+          tags: playr-artist:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Save Docker Images
+        run: |
+          docker save -o images.tar playr-api:ci playr-web:ci playr-admin:ci playr-artist:ci
+
+      - name: Upload Docker Images
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: images.tar
+          retention-days: 1
 
   docker-run:
     name: Production Simulation
@@ -743,9 +771,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Download Docker Images
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+
+      - name: Load Docker Images
+        run: docker load -i images.tar
+
       - name: Start services
         run: |
-          docker compose -f docker-compose.prod.yml up -d --build
+          IMAGE_TAG=ci docker compose -f docker-compose.prod.yml up -d --no-build
           echo "Waiting for services to start..."
           sleep 30
 
