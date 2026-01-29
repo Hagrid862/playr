@@ -338,7 +338,7 @@ jobs:
 
       - name: Start Full Stack
         run: |
-          docker compose -f docker-compose.yml up -d --build
+          docker compose -f docker-compose.prod.yml up -d --build
 
       - name: Wait for Services
         run: |
@@ -371,7 +371,7 @@ jobs:
           done
 
           echo "Services failed to start in time."
-          docker compose -f docker-compose.yml logs
+          docker compose -f docker-compose.prod.yml logs
           exit 1
 
       - name: Run Migrations
