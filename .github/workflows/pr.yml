@@ -50,11 +50,16 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: pnpm run prisma:generate
 
   build:
     name: Build
@@ -81,6 +86,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -123,6 +129,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -156,6 +163,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -189,6 +197,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -222,6 +231,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -256,6 +266,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -289,6 +300,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -322,6 +334,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -359,6 +372,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -399,6 +413,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -437,6 +452,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -475,6 +491,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -524,6 +541,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -569,6 +587,7 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
+            packages/db/src/generated
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
