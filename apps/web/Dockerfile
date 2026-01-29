@@ -26,6 +26,7 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 # Build the project
+RUN pnpm turbo run prisma:generate --filter=@repo/db
 RUN pnpm turbo build --filter=@repo/web...
 
 FROM nginx:alpine AS runner
