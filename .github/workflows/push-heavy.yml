@@ -336,11 +336,43 @@ jobs:
       - name: Debug - List Artifacts
         run: ls -R apps/api/dist apps/web/dist || echo "Artifacts missing"
 
-      - name: Start Infrastructure
+      - name: Start Full Stack
         run: |
-          docker compose -f docker-compose.dev.yml up -d
-          echo "Waiting for database to be ready..."
-          sleep 15
+          docker compose -f docker-compose.yml up -d --build
+
+      - name: Wait for Services
+        run: |
+          echo "Waiting for services to be ready..."
+          max_retries=30
+          counter=0
+
+          check_service() {
+            url=$1
+            name=$2
+            if curl -s --head --request GET "$url" | grep "200 OK" > /dev/null; then 
+              echo "$name is up!"
+              return 0
+            else
+              return 1
+            fi
+          }
+
+          while [ $counter -lt $max_retries ]; do
+            if check_service "http://localhost:8000/health" "API" && \
+               check_service "http://localhost:3000/" "Web" && \
+               check_service "http://localhost:3001/" "Artist" && \
+               check_service "http://localhost:3002/" "Admin"; then
+               echo "All services are ready!"
+               exit 0
+            fi
+            echo "Waiting for services... ($counter/$max_retries)"
+            sleep 5
+            counter=$((counter+1))
+          done
+
+          echo "Services failed to start in time."
+          docker compose -f docker-compose.yml logs
+          exit 1
 
       - name: Run Migrations
         run: pnpm run prisma:push
