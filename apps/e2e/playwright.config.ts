@@ -71,7 +71,7 @@ export default defineConfig({
   webServer: process.env.CI
     ? {
         command: "pnpm turbo run start", // Validation: Adjust this command if 'start' is not the correct one to run all apps
-        url: "http://localhost:8000/docs", // Wait for API to be up using Swagger docs endpoint
+        url: "http://localhost:8000/health", // Wait for API to be up using explicit health check
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
       }
