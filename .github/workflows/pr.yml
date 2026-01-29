@@ -524,10 +524,14 @@ jobs:
       - name: Download Docker Images
         uses: actions/download-artifact@v4
         with:
-          name: docker-images
+          pattern: docker-image-*
+          merge-multiple: true
 
       - name: Load Docker Images
-        run: docker load -i images.tar
+        run: |
+          for file in *.tar; do
+            docker load -i "$file"
+          done
 
       - name: Start Full Stack
         run: |
@@ -693,9 +697,12 @@ jobs:
           done
 
   docker-build:
-    name: Docker Build
+    name: Docker Build - ${{ matrix.app }}
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests]
+    strategy:
+      matrix:
+        app: [api, web, admin, artist]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -703,59 +710,26 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build API image
+      - name: Build ${{ matrix.app }} image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/api/Dockerfile
+          file: apps/${{ matrix.app }}/Dockerfile
           load: true
           push: false
-          tags: playr-api:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: playr-${{ matrix.app }}:ci
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
-      - name: Build Web image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          load: true
-          push: false
-          tags: playr-web:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build Admin image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/admin/Dockerfile
-          load: true
-          push: false
-          tags: playr-admin:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build Artist image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/artist/Dockerfile
-          load: true
-          push: false
-          tags: playr-artist:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Save Docker Images
+      - name: Save Docker Image
         run: |
-          docker save -o images.tar playr-api:ci playr-web:ci playr-admin:ci playr-artist:ci
+          docker save -o ${{ matrix.app }}.tar playr-${{ matrix.app }}:ci
 
-      - name: Upload Docker Images
+      - name: Upload Docker Image
         uses: actions/upload-artifact@v4
         with:
-          name: docker-images
-          path: images.tar
+          name: docker-image-${{ matrix.app }}
+          path: ${{ matrix.app }}.tar
           retention-days: 1
 
   docker-run:
@@ -769,10 +743,14 @@ jobs:
       - name: Download Docker Images
         uses: actions/download-artifact@v4
         with:
-          name: docker-images
+          pattern: docker-image-*
+          merge-multiple: true
 
       - name: Load Docker Images
-        run: docker load -i images.tar
+        run: |
+          for file in *.tar; do
+            docker load -i "$file"
+          done
 
       - name: Start services
         run: |
