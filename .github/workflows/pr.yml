@@ -516,7 +516,7 @@ jobs:
           name: build-outputs
 
       - name: Install Playwright browsers
-        run: pnpm --filter @repo/e2e exec playwright install --with-deps
+        run: pnpm --filter @repo/e2e exec playwright install chromium --with-deps
 
       - name: Debug - List Artifacts
         run: ls -R apps/api/dist apps/web/dist || echo "Artifacts missing"
@@ -528,7 +528,7 @@ jobs:
       - name: Wait for Services
         run: |
           echo "Waiting for services to be ready..."
-          max_retries=30
+          max_retries=60
           counter=0
 
           check_service() {
