@@ -293,10 +293,46 @@ jobs:
       - name: Run integration tests
         run: pnpm run test:integration
 
+  docker-build:
+    name: Docker Build - ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    strategy:
+      matrix:
+        app: [api, web, admin, artist]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.app }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          load: true
+          push: false
+          tags: playr-${{ matrix.app }}:ci
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+      - name: Save Docker Image
+        run: |
+          docker save -o ${{ matrix.app }}.tar playr-${{ matrix.app }}:ci
+
+      - name: Upload Docker Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ matrix.app }}
+          path: ${{ matrix.app }}.tar
+          retention-days: 1
+
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: docker-build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -336,9 +372,21 @@ jobs:
       - name: Debug - List Artifacts
         run: ls -R apps/api/dist apps/web/dist || echo "Artifacts missing"
 
+      - name: Download Docker Images
+        uses: actions/download-artifact@v4
+        with:
+          pattern: docker-image-*
+          merge-multiple: true
+
+      - name: Load Docker Images
+        run: |
+          for file in *.tar; do
+            docker load -i "$file"
+          done
+
       - name: Start Full Stack
         run: |
-          docker compose -f docker-compose.prod.yml up -d --build
+          IMAGE_TAG=ci docker compose -f docker-compose.prod.yml up -d --no-build
 
       - name: Wait for Services
         run: |
@@ -359,11 +407,11 @@ jobs:
 
           while [ $counter -lt $max_retries ]; do
             if check_service "http://localhost:8000/health" "API" && \
-              check_service "http://localhost:3000/" "Web" && \
-              check_service "http://localhost:3001/" "Artist" && \
-              check_service "http://localhost:3002/" "Admin"; then
-              echo "All services are ready!"
-              exit 0
+               check_service "http://localhost:3000/" "Web" && \
+               check_service "http://localhost:3001/" "Artist" && \
+               check_service "http://localhost:3002/" "Admin"; then
+               echo "All services are ready!"
+               exit 0
             fi
             echo "Waiting for services... ($counter/$max_retries)"
             sleep 5
@@ -399,54 +447,3 @@ jobs:
           name: playwright-report
           path: apps/e2e/playwright-report
           retention-days: 7
-
-  docker-build:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, e2e-tests]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build API image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/api/Dockerfile
-          push: false
-          tags: playr-api:${{ github.ref_name }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build Web image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          push: false
-          tags: playr-web:${{ github.ref_name }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build Admin image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/admin/Dockerfile
-          push: false
-          tags: playr-admin:${{ github.ref_name }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build Artist image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/artist/Dockerfile
-          push: false
-          tags: playr-artist:${{ github.ref_name }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
