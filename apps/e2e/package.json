@@ -6,6 +6,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "@repo/configs": "workspace:*",
+    "@types/node": "catalog:",
+    "dotenv": "^17.2.3",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC"
