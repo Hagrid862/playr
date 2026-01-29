@@ -7,6 +7,7 @@
     "build": "vite build && tsc",
     "check": "prettier --write . && eslint --fix",
     "dev": "vite --port 3000",
+    "dev:host": "vite --port 3000 --host",
     "format": "prettier",
     "lint": "eslint",
     "preview": "vite preview",

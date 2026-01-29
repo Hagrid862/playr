@@ -1,12 +1,16 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
-  "globalEnv": ["PORT", "DATABASE_URL"],
+  "globalEnv": ["PORT", "DATABASE_URL", "VITE_API_URL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "dev:host": {
       "cache": false,
       "persistent": true
     },
@@ -20,7 +24,11 @@
       "dependsOn": ["^test:integration"]
     },
     "test:e2e": {
-      "dependsOn": ["^test:watch"]
+      "dependsOn": ["^test:e2e"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
     },
     "prisma:generate": {
       "cache": true
