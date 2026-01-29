@@ -22,7 +22,7 @@ COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/packages/db/prisma/schema.prisma ./packages/db/prisma/schema.prisma
 
 # Install pnpm
-RUN corepack enable
+RUN npm install -g pnpm@9.15.4
 RUN pnpm install --frozen-lockfile
 
 # Build the project and its dependencies

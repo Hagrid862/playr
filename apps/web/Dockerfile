@@ -15,7 +15,7 @@ COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-RUN corepack enable
+RUN npm install -g pnpm@9.15.4
 RUN pnpm install --frozen-lockfile
 
 COPY --from=builder /app/out/full/ .
