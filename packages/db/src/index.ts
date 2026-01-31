@@ -3,6 +3,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 export * from "./generated/prisma/client";
+export * from "./generated/prisma/models";
+export * from "./generated/prisma/enums";
+export * from "./generated/prisma/commonInputTypes";
 export * as browser from "./generated/prisma/browser";
 
 export const createPrismaClient = (connectionString: string) => {
