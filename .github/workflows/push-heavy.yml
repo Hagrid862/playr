@@ -54,7 +54,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
@@ -64,10 +63,6 @@ jobs:
       - name: Generate Prisma client
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: pnpm run prisma:generate
-
-      - name: Build contracts package
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: pnpm --filter @repo/contracts run build
 
   build:
     name: Build
@@ -96,7 +91,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -141,7 +135,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -177,7 +170,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -213,7 +205,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -249,7 +240,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -290,7 +280,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
@@ -367,7 +356,6 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-            packages/contracts/dist
           key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
