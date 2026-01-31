@@ -574,13 +574,13 @@ jobs:
       - name: Run Migrations
         run: pnpm run prisma:push
         env:
-          DATABASE_URL: "postgresql://hagrid:hagrid@localhost:5435/playr?schema=public"
+          DATABASE_URL: "postgresql://playr:playr@localhost:5435/playr?schema=public"
 
       - name: Run E2E tests
         run: pnpm run test:e2e
         env:
           CI: "true"
-          DATABASE_URL: "postgresql://hagrid:hagrid@localhost:5435/playr?schema=public"
+          DATABASE_URL: "postgresql://playr:playr@localhost:5435/playr?schema=public"
           MINIO_ENDPOINT: "localhost"
           MINIO_PORT: "9000"
           MINIO_ACCESS_KEY: "minioadmin"
