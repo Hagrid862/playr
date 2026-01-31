@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 export * from "./generated/prisma/client";
+export * as browser from "./generated/prisma/browser";
 
 export const createPrismaClient = (connectionString: string) => {
   if (!connectionString) {
