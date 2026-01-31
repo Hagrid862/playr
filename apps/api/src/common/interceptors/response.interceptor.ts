@@ -4,18 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { BYPASS_RESPONSE_INTERCEPTOR_KEY } from '../decorators/bypass-interceptor.decorator';
 import { WithMeta } from '../utils/with-meta.util';
-
-export interface StandardizedResponse<T> {
-  success: boolean;
-  data: T | null;
-  error: null;
-  meta: {
-    timestamp: string;
-    requestId: string;
-    path: string;
-    [key: string]: any;
-  };
-}
+import { createStandardizedResponse, StandardizedResponse } from '../utils/response.helper';
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, StandardizedResponse<T>> {
@@ -32,8 +21,6 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, StandardizedRe
     }
 
     const request = context.switchToHttp().getRequest();
-    const requestId = request.id || request.headers['x-request-id'] || this.generateRequestId();
-
     return next.handle().pipe(
       map((res: unknown): StandardizedResponse<T> => {
         let data = res;
@@ -44,22 +31,12 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, StandardizedRe
           extraMeta = res.meta;
         }
 
-        return {
-          success: true,
+        return createStandardizedResponse({
           data: (data as T) ?? null,
-          error: null,
-          meta: {
-            timestamp: new Date().toISOString(),
-            requestId,
-            path: request.url,
-            ...extraMeta,
-          },
-        };
+          request,
+          extraMeta,
+        });
       }),
     );
-  }
-
-  private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

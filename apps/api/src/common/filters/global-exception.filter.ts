@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { createStandardizedResponse } from '../utils/response.helper';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -37,21 +38,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       this.logger.error(exception);
     }
 
-    const requestId = (request as any).id || request.headers['x-request-id'] || `req_${Date.now()}`;
-
-    response.status(status).json({
+    const standardizedResponse = createStandardizedResponse({
       success: false,
       data: null,
       error: {
         statusCode: status,
         message: errorMessage,
-        timestamp: new Date().toISOString(),
       },
-      meta: {
-        timestamp: new Date().toISOString(),
-        requestId,
-        path: request.url,
-      },
+      request,
     });
+
+    response.status(status).json(standardizedResponse);
   }
 }
