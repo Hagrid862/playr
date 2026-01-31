@@ -1,9 +1,20 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { ZodValidationPipe } from 'nestjs-zod';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
+
+  app.useGlobalPipes(new ZodValidationPipe());
+
+  const prefix = process.env.API_PREFIX;
+  if (prefix) app.setGlobalPrefix(prefix);
 
   const config = new DocumentBuilder()
     .setTitle('Playr API')
