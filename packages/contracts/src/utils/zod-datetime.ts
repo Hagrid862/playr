@@ -4,14 +4,14 @@ import z from "zod";
  * Creates a Zod schema for datetime fields that:
  * 1. Accepts both Date objects and ISO datetime strings (flexible input)
  * 2. Converts Date objects to ISO strings for JSON Schema compatibility
- * 3. Outputs as string (JSON compatible) - use `.transform(v => new Date(v))` if you need Date objects
+ * 3. Transforms back to Date objects for output type satisfaction
  */
 export const zodDateTime = () =>
   z
     .preprocess((val) => {
       if (val instanceof Date) return val.toISOString();
       return val;
-    }, z.string())
+    }, z.iso.datetime())
     .transform((val) => new Date(val));
 
 /**
@@ -22,5 +22,5 @@ export const zodDateTimeNullable = () =>
     .preprocess((val) => {
       if (val instanceof Date) return val.toISOString();
       return val;
-    }, z.string().nullable())
+    }, z.iso.datetime().nullable())
     .transform((val) => (val ? new Date(val) : null));
