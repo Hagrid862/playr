@@ -1,5 +1,6 @@
 import { type CommunityProfile } from "@repo/db";
 import z from "zod";
+import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 
 export const CommunityProfileSchema = z.object({
   id: z.string(),
@@ -10,9 +11,9 @@ export const CommunityProfileSchema = z.object({
   avatarId: z.string().nullable(),
   userId: z.string(),
   artistId: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  deletedAt: z.date().nullable(),
+  createdAt: zodDateTime(),
+  updatedAt: zodDateTime(),
+  deletedAt: zodDateTimeNullable(),
 }) satisfies z.ZodType<CommunityProfile>;
 
 export type ZodCommunityProfile = z.infer<typeof CommunityProfileSchema>;

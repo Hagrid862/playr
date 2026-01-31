@@ -1,5 +1,6 @@
 import { NotificationStatus, type Notification } from "@repo/db";
 import z from "zod";
+import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 
 export const NotificationSchema = z.object({
   id: z.string(),
@@ -7,9 +8,9 @@ export const NotificationSchema = z.object({
   description: z.string(),
   status: z.enum(NotificationStatus),
   userId: z.string(),
-  createdAt: z.date(),
-  dismissedAt: z.date().nullable(),
-  deletedAt: z.date().nullable(),
+  createdAt: zodDateTime(),
+  dismissedAt: zodDateTimeNullable(),
+  deletedAt: zodDateTimeNullable(),
 }) satisfies z.ZodType<Notification>;
 
 export type ZodNotification = z.infer<typeof NotificationSchema>;
