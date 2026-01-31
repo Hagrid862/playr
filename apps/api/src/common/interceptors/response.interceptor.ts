@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { BYPASS_RESPONSE_INTERCEPTOR_KEY } from '../decorators/bypass-interceptor.decorator';
+import { WithMeta } from '../utils/with-meta.util';
 
 export interface StandardizedResponse<T> {
   success: boolean;
@@ -12,6 +13,7 @@ export interface StandardizedResponse<T> {
     timestamp: string;
     requestId: string;
     path: string;
+    [key: string]: any;
   };
 }
 
@@ -33,15 +35,24 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, StandardizedRe
     const requestId = request.id || request.headers['x-request-id'] || this.generateRequestId();
 
     return next.handle().pipe(
-      map((data: T): StandardizedResponse<T> => {
+      map((res: unknown): StandardizedResponse<T> => {
+        let data = res;
+        let extraMeta = {};
+
+        if (res instanceof WithMeta) {
+          data = res.data;
+          extraMeta = res.meta;
+        }
+
         return {
           success: true,
-          data: data ?? null,
+          data: (data as T) ?? null,
           error: null,
           meta: {
             timestamp: new Date().toISOString(),
             requestId,
             path: request.url,
+            ...extraMeta,
           },
         };
       }),
