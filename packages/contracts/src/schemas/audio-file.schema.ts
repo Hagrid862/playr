@@ -15,7 +15,7 @@ export const AudioFileSchema = z.object({
   mimeType: z.string(),
   size: z.number().int(),
   format: z.enum(AudioFormat),
-  duration: z.number().nullable(),
+  duration: z.number().min(0).nullable(),
   bitrate: z.number().int().nullable(),
   sampleRate: z.number().int().nullable(),
   channels: z.number().int().nullable(),
