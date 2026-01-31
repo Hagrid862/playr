@@ -57,7 +57,7 @@
       "persistent": true
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^build", "^check-types"]
     },
     "start": {
       "dependsOn": ["build", "^build"],
