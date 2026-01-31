@@ -7,3 +7,1002 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// -----------------------------------------------------------
+// --- user management ---------------------------------------
+// -----------------------------------------------------------
+
+model User {
+  id String @id @default(cuid())
+  username String @unique
+  firstName String
+  lastName String?
+  birthDate String?
+  gender Gender?
+  description String? @db.Text
+  password String
+
+  library Library? @relation("UserLibrary")
+
+  avatarId String? @unique
+  avatar Image? @relation("UserAvatarImage", fields: [avatarId], references: [id], onDelete: SetNull)
+
+  artistProfile ArtistProfile? @relation("ArtistProfileUser")
+  communityProfile CommunityProfile? @relation("CommunityProfileUser")
+  moderatorAccount ModeratorAccount? @relation("UserModeratorAccount")
+
+  emailAddresses EmailAddress[] @relation("UserEmailAddresses")
+  sessions Session[] @relation("UserSessions")
+  reports Report[] @relation("UserReports")
+  listenHistory ListenHistory[] @relation("UserListenHistory")
+  searchHistory SearchHistory[] @relation("UserSearchHistory")
+  notifications Notification[] @relation("UserNotifications")
+
+  reportTargets ReportTarget[] @relation("UserReportTargets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model EmailAddress {
+  id String @id @default(cuid())
+  email String @unique
+  type EmailType @default(primary)
+  status EmailStatus @default(pending)
+  
+  userId String
+  user User @relation("UserEmailAddresses", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  verifiedAt DateTime?
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("email_addresses")
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  userId String
+  user User @relation("UserSessions", fields: [userId], references: [id], onDelete: Cascade)
+  type SessionType @default(user)
+
+  refreshTokens RefreshToken[] @relation("SessionRefreshTokens")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime?
+  refreshedAt DateTime?
+  revokedAt DateTime?
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id String @id @default(cuid())
+  token String @unique
+
+  sessionId String
+  session Session @relation("SessionRefreshTokens", fields: [sessionId], references: [id], onDelete: Cascade)
+
+  accessTokenId String? @unique
+  accessToken AccessToken? @relation("RefreshTokenAccessToken", fields: [accessTokenId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revokedAt DateTime?
+  deletedAt DateTime?
+
+  @@index([sessionId])
+  @@map("refresh_tokens")
+}
+
+model AccessToken {
+  id String @id @default(cuid())
+  token String @unique
+
+  refreshTokenId String? @unique
+  refreshToken RefreshToken? @relation("RefreshTokenAccessToken")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revokedAt DateTime?
+  deletedAt DateTime?
+
+  @@map("access_tokens")
+}
+
+// -----------------------------------------------------------
+// --- library -----------------------------------------------
+// -----------------------------------------------------------
+
+model Library {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user User @relation("UserLibrary", fields: [userId], references: [id], onDelete: Cascade)
+
+  artists LibraryArtist[] @relation("LibraryArtistLibrary")
+  albums LibraryAlbum[] @relation("LibraryAlbumLibrary")
+  tracks LibraryTrack[] @relation("LibraryTrackLibrary")
+  playlists Playlist[] @relation("LibraryPlaylistLibrary")
+  importedPlaylists Playlist[] @relation("ImportedPlaylistLibrary")
+
+  pins LibraryPin[] @relation("LibraryPinLibrary")
+  favorites LibraryFavorite[] @relation("LibraryFavoriteLibrary")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([createdAt])
+  @@map("libraries")
+}
+
+model LibraryFavorite {
+  id String @id @default(cuid())
+  order Int @default(0)
+
+  libraryId String
+  library Library @relation("LibraryFavoriteLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
+
+  trackId String
+  track Track @relation("LibraryFavoriteTrack", fields: [trackId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([libraryId, trackId])
+  @@index([libraryId])
+  @@index([trackId])
+  @@map("library_favorites")
+}
+
+model LibraryPin {
+  id String @id @default(cuid())
+  order Int @default(0)
+
+  libraryId String
+  library Library @relation("LibraryPinLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
+
+  artistId String?
+  artist Artist? @relation("LibraryPinArtist", fields: [artistId], references: [id], onDelete: Cascade)
+
+  albumId String?
+  album Album? @relation("LibraryPinAlbum", fields: [albumId], references: [id], onDelete: Cascade)
+
+  trackId String?
+  track Track? @relation("LibraryPinTrack", fields: [trackId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([libraryId, artistId])
+  @@unique([libraryId, albumId])
+  @@unique([libraryId, trackId])
+  @@index([libraryId])
+  @@map("library_pins")
+}
+
+model LibraryArtist {
+  id String @id @default(cuid())
+
+  libraryId String
+  library Library @relation("LibraryArtistLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
+
+  artistId String
+  artist Artist @relation("LibraryArtistArtist", fields: [artistId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([libraryId, artistId])
+  @@index([libraryId])
+  @@index([artistId])
+  @@map("library_artists")
+}
+
+model LibraryAlbum {
+  id String @id @default(cuid())
+
+  libraryId String
+  library Library @relation("LibraryAlbumLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
+
+  albumId String
+  album Album @relation("LibraryAlbumAlbum", fields: [albumId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([libraryId, albumId])
+  @@index([libraryId])
+  @@index([albumId])
+  @@map("library_albums")
+}
+
+model LibraryTrack {
+  id String @id @default(cuid())
+  listenedCount Int @default(0)
+
+  libraryId String
+  library Library @relation("LibraryTrackLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
+
+  trackId String
+  track Track @relation("LibraryTrackTrack", fields: [trackId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  listenCountResetAt DateTime?
+  deletedAt DateTime?
+
+  @@unique([libraryId, trackId])
+  @@index([libraryId])
+  @@index([trackId])
+  @@map("library_tracks")
+}
+
+// -----------------------------------------------------------
+// --- professional artist -----------------------------------
+// -----------------------------------------------------------
+
+model ArtistProfile {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user User @relation("ArtistProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  artistId String? @unique
+  artist Artist? @relation("ArtistProfileArtist", fields: [artistId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@map("artist_profiles")
+}
+
+// -----------------------------------------------------------
+// --- music -------------------------------------------------
+// -----------------------------------------------------------
+
+model Artist {
+  id String @id @default(cuid())
+  name String
+  description String? @db.Text
+  isCommunity Boolean @default(false)
+  verified Boolean @default(false)
+
+  artistProfile ArtistProfile? @relation("ArtistProfileArtist")
+  communityProfile CommunityProfile? @relation("CommunityProfileArtist")
+
+  bannerId String? @unique
+  banner Image? @relation("ArtistBannerImage", fields: [bannerId], references: [id], onDelete: SetNull)
+
+  avatarId String? @unique
+  avatar Image? @relation("ArtistAvatarImage", fields: [avatarId], references: [id], onDelete: SetNull)
+
+  albums Album[] @relation("AlbumArtists")
+  tracks Track[] @relation("TrackArtists")
+  libraryArtists LibraryArtist[] @relation("LibraryArtistArtist")
+  libraryPins LibraryPin[] @relation("LibraryPinArtist")
+  playlists Playlist[] @relation("ArtistPlaylists")
+  followers ArtistFollow[] @relation("ArtistFollowers")
+  genres ArtistGenre[] @relation("ArtistGenres")
+
+  reportTargets ReportTarget[] @relation("ArtistReportTargets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([deletedAt])
+  @@index([name])
+  @@map("artists")
+}
+
+model Album {
+  id String @id @default(cuid())
+  name String
+  description String? @db.Text
+  type AlbumType @default(album)
+  totalTracks Int @default(0)
+  totalDuration Int @default(0)
+  releaseDate DateTime?
+
+  coverId String? @unique
+  cover Image? @relation("AlbumCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
+
+  artists Artist[] @relation("AlbumArtists")
+  tracks Track[] @relation("AlbumTracks")
+  libraryAlbums LibraryAlbum[] @relation("LibraryAlbumAlbum")
+  libraryPins LibraryPin[] @relation("LibraryPinAlbum")
+  comments CommunityComment[] @relation("AlbumComments")
+  genres AlbumGenre[] @relation("AlbumGenres")
+
+  reportTargets ReportTarget[] @relation("AlbumReportTargets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([deletedAt])
+  @@index([name])
+  @@index([type])
+  @@map("albums")
+}
+
+model Track {
+  id String @id @default(cuid())
+  title String
+  trackNumber Int @default(0)
+  diskNumber Int @default(0)
+  duration Int @default(0)
+  listenedCount Int @default(0)
+  explicit Boolean @default(false)
+  lyrics String? @db.Text
+
+  albumId String
+  album Album @relation("AlbumTracks", fields: [albumId], references: [id], onDelete: Cascade)
+
+  libraryTracks LibraryTrack[] @relation("LibraryTrackTrack")
+  libraryPins LibraryPin[] @relation("LibraryPinTrack")
+  playlistTracks PlaylistTrack[] @relation("PlaylistTrackTrack")
+  favoritedIn LibraryFavorite[] @relation("LibraryFavoriteTrack")
+  comments CommunityComment[] @relation("TrackComments")
+  listenHistory ListenHistory[] @relation("TrackListenHistory")
+  genres TrackGenre[] @relation("TrackGenres")
+  credits TrackCredit[] @relation("TrackCredits")
+  audioFiles AudioFile[] @relation("TrackAudioFiles")
+
+  artists Artist[] @relation("TrackArtists")
+
+  reportTargets ReportTarget[] @relation("TrackReportTargets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([albumId])
+  @@index([deletedAt])
+  @@index([title])
+  @@map("tracks")
+}
+
+// -----------------------------------------------------------
+// --- genres ------------------------------------------------
+// -----------------------------------------------------------
+
+model Genre {
+  id String @id @default(cuid())
+  name String @unique
+  slug String @unique
+  description String? @db.Text
+
+  artists ArtistGenre[] @relation("GenreArtists")
+  albums AlbumGenre[] @relation("GenreAlbums")
+  tracks TrackGenre[] @relation("GenreTracks")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([name])
+  @@map("genres")
+}
+
+model ArtistGenre {
+  id String @id @default(cuid())
+
+  artistId String
+  artist Artist @relation("ArtistGenres", fields: [artistId], references: [id], onDelete: Cascade)
+
+  genreId String
+  genre Genre @relation("GenreArtists", fields: [genreId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([artistId, genreId])
+  @@index([artistId])
+  @@index([genreId])
+  @@map("artist_genres")
+}
+
+model AlbumGenre {
+  id String @id @default(cuid())
+
+  albumId String
+  album Album @relation("AlbumGenres", fields: [albumId], references: [id], onDelete: Cascade)
+
+  genreId String
+  genre Genre @relation("GenreAlbums", fields: [genreId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([albumId, genreId])
+  @@index([albumId])
+  @@index([genreId])
+  @@map("album_genres")
+}
+
+model TrackGenre {
+  id String @id @default(cuid())
+
+  trackId String
+  track Track @relation("TrackGenres", fields: [trackId], references: [id], onDelete: Cascade)
+
+  genreId String
+  genre Genre @relation("GenreTracks", fields: [genreId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([trackId, genreId])
+  @@index([trackId])
+  @@index([genreId])
+  @@map("track_genres")
+}
+
+// -----------------------------------------------------------
+// --- follows -----------------------------------------------
+// -----------------------------------------------------------
+
+model ArtistFollow {
+  id String @id @default(cuid())
+
+  profileId String
+  profile CommunityProfile @relation("CommunityProfileFollowedArtists", fields: [profileId], references: [id], onDelete: Cascade)
+
+  artistId String
+  artist Artist @relation("ArtistFollowers", fields: [artistId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([profileId, artistId])
+  @@index([profileId])
+  @@index([artistId])
+  @@map("artist_follows")
+}
+
+// -----------------------------------------------------------
+// --- history -----------------------------------------------
+// -----------------------------------------------------------
+
+model ListenHistory {
+  id String @id @default(cuid())
+  listenedAt DateTime @default(now())
+  durationMs Int @default(0)
+  completed Boolean @default(false)
+
+  userId String
+  user User @relation("UserListenHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  trackId String
+  track Track @relation("TrackListenHistory", fields: [trackId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([trackId])
+  @@index([listenedAt])
+  @@map("listen_history")
+}
+
+model SearchHistory {
+  id String @id @default(cuid())
+  query String
+  searchedAt DateTime @default(now())
+
+  userId String
+  user User @relation("UserSearchHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([searchedAt])
+  @@map("search_history")
+}
+
+// -----------------------------------------------------------
+// --- credits -----------------------------------------------
+// -----------------------------------------------------------
+
+model TrackCredit {
+  id String @id @default(cuid())
+  name String
+  role CreditRole
+
+  trackId String
+  track Track @relation("TrackCredits", fields: [trackId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([trackId])
+  @@index([role])
+  @@map("track_credits")
+}
+
+// -----------------------------------------------------------
+// --- notifications -----------------------------------------
+// -----------------------------------------------------------
+
+model Notification {
+  id String @id @default(cuid())
+  title String
+  description String @db.Text
+  status NotificationStatus @default(default)
+  
+  userId String
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  dismissedAt DateTime?
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// -----------------------------------------------------------
+// --- community ---------------------------------------------
+// -----------------------------------------------------------
+
+model CommunityProfile {
+  id String @id @default(cuid())
+  name String
+  description String? @db.Text
+  isVerified Boolean @default(false)
+
+  coverId String? @unique
+  cover Image? @relation("CommunityProfileCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
+
+  avatarId String? @unique
+  avatar Image? @relation("CommunityProfileAvatarImage", fields: [avatarId], references: [id], onDelete: SetNull)
+
+  userId String @unique
+  user User @relation("CommunityProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  artistId String? @unique
+  artist Artist? @relation("CommunityProfileArtist", fields: [artistId], references: [id])
+
+  comments CommunityComment[] @relation("CommunityProfileComments")
+  reactions CommunityCommentReaction[] @relation("CommunityProfileReactions")
+  followedArtists ArtistFollow[] @relation("CommunityProfileFollowedArtists")
+
+  reportTargets ReportTarget[] @relation("CommunityProfileReportTargets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("community_profiles")
+}
+
+model CommunityComment {
+  id String @id @default(cuid())
+  content String @db.Text
+  isPinned Boolean @default(false)
+
+  profileId String
+  profile CommunityProfile @relation("CommunityProfileComments", fields: [profileId], references: [id], onDelete: Cascade)
+
+  trackId String?
+  track Track? @relation("TrackComments", fields: [trackId], references: [id], onDelete: Cascade)
+
+  albumId String?
+  album Album? @relation("AlbumComments", fields: [albumId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent CommunityComment? @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+
+  attachedImageId String? @unique
+  attachedImage Image? @relation("CommunityCommentAttachedImage", fields: [attachedImageId], references: [id])
+  replies CommunityComment[] @relation("CommunityCommentReplies")
+  reactions CommunityCommentReaction[] @relation("CommunityCommentReactions")
+
+  reportTargets ReportTarget[] @relation("CommunityCommentReportTargets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([profileId])
+  @@index([trackId])
+  @@index([albumId])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@map("community_comments")
+}
+
+model CommunityCommentReaction {
+  id String @id @default(cuid())
+  reaction CommunityReactionType
+
+  commentId String
+  comment CommunityComment @relation("CommunityCommentReactions", fields: [commentId], references: [id], onDelete: Cascade)
+
+  profileId String
+  profile CommunityProfile @relation("CommunityProfileReactions", fields: [profileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([commentId, profileId])
+  @@index([commentId])
+  @@index([profileId])
+  @@map("community_comment_reactions")
+}
+
+// -----------------------------------------------------------
+// --- playlist ----------------------------------------------
+// -----------------------------------------------------------
+
+model Playlist {
+  id String @id @default(cuid())
+  name String
+  description String? @db.Text
+  isPublic Boolean @default(false)
+  isCollaborative Boolean @default(false)
+
+  libraryId String?
+  library Library? @relation("LibraryPlaylistLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
+
+  artistId String?
+  artist Artist? @relation("ArtistPlaylists", fields: [artistId], references: [id], onDelete: SetNull)
+
+  coverId String? @unique
+  cover Image? @relation("PlaylistCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
+
+  tracks PlaylistTrack[] @relation("PlaylistTrackPlaylist")
+  importedIn Library[] @relation("ImportedPlaylistLibrary")
+
+  reportTargets ReportTarget[] @relation("PlaylistReportTargets")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([libraryId])
+  @@index([artistId])
+  @@index([deletedAt])
+  @@index([isPublic])
+  @@map("playlists")
+}
+
+model PlaylistTrack {
+  id String @id @default(cuid())
+  order Int @default(0)
+
+  playlistId String
+  playlist Playlist @relation("PlaylistTrackPlaylist", fields: [playlistId], references: [id], onDelete: Cascade)
+
+  trackId String
+  track Track @relation("PlaylistTrackTrack", fields: [trackId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+  @@index([trackId])
+  @@map("playlist_tracks")
+}
+
+// -----------------------------------------------------------
+// --- moderation---------------------------------------------
+// -----------------------------------------------------------
+
+model Report {
+  id String @id @default(cuid())
+  reason String
+  description String? @db.Text
+  status ReportStatus @default(created)
+
+  userId String
+  user User @relation("UserReports", fields: [userId], references: [id], onDelete: Cascade)
+
+  targetId String? @unique
+  target ReportTarget? @relation("ReportTargetReport", fields: [targetId], references: [id])
+
+  assignedModeratorId String? @unique
+  assignedModerator ModeratorAccount? @relation("ModeratorAccountAssignedReport", fields: [assignedModeratorId], references: [id])
+
+  attachedImages Image[] @relation("ReportAttachedImages")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("reports")
+}
+
+model ReportTarget {
+  id String @id @default(cuid())
+
+  report Report? @relation("ReportTargetReport")
+
+  userId String?
+  user User? @relation("UserReportTargets", fields: [userId], references: [id])
+
+  communityProfileId String?
+  communityProfile CommunityProfile? @relation("CommunityProfileReportTargets", fields: [communityProfileId], references: [id])
+
+  communityCommentId String?
+  communityComment CommunityComment? @relation("CommunityCommentReportTargets", fields: [communityCommentId], references: [id])
+
+  artistId String?
+  artist Artist? @relation("ArtistReportTargets", fields: [artistId], references: [id])
+
+  albumId String?
+  album Album? @relation("AlbumReportTargets", fields: [albumId], references: [id])
+
+  trackId String?
+  track Track? @relation("TrackReportTargets", fields: [trackId], references: [id])
+
+  playlistId String?
+  playlist Playlist? @relation("PlaylistReportTargets", fields: [playlistId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([artistId])
+  @@index([albumId])
+  @@index([trackId])
+  @@index([playlistId])
+  @@map("report_targets")
+}
+
+model ModeratorAccount {
+  id String @id @default(cuid())
+  
+  userId String @unique
+  user User @relation("UserModeratorAccount", fields: [userId], references: [id], onDelete: Cascade)
+
+  assignedReport Report? @relation("ModeratorAccountAssignedReport")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@map("moderator_accounts")
+}
+
+// -----------------------------------------------------------
+// --- files and media ---------------------------------------
+// -----------------------------------------------------------
+
+model Image {
+  id String @id @default(cuid())
+  alt String?
+
+  bucket FileBucket
+  key String
+  url String?
+  
+  mimeType String
+  blurhash String?
+
+  variants ImageVariant[] @relation("ImageVariants")
+
+  userAvatar User? @relation("UserAvatarImage")
+  artistBanner Artist? @relation("ArtistBannerImage")
+  artistAvatar Artist? @relation("ArtistAvatarImage")
+  albumCover Album? @relation("AlbumCoverImage")
+  communityProfileCover CommunityProfile? @relation("CommunityProfileCoverImage")
+  communityProfileAvatar CommunityProfile? @relation("CommunityProfileAvatarImage")
+  communityCommentImage CommunityComment? @relation("CommunityCommentAttachedImage")
+  playlistCover Playlist? @relation("PlaylistCoverImage")
+  
+  reportId String?
+  reportAttached Report? @relation("ReportAttachedImages", fields: [reportId], references: [id])
+
+  uploadStatus ImageUploadStatus @default(uploaded)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  
+  @@index([key])
+  @@index([reportId])
+  @@map("images")
+}
+
+model ImageVariant {
+  id String @id @default(cuid())
+  type ImageVariantType @default(original)
+
+  bucket FileBucket
+  key    String
+  url    String?
+
+  width  Int?
+  height Int?
+  size   Int
+
+  imageId String
+  image Image @relation("ImageVariants", fields: [imageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([imageId])
+  @@index([key])
+  @@map("image_variants")
+}
+
+// -----------------------------------------------------------
+// --- audio -------------------------------------------------
+// -----------------------------------------------------------
+
+model AudioFile {
+  id String @id @default(cuid())
+
+  bucket   FileBucket
+  key      String
+  url      String?
+  mimeType String
+  size     Int
+  
+  format      AudioFormat
+  duration    Float?
+  bitrate     Int?
+  sampleRate  Int?
+  channels    Int?
+
+  waveformJson String? @db.Text
+
+  trackId String
+  track   Track @relation("TrackAudioFiles", fields: [trackId], references: [id], onDelete: Cascade)
+
+  quality  AudioQuality @default(original)
+  status   ProcessingStatus @default(pending)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([trackId])
+  @@index([status])
+  @@map("audio_files")
+}
+
+// -----------------------------------------------------------
+// --- enums -------------------------------------------------
+// -----------------------------------------------------------
+
+enum EmailStatus {
+  created
+  pending
+  verified
+}
+
+enum EmailType {
+  primary
+  recovery
+}
+
+enum AlbumType {
+  album
+  single
+  ep
+  compilation
+}
+
+enum SessionType {
+  user
+  guest
+  admin
+  artist
+}
+
+enum ReportStatus {
+  created
+  inReview
+  accepted
+  rejected
+}
+
+enum CommunityReactionType {
+  like
+  dislike
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum CreditRole {
+  producer
+  songwriter
+  composer
+  arranger
+  engineer
+  mixer
+  masterer
+  featuring
+  remixer
+}
+
+enum NotificationStatus {
+  error
+  default
+  success
+  info
+  warn
+}
+
+enum FileBucket {
+  private
+  public
+}
+
+enum ImageUploadStatus {
+  pending
+  processing
+  uploaded
+  failed
+}
+
+enum ImageVariantType {
+  original
+  thumbnail
+  small
+  medium
+  large
+}
+
+enum AudioFormat {
+  mp3
+  wav
+  aac
+  flac
+  ogg
+  opus
+}
+
+enum AudioQuality {
+  original
+  high
+  standard
+  low
+}
+
+enum ProcessingStatus {
+  pending
+  processing
+  complete
+  failed
+}
