@@ -12,6 +12,10 @@ import {
 export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ─────────────────────────────────────────────────────────────
+  // QUERIES
+  // ─────────────────────────────────────────────────────────────
+
   async GetById(id: string): Promise<User | null> {
     return await this.prisma.client.user.findUnique({ where: { id } });
   }
@@ -48,14 +52,22 @@ export class UserRepository {
     });
   }
 
-  async Count(filter?: UserWhereInput): Promise<number> {
-    return await this.prisma.client.user.count({ where: filter });
-  }
+  // ─────────────────────────────────────────────────────────────
+  // EXISTS & COUNT
+  // ─────────────────────────────────────────────────────────────
 
   async Exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.user.count({ where: { id } });
     return count > 0;
   }
+
+  async Count(filter?: UserWhereInput): Promise<number> {
+    return await this.prisma.client.user.count({ where: filter });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // CREATE
+  // ─────────────────────────────────────────────────────────────
 
   async Create(user: UserCreateInput): Promise<User> {
     return await this.prisma.client.user.create({ data: user });
@@ -64,6 +76,10 @@ export class UserRepository {
   async CreateMany(users: UserCreateInput[]): Promise<User[]> {
     return await this.prisma.client.user.createManyAndReturn({ data: users });
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // UPDATE
+  // ─────────────────────────────────────────────────────────────
 
   async Update(id: string, user: UserUpdateInput): Promise<User> {
     return await this.prisma.client.user.update({ data: user, where: { id } });
@@ -74,6 +90,10 @@ export class UserRepository {
       updates.map(({ id, data }) => this.prisma.client.user.update({ where: { id }, data })),
     );
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // DELETE
+  // ─────────────────────────────────────────────────────────────
 
   async Delete(id: string): Promise<User> {
     return await this.prisma.client.user.delete({ where: { id } });
