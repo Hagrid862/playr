@@ -26,11 +26,15 @@ export class AuthController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Email or Username already taken',
+    description: 'Email already taken',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Username already taken',
     type: ApiErrorResponseDto,
   })
   register(@Body() body: RegisterRequestDto) {
-    this.commandBus.execute(new RegisterCommand(body));
-    return 'Success';
+    return this.commandBus.execute(new RegisterCommand(body));
   }
 }
