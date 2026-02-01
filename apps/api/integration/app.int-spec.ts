@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import { PrismaService } from './../src/shared/services/prisma/prisma.service';
+import { PrismaService } from '../src/shared/services/prisma.service';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
 
 describe('AppController (e2e)', () => {
