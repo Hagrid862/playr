@@ -61,6 +61,13 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
       throw new ConflictException('Username already exists');
     }
 
+    // Validate password strength
+    if (!this.isPasswordStrong(password)) {
+      throw new BadRequestException(
+        'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number',
+      );
+    }
+
     const hashedPassword = await this.hashingService.hash(password);
     const normalizedEmail = email.toLowerCase().trim();
     const formattedBirthDate = this.formatDateToDDMMYYYY(birthDateObj);
@@ -118,5 +125,14 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
+  }
+
+  private isPasswordStrong(password: string): boolean {
+    const minLength = 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    return password.length >= minLength && hasUppercase && hasLowercase && hasNumber;
   }
 }
