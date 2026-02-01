@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './services/prisma.service';
+import { HashingService } from './services/hashing.service';
 import { UserRepository } from './repositories/user.repository';
 import { EmailAddressRepository } from './repositories/email-address.repository';
 
@@ -7,7 +8,7 @@ import { EmailAddressRepository } from './repositories/email-address.repository'
 @Module({
   imports: [],
   controllers: [],
-  providers: [PrismaService, UserRepository, EmailAddressRepository],
-  exports: [PrismaService, UserRepository, EmailAddressRepository],
+  providers: [PrismaService, HashingService, UserRepository, EmailAddressRepository],
+  exports: [PrismaService, HashingService, UserRepository, EmailAddressRepository],
 })
 export class SharedModule {}
