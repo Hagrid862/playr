@@ -54,7 +54,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
       const createdEmail = await tx.emailAddress.create({
         data: {
           email,
-          status: EmailStatus.created,
+          status: EmailStatus.verified, // TODO: change to created after creating email verification system
           userId: createdUser.id,
         },
       });
