@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { PrismaService } from './services/prisma/prisma.service';
+import { PrismaService } from './services/prisma.service';
 import { UserRepository } from './repositories/user.repository';
 import { EmailAddressRepository } from './repositories/email-address.repository';
 
