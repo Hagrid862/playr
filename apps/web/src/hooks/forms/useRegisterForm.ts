@@ -43,7 +43,9 @@ export function useRegisterForm() {
   const errors = useMemo<FormErrors>(() => {
     const errs: FormErrors = {};
 
-    if (formData.username) {
+    if (!formData.username.trim()) {
+      errs.username = 'Username is required';
+    } else {
       if (formData.username.length < 3) {
         errs.username = 'Username must be at least 3 characters';
       } else if (formData.username.length > 32) {
@@ -54,20 +56,16 @@ export function useRegisterForm() {
       }
     }
 
-    if (formData.firstName) {
-      if (formData.firstName.length < 1) {
-        errs.firstName = 'First name is required';
-      } else if (formData.firstName.length > 32) {
-        errs.firstName = 'First name must be at most 32 characters';
-      }
+    if (!formData.firstName.trim()) {
+      errs.firstName = 'First name is required';
+    } else if (formData.firstName.length > 32) {
+      errs.firstName = 'First name must be at most 32 characters';
     }
 
-    if (formData.lastName) {
-      if (formData.lastName.length < 1) {
-        errs.lastName = 'Last name is required';
-      } else if (formData.lastName.length > 32) {
-        errs.lastName = 'Last name must be at most 32 characters';
-      }
+    if (!formData.lastName.trim()) {
+      errs.lastName = 'Last name is required';
+    } else if (formData.lastName.length > 32) {
+      errs.lastName = 'Last name must be at most 32 characters';
     }
 
     if (formData.birthDate) {
