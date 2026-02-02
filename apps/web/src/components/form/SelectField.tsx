@@ -1,0 +1,61 @@
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface SelectFieldProps {
+  label: string;
+  placeholder?: string;
+  value: string;
+  options: SelectOption[];
+  error?: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+}
+
+export function SelectField({
+  label,
+  placeholder = 'Select',
+  value,
+  options,
+  error,
+  onChange,
+  onBlur,
+}: SelectFieldProps) {
+  return (
+    <Field data-invalid={!!error}>
+      <FieldLabel>{label}</FieldLabel>
+      <Select
+        value={value}
+        onValueChange={(val) => {
+          onChange(val);
+          onBlur();
+        }}
+      >
+        <SelectTrigger
+          className={`w-full ${error ? 'border-destructive focus-visible:ring-destructive/50' : ''}`}
+          onBlur={onBlur}
+        >
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent position="popper">
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <FieldError>{error}</FieldError>}
+    </Field>
+  );
+}
