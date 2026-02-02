@@ -11,7 +11,7 @@ export const MetaSchema = z
 
 export const ErrorSchema = z.object({
   statusCode: z.number(),
-  message: z.union([z.string(), z.record(z.string(), z.any())]),
+  message: z.union([z.string(), z.record(z.string(), z.unknown())]),
 });
 
 export const createApiResponseSchema = <T extends z.ZodTypeAny>(

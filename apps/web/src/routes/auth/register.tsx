@@ -1,16 +1,21 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { RegisterWelcomePanel } from '@/components/auth/RegisterWelcomePanel';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { RegisterWelcomePanel } from '@/components/auth/RegisterWelcomePanel';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { useRegister } from '@/hooks/api/auth';
 import { useRegisterForm } from '@/hooks/useRegisterForm';
+import { CircleNotch } from '@phosphor-icons/react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
+  const { mutateAsync: registerUser, isPending: isLoading, error } = useRegister();
+
   const {
     formData,
     errors,
@@ -24,11 +29,14 @@ function RouteComponent() {
     setIsPasswordFocused,
   } = useRegisterForm();
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     const data = handleSubmit(e);
     if (data) {
-      // TODO: Send request to API
-      console.log('Form is valid, ready to submit:', data);
+      try {
+        await registerUser(data).then(() => navigate({ to: '/auth/login' }));
+      } catch (err) {
+        console.error('Registration failed', err);
+      }
     }
   };
 
@@ -45,6 +53,11 @@ function RouteComponent() {
               <CardHeader className="p-0 pb-4">
                 <CardTitle>Create an account</CardTitle>
               </CardHeader>
+              {error && (
+                <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  {error.message}
+                </div>
+              )}
               <RegisterForm
                 formData={formData}
                 isPasswordFocused={isPasswordFocused}
@@ -64,10 +77,17 @@ function RouteComponent() {
             type="submit"
             color="primary"
             className="w-full"
-            disabled={!isFormValid}
+            disabled={!isFormValid || isLoading}
             onClick={onSubmit}
           >
-            Create account
+            {isLoading ? (
+              <>
+                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              'Create account'
+            )}
           </Button>
         </CardFooter>
       </Card>
