@@ -26,12 +26,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Email already taken',
-    type: ApiErrorResponseDto,
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Username already taken',
+    description: 'Email or username already taken',
     type: ApiErrorResponseDto,
   })
   register(@Body() body: RegisterRequestDto) {
