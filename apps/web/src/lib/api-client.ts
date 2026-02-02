@@ -1,35 +1,55 @@
-export async function apiClient<T>(
-  endpoint: string,
-  options: Omit<RequestInit, 'body'> & { body?: unknown } = {},
-): Promise<T> {
-  const { body, ...customConfig } = options;
-  const headers = { 'Content-Type': 'application/json' };
-  const config: RequestInit = {
-    method: body ? 'POST' : 'GET',
-    ...customConfig,
-    headers: {
-      ...headers,
-      ...customConfig.headers,
-    },
-  };
+import { ZodType } from 'zod';
+import { ApiError } from './api-error';
 
-  if (body) {
-    config.body = JSON.stringify(body);
+type RequestConfig<T> = Omit<RequestInit, 'body'> & {
+  body?: unknown;
+  zodSchema?: ZodType<T>;
+};
+
+class ApiClient {
+  private baseUrl: string;
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
   }
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const response = await fetch(`${apiUrl}/api/${endpoint}`, config);
+  async request<T>(endpoint: string, options: RequestConfig<T> = {}): Promise<T> {
+    const { body, zodSchema, ...customConfig } = options;
+    const headers = { 'Content-Type': 'application/json' };
 
-  if (response.ok) {
-    // Some endpoints might return 204 No Content
-    if (response.status === 204) {
-      return {} as T;
+    const config: RequestInit = {
+      method: body ? 'POST' : 'GET',
+      ...customConfig,
+      headers: {
+        ...headers,
+        ...customConfig.headers,
+      },
+    };
+
+    if (body) {
+      config.body = JSON.stringify(body);
     }
-    const data = await response.json();
-    return data;
-  } else {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMessage = errorData?.message || response.statusText || 'Unknown error';
-    return Promise.reject(new Error(errorMessage));
+
+    const response = await fetch(`${this.baseUrl}/api/${endpoint}`, config);
+
+    if (response.ok) {
+      if (response.status === 204) {
+        return {} as T;
+      }
+      const data = await response.json();
+      if (zodSchema) {
+        return zodSchema.parse(data);
+      }
+      return data;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(response.status, response.statusText, errorData);
+    }
   }
 }
+
+export const api = new ApiClient(import.meta.env.VITE_API_URL || 'http://localhost:8000');
+
+export const apiClient = <T>(endpoint: string, options?: RequestConfig<T>) => {
+  return api.request<T>(endpoint, options);
+};
