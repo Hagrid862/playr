@@ -12,7 +12,7 @@ export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
 });
 
-function RouteComponent() {
+export function RouteComponent() {
   const navigate = useNavigate();
   const { mutateAsync: registerUser, isPending: isLoading, error } = useRegister();
 

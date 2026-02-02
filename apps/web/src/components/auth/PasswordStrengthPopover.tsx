@@ -11,6 +11,7 @@ interface PasswordStrengthPopoverProps {
   onFocus: () => void;
   onBlur: () => void;
   hasError: boolean;
+  id?: string;
 }
 
 export function PasswordStrengthPopover({
@@ -21,6 +22,7 @@ export function PasswordStrengthPopover({
   onFocus,
   onBlur,
   hasError,
+  id,
 }: PasswordStrengthPopoverProps) {
   const passwordChecks = useMemo(() => {
     return {
@@ -63,6 +65,7 @@ export function PasswordStrengthPopover({
     <Popover open={isOpen && password.length > 0}>
       <PopoverTrigger asChild>
         <Input
+          id={id}
           type="password"
           placeholder="••••••••"
           value={value}

@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from '@phosphor-icons/react';
 import { format } from 'date-fns';
+import { useId } from 'react';
 
 interface DatePickerFieldProps {
   label: string;
@@ -25,12 +26,14 @@ export function DatePickerField({
   fromYear = 1900,
   toYear = new Date().getFullYear(),
 }: DatePickerFieldProps) {
+  const id = useId();
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Popover>
         <PopoverTrigger asChild>
           <div
+            id={id}
             role="button"
             tabIndex={0}
             className={cn(

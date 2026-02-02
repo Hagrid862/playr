@@ -2,6 +2,7 @@ import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/fie
 import { TextField, DatePickerField, SelectField } from '@/components/form';
 import { PasswordStrengthPopover } from './PasswordStrengthPopover';
 import type { FormData } from '@/hooks/forms/useRegisterForm';
+import { useId } from 'react';
 
 const genderOptions = [
   { value: 'male', label: 'Male' },
@@ -33,6 +34,8 @@ export function RegisterForm({
   getFieldError,
   setIsPasswordFocused,
 }: RegisterFormProps) {
+  const passwordId = useId();
+
   return (
     <form className="flex flex-col gap-2" onSubmit={onSubmit}>
       <TextField
@@ -92,9 +95,10 @@ export function RegisterForm({
       />
 
       <Field data-invalid={showPasswordError}>
-        <FieldLabel>Password</FieldLabel>
+        <FieldLabel htmlFor={passwordId}>Password</FieldLabel>
         <FieldContent>
           <PasswordStrengthPopover
+            id={passwordId}
             password={formData.password}
             isOpen={isPasswordFocused}
             value={formData.password}

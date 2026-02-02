@@ -1,5 +1,6 @@
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { useId } from 'react';
 
 interface TextFieldProps {
   label: string;
@@ -20,11 +21,13 @@ export function TextField({
   onChange,
   onBlur,
 }: TextFieldProps) {
+  const id = useId();
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <FieldContent>
         <Input
+          id={id}
           type={type}
           placeholder={placeholder}
           value={value}

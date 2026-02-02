@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useId } from 'react';
 
 interface SelectOption {
   value: string;
@@ -32,9 +33,10 @@ export function SelectField({
   onChange,
   onBlur,
 }: SelectFieldProps) {
+  const id = useId();
   return (
     <Field data-invalid={!!error}>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Select
         value={value}
         onValueChange={(val) => {
@@ -43,6 +45,7 @@ export function SelectField({
         }}
       >
         <SelectTrigger
+          id={id}
           type="button"
           tabIndex={0}
           className={`w-full ${error ? 'border-destructive focus-visible:ring-destructive/50' : ''}`}
