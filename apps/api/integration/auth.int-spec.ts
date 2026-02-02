@@ -3,6 +3,7 @@ import request from 'supertest';
 import { createIntegrationApp } from './test-utils';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import { Gender } from '@repo/db';
+import { vi } from 'vitest';
 
 describe('AuthController (Integration)', () => {
   let app: INestApplication;
