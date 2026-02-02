@@ -2,6 +2,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -42,17 +43,21 @@ export function SelectField({
         }}
       >
         <SelectTrigger
+          type="button"
+          tabIndex={0}
           className={`w-full ${error ? 'border-destructive focus-visible:ring-destructive/50' : ''}`}
           onBlur={onBlur}
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent position="popper">
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
       {error && <FieldError>{error}</FieldError>}

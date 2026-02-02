@@ -1,5 +1,6 @@
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from '@phosphor-icons/react';
@@ -29,18 +30,20 @@ export function DatePickerField({
       <FieldLabel>{label}</FieldLabel>
       <Popover>
         <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            data-empty={!value}
-            className={`w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground ${
-              error ? 'border-destructive focus-visible:ring-destructive/50' : ''
-            }`}
+          <div
+            role="button"
+            tabIndex={0}
+            className={cn(
+              buttonVariants({ variant: 'outline' }),
+              'w-full justify-start text-left font-normal',
+              !value && 'text-muted-foreground',
+              error && 'border-destructive focus-visible:ring-destructive/50',
+            )}
             onBlur={onBlur}
           >
-            <CalendarIcon className="size-4" />
+            <CalendarIcon className="size-4 mr-2" />
             {value ? format(value, 'PPP') : <span>Pick a date</span>}
-          </Button>
+          </div>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar

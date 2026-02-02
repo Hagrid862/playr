@@ -78,6 +78,7 @@ export function PasswordStrengthPopover({
         sideOffset={4}
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="space-y-3">
           <div className="space-y-2">
