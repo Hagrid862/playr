@@ -1,7 +1,7 @@
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { TextField, DatePickerField, SelectField } from '@/components/form';
 import { PasswordStrengthPopover } from './PasswordStrengthPopover';
-import type { FormData } from '@/hooks/useRegisterForm';
+import type { FormData } from '@/hooks/forms/useRegisterForm';
 
 const genderOptions = [
   { value: 'male', label: 'Male' },
