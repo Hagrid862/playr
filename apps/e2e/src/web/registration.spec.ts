@@ -9,7 +9,7 @@ test.describe("Registration Workflow", () => {
     await registrationPage.goto();
   });
 
-  test("should successfully register a new user", async ({ page }) => {
+  test("should successfully register a new user", async () => {
     const timestamp = Date.now();
     const username = `user_${timestamp}`;
     const email = `user_${timestamp}@example.com`;
