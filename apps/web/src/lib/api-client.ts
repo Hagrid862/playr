@@ -30,7 +30,7 @@ class ApiClient {
       config.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${this.baseUrl}/api/${endpoint}`, config);
+    const response = await fetch(`${this.baseUrl}/${endpoint}`, config);
 
     if (response.ok) {
       if (response.status === 204) {
