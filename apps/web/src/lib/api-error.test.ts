@@ -41,7 +41,7 @@ describe('ApiError', () => {
   });
 
   it('fallbacks to default message if no statusText and no message in data', () => {
-    // @ts-ignore - simulating missing statusText
+    // @ts-expect-error - simulating missing statusText
     const error = new ApiError(500, undefined, {});
     expect(error.message).toBe('Unknown API Error');
   });
