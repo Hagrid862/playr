@@ -18,12 +18,6 @@ describe('SelectField', () => {
     onBlur: vi.fn(),
   };
 
-  beforeAll(() => {
-    window.HTMLElement.prototype.scrollIntoView = vi.fn();
-    window.HTMLElement.prototype.hasPointerCapture = vi.fn();
-    window.HTMLElement.prototype.releasePointerCapture = vi.fn();
-  });
-
   it('renders label correctly', () => {
     render(<SelectField {...defaultProps} />);
     expect(screen.getByText('Test Label')).toBeInTheDocument();
