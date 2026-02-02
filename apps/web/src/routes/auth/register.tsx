@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useRegister } from '@/hooks/api/auth';
-import { useRegisterForm } from '@/hooks/useRegisterForm';
+import { useRegisterForm } from '@/hooks/forms/useRegisterForm';
 import { CircleNotch } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
