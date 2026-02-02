@@ -68,7 +68,9 @@ export function useRegisterForm() {
       errs.lastName = 'Last name must be at most 32 characters';
     }
 
-    if (formData.birthDate) {
+    if (!formData.birthDate) {
+      errs.birthDate = 'Birth date is required';
+    } else if (formData.birthDate) {
       if (formData.birthDate > new Date()) {
         errs.birthDate = 'Birth date cannot be in the future';
       } else {
@@ -84,7 +86,13 @@ export function useRegisterForm() {
       }
     }
 
-    if (formData.email) {
+    if (!formData.gender) {
+      errs.gender = 'Gender is required';
+    }
+
+    if (!formData.email.trim()) {
+      errs.email = 'Email is required';
+    } else if (formData.email) {
       const emailResult = z.string().email().safeParse(formData.email);
       if (!emailResult.success) {
         errs.email = 'Invalid email address';
@@ -93,7 +101,9 @@ export function useRegisterForm() {
       }
     }
 
-    if (formData.password) {
+    if (!formData.password) {
+      errs.password = 'Password is required';
+    } else if (formData.password) {
       if (formData.password.length < 8) {
         errs.password = 'Password must be at least 8 characters';
       } else if (formData.password.length > 128) {
@@ -107,7 +117,9 @@ export function useRegisterForm() {
       }
     }
 
-    if (formData.confirmPassword) {
+    if (!formData.confirmPassword) {
+      errs.confirmPassword = 'Please confirm your password';
+    } else if (formData.confirmPassword) {
       if (formData.confirmPassword !== formData.password) {
         errs.confirmPassword = 'Passwords do not match';
       }
