@@ -1,8 +1,9 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegisterCommand } from '../impl/register.command';
-import { ConflictException, InternalServerErrorException } from '@nestjs/common';
+import { ZodUser } from '@repo/contracts';
+import { ConflictException } from '@nestjs/common';
 import { UserRepository } from '@/shared/repositories/user.repository';
-import { EmailStatus, User } from '@repo/db';
+import { EmailStatus } from '@repo/db';
 import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 
@@ -14,7 +15,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(command: RegisterCommand): Promise<User | null> {
+  async execute(command: RegisterCommand): Promise<ZodUser> {
     const { payload } = command;
     // Note: username and email are already normalized (lowercase, trimmed) by Zod transforms
     const { username, email, password, firstName, lastName, birthDate, gender } = payload;
@@ -45,23 +46,28 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
           birthDate: formattedBirthDate,
           gender,
         },
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          birthDate: true,
+          gender: true,
+          description: true,
+          avatarId: true,
+          createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
+        },
       });
 
-      if (!createdUser) {
-        throw new InternalServerErrorException('Failed to create user');
-      }
-
-      const createdEmail = await tx.emailAddress.create({
+      await tx.emailAddress.create({
         data: {
           email,
           status: EmailStatus.verified, // TODO: change to created after creating email verification system
           userId: createdUser.id,
         },
       });
-
-      if (!createdEmail) {
-        throw new InternalServerErrorException('Failed to create email address');
-      }
 
       return createdUser;
     });
