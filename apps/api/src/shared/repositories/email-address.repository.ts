@@ -17,41 +17,41 @@ export class EmailAddressRepository {
   // QUERIES
   // ─────────────────────────────────────────────────────────────
 
-  async GetById(id: string): Promise<EmailAddress | null> {
+  async getById(id: string): Promise<EmailAddress | null> {
     return await this.prisma.client.emailAddress.findUnique({ where: { id } });
   }
 
-  async GetByEmail(email: string): Promise<EmailAddress | null> {
+  async getByEmail(email: string): Promise<EmailAddress | null> {
     return await this.prisma.client.emailAddress.findFirst({ where: { email } });
   }
 
-  async GetAllByUserId(userId: string): Promise<EmailAddress[]> {
+  async getAllByUserId(userId: string): Promise<EmailAddress[]> {
     return await this.prisma.client.emailAddress.findMany({ where: { userId } });
   }
 
-  async GetPrimaryByUserId(userId: string): Promise<EmailAddress | null> {
+  async getPrimaryByUserId(userId: string): Promise<EmailAddress | null> {
     return await this.prisma.client.emailAddress.findFirst({
       where: { userId, type: EmailType.primary },
     });
   }
 
-  async GetRecoveryByUserId(userId: string): Promise<EmailAddress[]> {
+  async getRecoveryByUserId(userId: string): Promise<EmailAddress[]> {
     return await this.prisma.client.emailAddress.findMany({
       where: { userId, type: EmailType.recovery },
     });
   }
 
-  async GetByTypeAndUserId(type: EmailType, userId: string): Promise<EmailAddress[]> {
+  async getByTypeAndUserId(type: EmailType, userId: string): Promise<EmailAddress[]> {
     return await this.prisma.client.emailAddress.findMany({
       where: { userId, type },
     });
   }
 
-  async GetByStatusAndUserId(status: EmailStatus, userId: string): Promise<EmailAddress[]> {
+  async getByStatusAndUserId(status: EmailStatus, userId: string): Promise<EmailAddress[]> {
     return await this.prisma.client.emailAddress.findMany({ where: { status, userId } });
   }
 
-  async GetVerifiedByUserId(userId: string): Promise<EmailAddress[]> {
+  async getVerifiedByUserId(userId: string): Promise<EmailAddress[]> {
     return await this.prisma.client.emailAddress.findMany({
       where: { userId, status: EmailStatus.verified },
     });
@@ -61,26 +61,26 @@ export class EmailAddressRepository {
   // EXISTS & COUNT
   // ─────────────────────────────────────────────────────────────
 
-  async Exists(id: string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.emailAddress.count({ where: { id } });
     return count > 0;
   }
 
-  async ExistsByEmail(email: string): Promise<boolean> {
+  async existsByEmail(email: string): Promise<boolean> {
     const count = await this.prisma.client.emailAddress.count({ where: { email } });
     return count > 0;
   }
 
-  async ExistsByUserId(userId: string): Promise<boolean> {
+  async existsByUserId(userId: string): Promise<boolean> {
     const count = await this.prisma.client.emailAddress.count({ where: { userId } });
     return count > 0;
   }
 
-  async Count(filter: EmailAddressWhereInput): Promise<number> {
+  async count(filter: EmailAddressWhereInput): Promise<number> {
     return await this.prisma.client.emailAddress.count({ where: filter });
   }
 
-  async CountPerUserId(userId: string): Promise<number> {
+  async countPerUserId(userId: string): Promise<number> {
     return await this.prisma.client.emailAddress.count({ where: { userId } });
   }
 
@@ -88,7 +88,7 @@ export class EmailAddressRepository {
   // CREATE
   // ─────────────────────────────────────────────────────────────
 
-  async Create(payload: EmailAddressCreateInput): Promise<EmailAddress> {
+  async create(payload: EmailAddressCreateInput): Promise<EmailAddress> {
     return await this.prisma.client.emailAddress.create({ data: payload });
   }
 
@@ -96,11 +96,11 @@ export class EmailAddressRepository {
   // UPDATE
   // ─────────────────────────────────────────────────────────────
 
-  async Edit(id: string, payload: EmailAddressUpdateInput): Promise<EmailAddress> {
+  async edit(id: string, payload: EmailAddressUpdateInput): Promise<EmailAddress> {
     return await this.prisma.client.emailAddress.update({ where: { id }, data: payload });
   }
 
-  async UpdateMany(
+  async updateMany(
     updates: { id: string; data: EmailAddressUpdateInput }[],
   ): Promise<EmailAddress[]> {
     return await this.prisma.client.$transaction(
@@ -114,11 +114,11 @@ export class EmailAddressRepository {
   // DELETE
   // ─────────────────────────────────────────────────────────────
 
-  async Delete(id: string): Promise<EmailAddress> {
+  async delete(id: string): Promise<EmailAddress> {
     return await this.prisma.client.emailAddress.delete({ where: { id } });
   }
 
-  async DeleteMany(filter: EmailAddressWhereInput): Promise<EmailAddress[]> {
+  async deleteMany(filter: EmailAddressWhereInput): Promise<EmailAddress[]> {
     const emailAddressesToDelete = await this.prisma.client.emailAddress.findMany({
       where: filter,
     });

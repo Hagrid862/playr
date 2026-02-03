@@ -16,15 +16,15 @@ export class UserRepository {
   // QUERIES
   // ─────────────────────────────────────────────────────────────
 
-  async GetById(id: string): Promise<User | null> {
+  async getById(id: string): Promise<User | null> {
     return await this.prisma.client.user.findUnique({ where: { id } });
   }
 
-  async GetByUsername(username: string): Promise<User | null> {
+  async getByUsername(username: string): Promise<User | null> {
     return await this.prisma.client.user.findUnique({ where: { username } });
   }
 
-  async GetByEmail(email: string): Promise<User | null> {
+  async getByEmail(email: string): Promise<User | null> {
     const emailAddress = await this.prisma.client.emailAddress.findFirst({
       where: {
         email,
@@ -38,7 +38,7 @@ export class UserRepository {
     return emailAddress?.user ?? null;
   }
 
-  async GetPaginated(
+  async getPaginated(
     page: number,
     limit: number,
     filter?: UserWhereInput,
@@ -56,12 +56,12 @@ export class UserRepository {
   // EXISTS & COUNT
   // ─────────────────────────────────────────────────────────────
 
-  async Exists(id: string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.user.count({ where: { id } });
     return count > 0;
   }
 
-  async Count(filter?: UserWhereInput): Promise<number> {
+  async count(filter?: UserWhereInput): Promise<number> {
     return await this.prisma.client.user.count({ where: filter });
   }
 
@@ -69,11 +69,11 @@ export class UserRepository {
   // CREATE
   // ─────────────────────────────────────────────────────────────
 
-  async Create(user: UserCreateInput): Promise<User> {
+  async create(user: UserCreateInput): Promise<User> {
     return await this.prisma.client.user.create({ data: user });
   }
 
-  async CreateMany(users: UserCreateInput[]): Promise<User[]> {
+  async createMany(users: UserCreateInput[]): Promise<User[]> {
     return await this.prisma.client.user.createManyAndReturn({ data: users });
   }
 
@@ -81,11 +81,11 @@ export class UserRepository {
   // UPDATE
   // ─────────────────────────────────────────────────────────────
 
-  async Update(id: string, user: UserUpdateInput): Promise<User> {
+  async update(id: string, user: UserUpdateInput): Promise<User> {
     return await this.prisma.client.user.update({ data: user, where: { id } });
   }
 
-  async UpdateMany(updates: { id: string; data: UserUpdateInput }[]): Promise<User[]> {
+  async updateMany(updates: { id: string; data: UserUpdateInput }[]): Promise<User[]> {
     return await this.prisma.client.$transaction(
       updates.map(({ id, data }) => this.prisma.client.user.update({ where: { id }, data })),
     );
@@ -95,11 +95,11 @@ export class UserRepository {
   // DELETE
   // ─────────────────────────────────────────────────────────────
 
-  async Delete(id: string): Promise<User> {
+  async delete(id: string): Promise<User> {
     return await this.prisma.client.user.delete({ where: { id } });
   }
 
-  async DeleteMany(filter: UserWhereInput): Promise<User[]> {
+  async deleteMany(filter: UserWhereInput): Promise<User[]> {
     const usersToDelete = await this.prisma.client.user.findMany({ where: filter });
     await this.prisma.client.user.deleteMany({ where: filter });
     return usersToDelete;

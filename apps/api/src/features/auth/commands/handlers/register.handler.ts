@@ -22,8 +22,8 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
 
     // Check for existing email and username in parallel
     const [existingEmail, existingUsername] = await Promise.all([
-      this.userRepository.GetByEmail(email),
-      this.userRepository.GetByUsername(username),
+      this.userRepository.getByEmail(email),
+      this.userRepository.getByUsername(username),
     ]);
 
     // Check email first (prioritized if both exist)

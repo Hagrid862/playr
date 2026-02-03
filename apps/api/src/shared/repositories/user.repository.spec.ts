@@ -62,31 +62,31 @@ describe('UserRepository', () => {
     expect(repository).toBeDefined();
   });
 
-  describe('GetById', () => {
+  describe('getById', () => {
     it('should return a user if found', async () => {
       mockTx.user.findUnique.mockResolvedValue(mockUser);
-      const result = await repository.GetById('user-id-123');
+      const result = await repository.getById('user-id-123');
       expect(result).toEqual(mockUser);
       expect(mockTx.user.findUnique).toHaveBeenCalledWith({ where: { id: 'user-id-123' } });
     });
 
     it('should return null if not found', async () => {
       mockTx.user.findUnique.mockResolvedValue(null);
-      const result = await repository.GetById('non-existent');
+      const result = await repository.getById('non-existent');
       expect(result).toBeNull();
     });
   });
 
-  describe('GetByUsername', () => {
+  describe('getByUsername', () => {
     it('should return a user if found', async () => {
       mockTx.user.findUnique.mockResolvedValue(mockUser);
-      const result = await repository.GetByUsername('testuser');
+      const result = await repository.getByUsername('testuser');
       expect(result).toEqual(mockUser);
       expect(mockTx.user.findUnique).toHaveBeenCalledWith({ where: { username: 'testuser' } });
     });
   });
 
-  describe('GetByEmail', () => {
+  describe('getByEmail', () => {
     it('should return user associated with primary email', async () => {
       mockTx.emailAddress.findFirst.mockResolvedValue({
         id: 'email-id',
@@ -95,7 +95,7 @@ describe('UserRepository', () => {
         user: mockUser,
       });
 
-      const result = await repository.GetByEmail('test@example.com');
+      const result = await repository.getByEmail('test@example.com');
       expect(result).toEqual(mockUser);
       expect(mockTx.emailAddress.findFirst).toHaveBeenCalledWith({
         where: { email: 'test@example.com', type: 'primary' },
@@ -105,12 +105,12 @@ describe('UserRepository', () => {
 
     it('should return null if email not found', async () => {
       mockTx.emailAddress.findFirst.mockResolvedValue(null);
-      const result = await repository.GetByEmail('non-existent@example.com');
+      const result = await repository.getByEmail('non-existent@example.com');
       expect(result).toBeNull();
     });
   });
 
-  describe('Create', () => {
+  describe('create', () => {
     it('should create a user', async () => {
       mockTx.user.create.mockResolvedValue(mockUser);
       const userCreateInput = {
@@ -122,18 +122,18 @@ describe('UserRepository', () => {
         gender: mockUser.gender,
       };
 
-      const result = await repository.Create(userCreateInput as any); // Casting for test simplicity on input
+      const result = await repository.create(userCreateInput as any); // Casting for test simplicity on input
       expect(result).toEqual(mockUser);
       expect(mockTx.user.create).toHaveBeenCalledWith({ data: userCreateInput });
     });
   });
 
-  describe('Update', () => {
+  describe('update', () => {
     it('should update a user', async () => {
       const updatedUser = { ...mockUser, firstName: 'Updated' };
       mockTx.user.update.mockResolvedValue(updatedUser);
 
-      const result = await repository.Update(mockUser.id, { firstName: 'Updated' });
+      const result = await repository.update(mockUser.id, { firstName: 'Updated' });
       expect(result).toEqual(updatedUser);
       expect(mockTx.user.update).toHaveBeenCalledWith({
         data: { firstName: 'Updated' },
@@ -142,10 +142,10 @@ describe('UserRepository', () => {
     });
   });
 
-  describe('Delete', () => {
+  describe('delete', () => {
     it('should delete a user', async () => {
       mockTx.user.delete.mockResolvedValue(mockUser);
-      const result = await repository.Delete(mockUser.id);
+      const result = await repository.delete(mockUser.id);
       expect(result).toEqual(mockUser);
       expect(mockTx.user.delete).toHaveBeenCalledWith({ where: { id: mockUser.id } });
     });
