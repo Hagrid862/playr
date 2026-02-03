@@ -6,6 +6,7 @@ import {
   UserCreateInput,
   UserUpdateInput,
   UserOrderByWithRelationInput,
+  EmailType,
 } from '@repo/db';
 
 @Injectable()
@@ -28,7 +29,7 @@ export class UserRepository {
     const emailAddress = await this.prisma.client.emailAddress.findFirst({
       where: {
         email,
-        type: 'primary',
+        type: EmailType.primary,
       },
       include: {
         user: true,
