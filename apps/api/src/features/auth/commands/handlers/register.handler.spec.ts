@@ -21,7 +21,7 @@ describe('RegisterHandler', () => {
     password: 'hashed-password',
     firstName: 'John',
     lastName: 'Doe',
-    birthDate: '01-01-2000',
+    birthDate: '2000-01-01',
     gender: Gender.male,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -121,7 +121,7 @@ describe('RegisterHandler', () => {
           password: 'hashed-password',
           firstName: mockPayload.firstName,
           lastName: mockPayload.lastName,
-          birthDate: '01-01-2000', // manually formatted in handler
+          birthDate: '2000-01-01', // ISO 8601 format (YYYY-MM-DD)
           gender: mockPayload.gender,
         },
         select: {
@@ -150,10 +150,8 @@ describe('RegisterHandler', () => {
 
     it('should throw ConflictException if email already exists', async () => {
       // Arrange
-      // We don't need a full typed object here, we just need to satisfy what GetByEmail returns for the check.
-      // Assuming GetByEmail returns a specific type (e.g. EmailAddress or null).
-      // We can assume it returns something truthy to trigger the check.
       vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue({ id: 'existing-email-id' } as any);
+      vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue(null);
 
       const command = new RegisterCommand(mockPayload);
 
@@ -162,7 +160,8 @@ describe('RegisterHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow('Email already exists');
 
       expect(userRepository.GetByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(userRepository.GetByUsername).not.toHaveBeenCalled();
+      // Username check is now called in parallel (not skipped)
+      expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
     });
 
     it('should throw ConflictException if username already exists', async () => {
@@ -182,6 +181,20 @@ describe('RegisterHandler', () => {
       expect(userRepository.GetByEmail).toHaveBeenCalledWith(mockPayload.email);
       expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
     });
+
+   it('should prioritize email conflict over username when both exist', async () => {
+     // Arrange
+     vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue({ id: 'existing-email-id' } as any);
+     vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue({ id: 'existing-user-id' } as any);
+
+     const command = new RegisterCommand(mockPayload);
+
+     // Act & Assert
+     // Email error should be thrown first (email check is prioritized)
+     await expect(handler.execute(command)).rejects.toThrow('Email already exists');
+     expect(userRepository.GetByEmail).toHaveBeenCalledWith(mockPayload.email);
+     expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
+   });
 
     it('should throw error if user creation fails', async () => {
       // Arrange
