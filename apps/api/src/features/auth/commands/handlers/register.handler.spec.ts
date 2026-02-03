@@ -4,7 +4,7 @@ import { RegisterCommand } from '../impl/register.command';
 import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
-import { ConflictException, InternalServerErrorException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import { EmailStatus, User, Gender } from '@repo/db';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { RegisterRequestDto } from '../../dto/register.request.dto';
@@ -124,6 +124,19 @@ describe('RegisterHandler', () => {
           birthDate: '01-01-2000', // manually formatted in handler
           gender: mockPayload.gender,
         },
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          birthDate: true,
+          gender: true,
+          description: true,
+          avatarId: true,
+          createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
+        },
       });
       expect(mockTx.emailAddress.create).toHaveBeenCalledWith({
         data: {
@@ -170,35 +183,33 @@ describe('RegisterHandler', () => {
       expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
     });
 
-    it('should throw InternalServerErrorException if user creation fails', async () => {
+    it('should throw error if user creation fails', async () => {
       // Arrange
       vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue(null);
       vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue(null);
       vi.spyOn(hashingService, 'hash').mockResolvedValue('hashed-password');
 
-      mockTx.user.create.mockResolvedValue(null); // Simulate failure
+      mockTx.user.create.mockRejectedValue(new Error('Database error')); // Simulate failure
 
       const command = new RegisterCommand(mockPayload);
 
       // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
-      await expect(handler.execute(command)).rejects.toThrow('Failed to create user');
+      await expect(handler.execute(command)).rejects.toThrow('Database error');
     });
 
-    it('should throw InternalServerErrorException if email creation fails', async () => {
+    it('should throw error if email creation fails', async () => {
       // Arrange
       vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue(null);
       vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue(null);
       vi.spyOn(hashingService, 'hash').mockResolvedValue('hashed-password');
 
       mockTx.user.create.mockResolvedValue(mockUser);
-      mockTx.emailAddress.create.mockResolvedValue(null); // Simulate failure
+      mockTx.emailAddress.create.mockRejectedValue(new Error('Database error')); // Simulate failure
 
       const command = new RegisterCommand(mockPayload);
 
       // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
-      await expect(handler.execute(command)).rejects.toThrow('Failed to create email address');
+      await expect(handler.execute(command)).rejects.toThrow('Database error');
     });
   });
 });
