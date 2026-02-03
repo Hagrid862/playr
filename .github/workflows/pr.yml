@@ -535,7 +535,7 @@ jobs:
 
       - name: Start Full Stack
         run: |
-          IMAGE_TAG=ci docker compose -f docker-compose.prod.yml up -d --no-build
+          IMAGE_TAG=ci MINIO_ROOT_USER=minioadmin MINIO_ROOT_PASSWORD=minioadmin docker compose -f docker-compose.prod.yml up -d --no-build
 
       - name: Wait for Services
         run: |
@@ -555,6 +555,17 @@ jobs:
           }
 
           while [ $counter -lt $max_retries ]; do
+            # Check if any container has exited unexpectedly
+            # - Any service that is in 'restarting' state
+            # - Any service except 'minio-setup' that is in 'exited' state
+            # - 'minio-setup' specifically if it exited with a non-zero code
+            if docker compose -f docker-compose.prod.yml ps --format json | jq -e 'select(.State == "restarting" or (.Service != "minio-setup" and .State == "exited") or (.Service == "minio-setup" and .State == "exited" and .ExitCode != 0))' > /dev/null; then
+              echo "::error::One or more containers crashed or are restarting!"
+              docker compose -f docker-compose.prod.yml ps
+              docker compose -f docker-compose.prod.yml logs
+              exit 1
+            fi
+
             if check_service "http://localhost:8000/health" "API" && \
                check_service "http://localhost:3000/" "Web" && \
                check_service "http://localhost:3001/" "Artist" && \
