@@ -20,20 +20,24 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     // Note: username and email are already normalized (lowercase, trimmed) by Zod transforms
     const { username, email, password, firstName, lastName, birthDate, gender } = payload;
 
-    // Check for existing email
-    const existingEmail = await this.userRepository.GetByEmail(email);
+    // Check for existing email and username in parallel
+    const [existingEmail, existingUsername] = await Promise.all([
+      this.userRepository.GetByEmail(email),
+      this.userRepository.GetByUsername(username),
+    ]);
+
+    // Check email first (prioritized if both exist)
     if (existingEmail) {
       throw new ConflictException('Email already exists');
     }
 
-    // Check for existing username
-    const existingUsername = await this.userRepository.GetByUsername(username);
     if (existingUsername) {
       throw new ConflictException('Username already exists');
     }
 
     const hashedPassword = await this.hashingService.hash(password);
-    const formattedBirthDate = this.formatDateToDDMMYYYY(new Date(birthDate));
+    // Convert to ISO 8601 format (YYYY-MM-DD) for standardized date storage
+    const isoFormattedBirthDate = new Date(birthDate).toISOString().split('T')[0];
 
     // Use transaction to ensure atomicity - if email creation fails, user is rolled back
     const user = await this.prisma.client.$transaction(async (tx) => {
@@ -43,7 +47,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
           password: hashedPassword,
           firstName,
           lastName,
-          birthDate: formattedBirthDate,
+          birthDate: isoFormattedBirthDate,
           gender,
         },
         select: {
@@ -73,12 +77,5 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     });
 
     return user;
-  }
-
-  private formatDateToDDMMYYYY(date: Date): string {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
   }
 }
