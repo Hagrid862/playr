@@ -1,11 +1,11 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { RegisterCommand } from '../impl/register.command';
-import { ZodUser } from '@repo/contracts';
-import { ConflictException } from '@nestjs/common';
 import { UserRepository } from '@/shared/repositories/user.repository';
-import { EmailStatus } from '@repo/db';
 import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
+import { ConflictException } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { ZodUser } from '@repo/contracts';
+import { EmailStatus } from '@repo/db';
+import { RegisterCommand } from '../impl/register.command';
 
 @CommandHandler(RegisterCommand)
 export class RegisterHandler implements ICommandHandler<RegisterCommand> {
@@ -36,8 +36,8 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     }
 
     const hashedPassword = await this.hashingService.hash(password);
-    // Convert to ISO 8601 format (YYYY-MM-DD) for standardized date storage
-    const isoFormattedBirthDate = new Date(birthDate).toISOString().split('T')[0];
+    // Use birthDate as-is (already in YYYY-MM-DD format from Zod validation)
+    const isoFormattedBirthDate = birthDate;
 
     // Use transaction to ensure atomicity - if email creation fails, user is rolled back
     const user = await this.prisma.client.$transaction(async (tx) => {
