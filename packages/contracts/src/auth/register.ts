@@ -13,8 +13,14 @@ export const RegisterRequestSchema = z.object({
       "Username can only contain lowercase letters, numbers, underscores, and dots",
     )
     .transform((val) => val.toLowerCase().trim()),
-  firstName: z.string().min(1, "First name is required").max(32, "First name must be at most 32 characters"),
-  lastName: z.string().min(1, "Last name is required").max(32, "Last name must be at most 32 characters"),
+  firstName: z
+    .string()
+    .min(1, "First name is required")
+    .max(32, "First name must be at most 32 characters"),
+  lastName: z
+    .string()
+    .min(1, "Last name is required")
+    .max(32, "Last name must be at most 32 characters"),
   birthDate: z
     .string()
     .refine(
@@ -37,7 +43,7 @@ export const RegisterRequestSchema = z.object({
         age--;
       }
       return age >= 13;
-    }, "You must be at least 13 years old"),
+    }, "You must be at least 13 years old to register"),
   gender: z.enum(Gender),
   email: z
     .email("Invalid email address")
