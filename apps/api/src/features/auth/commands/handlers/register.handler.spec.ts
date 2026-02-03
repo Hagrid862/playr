@@ -56,8 +56,8 @@ describe('RegisterHandler', () => {
         {
           provide: UserRepository,
           useValue: {
-            GetByEmail: vi.fn(),
-            GetByUsername: vi.fn(),
+            getByEmail: vi.fn(),
+            getByUsername: vi.fn(),
           },
         },
         {
@@ -94,8 +94,8 @@ describe('RegisterHandler', () => {
   describe('execute', () => {
     it('should successfully register a new user', async () => {
       // Arrange
-      vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue(null);
-      vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue(null);
+      vi.spyOn(userRepository, 'getByEmail').mockResolvedValue(null);
+      vi.spyOn(userRepository, 'getByUsername').mockResolvedValue(null);
       vi.spyOn(hashingService, 'hash').mockResolvedValue('hashed-password');
       mockTx.user.create.mockResolvedValue(mockUser);
       mockTx.emailAddress.create.mockResolvedValue({
@@ -110,8 +110,8 @@ describe('RegisterHandler', () => {
       const result = await handler.execute(command);
 
       // Assert
-      expect(userRepository.GetByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
+      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
+      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
       expect(hashingService.hash).toHaveBeenCalledWith(mockPayload.password);
 
       expect(prismaService.client.$transaction).toHaveBeenCalled();
@@ -150,8 +150,8 @@ describe('RegisterHandler', () => {
 
     it('should throw ConflictException if email already exists', async () => {
       // Arrange
-      vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue({ id: 'existing-email-id' } as any);
-      vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue(null);
+      vi.spyOn(userRepository, 'getByEmail').mockResolvedValue({ id: 'existing-email-id' } as any);
+      vi.spyOn(userRepository, 'getByUsername').mockResolvedValue(null);
 
       const command = new RegisterCommand(mockPayload);
 
@@ -159,16 +159,16 @@ describe('RegisterHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow(ConflictException);
       await expect(handler.execute(command)).rejects.toThrow('Email already exists');
 
-      expect(userRepository.GetByEmail).toHaveBeenCalledWith(mockPayload.email);
+      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
       // Username check is now called in parallel (not skipped)
-      expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
+      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
     });
 
     it('should throw ConflictException if username already exists', async () => {
       // Arrange
-      vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue(null);
-      // Same assumption for GetByUsername
-      vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue({
+      vi.spyOn(userRepository, 'getByEmail').mockResolvedValue(null);
+      // Same assumption for getByUsername
+      vi.spyOn(userRepository, 'getByUsername').mockResolvedValue({
         id: 'existing-user-id',
       } as any);
 
@@ -178,28 +178,30 @@ describe('RegisterHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow(ConflictException);
       await expect(handler.execute(command)).rejects.toThrow('Username already exists');
 
-      expect(userRepository.GetByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
+      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
+      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
     });
 
-   it('should prioritize email conflict over username when both exist', async () => {
-     // Arrange
-     vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue({ id: 'existing-email-id' } as any);
-     vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue({ id: 'existing-user-id' } as any);
+    it('should prioritize email conflict over username when both exist', async () => {
+      // Arrange
+      vi.spyOn(userRepository, 'getByEmail').mockResolvedValue({ id: 'existing-email-id' } as any);
+      vi.spyOn(userRepository, 'getByUsername').mockResolvedValue({
+        id: 'existing-user-id',
+      } as any);
 
-     const command = new RegisterCommand(mockPayload);
+      const command = new RegisterCommand(mockPayload);
 
-     // Act & Assert
-     // Email error should be thrown first (email check is prioritized)
-     await expect(handler.execute(command)).rejects.toThrow('Email already exists');
-     expect(userRepository.GetByEmail).toHaveBeenCalledWith(mockPayload.email);
-     expect(userRepository.GetByUsername).toHaveBeenCalledWith(mockPayload.username);
-   });
+      // Act & Assert
+      // Email error should be thrown first (email check is prioritized)
+      await expect(handler.execute(command)).rejects.toThrow('Email already exists');
+      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
+      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
+    });
 
     it('should throw error if user creation fails', async () => {
       // Arrange
-      vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue(null);
-      vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue(null);
+      vi.spyOn(userRepository, 'getByEmail').mockResolvedValue(null);
+      vi.spyOn(userRepository, 'getByUsername').mockResolvedValue(null);
       vi.spyOn(hashingService, 'hash').mockResolvedValue('hashed-password');
 
       mockTx.user.create.mockRejectedValue(new Error('Database error')); // Simulate failure
@@ -212,8 +214,8 @@ describe('RegisterHandler', () => {
 
     it('should throw error if email creation fails', async () => {
       // Arrange
-      vi.spyOn(userRepository, 'GetByEmail').mockResolvedValue(null);
-      vi.spyOn(userRepository, 'GetByUsername').mockResolvedValue(null);
+      vi.spyOn(userRepository, 'getByEmail').mockResolvedValue(null);
+      vi.spyOn(userRepository, 'getByUsername').mockResolvedValue(null);
       vi.spyOn(hashingService, 'hash').mockResolvedValue('hashed-password');
 
       mockTx.user.create.mockResolvedValue(mockUser);
