@@ -52,9 +52,7 @@ export const RegisterRequestSchema = z.object({
     .regex(/[0-9]/, "Password must contain at least one number"),
 });
 
-export const RegisterResponseSchema = createApiResponseSchema(
-  UserSchema.omit({ password: true }),
-);
+export const RegisterResponseSchema = createApiResponseSchema(UserSchema);
 
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
