@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback } from 'react';
-import { z } from 'zod';
 import { RegisterRequestSchema } from '@repo/contracts';
 
 export type FormData = {
@@ -27,6 +26,99 @@ const initialFormData: FormData = {
   confirmPassword: '',
 };
 
+/**
+ * Pure validation function that validates form data against the schema
+ * Applies consistent normalization for username and email
+ */
+function validateFormData(formData: FormData): FormErrors {
+  const errs: FormErrors = {};
+
+  // Validate username using shared schema with normalization
+  if (!formData.username.trim()) {
+    errs.username = 'Username is required';
+  } else {
+    const usernameResult = RegisterRequestSchema.shape.username.safeParse(
+      formData.username.toLowerCase().trim(),
+    );
+    if (!usernameResult.success) {
+      errs.username = usernameResult.error.issues[0]?.message || 'Invalid username';
+    }
+  }
+
+  // Validate firstName using shared schema
+  if (!formData.firstName.trim()) {
+    errs.firstName = 'First name is required';
+  } else {
+    const firstNameResult = RegisterRequestSchema.shape.firstName.safeParse(formData.firstName);
+    if (!firstNameResult.success) {
+      errs.firstName = firstNameResult.error.issues[0]?.message || 'Invalid first name';
+    }
+  }
+
+  // Validate lastName using shared schema
+  if (!formData.lastName.trim()) {
+    errs.lastName = 'Last name is required';
+  } else {
+    const lastNameResult = RegisterRequestSchema.shape.lastName.safeParse(formData.lastName);
+    if (!lastNameResult.success) {
+      errs.lastName = lastNameResult.error.issues[0]?.message || 'Invalid last name';
+    }
+  }
+
+  // Validate birthDate using shared schema
+  if (!formData.birthDate) {
+    errs.birthDate = 'Birth date is required';
+  } else {
+    const birthDateResult = RegisterRequestSchema.shape.birthDate.safeParse(
+      formData.birthDate.toISOString(),
+    );
+    if (!birthDateResult.success) {
+      errs.birthDate = birthDateResult.error.issues[0]?.message || 'Invalid birth date';
+    }
+  }
+
+  // Validate gender using shared schema
+  if (!formData.gender) {
+    errs.gender = 'Gender is required';
+  } else {
+    const genderResult = RegisterRequestSchema.shape.gender.safeParse(formData.gender);
+    if (!genderResult.success) {
+      errs.gender = genderResult.error.issues[0]?.message || 'Invalid gender';
+    }
+  }
+
+  // Validate email using shared schema with normalization
+  if (!formData.email.trim()) {
+    errs.email = 'Email is required';
+  } else {
+    const emailResult = RegisterRequestSchema.shape.email.safeParse(
+      formData.email.toLowerCase().trim(),
+    );
+    if (!emailResult.success) {
+      errs.email = emailResult.error.issues[0]?.message || 'Invalid email';
+    }
+  }
+
+  // Validate password using shared schema
+  if (!formData.password) {
+    errs.password = 'Password is required';
+  } else {
+    const passwordResult = RegisterRequestSchema.shape.password.safeParse(formData.password);
+    if (!passwordResult.success) {
+      errs.password = passwordResult.error.issues[0]?.message || 'Invalid password';
+    }
+  }
+
+  // Frontend-specific validation: confirmPassword
+  if (!formData.confirmPassword) {
+    errs.confirmPassword = 'Please confirm your password';
+  } else if (formData.confirmPassword !== formData.password) {
+    errs.confirmPassword = 'Passwords do not match';
+  }
+
+  return errs;
+}
+
 export function useRegisterForm() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [touched, setTouched] = useState<TouchedFields>({});
@@ -41,91 +133,7 @@ export function useRegisterForm() {
   }, []);
 
   const errors = useMemo<FormErrors>(() => {
-    const errs: FormErrors = {};
-
-    if (!formData.username.trim()) {
-      errs.username = 'Username is required';
-    } else {
-      if (formData.username.length < 3) {
-        errs.username = 'Username must be at least 3 characters';
-      } else if (formData.username.length > 32) {
-        errs.username = 'Username must be at most 32 characters';
-      } else if (!/^[a-z0-9_.]+$/.test(formData.username.toLowerCase())) {
-        errs.username =
-          'Username can only contain lowercase letters, numbers, underscores, and dots';
-      }
-    }
-
-    if (!formData.firstName.trim()) {
-      errs.firstName = 'First name is required';
-    } else if (formData.firstName.length > 32) {
-      errs.firstName = 'First name must be at most 32 characters';
-    }
-
-    if (!formData.lastName.trim()) {
-      errs.lastName = 'Last name is required';
-    } else if (formData.lastName.length > 32) {
-      errs.lastName = 'Last name must be at most 32 characters';
-    }
-
-    if (!formData.birthDate) {
-      errs.birthDate = 'Birth date is required';
-    } else if (formData.birthDate) {
-      if (formData.birthDate > new Date()) {
-        errs.birthDate = 'Birth date cannot be in the future';
-      } else {
-        const today = new Date();
-        let age = today.getFullYear() - formData.birthDate.getFullYear();
-        const monthDiff = today.getMonth() - formData.birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < formData.birthDate.getDate())) {
-          age--;
-        }
-        if (age < 13) {
-          errs.birthDate = 'You must be at least 13 years old to register';
-        }
-      }
-    }
-
-    if (!formData.gender) {
-      errs.gender = 'Gender is required';
-    }
-
-    if (!formData.email.trim()) {
-      errs.email = 'Email is required';
-    } else if (formData.email) {
-      const emailResult = z.string().email().safeParse(formData.email);
-      if (!emailResult.success) {
-        errs.email = 'Invalid email address';
-      } else if (formData.email.length > 256) {
-        errs.email = 'Email must be at most 256 characters';
-      }
-    }
-
-    if (!formData.password) {
-      errs.password = 'Password is required';
-    } else if (formData.password) {
-      if (formData.password.length < 8) {
-        errs.password = 'Password must be at least 8 characters';
-      } else if (formData.password.length > 128) {
-        errs.password = 'Password must be at most 128 characters';
-      } else if (!/[A-Z]/.test(formData.password)) {
-        errs.password = 'Password must contain at least one uppercase letter';
-      } else if (!/[a-z]/.test(formData.password)) {
-        errs.password = 'Password must contain at least one lowercase letter';
-      } else if (!/[0-9]/.test(formData.password)) {
-        errs.password = 'Password must contain at least one number';
-      }
-    }
-
-    if (!formData.confirmPassword) {
-      errs.confirmPassword = 'Please confirm your password';
-    } else if (formData.confirmPassword) {
-      if (formData.confirmPassword !== formData.password) {
-        errs.confirmPassword = 'Passwords do not match';
-      }
-    }
-
-    return errs;
+    return validateFormData(formData);
   }, [formData]);
 
   const isFormValid = useMemo(() => {
@@ -142,6 +150,25 @@ export function useRegisterForm() {
     const noErrors = Object.keys(errors).length === 0;
     return allFieldsFilled && noErrors;
   }, [formData, errors]);
+
+  const checkFormValid = useCallback(() => {
+    const allFieldsFilled =
+      formData.username.trim() !== '' &&
+      formData.firstName.trim() !== '' &&
+      formData.lastName.trim() !== '' &&
+      formData.birthDate !== undefined &&
+      formData.gender !== '' &&
+      formData.email.trim() !== '' &&
+      formData.password !== '' &&
+      formData.confirmPassword !== '';
+
+    if (!allFieldsFilled) {
+      return false;
+    }
+
+    const errs = validateFormData(formData);
+    return Object.keys(errs).length === 0;
+  }, [formData]);
 
   const touchAllFields = useCallback(() => {
     setTouched({
@@ -161,7 +188,8 @@ export function useRegisterForm() {
       e.preventDefault();
       touchAllFields();
 
-      if (!isFormValid) {
+      const isValid = checkFormValid();
+      if (!isValid) {
         return null;
       }
 
@@ -183,7 +211,7 @@ export function useRegisterForm() {
 
       return result.data;
     },
-    [formData, isFormValid, touchAllFields],
+    [formData, checkFormValid, touchAllFields],
   );
 
   const getFieldError = useCallback(
