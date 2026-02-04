@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createApiResponseSchema } from "../api/response.schema";
 import { UserSchema } from "../schemas/user.schema";
 import { Gender } from "@repo/db";
+import { zodDateOnly } from "../utils/zod-date";
 
 export const RegisterRequestSchema = z.object({
   username: z
@@ -21,12 +22,7 @@ export const RegisterRequestSchema = z.object({
     .string()
     .min(1, "Last name is required")
     .max(32, "Last name must be at most 32 characters"),
-  birthDate: z
-    .string()
-    .refine(
-      (val) => !isNaN(new Date(val).getTime()),
-      "Invalid birth date format",
-    )
+  birthDate: zodDateOnly()
     .refine(
       (val) => new Date(val) <= new Date(),
       "Birth date cannot be in the future",
@@ -43,8 +39,7 @@ export const RegisterRequestSchema = z.object({
         age--;
       }
       return age >= 13;
-    }, "You must be at least 13 years old to register")
-    .transform((val) => new Date(val).toISOString().split("T")[0]),
+    }, "You must be at least 13 years old to register"),
   gender: z.enum(Gender),
   email: z
     .email("Invalid email address")
