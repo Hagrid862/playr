@@ -1,5 +1,6 @@
 import { AlbumType, type Album } from "@repo/db";
 import z from "zod";
+import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 
 export const AlbumSchema = z.object({
   id: z.string(),
@@ -8,11 +9,11 @@ export const AlbumSchema = z.object({
   type: z.enum(AlbumType),
   totalTracks: z.number().int(),
   totalDuration: z.number().int(),
-  releaseDate: z.date().nullable(),
+  releaseDate: zodDateTimeNullable(),
   coverId: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  deletedAt: z.date().nullable(),
+  createdAt: zodDateTime(),
+  updatedAt: zodDateTime(),
+  deletedAt: zodDateTimeNullable(),
 }) satisfies z.ZodType<Album>;
 
 export type ZodAlbum = z.infer<typeof AlbumSchema>;

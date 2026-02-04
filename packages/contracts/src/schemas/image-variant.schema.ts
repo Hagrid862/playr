@@ -1,5 +1,6 @@
 import { FileBucket, ImageVariantType, type ImageVariant } from "@repo/db";
 import z from "zod";
+import { zodDateTime } from "../utils/zod-datetime";
 
 export const ImageVariantSchema = z.object({
   id: z.string(),
@@ -11,8 +12,8 @@ export const ImageVariantSchema = z.object({
   height: z.number().int().nullable(),
   size: z.number().int(),
   imageId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: zodDateTime(),
+  updatedAt: zodDateTime(),
 }) satisfies z.ZodType<ImageVariant>;
 
 export type ZodImageVariant = z.infer<typeof ImageVariantSchema>;

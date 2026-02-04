@@ -4,6 +4,20 @@
   "private": true,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./enums": {
+      "types": "./dist/src/generated/prisma/enums.d.ts",
+      "import": "./dist/src/generated/prisma/enums.js",
+      "require": "./dist/src/generated/prisma/enums.js",
+      "default": "./dist/src/generated/prisma/enums.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "check-types": "tsc --noEmit",

@@ -20,6 +20,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@repo/contracts': fileURLToPath(
+        new URL('../../packages/contracts/src/index.ts', import.meta.url),
+      ),
+      '@repo/db': fileURLToPath(
+        new URL('../../packages/db/src/generated/prisma/browser.ts', import.meta.url),
+      ),
     },
   },
   test: {
@@ -29,5 +35,6 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
     },
+    setupFiles: ['./src/setupTests.ts'],
   },
 });

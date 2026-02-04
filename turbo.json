@@ -9,7 +9,9 @@
     "VITE_ARTIST_URL",
     "VITE_ADMIN_URL",
     "CI",
-    "API_PREFIX"
+    "API_PREFIX",
+    "NODE_ENV",
+    "CORS_ALLOWED_ORIGINS"
   ],
   "tasks": {
     "build": {
@@ -57,7 +59,7 @@
       "persistent": true
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^build", "^check-types"]
     },
     "start": {
       "dependsOn": ["build", "^build"],

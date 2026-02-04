@@ -1,5 +1,6 @@
 import { type Track } from "@repo/db";
 import z from "zod";
+import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 
 export const TrackSchema = z.object({
   id: z.string(),
@@ -11,9 +12,9 @@ export const TrackSchema = z.object({
   explicit: z.boolean(),
   lyrics: z.string().nullable(),
   albumId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  deletedAt: z.date().nullable(),
+  createdAt: zodDateTime(),
+  updatedAt: zodDateTime(),
+  deletedAt: zodDateTimeNullable(),
 }) satisfies z.ZodType<Track>;
 
 export type ZodTrack = z.infer<typeof TrackSchema>;

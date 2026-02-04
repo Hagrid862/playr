@@ -25,6 +25,27 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
+  const env = process.env.NODE_ENV || 'development';
+  const isProduction = env === 'production' || env === 'prod';
+
+  if (!isProduction) {
+    app.enableCors({
+      origin: '*',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    });
+  } else {
+    const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || [];
+    app.enableCors({
+      origin: allowedOrigins,
+      credentials: true,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    });
+  }
+
   await app.listen(process.env.PORT ? parseInt(process.env.PORT, 10) : 8000);
 }
 

@@ -1,5 +1,6 @@
 import { type Artist } from "@repo/db";
 import z from "zod";
+import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 
 export const ArtistSchema = z.object({
   id: z.string(),
@@ -9,9 +10,9 @@ export const ArtistSchema = z.object({
   verified: z.boolean(),
   bannerId: z.string().nullable(),
   avatarId: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  deletedAt: z.date().nullable(),
+  createdAt: zodDateTime(),
+  updatedAt: zodDateTime(),
+  deletedAt: zodDateTimeNullable(),
 }) satisfies z.ZodType<Artist>;
 
 export type ZodArtist = z.infer<typeof ArtistSchema>;
