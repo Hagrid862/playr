@@ -23,19 +23,24 @@ export const RegisterRequestSchema = z.object({
     .min(1, "Last name is required")
     .max(32, "Last name must be at most 32 characters"),
   birthDate: zodDateOnly()
-    .refine(
-      (val) => new Date(val) <= new Date(),
-      "Birth date cannot be in the future",
-    )
     .refine((val) => {
-      const birthDate = new Date(val);
       const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-      ) {
+      const todayStr = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0"),
+      ].join("-");
+      return val <= todayStr;
+    }, "Birth date cannot be in the future")
+    .refine((val) => {
+      const [y, m, d] = val.split("-").map(Number);
+      const today = new Date();
+      const currentY = today.getFullYear();
+      const currentM = today.getMonth() + 1;
+      const currentD = today.getDate();
+
+      let age = currentY - y;
+      if (currentM < m || (currentM === m && currentD < d)) {
         age--;
       }
       return age >= 13;
