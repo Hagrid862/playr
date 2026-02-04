@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createIntegrationApp } from './test-utils';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
-import { Gender } from '@repo/db';
+import { Gender, User, EmailAddress, EmailType, EmailStatus } from '@repo/db';
 import { vi } from 'vitest';
 
 describe('AuthController (Integration)', () => {
@@ -36,7 +36,7 @@ describe('AuthController (Integration)', () => {
 
     it('should register a new user successfully (201)', async () => {
       // Mock repository checks (no existing user/email)
-      prismaMock.client.user.findFirst.mockResolvedValue(null);
+      prismaMock.client.user.findUnique.mockResolvedValue(null);
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 
       // Mock successful creation
@@ -44,15 +44,24 @@ describe('AuthController (Integration)', () => {
         id: 'user-123',
         ...validRegistration,
         birthDate: '1990-01-01',
+        description: null,
+        avatarId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any);
+        deletedAt: null,
+      } as User);
 
       prismaMock.client.emailAddress.create.mockResolvedValue({
         id: 'email-123',
         email: validRegistration.email,
         userId: 'user-123',
-      } as any);
+        type: EmailType.primary,
+        status: EmailStatus.verified,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        verifiedAt: new Date(),
+        deletedAt: null,
+      } as EmailAddress);
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')
@@ -67,8 +76,16 @@ describe('AuthController (Integration)', () => {
       // Note: GetByEmail uses prisma.emailAddress.findFirst
       prismaMock.client.emailAddress.findFirst.mockResolvedValue({
         id: 'existing',
-        user: { id: 'user-1' },
-      } as any);
+        email: validRegistration.email,
+        userId: 'user-1',
+        type: EmailType.primary,
+        status: EmailStatus.verified,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        verifiedAt: new Date(),
+        deletedAt: null,
+        user: { id: 'user-1' } as User,
+      } as EmailAddress & { user: User });
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')
@@ -82,7 +99,20 @@ describe('AuthController (Integration)', () => {
       // Mock repository check (email ok, username taken)
       // Note: GetByUsername uses prisma.user.findUnique
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
-      prismaMock.client.user.findUnique.mockResolvedValue({ id: 'existing' } as any);
+      prismaMock.client.user.findUnique.mockResolvedValue({
+        id: 'existing',
+        username: validRegistration.username,
+        password: 'hashed',
+        firstName: 'Existing',
+        lastName: 'User',
+        birthDate: '1990-01-01',
+        gender: Gender.male,
+        description: null,
+        avatarId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      } as User);
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')

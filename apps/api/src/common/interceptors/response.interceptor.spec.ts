@@ -4,23 +4,15 @@ import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { of, firstValueFrom } from 'rxjs';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { WithMeta } from '../utils/with-meta.util';
+import { DeepMocked, createMock } from '@golevelup/ts-vitest';
+import { Request } from 'express';
 
 describe('ResponseInterceptor', () => {
   let interceptor: ResponseInterceptor<any>;
-  let reflector: Reflector;
+  let reflector: DeepMocked<Reflector>;
 
   beforeEach(async () => {
-    // Manually create mock reflector
-    const mockReflector = {
-      get: vi.fn(),
-    };
-
-    // Assign to the reflector variable used in tests
-    // We cast to unknown first to bypass type check if Reflector has private props,
-    // but Reflector interface usually allows this or we just cast to Reflector.
-    reflector = mockReflector as unknown as Reflector;
-
-    // Manually instantiate interceptor
+    reflector = createMock<Reflector>();
     interceptor = new ResponseInterceptor(reflector);
   });
 
@@ -34,24 +26,24 @@ describe('ResponseInterceptor', () => {
 
   it('should wrap successful response in standard format', async () => {
     const mockData = { id: 1, name: 'test' };
-    const mockRequest = {
+    const mockRequest = createMock<Request>({
       id: 'req-123',
       url: '/test',
-      headers: {},
-    } as unknown as ExecutionContext;
+      startTime: Date.now(),
+    });
 
-    const context = {
+    const context = createMock<ExecutionContext>({
       switchToHttp: () => ({
         getRequest: () => mockRequest,
       }),
       getHandler: () => ({}),
-    } as unknown as ExecutionContext;
+    });
 
     const next: CallHandler = {
       handle: () => of(mockData),
     };
 
-    vi.spyOn(reflector, 'get').mockReturnValue(false); // No bypass
+    reflector.get.mockReturnValue(false); // No bypass
 
     const result = await firstValueFrom(interceptor.intercept(context, next));
     expect(result).toEqual({
@@ -68,21 +60,22 @@ describe('ResponseInterceptor', () => {
   it('should bypass wrapping if decorator is present', async () => {
     const mockData = { id: 1, name: 'test' };
 
-    const context = {
+    const context = createMock<ExecutionContext>({
       switchToHttp: () => ({
-        getRequest: () => ({
-          url: '/test',
-          headers: {},
-        }),
+        getRequest: () =>
+          createMock<Request>({
+            url: '/test',
+            startTime: Date.now(),
+          }),
       }),
       getHandler: () => ({}),
-    } as unknown as ExecutionContext;
+    });
 
     const next: CallHandler = {
       handle: () => of(mockData),
     };
 
-    vi.spyOn(reflector, 'get').mockReturnValue(true); // Bypass = true
+    reflector.get.mockReturnValue(true); // Bypass = true
 
     const result = await firstValueFrom(interceptor.intercept(context, next));
 
@@ -93,24 +86,24 @@ describe('ResponseInterceptor', () => {
     const mockData = { id: 1 };
     const mockMeta = { page: 1 };
     const withMeta = new WithMeta(mockData, mockMeta);
-    const mockRequest = {
+    const mockRequest = createMock<Request>({
       id: 'req-123',
       url: '/test',
-      headers: {},
-    };
+      startTime: Date.now(),
+    });
 
-    const context = {
+    const context = createMock<ExecutionContext>({
       switchToHttp: () => ({
         getRequest: () => mockRequest,
       }),
       getHandler: () => ({}),
-    } as unknown as ExecutionContext;
+    });
 
     const next: CallHandler = {
       handle: () => of(withMeta),
     };
 
-    vi.spyOn(reflector, 'get').mockReturnValue(false);
+    reflector.get.mockReturnValue(false);
 
     const result = await firstValueFrom(interceptor.intercept(context, next));
 

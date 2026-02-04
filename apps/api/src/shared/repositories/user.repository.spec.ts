@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRepository } from './user.repository';
 import { PrismaService } from '../services/prisma.service';
-import { User, Gender } from '@repo/db';
+import { User, Gender, EmailAddress, EmailType, UserCreateInput } from '@repo/db';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { PrismaClient } from '@repo/db';
 
 describe('UserRepository', () => {
   let repository: UserRepository;
@@ -22,23 +24,10 @@ describe('UserRepository', () => {
     deletedAt: null,
   };
 
-  const mockTx = {
-    user: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      count: vi.fn(),
-      create: vi.fn(),
-      createManyAndReturn: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      deleteMany: vi.fn(),
-    },
-    emailAddress: {
-      findFirst: vi.fn(),
-    },
-  };
+  let mockTx: DeepMocked<PrismaClient>;
 
   beforeEach(async () => {
+    mockTx = createMock<PrismaClient>();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserRepository,
@@ -88,12 +77,14 @@ describe('UserRepository', () => {
 
   describe('getByEmail', () => {
     it('should return user associated with primary email', async () => {
-      mockTx.emailAddress.findFirst.mockResolvedValue({
-        id: 'email-id',
-        email: 'test@example.com',
-        type: 'primary',
-        user: mockUser,
-      });
+      mockTx.emailAddress.findFirst.mockResolvedValue(
+        createMock<EmailAddress & { user: User }>({
+          id: 'email-id',
+          email: 'test@example.com',
+          type: EmailType.primary,
+          user: mockUser,
+        }),
+      );
 
       const result = await repository.getByEmail('test@example.com');
       expect(result).toEqual(mockUser);
@@ -113,7 +104,7 @@ describe('UserRepository', () => {
   describe('create', () => {
     it('should create a user', async () => {
       mockTx.user.create.mockResolvedValue(mockUser);
-      const userCreateInput = {
+      const userCreateInput: UserCreateInput = {
         username: 'newuser',
         password: 'password',
         firstName: 'New',
@@ -122,7 +113,7 @@ describe('UserRepository', () => {
         gender: mockUser.gender,
       };
 
-      const result = await repository.create(userCreateInput as any); // Casting for test simplicity on input
+      const result = await repository.create(userCreateInput);
       expect(result).toEqual(mockUser);
       expect(mockTx.user.create).toHaveBeenCalledWith({ data: userCreateInput });
     });

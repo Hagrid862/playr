@@ -1,13 +1,19 @@
 import { GlobalExceptionFilter } from './global-exception.filter';
-import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { Request, Response } from 'express';
+import { createMock } from '@golevelup/ts-vitest';
 
 describe('GlobalExceptionFilter', () => {
   let filter: GlobalExceptionFilter;
 
   beforeEach(() => {
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
     filter = new GlobalExceptionFilter();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should be defined', () => {
@@ -15,31 +21,31 @@ describe('GlobalExceptionFilter', () => {
   });
 
   it('should catch HttpException and return formatted error response', () => {
-    const mockJson = vi.fn();
-    const mockStatus = vi.fn().mockReturnValue({ json: mockJson });
-    const mockResponse = {
-      status: mockStatus,
-    } as unknown as Response;
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    });
 
-    const mockRequest = {
+    const mockRequest = createMock<Request>({
       url: '/test',
       method: 'GET',
-      headers: {},
-    } as unknown as Request;
+      startTime: Date.now(),
+      id: 'test-id',
+    });
 
-    const mockHost = {
+    const mockHost = createMock<ArgumentsHost>({
       switchToHttp: () => ({
         getResponse: () => mockResponse,
         getRequest: () => mockRequest,
       }),
-    } as unknown as ArgumentsHost;
+    });
 
     const exception = new HttpException('Forbidden', HttpStatus.FORBIDDEN);
 
     filter.catch(exception, mockHost);
 
-    expect(mockStatus).toHaveBeenCalledWith(HttpStatus.FORBIDDEN);
-    expect(mockJson).toHaveBeenCalledWith(
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.FORBIDDEN);
+    expect(mockResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
         data: null,
@@ -52,35 +58,35 @@ describe('GlobalExceptionFilter', () => {
   });
 
   it('should catch unknown errors and return 500', () => {
-    const mockJson = vi.fn();
-    const mockStatus = vi.fn().mockReturnValue({ json: mockJson });
-    const mockResponse = {
-      status: mockStatus,
-    } as unknown as Response;
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    });
 
-    const mockRequest = {
+    const mockRequest = createMock<Request>({
       url: '/test',
-      headers: {},
-    } as unknown as Request;
+      startTime: Date.now(),
+      id: 'test-id',
+    });
 
-    const mockHost = {
+    const mockHost = createMock<ArgumentsHost>({
       switchToHttp: () => ({
         getResponse: () => mockResponse,
         getRequest: () => mockRequest,
       }),
-    } as unknown as ArgumentsHost;
+    });
 
     const exception = new Error('Something went wrong');
 
     filter.catch(exception, mockHost);
 
-    expect(mockStatus).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
-    expect(mockJson).toHaveBeenCalledWith(
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(mockResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
         error: {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Internal server error', // The filter overrides unknown error messages for security usually, or checks if it's an object
+          message: 'Internal server error',
         },
       }),
     );
