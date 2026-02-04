@@ -25,11 +25,24 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  const environment = process.env.NODE_ENV || 'dev';
+  const env = process.env.NODE_ENV || 'development';
+  const isProduction = env === 'production' || env === 'prod';
 
-  if (environment === 'dev') {
+  if (!isProduction) {
     app.enableCors({
       origin: '*',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    });
+  } else {
+    const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || [];
+    app.enableCors({
+      origin: allowedOrigins,
+      credentials: true,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
     });
   }
 

@@ -10,7 +10,8 @@
     "VITE_ADMIN_URL",
     "CI",
     "API_PREFIX",
-    "NODE_ENV"
+    "NODE_ENV",
+    "CORS_ALLOWED_ORIGINS"
   ],
   "tasks": {
     "build": {
