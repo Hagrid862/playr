@@ -6,7 +6,7 @@ export type ApiFailureResponse = z.infer<typeof ApiFailureResponseSchema>;
 export class ApiError extends Error {
   constructor(
     public status: number,
-    public statusText: string,
+    public statusText: string | undefined,
     public data: unknown,
   ) {
     let message = statusText || 'Unknown API Error';
