@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { RegisterRequestSchema } from '@repo/contracts';
+import { format } from 'date-fns';
 
 export type FormData = {
   username: string;
@@ -69,9 +70,8 @@ function validateFormData(formData: FormData): FormErrors {
   if (!formData.birthDate) {
     errs.birthDate = 'Birth date is required';
   } else {
-    const birthDateResult = RegisterRequestSchema.shape.birthDate.safeParse(
-      formData.birthDate.toISOString(),
-    );
+    const dateStr = format(formData.birthDate, 'yyyy-MM-dd');
+    const birthDateResult = RegisterRequestSchema.shape.birthDate.safeParse(dateStr);
     if (!birthDateResult.success) {
       errs.birthDate = birthDateResult.error.issues[0]?.message || 'Invalid birth date';
     }
@@ -197,7 +197,7 @@ export function useRegisterForm() {
         username: formData.username.toLowerCase().trim(),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        birthDate: formData.birthDate!.toISOString(),
+        birthDate: format(formData.birthDate!, 'yyyy-MM-dd'),
         gender: formData.gender,
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
