@@ -43,7 +43,7 @@ describe('AuthController (Integration)', () => {
       prismaMock.client.user.create.mockResolvedValue({
         id: 'user-123',
         ...validRegistration,
-        birthDate: '01-01-1990', // Handler formats it
+        birthDate: '1990-01-01',
         createdAt: new Date(),
         updatedAt: new Date(),
       } as any);

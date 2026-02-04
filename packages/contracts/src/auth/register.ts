@@ -43,7 +43,8 @@ export const RegisterRequestSchema = z.object({
         age--;
       }
       return age >= 13;
-    }, "You must be at least 13 years old to register"),
+    }, "You must be at least 13 years old to register")
+    .transform((val) => new Date(val).toISOString().split("T")[0]),
   gender: z.enum(Gender),
   email: z
     .email("Invalid email address")
