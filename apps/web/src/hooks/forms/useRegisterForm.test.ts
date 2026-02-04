@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { useRegisterForm } from './useRegisterForm';
+import { RegisterRequest } from '@repo/contracts';
 
 // We might need to mock Date to test age calculations deterministically
 const MOCK_DATE = new Date('2024-01-01T12:00:00Z');
@@ -277,10 +278,9 @@ describe('useRegisterForm', () => {
   it('handleSubmit fails if form is invalid', () => {
     const { result } = renderHook(() => useRegisterForm());
     // Form initialized empty = invalid
-    let submitResult: unknown = null;
+    let submitResult: RegisterRequest | null = null;
     act(() => {
-      // @ts-expect-error - simulating partial FormEvent
-      submitResult = result.current.handleSubmit({ preventDefault: vi.fn() });
+      submitResult = result.current.handleSubmit();
     });
 
     expect(submitResult).toBeNull();
@@ -316,10 +316,9 @@ describe('useRegisterForm', () => {
 
     expect(result.current.isFormValid).toBe(false);
 
-    let submitResult: unknown = null;
+    let submitResult: RegisterRequest | null = null;
     act(() => {
-      // @ts-expect-error - simulating partial FormEvent
-      submitResult = result.current.handleSubmit({ preventDefault: vi.fn() });
+      submitResult = result.current.handleSubmit();
     });
 
     expect(submitResult).toBeNull();
@@ -349,24 +348,22 @@ describe('useRegisterForm', () => {
       result.current.handleChange('confirmPassword', validData.confirmPassword);
     });
 
-    let submitResult: ReturnType<typeof result.current.handleSubmit> = null;
+    let submitResult: RegisterRequest | null = null;
 
     act(() => {
-      // @ts-expect-error - simulating partial FormEvent
-      submitResult = result.current.handleSubmit({ preventDefault: vi.fn() });
+      submitResult = result.current.handleSubmit();
     });
+
     expect(submitResult).not.toBeNull();
-    // @ts-expect-error - simulating partial FormEvent
-    expect(submitResult?.username).toBe('validuser'); // Lowercased
-    // @ts-expect-error - simulating partial FormEvent
-    expect(submitResult?.firstName).toBe('John'); // Trimmed
-    // @ts-expect-error - simulating partial FormEvent
-    expect(submitResult?.lastName).toBe('Doe');
-    // @ts-expect-error - simulating partial FormEvent
-    expect(submitResult?.email).toBe('test@example.com'); // Lowercased + Trimmed
-    // @ts-expect-error - simulating partial FormEvent
-    expect(submitResult?.gender).toBe('male');
-    // @ts-expect-error - simulating partial FormEvent
-    expect(submitResult?.password).toBe('Password123!');
+    expect(submitResult).toEqual(
+      expect.objectContaining({
+        username: 'validuser',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'test@example.com',
+        gender: 'male',
+        password: 'Password123!',
+      }),
+    );
   });
 });

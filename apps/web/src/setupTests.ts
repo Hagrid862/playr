@@ -25,7 +25,7 @@ vi.stubGlobal('ResizeObserver', ResizeObserverMock);
  * implementation for environments where it might be missing.
  */
 if (typeof window.PointerEvent === 'undefined') {
-  class MockPointerEvent extends MouseEvent implements Partial<PointerEvent> {
+  class MockPointerEvent extends MouseEvent implements PointerEvent {
     public readonly pointerId: number = 0;
     public readonly width: number = 0;
     public readonly height: number = 0;
@@ -38,6 +38,7 @@ if (typeof window.PointerEvent === 'undefined') {
     public readonly azimuthAngle: number = 0;
     public readonly pointerType: string = 'mouse';
     public readonly isPrimary: boolean = false;
+    public readonly persistentId: number = 0;
 
     constructor(type: string, props: PointerEventInit = {}) {
       super(type, props);
@@ -53,5 +54,5 @@ if (typeof window.PointerEvent === 'undefined') {
     }
   }
 
-  vi.stubGlobal('PointerEvent', MockPointerEvent as unknown as typeof PointerEvent);
+  vi.stubGlobal('PointerEvent', MockPointerEvent);
 }

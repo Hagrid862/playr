@@ -1,19 +1,20 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createMock } from '@golevelup/ts-vitest';
 import { RouteComponent } from './register';
 
 // Mock hooks
-// Mock hooks
-const mockValues: {
+const mockValues = createMock<{
   mutateAsync: ReturnType<typeof vi.fn>;
   isPending: boolean;
   error: { message: string } | null;
-} = {
+}>({
   mutateAsync: vi.fn(),
   isPending: false,
   error: null,
-};
+});
+
 vi.mock('@/hooks/api/auth', () => ({
   useRegister: () => mockValues,
 }));
