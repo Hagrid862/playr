@@ -30,7 +30,8 @@ export function RouteComponent() {
   } = useRegisterForm();
 
   const onSubmit = async (e: React.FormEvent) => {
-    const data = handleSubmit(e);
+    e.preventDefault();
+    const data = handleSubmit();
     if (data) {
       try {
         await registerUser(data).then(() => navigate({ to: '/auth/login' }));

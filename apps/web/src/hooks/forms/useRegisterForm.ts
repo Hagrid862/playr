@@ -183,36 +183,32 @@ export function useRegisterForm() {
     });
   }, []);
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      touchAllFields();
+  const handleSubmit = useCallback(() => {
+    touchAllFields();
 
-      const isValid = checkFormValid();
-      if (!isValid) {
-        return null;
-      }
+    const isValid = checkFormValid();
+    if (!isValid) {
+      return null;
+    }
 
-      const requestData = {
-        username: formData.username.toLowerCase().trim(),
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        birthDate: format(formData.birthDate!, 'yyyy-MM-dd'),
-        gender: formData.gender,
-        email: formData.email.toLowerCase().trim(),
-        password: formData.password,
-      };
+    const requestData = {
+      username: formData.username.toLowerCase().trim(),
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      birthDate: format(formData.birthDate!, 'yyyy-MM-dd'),
+      gender: formData.gender,
+      email: formData.email.toLowerCase().trim(),
+      password: formData.password,
+    };
 
-      const result = RegisterRequestSchema.safeParse(requestData);
-      if (!result.success) {
-        console.error('Validation failed:', result.error);
-        return null;
-      }
+    const result = RegisterRequestSchema.safeParse(requestData);
+    if (!result.success) {
+      console.error('Validation failed:', result.error);
+      return null;
+    }
 
-      return result.data;
-    },
-    [formData, checkFormValid, touchAllFields],
-  );
+    return result.data;
+  }, [formData, checkFormValid, touchAllFields]);
 
   const getFieldError = useCallback(
     (field: keyof FormData) => {
