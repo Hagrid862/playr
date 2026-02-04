@@ -38,6 +38,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@golevelup/ts-vitest": "^2.2.0",
     "@repo/configs": "workspace:*",
     "@tanstack/devtools-vite": "^0.4.1",
     "@testing-library/dom": "^10.4.1",

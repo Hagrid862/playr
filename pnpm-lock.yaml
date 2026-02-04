@@ -99,6 +99,9 @@ importers:
         specifier: ^5.0.10
         version: 5.0.10(@types/react@19.2.10)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
+      '@golevelup/ts-vitest':
+        specifier: ^2.2.0
+        version: 2.2.0
       '@repo/configs':
         specifier: workspace:*
         version: link:../../packages/configs
@@ -193,6 +196,9 @@ importers:
       '@eslint/js':
         specifier: ^9.39.2
         version: 9.39.2
+      '@golevelup/ts-vitest':
+        specifier: ^2.2.0
+        version: 2.2.0
       '@nestjs/cli':
         specifier: ^11.0.0
         version: 11.0.16(@swc/core@1.15.11)(@types/node@22.19.7)
@@ -323,6 +329,9 @@ importers:
         specifier: ^5.0.10
         version: 5.0.10(@types/react@19.2.10)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
+      '@golevelup/ts-vitest':
+        specifier: ^2.2.0
+        version: 2.2.0
       '@repo/configs':
         specifier: workspace:*
         version: link:../../packages/configs
@@ -456,6 +465,9 @@ importers:
         specifier: ^5.0.10
         version: 5.0.10(@types/react@19.2.10)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
+      '@golevelup/ts-vitest':
+        specifier: ^2.2.0
+        version: 2.2.0
       '@repo/configs':
         specifier: workspace:*
         version: link:../../packages/configs
@@ -1049,6 +1061,9 @@ packages:
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
+
+  '@golevelup/ts-vitest@2.2.0':
+    resolution: {integrity: sha512-qfmuYK5n/h3wpweXrWRnQWt+LuDebUDL8TW8I6YMWKthwZxs+i1LIxbWN7/0BGXut6PdtLsnglClfNPv2tM5Ow==}
 
   '@hono/node-server@1.19.9':
     resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
@@ -6670,6 +6685,8 @@ snapshots:
       react-dom: 19.2.4(react@19.2.4)
 
   '@floating-ui/utils@0.2.10': {}
+
+  '@golevelup/ts-vitest@2.2.0': {}
 
   '@hono/node-server@1.19.9(hono@4.11.4)':
     dependencies:
