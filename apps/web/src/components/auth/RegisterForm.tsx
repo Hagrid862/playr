@@ -2,7 +2,7 @@ import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/fie
 import { TextField, DatePickerField, SelectField } from '@/components/form';
 import { PasswordStrengthPopover } from './PasswordStrengthPopover';
 import type { FormData } from '@/hooks/forms/useRegisterForm';
-import { useId } from 'react';
+import { useId, type SyntheticEvent } from 'react';
 
 const genderOptions = [
   { value: 'male', label: 'Male' },
@@ -11,11 +11,12 @@ const genderOptions = [
 ];
 
 interface RegisterFormProps {
+  id?: string;
   formData: FormData;
   isPasswordFocused: boolean;
   showPasswordError: boolean;
   passwordError?: string;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: SyntheticEvent<HTMLFormElement>) => void | Promise<void>;
   onChange: <K extends keyof FormData>(field: K, value: FormData[K]) => void;
   onBlur: (field: keyof FormData) => void;
   getFieldError: (field: keyof FormData) => string | undefined;
@@ -23,6 +24,7 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({
+  id,
   formData,
   isPasswordFocused,
   showPasswordError,
@@ -36,7 +38,7 @@ export function RegisterForm({
   const passwordId = useId();
 
   return (
-    <form className="flex flex-col gap-2" onSubmit={onSubmit}>
+    <form id={id} className="flex flex-col gap-2" onSubmit={onSubmit}>
       <TextField
         label="Username"
         placeholder="johndoe"
