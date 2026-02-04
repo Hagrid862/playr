@@ -1,11 +1,12 @@
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { type SyntheticEvent } from 'react';
 import { RegisterWelcomePanel } from '@/components/auth/RegisterWelcomePanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useRegister } from '@/hooks/api/auth';
 import { useRegisterForm } from '@/hooks/forms/useRegisterForm';
-import { CircleNotch } from '@phosphor-icons/react';
+import { CircleNotchIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/auth/register')({
@@ -29,7 +30,7 @@ export function RouteComponent() {
     setIsPasswordFocused,
   } = useRegisterForm();
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = handleSubmit();
     if (data) {
@@ -60,6 +61,7 @@ export function RouteComponent() {
                 </div>
               )}
               <RegisterForm
+                id="register-form"
                 formData={formData}
                 isPasswordFocused={isPasswordFocused}
                 showPasswordError={showPasswordError}
@@ -75,15 +77,15 @@ export function RouteComponent() {
         </CardContent>
         <CardFooter className="flex flex-col gap-2 border-t border-border/40 bg-muted/30">
           <Button
+            form="register-form"
             type="submit"
             color="primary"
             className="w-full"
             disabled={!isFormValid || isLoading}
-            onClick={onSubmit}
           >
             {isLoading ? (
               <>
-                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
               </>
             ) : (
