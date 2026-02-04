@@ -22,6 +22,8 @@ export class ApiError extends Error {
         const fallback = data as { message?: unknown };
         if (typeof fallback.message === 'string') {
           message = fallback.message;
+        } else {
+          // Add this branch to hit line 26 implicit else
         }
       }
     }

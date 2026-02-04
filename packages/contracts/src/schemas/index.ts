@@ -1,4 +1,3 @@
-export * from "./access-token.schema";
 export * from "./album-genre.schema";
 export * from "./album.schema";
 export * from "./artist-follow.schema";

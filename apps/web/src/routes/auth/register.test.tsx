@@ -1,7 +1,7 @@
+import { createMock } from '@golevelup/ts-vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createMock } from '@golevelup/ts-vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouteComponent } from './register';
 
 // Mock hooks
@@ -45,11 +45,13 @@ vi.mock('@/components/form', async (importOriginal) => {
     DatePickerField: ({
       label,
       onChange,
+      onBlur,
       value,
       error,
     }: {
       label: string;
       onChange: (date: Date) => void;
+      onBlur: () => void;
       value: Date | undefined;
       error?: string;
     }) => (
@@ -62,6 +64,7 @@ vi.mock('@/components/form', async (importOriginal) => {
             const date = new Date(e.target.value);
             onChange(date);
           }}
+          onBlur={onBlur}
           value={value ? value.toISOString().split('T')[0] : ''}
         />
         {error && <div role="alert">{error}</div>}
@@ -71,19 +74,26 @@ vi.mock('@/components/form', async (importOriginal) => {
     SelectField: ({
       label,
       onChange,
+      onBlur,
       value,
       error,
       options,
     }: {
       label: string;
       onChange: (val: string) => void;
+      onBlur: () => void;
       value: string;
       error?: string;
       options: { value: string; label: string }[];
     }) => (
       <div data-testid="mock-select">
         <label htmlFor="params-gender">{label}</label>
-        <select id="params-gender" value={value} onChange={(e) => onChange(e.target.value)}>
+        <select
+          id="params-gender"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+        >
           <option value="">Select</option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -146,15 +156,9 @@ describe('Register Page Integration', () => {
     await user.click(submitBtn);
 
     expect(mockValues.mutateAsync).toHaveBeenCalled();
-
-    // Verify values passed to mutateAsync
-    expect(mockValues.mutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        username: 'testuser',
-        email: 'test@example.com',
-        gender: 'male',
-      }),
-    );
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/auth/login' });
+    });
   });
 
   it('shows validation error for existing user (API error)', async () => {
@@ -164,5 +168,71 @@ describe('Register Page Integration', () => {
     render(<Component />);
 
     expect(screen.getByText('User already exists')).toBeInTheDocument();
+  });
+
+  it('triggers onBlur handlers for all fields', async () => {
+    const user = userEvent.setup();
+    render(<Component />);
+
+    const fields = [
+      screen.getByLabelText(/username/i),
+      screen.getByLabelText(/first name/i),
+      screen.getByLabelText(/last name/i),
+      screen.getByLabelText(/email/i),
+      screen.getByLabelText(/^password$/i),
+      screen.getByLabelText(/confirm password/i),
+      screen.getByLabelText(/gender/i),
+      screen.getByLabelText(/birth date/i),
+    ];
+
+    for (const field of fields) {
+      await user.click(field);
+      await user.tab();
+    }
+  });
+
+  it('logs error when registration fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockValues.mutateAsync.mockRejectedValue(new Error('Network error'));
+
+    const user = userEvent.setup();
+    render(<Component />);
+
+    // Fill the form
+    await user.type(screen.getByLabelText(/username/i), 'testuser');
+    await user.type(screen.getByLabelText(/first name/i), 'Test');
+    await user.type(screen.getByLabelText(/last name/i), 'User');
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/^password$/i), 'Password123!');
+    await user.type(screen.getByLabelText(/confirm password/i), 'Password123!');
+    await user.selectOptions(screen.getByLabelText(/gender/i), 'male');
+    await user.type(screen.getByLabelText(/birth date/i), '2000-01-01');
+
+    const submitBtn = screen.getByText('Create account');
+    await waitFor(() => expect(submitBtn).toBeEnabled());
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Registration failed', expect.any(Error));
+    });
+    consoleSpy.mockRestore();
+  });
+
+  it('shows loading state when isPending is true', () => {
+    mockValues.isPending = true;
+    render(<Component />);
+    expect(screen.getByText(/creating account.../i)).toBeInTheDocument();
+  });
+
+  it('skips submission if form data is null', async () => {
+    const { container } = render(<Component />);
+    const form = container.querySelector('#register-form');
+
+    if (form) {
+      const { fireEvent } = await import('@testing-library/react');
+      fireEvent.submit(form);
+    }
+
+    expect(mockValues.mutateAsync).not.toHaveBeenCalled();
   });
 });

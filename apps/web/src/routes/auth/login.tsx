@@ -1,46 +1,64 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldContent, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { useAuthStore } from '@/stores/auth.store';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useLogin } from '@/hooks/api/auth';
+import { useLoginForm } from '@/hooks/forms/useLoginForm';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { SyntheticEvent } from 'react';
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
+  const { mutateAsync: loginUser, isPending: isLoading, error } = useLogin();
+  const { formData, isFormValid, handleChange, handleBlur, handleSubmit, getFieldError } =
+    useLoginForm();
+
+  const onSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = handleSubmit();
+    if (data) {
+      try {
+        const response = await loginUser(data);
+
+        // Persist auth data using store
+        useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
+
+        await navigate({ to: '/' });
+      } catch (err) {
+        console.error('Login failed', err);
+      }
+    }
+  };
+
   return (
-    <div className="min-w-screen min-h-screen flex flex-col items-center justify-center">
+    <div className="min-w-screen min-h-screen flex flex-col items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Login to your account</CardTitle>
         </CardHeader>
         <CardContent>
-          <form id="login-form" className="flex flex-col gap-2">
-            <Field>
-              <FieldLabel>Email</FieldLabel>
-              <FieldContent>
-                <Input type="email" />
-              </FieldContent>
-            </Field>
-            <Field>
-              <FieldLabel>Password</FieldLabel>
-              <FieldContent>
-                <Input type="password" />
-              </FieldContent>
-            </Field>
-            <Button type="button" variant="link" color="primary" className="w-full justify-start">
-              Forgot password?
-            </Button>
-          </form>
+          {error && (
+            <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {error.message}
+            </div>
+          )}
+          <LoginForm
+            formData={formData}
+            isLoading={isLoading}
+            isValid={isFormValid}
+            onSubmit={onSubmit}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            getFieldError={getFieldError}
+          />
         </CardContent>
-        <CardFooter>
-          <Button form="login-form" type="submit" color="primary" className="w-full">
-            Login
-          </Button>
-        </CardFooter>
+        {/* Footer is handled inside LoginForm for button, specific link for register below */}
       </Card>
-      <Button asChild variant="link" color="primary" className="w-full mt-2">
+      <Button asChild variant="link" color="primary" className="w-full mt-4">
         <Link to="/auth/register">Don&apos;t have an account? Sign up!</Link>
       </Button>
     </div>

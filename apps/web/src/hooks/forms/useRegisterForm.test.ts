@@ -1,10 +1,21 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import { RegisterRequest, RegisterRequestSchema } from '@repo/contracts';
+import { act, renderHook } from '@testing-library/react';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useRegisterForm } from './useRegisterForm';
-import { RegisterRequest } from '@repo/contracts';
 
 // We might need to mock Date to test age calculations deterministically
 const MOCK_DATE = new Date('2024-01-01T12:00:00Z');
+
+vi.mock('@repo/contracts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@repo/contracts')>();
+  return {
+    ...actual,
+    RegisterRequestSchema: {
+      ...actual.RegisterRequestSchema,
+      safeParse: vi.fn(actual.RegisterRequestSchema.safeParse),
+    },
+  };
+});
 
 describe('useRegisterForm', () => {
   beforeAll(() => {
@@ -354,7 +365,6 @@ describe('useRegisterForm', () => {
       submitResult = result.current.handleSubmit();
     });
 
-    expect(submitResult).not.toBeNull();
     expect(submitResult).toEqual(
       expect.objectContaining({
         username: 'validuser',
@@ -365,5 +375,38 @@ describe('useRegisterForm', () => {
         password: 'Password123!',
       }),
     );
+  });
+
+  it('handleSubmit returns null if validation fails (defensive check)', async () => {
+    const { result } = renderHook(() => useRegisterForm());
+
+    // Fill with valid data first to pass checkFormValid()
+    act(() => {
+      result.current.handleChange('username', 'testuser');
+      result.current.handleChange('firstName', 'Test');
+      result.current.handleChange('lastName', 'User');
+      result.current.handleChange('email', 'test@example.com');
+      result.current.handleChange('password', 'Password123!');
+      result.current.handleChange('confirmPassword', 'Password123!');
+      result.current.handleChange('birthDate', new Date('2000-01-01'));
+      result.current.handleChange('gender', 'male');
+    });
+
+    const safeParseSpy = vi.spyOn(RegisterRequestSchema, 'safeParse').mockImplementation((data) => {
+      if ((data as any).password) return { success: false, error: { issues: [] } as any } as any;
+      return { success: true, data: data as any } as any;
+    });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    let submitResult;
+    act(() => {
+      submitResult = result.current.handleSubmit();
+    });
+
+    expect(submitResult).toBeNull();
+    expect(consoleSpy).toHaveBeenCalledWith('Validation failed:', expect.anything());
+
+    safeParseSpy.mockRestore();
+    consoleSpy.mockRestore();
   });
 });

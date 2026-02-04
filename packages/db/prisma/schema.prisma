@@ -96,9 +96,6 @@ model RefreshToken {
   sessionId String
   session Session @relation("SessionRefreshTokens", fields: [sessionId], references: [id], onDelete: Cascade)
 
-  accessTokenId String? @unique
-  accessToken AccessToken? @relation("RefreshTokenAccessToken", fields: [accessTokenId], references: [id])
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   revokedAt DateTime?
@@ -106,21 +103,6 @@ model RefreshToken {
 
   @@index([sessionId])
   @@map("refresh_tokens")
-}
-
-model AccessToken {
-  id String @id @default(cuid())
-  token String @unique
-
-  refreshTokenId String? @unique
-  refreshToken RefreshToken? @relation("RefreshTokenAccessToken")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  revokedAt DateTime?
-  deletedAt DateTime?
-
-  @@map("access_tokens")
 }
 
 // -----------------------------------------------------------

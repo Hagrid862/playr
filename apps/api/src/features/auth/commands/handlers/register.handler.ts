@@ -3,9 +3,10 @@ import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { ConflictException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { ZodUser } from '@repo/contracts';
+import { UserSchema, ZodUser } from '@repo/contracts';
 import { EmailStatus } from '@repo/db';
 import { RegisterCommand } from '../impl/register.command';
+import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 
 @CommandHandler(RegisterCommand)
 export class RegisterHandler implements ICommandHandler<RegisterCommand> {
@@ -13,6 +14,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     private readonly userRepository: UserRepository,
     private readonly hashingService: HashingService,
     private readonly prisma: PrismaService,
+    private readonly unitOfWork: UnitOfWorkService,
   ) {}
 
   async execute(command: RegisterCommand): Promise<ZodUser> {
@@ -40,8 +42,8 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     const isoFormattedBirthDate = birthDate;
 
     // Use transaction to ensure atomicity - if email creation fails, user is rolled back
-    const user = await this.prisma.client.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
+    const user = await this.unitOfWork.runInTransaction(async () => {
+      const createdUser = await this.prisma.client.user.create({
         data: {
           username,
           password: hashedPassword,
@@ -65,7 +67,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
         },
       });
 
-      await tx.emailAddress.create({
+      await this.prisma.client.emailAddress.create({
         data: {
           email,
           status: EmailStatus.verified, // TODO: change to created after creating email verification system
@@ -76,6 +78,6 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
       return createdUser;
     });
 
-    return user;
+    return UserSchema.parse(user);
   }
 }

@@ -79,6 +79,10 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MAIL_HOST: mailhog
       MAIL_PORT: 1025
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-test-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-test-refresh-secret}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
     command: /bin/sh -c "corepack enable && pnpm install && pnpm turbo run dev --filter=@repo/api"
     depends_on:
       - db

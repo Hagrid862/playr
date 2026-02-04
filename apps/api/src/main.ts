@@ -1,13 +1,15 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { ZodValidationPipe } from 'nestjs-zod';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use(cookieParser());
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
 
@@ -30,7 +32,8 @@ async function bootstrap() {
 
   if (!isProduction) {
     app.enableCors({
-      origin: '*',
+      origin: true, // Reflect origin to allow credentials
+      credentials: true,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       preflightContinue: false,
       optionsSuccessStatus: 204,

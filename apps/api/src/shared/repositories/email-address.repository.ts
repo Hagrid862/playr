@@ -103,7 +103,7 @@ export class EmailAddressRepository {
   async updateMany(
     updates: { id: string; data: EmailAddressUpdateInput }[],
   ): Promise<EmailAddress[]> {
-    return await this.prisma.client.$transaction(
+    return await this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.emailAddress.update({ where: { id }, data }),
       ),

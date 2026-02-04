@@ -7,6 +7,7 @@ import {
   UserUpdateInput,
   UserOrderByWithRelationInput,
   EmailType,
+  EmailStatus,
 } from '@repo/db';
 
 @Injectable()
@@ -37,6 +38,27 @@ export class UserRepository {
     });
 
     return emailAddress?.user ?? null;
+  }
+
+  async getByEmailWithStatus(email: string): Promise<(User & { emailStatus: EmailStatus }) | null> {
+    const emailAddress = await this.prisma.client.emailAddress.findFirst({
+      where: {
+        email,
+        type: EmailType.primary,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!emailAddress || !emailAddress.user) {
+      return null;
+    }
+
+    return {
+      ...emailAddress.user,
+      emailStatus: emailAddress.status,
+    };
   }
 
   async getPaginated(
@@ -87,7 +109,7 @@ export class UserRepository {
   }
 
   async updateMany(updates: { id: string; data: UserUpdateInput }[]): Promise<User[]> {
-    return await this.prisma.client.$transaction(
+    return await this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) => this.prisma.client.user.update({ where: { id }, data })),
     );
   }

@@ -1,0 +1,24 @@
+import { AuthGuard } from '@nestjs/passport';
+import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { LocalAuthGuard } from './local-auth.guard';
+
+describe('LocalAuthGuard', () => {
+  let guard: LocalAuthGuard;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [LocalAuthGuard],
+    }).compile();
+
+    guard = module.get<LocalAuthGuard>(LocalAuthGuard);
+  });
+
+  it('should be defined', () => {
+    expect(guard).toBeDefined();
+  });
+
+  it('should extend AuthGuard("local")', () => {
+    expect(guard).toBeInstanceOf(AuthGuard('local'));
+  });
+});
