@@ -16,7 +16,7 @@ function RouteComponent() {
           <CardTitle>Login to your account</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-2">
+          <form id="login-form" className="flex flex-col gap-2">
             <Field>
               <FieldLabel>Email</FieldLabel>
               <FieldContent>
@@ -29,18 +29,18 @@ function RouteComponent() {
                 <Input type="password" />
               </FieldContent>
             </Field>
-            <Button variant="link" color="primary" className="w-full justify-start">
+            <Button type="button" variant="link" color="primary" className="w-full justify-start">
               Forgot password?
             </Button>
           </form>
         </CardContent>
         <CardFooter>
-          <Button type="submit" color="primary" className="w-full">
+          <Button form="login-form" type="submit" color="primary" className="w-full">
             Login
           </Button>
         </CardFooter>
       </Card>
-      <Button variant="link" color="primary" className="w-full mt-2">
+      <Button asChild variant="link" color="primary" className="w-full mt-2">
         <Link to="/auth/register">Don&apos;t have an account? Sign up!</Link>
       </Button>
     </div>
