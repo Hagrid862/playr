@@ -1,4 +1,5 @@
 import { createMock } from '@golevelup/ts-vitest';
+import type { ZodUser } from '@repo/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { api, apiClient } from './api-client';
@@ -139,7 +140,7 @@ describe('ApiClient', () => {
 
   it('adds Authorization header when token exists', async () => {
     const { useAuthStore } = await import('@/stores/auth.store');
-    useAuthStore.getState().setAuth({ id: '1' } as any, 'valid-token');
+    useAuthStore.getState().setAuth(createMock<ZodUser>({ id: '1' }), 'valid-token');
 
     mockFetch.mockResolvedValueOnce(
       createMock<Response>({

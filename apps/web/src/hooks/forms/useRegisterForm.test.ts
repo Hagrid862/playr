@@ -1,6 +1,7 @@
 import { RegisterRequest, RegisterRequestSchema } from '@repo/contracts';
 import { act, renderHook } from '@testing-library/react';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { useRegisterForm } from './useRegisterForm';
 
 // We might need to mock Date to test age calculations deterministically
@@ -392,11 +393,20 @@ describe('useRegisterForm', () => {
       result.current.handleChange('gender', 'male');
     });
 
-    const safeParseSpy = vi.spyOn(RegisterRequestSchema, 'safeParse').mockImplementation((data) => {
-      if ((data as any).password) return { success: false, error: { issues: [] } as any } as any;
-      return { success: true, data: data as any } as any;
+    const safeParseSpy = vi.spyOn(RegisterRequestSchema, 'safeParse').mockImplementation((data: unknown) => {
+      const input = data as RegisterRequest;
+      if (input.password) {
+        return {
+          success: false,
+          error: new z.ZodError([]),
+        } as z.ZodSafeParseResult<RegisterRequest>;
+      }
+      return {
+        success: true,
+        data: input,
+      } as z.ZodSafeParseResult<RegisterRequest>;
     });
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     let submitResult;
     act(() => {

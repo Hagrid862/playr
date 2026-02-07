@@ -1,4 +1,6 @@
+import { createMock } from '@golevelup/ts-vitest';
 import { render, screen } from '@testing-library/react';
+import type { CalendarDay } from 'react-day-picker';
 import { describe, expect, it } from 'vitest';
 import * as FormComponents from '../form';
 import { Button } from './button';
@@ -167,24 +169,35 @@ describe('UI Components Coverage', () => {
       const date = new Date();
       // Test direct DayButton renders to hit all branch logic
       render(
-        <CalendarDayButton day={{ date } as any} modifiers={{ focused: true, selected: true }} />,
+        <CalendarDayButton
+          day={createMock<CalendarDay>({ date })}
+          modifiers={{ focused: true, selected: true }}
+        />,
       );
       render(
         <CalendarDayButton
-          day={{ date } as any}
+          day={createMock<CalendarDay>({ date })}
           modifiers={{ selected: true, range_start: true }}
         />,
       );
       render(
-        <CalendarDayButton day={{ date } as any} modifiers={{ selected: true, range_end: true }} />,
+        <CalendarDayButton
+          day={createMock<CalendarDay>({ date })}
+          modifiers={{ selected: true, range_end: true }}
+        />,
       );
       render(
         <CalendarDayButton
-          day={{ date } as any}
+          day={createMock<CalendarDay>({ date })}
           modifiers={{ selected: true, range_middle: true }}
         />,
       );
-      render(<CalendarDayButton day={{ date } as any} modifiers={{ selected: false }} />);
+      render(
+        <CalendarDayButton
+          day={createMock<CalendarDay>({ date })}
+          modifiers={{ selected: false }}
+        />,
+      );
 
       // Test dropdown layout for formatMonthDropdown
       render(
