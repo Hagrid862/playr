@@ -12,11 +12,11 @@
     "API_PREFIX",
     "NODE_ENV",
     "CORS_ALLOWED_ORIGINS",
-    "MINIO_ENDPOINT",
-    "MINIO_PORT",
-    "MINIO_ACCESS_KEY",
-    "MINIO_SECRET_KEY",
-    "MINIO_USE_SSL",
+    "S3_ENDPOINT",
+    "S3_PORT",
+    "S3_ACCESS_KEY",
+    "S3_SECRET_KEY",
+    "S3_USE_SSL",
     "MAIL_HOST",
     "MAIL_PORT",
     "MAIL_USER",
@@ -29,8 +29,12 @@
   ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "dev": {
       "cache": false,
@@ -41,19 +45,29 @@
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "test:unit": {
-      "dependsOn": ["^test:unit"]
+      "dependsOn": [
+        "^test:unit"
+      ]
     },
     "test:integration": {
-      "dependsOn": ["^test:integration"]
+      "dependsOn": [
+        "^test:integration"
+      ]
     },
     "test:e2e": {
-      "dependsOn": ["^test:e2e"]
+      "dependsOn": [
+        "^test:e2e"
+      ]
     },
     "test:coverage": {
-      "dependsOn": ["^test:coverage"]
+      "dependsOn": [
+        "^test:coverage"
+      ]
     },
     "test:watch": {
       "cache": false,
@@ -73,10 +87,16 @@
       "persistent": true
     },
     "check-types": {
-      "dependsOn": ["^build", "^check-types"]
+      "dependsOn": [
+        "^build",
+        "^check-types"
+      ]
     },
     "start": {
-      "dependsOn": ["build", "^build"],
+      "dependsOn": [
+        "build",
+        "^build"
+      ],
       "persistent": true
     }
   }
