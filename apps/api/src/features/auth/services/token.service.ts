@@ -1,0 +1,105 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { RefreshTokenRepository } from '../../../shared/repositories/refresh-token.repository';
+import { SessionRepository } from '../../../shared/repositories/session.repository';
+import { UnitOfWorkService } from '../../../shared/services/unit-of-work.service';
+
+@Injectable()
+export class TokenService {
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
+    private readonly sessionRepository: SessionRepository,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly unitOfWork: UnitOfWorkService,
+  ) {}
+
+  async generateAuthTokens(
+    userId: string,
+    username: string,
+    sessionId?: string,
+    oldRefreshToken?: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    return this.unitOfWork.runInTransaction(async () => {
+      let currentSessionId = sessionId;
+
+      if (!currentSessionId) {
+        const session = await this.sessionRepository.create({
+          user: { connect: { id: userId } },
+        });
+        currentSessionId = session.id;
+      }
+
+      const payload = { sub: userId, username, sessionId: currentSessionId };
+
+      const [accessToken, refreshToken] = await Promise.all([
+        this.jwtService.signAsync(payload, {
+          secret: this.config.get<string>('JWT_ACCESS_SECRET'),
+          expiresIn: this.config.get<string>('JWT_ACCESS_EXPIRES_IN'),
+        } as any),
+        this.jwtService.signAsync(payload, {
+          secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN'),
+        } as any),
+      ]);
+
+      if (oldRefreshToken) {
+        await this.refreshTokenRepository.revoke(oldRefreshToken);
+      }
+
+      await this.refreshTokenRepository.create({
+        token: refreshToken,
+        session: { connect: { id: currentSessionId } },
+      });
+
+      return { accessToken, refreshToken };
+    });
+  }
+
+  async verifyRefreshToken(
+    token: string,
+  ): Promise<{ userId: string; sessionId: string; isRevoked: boolean } | null> {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      });
+
+      const refreshTokenRecord = await this.refreshTokenRepository.getByToken(token);
+
+      if (!refreshTokenRecord || refreshTokenRecord.deletedAt) {
+        return null;
+      }
+
+      if (refreshTokenRecord.revokedAt) {
+        return {
+          userId: payload.sub,
+          sessionId: payload.sessionId,
+          isRevoked: true,
+        };
+      }
+
+      const session = await this.sessionRepository.getById(payload.sessionId);
+
+      if (!session || session.deletedAt) {
+        return null;
+      }
+
+      if (session.revokedAt) {
+        return {
+          userId: payload.sub,
+          sessionId: payload.sessionId,
+          isRevoked: true,
+        };
+      }
+
+      return {
+        userId: payload.sub,
+        sessionId: payload.sessionId,
+        isRevoked: false,
+      };
+    } catch {
+      return null;
+    }
+  }
+}

@@ -1,9 +1,11 @@
+import { useAuthStore } from '@/stores/auth.store';
 import { ZodType } from 'zod';
 import { ApiError } from './api-error';
 
 type RequestConfig<T> = Omit<RequestInit, 'body'> & {
   body?: unknown;
   zodSchema?: ZodType<T>;
+  _retry?: boolean;
 };
 
 class ApiClient {
@@ -14,11 +16,17 @@ class ApiClient {
   }
 
   async request<T>(endpoint: string, options: RequestConfig<T> = {}): Promise<T> {
-    const { body, zodSchema, ...customConfig } = options;
-    const headers = { 'Content-Type': 'application/json' };
+    const { body, zodSchema, _retry, ...customConfig } = options;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    const token = useAuthStore.getState().accessToken;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
 
     const config: RequestInit = {
       method: body ? 'POST' : 'GET',
+      credentials: 'include',
       ...customConfig,
       headers: {
         ...headers,
@@ -42,6 +50,33 @@ class ApiClient {
       }
       return data;
     } else {
+      if (response.status === 401 && !_retry) {
+        try {
+          // Attempt refresh
+          const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            const newAccessToken = refreshData.data.accessToken;
+
+            useAuthStore.getState().updateAccessToken(newAccessToken);
+
+            // Retry original request
+            return this.request<T>(endpoint, {
+              ...options,
+              _retry: true,
+            });
+          } else {
+            useAuthStore.getState().logout();
+          }
+        } catch {
+          useAuthStore.getState().logout();
+        }
+      }
+
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(response.status, response.statusText, errorData);
     }

@@ -1,8 +1,8 @@
-import { GlobalExceptionFilter } from './global-exception.filter';
-import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { Request, Response } from 'express';
 import { createMock } from '@golevelup/ts-vitest';
+import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { GlobalExceptionFilter } from './global-exception.filter';
 
 describe('GlobalExceptionFilter', () => {
   let filter: GlobalExceptionFilter;
@@ -88,6 +88,136 @@ describe('GlobalExceptionFilter', () => {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
           message: 'Internal server error',
         },
+      }),
+    );
+  });
+
+  it('should handle HttpException with object message', () => {
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    });
+
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      id: 'test-id',
+      startTime: undefined,
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    const objectMessage = { message: 'Custom error message', hint: 'Check docs' };
+    const exception = new HttpException(objectMessage, HttpStatus.BAD_REQUEST);
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: 'Custom error message',
+        }),
+      }),
+    );
+  });
+
+  it('should handle HttpException with object message missing message property', () => {
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    });
+
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      id: 'test-id',
+      startTime: undefined,
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    const objectMessage = { error: 'some_error' };
+    const exception = new HttpException(objectMessage, HttpStatus.BAD_REQUEST);
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: objectMessage,
+        }),
+      }),
+    );
+  });
+
+  it('should handle HttpException with null message', () => {
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    });
+
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      id: 'test-id',
+      startTime: undefined,
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    const exception = new HttpException(null as any, HttpStatus.BAD_REQUEST);
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: 'Internal server error',
+        }),
+      }),
+    );
+  });
+
+  it('should handle HttpException with number message', () => {
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    });
+
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      id: 'test-id',
+      startTime: undefined,
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    const exception = new HttpException(404 as any, HttpStatus.NOT_FOUND);
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: 'Internal server error',
+        }),
       }),
     );
   });

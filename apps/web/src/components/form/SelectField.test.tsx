@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { SelectField } from './SelectField';
 
 // Mock Radix UI Select components if necessary, but usually standard DOM query works with JSDOM
@@ -39,5 +39,20 @@ describe('SelectField', () => {
     // Radix UI renders content in a portal, typically appended to body
     expect(await screen.findByText('Option 1')).toBeInTheDocument();
     expect(screen.getByText('Option 2')).toBeInTheDocument();
+  });
+
+  it('calls onChange and onBlur when an option is selected', async () => {
+    const onChange = vi.fn();
+    const onBlur = vi.fn();
+    render(<SelectField {...defaultProps} onChange={onChange} onBlur={onBlur} />);
+
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+
+    const option = await screen.findByText('Option 1');
+    fireEvent.click(option);
+
+    expect(onChange).toHaveBeenCalledWith('opt1');
+    expect(onBlur).toHaveBeenCalled();
   });
 });

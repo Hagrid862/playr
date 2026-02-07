@@ -35,7 +35,10 @@ export function RouteComponent() {
     const data = handleSubmit();
     if (data) {
       try {
-        await registerUser(data).then(() => navigate({ to: '/auth/login' }));
+        await registerUser(data);
+
+        // Redirect to login page for verification flow
+        await navigate({ to: '/auth/login' });
       } catch (err) {
         console.error('Registration failed', err);
       }

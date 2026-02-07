@@ -10,13 +10,16 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { RegisterRequestDto } from '../../dto/register.request.dto';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { PrismaClient } from '@repo/db';
+import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
+import { UserSchema } from '@repo/contracts';
 
 describe('RegisterHandler', () => {
   let handler: RegisterHandler;
   let userRepository: DeepMocked<UserRepository>;
   let hashingService: DeepMocked<HashingService>;
   let prismaService: DeepMocked<PrismaService>;
-  let mockTx: DeepMocked<PrismaClient>;
+  let unitOfWork: DeepMocked<UnitOfWorkService>;
+  let mockPrismaClient: DeepMocked<PrismaClient>;
 
   const mockUser: User = {
     id: 'user-id-123',
@@ -40,17 +43,23 @@ describe('RegisterHandler', () => {
     firstName: 'John',
     lastName: 'Doe',
     birthDate: '2000-01-01',
-    gender: 'male', // The DTO likely expects the string literal or enum values if it validates against them. Zod schema usually allows strings matching enum.
+    gender: 'male',
   };
 
   beforeEach(async () => {
     userRepository = createMock<UserRepository>();
     hashingService = createMock<HashingService>();
-    mockTx = createMock<PrismaClient>();
-    prismaService = createMock<PrismaService>({
-      client: createMock<PrismaClient>({
-        $transaction: vi.fn((cb) => cb(mockTx)),
-      }),
+    mockPrismaClient = createMock<PrismaClient>();
+    unitOfWork = createMock<UnitOfWorkService>();
+
+    // Mock runInTransaction to just execute the callback
+    unitOfWork.runInTransaction.mockImplementation((work) => work());
+
+    prismaService = createMock<PrismaService>();
+    // In our implementation, repository/handler calls this.prisma.client
+    // We want this to return our mockPrismaClient
+    Object.defineProperty(prismaService, 'client', {
+      get: () => mockPrismaClient,
     });
 
     const module: TestingModule = await Test.createTestingModule({
@@ -59,6 +68,7 @@ describe('RegisterHandler', () => {
         { provide: UserRepository, useValue: userRepository },
         { provide: HashingService, useValue: hashingService },
         { provide: PrismaService, useValue: prismaService },
+        { provide: UnitOfWorkService, useValue: unitOfWork },
       ],
     }).compile();
 
@@ -79,8 +89,8 @@ describe('RegisterHandler', () => {
       userRepository.getByEmail.mockResolvedValue(null);
       userRepository.getByUsername.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
-      mockTx.user.create.mockResolvedValue(mockUser);
-      mockTx.emailAddress.create.mockResolvedValue({
+      mockPrismaClient.user.create.mockResolvedValue(mockUser);
+      mockPrismaClient.emailAddress.create.mockResolvedValue({
         id: 'email-id',
         email: 'test@example.com',
         userId: mockUser.id,
@@ -102,8 +112,8 @@ describe('RegisterHandler', () => {
       expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
       expect(hashingService.hash).toHaveBeenCalledWith(mockPayload.password);
 
-      expect(prismaService.client.$transaction).toHaveBeenCalled();
-      expect(mockTx.user.create).toHaveBeenCalledWith({
+      expect(unitOfWork.runInTransaction).toHaveBeenCalled();
+      expect(mockPrismaClient.user.create).toHaveBeenCalledWith({
         data: {
           username: mockPayload.username,
           password: 'hashed-password',
@@ -126,14 +136,14 @@ describe('RegisterHandler', () => {
           deletedAt: true,
         },
       });
-      expect(mockTx.emailAddress.create).toHaveBeenCalledWith({
+      expect(mockPrismaClient.emailAddress.create).toHaveBeenCalledWith({
         data: {
           email: mockPayload.email,
           status: EmailStatus.verified,
           userId: mockUser.id,
         },
       });
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual(UserSchema.parse(mockUser));
     });
 
     it('should throw ConflictException if email already exists', async () => {
@@ -192,7 +202,7 @@ describe('RegisterHandler', () => {
       userRepository.getByUsername.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
 
-      mockTx.user.create.mockRejectedValue(new Error('Database error')); // Simulate failure
+      mockPrismaClient.user.create.mockRejectedValue(new Error('Database error')); // Simulate failure
 
       const command = new RegisterCommand(mockPayload);
 
@@ -206,13 +216,46 @@ describe('RegisterHandler', () => {
       userRepository.getByUsername.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
 
-      mockTx.user.create.mockResolvedValue(mockUser);
-      mockTx.emailAddress.create.mockRejectedValue(new Error('Database error')); // Simulate failure
+      mockPrismaClient.user.create.mockResolvedValue(mockUser);
+      mockPrismaClient.emailAddress.create.mockRejectedValue(new Error('Database error')); // Simulate failure
 
       const command = new RegisterCommand(mockPayload);
 
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow('Database error');
+    });
+
+    it('should successfully register a user with minimal fields', async () => {
+      // Arrange
+      const minimalPayload = {
+        ...mockPayload,
+        lastName: null,
+      };
+      const minimalUser = {
+        ...mockUser,
+        lastName: null,
+      };
+
+      userRepository.getByEmail.mockResolvedValue(null);
+      userRepository.getByUsername.mockResolvedValue(null);
+      hashingService.hash.mockResolvedValue('hashed-password');
+      mockPrismaClient.user.create.mockResolvedValue(minimalUser);
+      mockPrismaClient.emailAddress.create.mockResolvedValue({} as any);
+
+      const command = new RegisterCommand(minimalPayload as any);
+
+      // Act
+      const result = await handler.execute(command);
+
+      // Assert
+      expect(result.lastName).toBeNull();
+      expect(mockPrismaClient.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            lastName: null,
+          }),
+        }),
+      );
     });
   });
 });

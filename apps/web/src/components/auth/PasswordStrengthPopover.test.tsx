@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { PasswordStrengthPopover } from './PasswordStrengthPopover';
 
 describe('PasswordStrengthPopover', () => {
@@ -64,5 +64,11 @@ describe('PasswordStrengthPopover', () => {
   it('does not show popover content when password is empty even if open', () => {
     render(<PasswordStrengthPopover {...defaultProps} password="" isOpen={true} />);
     expect(screen.queryByText('Password strength')).not.toBeInTheDocument();
+  });
+
+  it('applies error styles when hasError is true', () => {
+    render(<PasswordStrengthPopover {...defaultProps} hasError={true} />);
+    const input = screen.getByPlaceholderText('••••••••');
+    expect(input).toHaveClass('border-destructive');
   });
 });

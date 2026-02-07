@@ -245,7 +245,6 @@ jobs:
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high
-        continue-on-error: true
 
   deprecated-check:
     name: Deprecated Packages Check
@@ -592,10 +591,10 @@ jobs:
         env:
           CI: "true"
           DATABASE_URL: "postgresql://playr:playr@localhost:5435/playr?schema=public"
-          MINIO_ENDPOINT: "localhost"
-          MINIO_PORT: "9000"
-          MINIO_ACCESS_KEY: "minioadmin"
-          MINIO_SECRET_KEY: "minioadmin"
+          S3_ENDPOINT: "localhost"
+          S3_PORT: "9000"
+          S3_ACCESS_KEY: "minioadmin"
+          S3_SECRET_KEY: "minioadmin"
           MAIL_HOST: "localhost"
           MAIL_PORT: "1025"
           PORT: "8000"

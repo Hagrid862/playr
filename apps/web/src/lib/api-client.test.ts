@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createMock } from '@golevelup/ts-vitest';
+import type { ZodUser } from '@repo/contracts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { api, apiClient } from './api-client';
 import { ApiError } from './api-error';
-import { z } from 'zod';
-import { createMock } from '@golevelup/ts-vitest';
 
 // Mock the global fetch
 const mockFetch = vi.fn();
@@ -135,5 +136,133 @@ describe('ApiClient', () => {
 
     const result = await apiClient('wrapper-test');
     expect(result).toEqual(mockResponse);
+  });
+
+  it('adds Authorization header when token exists', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store');
+    useAuthStore.getState().setAuth(createMock<ZodUser>({ id: '1' }), 'valid-token');
+
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true }),
+      }),
+    );
+
+    await api.request('secure');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer valid-token',
+        }),
+      }),
+    );
+  });
+
+  it('handles 401 and refreshes token successfully', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store');
+    useAuthStore.getState().logout();
+
+    // 1st call: Original request returns 401
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({ message: 'Unauthorized' }),
+      }),
+    );
+
+    // 2nd call: Refresh request returns 200 with new token
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { accessToken: 'new-token' } }),
+      }),
+    );
+
+    // 3rd call: Retried original request returns 200
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true }),
+      }),
+    );
+
+    const result = await api.request('retried');
+
+    expect(result).toEqual({ success: true });
+    expect(useAuthStore.getState().accessToken).toBe('new-token');
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/auth/refresh'),
+      expect.anything(),
+    );
+  });
+
+  it('logs out on failed refresh', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store');
+    const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
+
+    // 1st call: Original request returns 401
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+
+    // 2nd call: Refresh request returns 401
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+
+    await expect(api.request('fail-refresh')).rejects.toThrow();
+    expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('logs out on refresh exception', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store');
+    const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
+
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+    mockFetch.mockRejectedValueOnce(new Error('Network error during refresh'));
+
+    await expect(api.request('refresh-error')).rejects.toThrow();
+    expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('handles JSON parsing failure gracefully', async () => {
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => {
+          throw new Error('JSON parse error');
+        },
+      }),
+    );
+
+    // This should hit the .catch(() => ({})) on line 80
+    const request = api.request('bad-json');
+    await expect(request).rejects.toThrow(ApiError);
+    await expect(request).rejects.toMatchObject({ data: {} });
   });
 });

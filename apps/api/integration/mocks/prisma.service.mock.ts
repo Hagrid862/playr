@@ -4,16 +4,21 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 
 @Injectable()
 export class PrismaServiceMock {
-  public client: DeepMocked<PrismaClient> = createMock<PrismaClient>();
+  private readonly _mockClient: DeepMocked<PrismaClient> = createMock<PrismaClient>();
 
   constructor() {
     // Basic setup for $transaction to just execute the callback
-    this.client.$transaction.mockImplementation(async (callback: any) => {
-      return typeof callback === 'function' ? callback(this.client) : callback;
+    this._mockClient.$transaction.mockImplementation(async (callback: any) => {
+      return typeof callback === 'function' ? callback(this._mockClient) : callback;
     });
+  }
 
-    // Setup fluent API for common models if needed
-    // Example: this.client.user.findUnique.mockReturnThis();
+  get client() {
+    return this._mockClient;
+  }
+
+  get mainClient() {
+    return this._mockClient;
   }
 
   async onModuleInit() {

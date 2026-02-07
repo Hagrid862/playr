@@ -1,0 +1,199 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { TokenService } from './token.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { SessionRepository } from '../../../shared/repositories/session.repository';
+import { RefreshTokenRepository } from '../../../shared/repositories/refresh-token.repository';
+import { UnitOfWorkService } from '../../../shared/services/unit-of-work.service';
+import { PrismaService } from '../../../shared/services/prisma.service';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+
+describe('TokenService', () => {
+  let service: TokenService;
+  let jwtService: DeepMocked<JwtService>;
+  let configService: DeepMocked<ConfigService>;
+  let sessionRepository: DeepMocked<SessionRepository>;
+  let refreshTokenRepository: DeepMocked<RefreshTokenRepository>;
+  let unitOfWork: DeepMocked<UnitOfWorkService>;
+
+  beforeEach(async () => {
+    jwtService = createMock<JwtService>();
+    configService = createMock<ConfigService>();
+    sessionRepository = createMock<SessionRepository>();
+    refreshTokenRepository = createMock<RefreshTokenRepository>();
+    unitOfWork = createMock<UnitOfWorkService>();
+
+    // Mock unit of work transaction
+    unitOfWork.runInTransaction.mockImplementation((work) => work());
+
+    // Mock config
+    configService.get.mockImplementation((key: string) => {
+      if (key.includes('SECRET')) return 'secret';
+      if (key.includes('EXPIRES_IN')) return '1h';
+      return null;
+    });
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        TokenService,
+        { provide: JwtService, useValue: jwtService },
+        { provide: ConfigService, useValue: configService },
+        { provide: SessionRepository, useValue: sessionRepository },
+        { provide: RefreshTokenRepository, useValue: refreshTokenRepository },
+        { provide: UnitOfWorkService, useValue: unitOfWork },
+        { provide: PrismaService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get<TokenService>(TokenService);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('generateAuthTokens', () => {
+    it('should generate tokens and create a new session if sessionId is not provided', async () => {
+      // Arrange
+      jwtService.signAsync.mockResolvedValue('mock-token');
+      sessionRepository.create.mockResolvedValue({ id: 'new-session-id' } as any);
+
+      // Act
+      const result = await service.generateAuthTokens('user-123', 'username');
+
+      // Assert
+      expect(sessionRepository.create).toHaveBeenCalled();
+      expect(jwtService.signAsync).toHaveBeenCalledTimes(2);
+      expect(refreshTokenRepository.create).toHaveBeenCalledWith({
+        token: 'mock-token',
+        session: { connect: { id: 'new-session-id' } },
+      });
+      expect(result).toEqual({
+        accessToken: 'mock-token',
+        refreshToken: 'mock-token',
+      });
+    });
+
+    it('should use existing sessionId and revoke old token if provided', async () => {
+      // Arrange
+      jwtService.signAsync.mockResolvedValue('new-token');
+      const oldToken = 'old-token';
+      const sessionId = 'existing-session-id';
+
+      // Act
+      await service.generateAuthTokens('user-123', 'username', sessionId, oldToken);
+
+      // Assert
+      expect(sessionRepository.create).not.toHaveBeenCalled();
+      expect(refreshTokenRepository.revoke).toHaveBeenCalledWith(oldToken);
+      expect(refreshTokenRepository.create).toHaveBeenCalledWith({
+        token: 'new-token',
+        session: { connect: { id: sessionId } },
+      });
+    });
+  });
+
+  describe('verifyRefreshToken', () => {
+    const mockToken = 'some-jwt-token';
+    const mockPayload = { sub: 'user-123', sessionId: 'session-123' };
+
+    it('should return decoded info if token and session are valid', async () => {
+      // Arrange
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+      refreshTokenRepository.getByToken.mockResolvedValue({
+        revokedAt: null,
+        deletedAt: null,
+      } as any);
+      sessionRepository.getById.mockResolvedValue({
+        revokedAt: null,
+        deletedAt: null,
+      } as any);
+
+      // Act
+      const result = await service.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result).toEqual({
+        userId: mockPayload.sub,
+        sessionId: mockPayload.sessionId,
+        isRevoked: false,
+      });
+    });
+
+    it('should return null if JWT verification fails', async () => {
+      // Arrange
+      jwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
+
+      // Act
+      const result = await service.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should return null if token is not found in database', async () => {
+      // Arrange
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+      refreshTokenRepository.getByToken.mockResolvedValue(null);
+
+      // Act
+      const result = await service.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should return isRevoked: true if token is revoked in database', async () => {
+      // Arrange
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+      refreshTokenRepository.getByToken.mockResolvedValue({
+        revokedAt: new Date(),
+      } as any);
+
+      // Act
+      const result = await service.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result).toEqual({
+        userId: mockPayload.sub,
+        sessionId: mockPayload.sessionId,
+        isRevoked: true,
+      });
+    });
+
+    it('should return isRevoked: true if session is revoked in database', async () => {
+      // Arrange
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+      refreshTokenRepository.getByToken.mockResolvedValue({
+        revokedAt: null,
+      } as any);
+      sessionRepository.getById.mockResolvedValue({
+        revokedAt: new Date(),
+      } as any);
+
+      // Act
+      const result = await service.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result?.isRevoked).toBe(true);
+    });
+
+    it('should return null if session is deleted', async () => {
+      // Arrange
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+      refreshTokenRepository.getByToken.mockResolvedValue({ revokedAt: null } as any);
+      sessionRepository.getById.mockResolvedValue(null); // or session with deletedAt
+
+      // Act
+      const result = await service.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result).toBeNull();
+    });
+  });
+});

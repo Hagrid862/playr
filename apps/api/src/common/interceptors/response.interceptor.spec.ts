@@ -1,11 +1,11 @@
-import { ResponseInterceptor } from './response.interceptor';
-import { Reflector } from '@nestjs/core';
-import { ExecutionContext, CallHandler } from '@nestjs/common';
-import { of, firstValueFrom } from 'rxjs';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { WithMeta } from '../utils/with-meta.util';
 import { DeepMocked, createMock } from '@golevelup/ts-vitest';
+import { CallHandler, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
+import { firstValueFrom, of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WithMeta } from '../utils/with-meta.util';
+import { ResponseInterceptor } from './response.interceptor';
 
 describe('ResponseInterceptor', () => {
   let interceptor: ResponseInterceptor<any>;
@@ -108,6 +108,135 @@ describe('ResponseInterceptor', () => {
     const result = await firstValueFrom(interceptor.intercept(context, next));
 
     expect(result.data).toEqual(mockData);
+    expect(result.data).toEqual(mockData);
     expect(result.meta).toEqual(expect.objectContaining(mockMeta));
+  });
+
+  it('should generate requestId if id and header are missing', async () => {
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      headers: {},
+      id: undefined,
+      startTime: undefined,
+    });
+
+    const context = createMock<ExecutionContext>({
+      switchToHttp: () => ({
+        getRequest: () => mockRequest,
+      }),
+      getHandler: () => ({}),
+    });
+
+    const next: CallHandler = {
+      handle: () => of({}),
+    };
+
+    reflector.get.mockReturnValue(false);
+
+    const result = await firstValueFrom(interceptor.intercept(context, next));
+    expect(result.meta.requestId).toMatch(/^req_/);
+  });
+
+  it('should use x-request-id from header if present', async () => {
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      headers: {
+        'x-request-id': 'header-id',
+      },
+      id: undefined,
+      startTime: undefined,
+    });
+
+    const context = createMock<ExecutionContext>({
+      switchToHttp: () => ({
+        getRequest: () => mockRequest,
+      }),
+      getHandler: () => ({}),
+    });
+
+    const next: CallHandler = {
+      handle: () => of({}),
+    };
+
+    reflector.get.mockReturnValue(false);
+
+    const result = await firstValueFrom(interceptor.intercept(context, next));
+    expect(result.meta.requestId).toBe('header-id');
+  });
+
+  it('should handle x-request-id as an array', async () => {
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      headers: {
+        'x-request-id': ['first-id', 'second-id'],
+      },
+      id: undefined,
+      startTime: undefined,
+    });
+
+    const context = createMock<ExecutionContext>({
+      switchToHttp: () => ({
+        getRequest: () => mockRequest,
+      }),
+      getHandler: () => ({}),
+    });
+
+    const next: CallHandler = {
+      handle: () => of({}),
+    };
+
+    reflector.get.mockReturnValue(false);
+
+    const result = await firstValueFrom(interceptor.intercept(context, next));
+    expect(result.meta.requestId).toBe('first-id');
+  });
+
+  it('should not include duration if startTime is missing', async () => {
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      headers: {},
+      id: 'test-id',
+      startTime: undefined,
+    });
+
+    const context = createMock<ExecutionContext>({
+      switchToHttp: () => ({
+        getRequest: () => mockRequest,
+      }),
+      getHandler: () => ({}),
+    });
+
+    const next: CallHandler = {
+      handle: () => of({}),
+    };
+
+    reflector.get.mockReturnValue(false);
+
+    const result = await firstValueFrom(interceptor.intercept(context, next));
+    expect(result.meta.duration).toBeUndefined();
+  });
+
+  it('should handle null response data', async () => {
+    const mockRequest = createMock<Request>({
+      url: '/test',
+      id: 'test-id',
+      startTime: undefined,
+    });
+
+    const context = createMock<ExecutionContext>({
+      switchToHttp: () => ({
+        getRequest: () => mockRequest,
+      }),
+      getHandler: () => ({}),
+    });
+
+    const next: CallHandler = {
+      handle: () => of(null),
+    };
+
+    reflector.get.mockReturnValue(false);
+
+    const result = await firstValueFrom(interceptor.intercept(context, next));
+    expect(result.data).toBeNull();
   });
 });

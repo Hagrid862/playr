@@ -1,12 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import './setup-env';
+
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { PrismaService } from '../src/shared/services/prisma.service';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import { Reflector } from '@nestjs/core';
+import { Test, TestingModule } from '@nestjs/testing';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { AppModule } from '../src/app.module';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
-import { ZodValidationPipe } from 'nestjs-zod';
+import { PrismaService } from '../src/shared/services/prisma.service';
+import { PrismaServiceMock } from './mocks/prisma.service.mock';
 
 /**
  * Creates a NestJS application configured for integration testing.

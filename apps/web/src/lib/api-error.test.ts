@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ApiError } from './api-error';
 
 describe('ApiError', () => {
@@ -43,5 +43,32 @@ describe('ApiError', () => {
   it('fallbacks to default message if no statusText and no message in data', () => {
     const error = new ApiError(500, undefined, {});
     expect(error.message).toBe('Unknown API Error');
+  });
+
+  it('handles non-object data gracefully', () => {
+    const error = new ApiError(500, 'Error', 'plain text');
+    expect(error.message).toBe('Error');
+
+    const error2 = new ApiError(500, 'Error', null);
+    expect(error2.message).toBe('Error');
+
+    const error3 = new ApiError(500, 'Error', undefined);
+    expect(error3.message).toBe('Error');
+
+    const error4 = new ApiError(500, 'Error', 123);
+    expect(error4.message).toBe('Error');
+  });
+
+  it('handles flat message property that is not a string', () => {
+    const data = { message: { complex: 'error' } };
+    const error = new ApiError(500, 'Server Error', data);
+    // Should fallback to statusText because line 23 check fails
+    expect(error.message).toBe('Server Error');
+  });
+
+  it('handles data with no message property', () => {
+    const data = { other: 'stuff' };
+    const error = new ApiError(500, 'Server Error', data);
+    expect(error.message).toBe('Server Error');
   });
 });
