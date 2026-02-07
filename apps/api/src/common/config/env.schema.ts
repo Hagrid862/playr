@@ -10,12 +10,12 @@ export const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
-  // MinIO
-  MINIO_ENDPOINT: z.string().min(1),
-  MINIO_PORT: z.coerce.number().default(9000),
-  MINIO_ACCESS_KEY: z.string().min(1),
-  MINIO_SECRET_KEY: z.string().min(1),
-  MINIO_USE_SSL: z.coerce.boolean().default(false),
+  // S3
+  S3_ENDPOINT: z.string().min(1),
+  S3_PORT: z.coerce.number().default(9000),
+  S3_ACCESS_KEY: z.string().min(1),
+  S3_SECRET_KEY: z.string().min(1),
+  S3_USE_SSL: z.coerce.boolean().default(false),
 
   // Mail
   MAIL_HOST: z.string().min(1),
