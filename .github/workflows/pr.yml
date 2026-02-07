@@ -245,7 +245,6 @@ jobs:
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high
-        continue-on-error: true
 
   deprecated-check:
     name: Deprecated Packages Check
