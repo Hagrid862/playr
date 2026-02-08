@@ -15,6 +15,7 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppSearchIndexRouteImport } from './routes/app/search/index'
 import { Route as AppNewIndexRouteImport } from './routes/app/new/index'
+import { Route as AppLibraryPrivateIndexRouteImport } from './routes/app/library/private/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const AppNewIndexRoute = AppNewIndexRouteImport.update({
   path: '/app/new/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppLibraryPrivateIndexRoute = AppLibraryPrivateIndexRouteImport.update({
+  id: '/app/library/private/',
+  path: '/app/library/private/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
+  '/app/library/private/': typeof AppLibraryPrivateIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/new': typeof AppNewIndexRoute
   '/app/search': typeof AppSearchIndexRoute
+  '/app/library/private': typeof AppLibraryPrivateIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
+  '/app/library/private/': typeof AppLibraryPrivateIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/new/'
     | '/app/search/'
+    | '/app/library/private/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/new'
     | '/app/search'
+    | '/app/library/private'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/new/'
     | '/app/search/'
+    | '/app/library/private/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +118,7 @@ export interface RootRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppNewIndexRoute: typeof AppNewIndexRoute
   AppSearchIndexRoute: typeof AppSearchIndexRoute
+  AppLibraryPrivateIndexRoute: typeof AppLibraryPrivateIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/library/private/': {
+      id: '/app/library/private/'
+      path: '/app/library/private'
+      fullPath: '/app/library/private/'
+      preLoaderRoute: typeof AppLibraryPrivateIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppNewIndexRoute: AppNewIndexRoute,
   AppSearchIndexRoute: AppSearchIndexRoute,
+  AppLibraryPrivateIndexRoute: AppLibraryPrivateIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

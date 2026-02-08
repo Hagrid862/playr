@@ -67,9 +67,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive={undefined}>
-                  <BooksIcon />
-                  <span>Private Library</span>
+                <SidebarMenuButton asChild>
+                  <Link to="/app/library/private" activeProps={{ 'data-active': 'true' }}>
+                    <BooksIcon />
+                    <span>Private Library</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
