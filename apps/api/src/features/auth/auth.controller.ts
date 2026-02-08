@@ -11,10 +11,11 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { User } from '@repo/db';
 import { Throttle } from '@nestjs/throttler';
+import { User } from '@repo/db';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiErrorResponseDto } from '../../common/dto/api-error.response.dto';
+import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { LoginCommand } from './commands/impl/login.command';
 import { LogoutCommand } from './commands/impl/logout.command';
 import { RefreshTokensCommand } from './commands/impl/refresh-tokens.command';
@@ -24,7 +25,6 @@ import { LogoutResponseDto } from './dto/logout.response.dto';
 import { RefreshResponseDto } from './dto/refresh.response.dto';
 import { RegisterRequestDto } from './dto/register.request.dto';
 import { RegisterResponseDto } from './dto/register.response.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshTokenInterceptor } from './interceptors/refresh-token.interceptor';
 
@@ -33,7 +33,7 @@ import { RefreshTokenInterceptor } from './interceptors/refresh-token.intercepto
 @Throttle({ default: { limit: 10, ttl: 60000 } })
 @UseInterceptors(RefreshTokenInterceptor)
 export class AuthController {
-  constructor(private commandBus: CommandBus) {}
+  constructor(private commandBus: CommandBus) { }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
