@@ -11,7 +11,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           <main className="w-full pb-32">{children}</main>
         </div>
         <Card className="absolute bottom-2 left-0 right-2 z-10 h-20 border-border/50 shadow-lg backdrop-blur-md flex items-center justify-center bg-stone-900 rounded-lg">
-            <span className="text-muted-foreground text-sm">Player Controls Placeholder</span>
+          <span className="text-muted-foreground text-sm">Player Controls Placeholder</span>
         </Card>
       </div>
     </SidebarProvider>

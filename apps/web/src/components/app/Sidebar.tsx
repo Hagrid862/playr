@@ -10,10 +10,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarTrigger
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/stores/auth.store';
-import { BooksIcon, GridFourIcon, HouseIcon, MagnifyingGlassIcon, SignOutIcon } from '@phosphor-icons/react';
+import {
+  BooksIcon,
+  GridFourIcon,
+  HouseIcon,
+  MagnifyingGlassIcon,
+  SignOutIcon,
+} from '@phosphor-icons/react';
 import { Link, useRouter } from '@tanstack/react-router';
 
 export function AppSidebar() {
@@ -26,7 +32,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" variant='floating'>
+    <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader>
         <SidebarTrigger />
       </SidebarHeader>
@@ -44,7 +50,11 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app" activeOptions={{ exact: true }} activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to="/app"
+                    activeOptions={{ exact: true }}
+                    activeProps={{ 'data-active': 'true' }}
+                  >
                     <HouseIcon />
                     <span>Home</span>
                   </Link>
