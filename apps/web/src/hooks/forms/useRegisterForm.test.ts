@@ -393,20 +393,22 @@ describe('useRegisterForm', () => {
       result.current.handleChange('gender', 'male');
     });
 
-    const safeParseSpy = vi.spyOn(RegisterRequestSchema, 'safeParse').mockImplementation((data: unknown) => {
-      const input = data as RegisterRequest;
-      if (input.password) {
+    const safeParseSpy = vi
+      .spyOn(RegisterRequestSchema, 'safeParse')
+      .mockImplementation((data: unknown) => {
+        const input = data as RegisterRequest;
+        if (input.password) {
+          return {
+            success: false,
+            error: new z.ZodError([]),
+          } as z.ZodSafeParseResult<RegisterRequest>;
+        }
         return {
-          success: false,
-          error: new z.ZodError([]),
+          success: true,
+          data: input,
         } as z.ZodSafeParseResult<RegisterRequest>;
-      }
-      return {
-        success: true,
-        data: input,
-      } as z.ZodSafeParseResult<RegisterRequest>;
-    });
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+      });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     let submitResult;
     act(() => {
