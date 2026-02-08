@@ -1,9 +1,9 @@
-import { Strategy } from 'passport-local';
-import { PassportStrategy } from '@nestjs/passport';
+import { AuthenticatedUser } from '@/common/types/auth.types';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy } from 'passport-local';
 import { ValidateUserQuery } from '../queries/impl/validate-user.query';
-import { User } from '@repo/db';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -13,11 +13,11 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(email: string, password: string): Promise<User> {
+  async validate(email: string, password: string): Promise<AuthenticatedUser> {
     const user = await this.queryBus.execute(new ValidateUserQuery(email, password));
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return user;
+    return { user };
   }
 }
