@@ -22,6 +22,8 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     EmailAddressRepository,
     SessionRepository,
     RefreshTokenRepository,
+    // guards
+    JwtAuthGuard,
   ],
   exports: [
     // Services
