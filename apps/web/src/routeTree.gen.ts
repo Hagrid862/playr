@@ -17,6 +17,7 @@ import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppSearchIndexRouteImport } from './routes/app/search/index'
 import { Route as AppNewIndexRouteImport } from './routes/app/new/index'
 import { Route as AppLibraryOverviewIndexRouteImport } from './routes/app/library/overview/index'
+import { Route as AppLibraryArtistsIndexRouteImport } from './routes/app/library/artists/index'
 
 const AppRoute = AppRouteImport.update({
   id: '/app',
@@ -58,6 +59,11 @@ const AppLibraryOverviewIndexRoute = AppLibraryOverviewIndexRouteImport.update({
   path: '/library/overview/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLibraryArtistsIndexRoute = AppLibraryArtistsIndexRouteImport.update({
+  id: '/library/artists/',
+  path: '/library/artists/',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
+  '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
 }
 export interface FileRoutesByTo {
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/new': typeof AppNewIndexRoute
   '/app/search': typeof AppSearchIndexRoute
+  '/app/library/artists': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview': typeof AppLibraryOverviewIndexRoute
 }
 export interface FileRoutesById {
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
+  '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
 }
 export interface FileRouteTypes {
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/new/'
     | '/app/search/'
+    | '/app/library/artists/'
     | '/app/library/overview/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/new'
     | '/app/search'
+    | '/app/library/artists'
     | '/app/library/overview'
   id:
     | '__root__'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/new/'
     | '/app/search/'
+    | '/app/library/artists/'
     | '/app/library/overview/'
   fileRoutesById: FileRoutesById
 }
@@ -186,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryOverviewIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/library/artists/': {
+      id: '/app/library/artists/'
+      path: '/library/artists'
+      fullPath: '/app/library/artists/'
+      preLoaderRoute: typeof AppLibraryArtistsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -193,6 +212,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppNewIndexRoute: typeof AppNewIndexRoute
   AppSearchIndexRoute: typeof AppSearchIndexRoute
+  AppLibraryArtistsIndexRoute: typeof AppLibraryArtistsIndexRoute
   AppLibraryOverviewIndexRoute: typeof AppLibraryOverviewIndexRoute
 }
 
@@ -200,6 +220,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppNewIndexRoute: AppNewIndexRoute,
   AppSearchIndexRoute: AppSearchIndexRoute,
+  AppLibraryArtistsIndexRoute: AppLibraryArtistsIndexRoute,
   AppLibraryOverviewIndexRoute: AppLibraryOverviewIndexRoute,
 }
 
