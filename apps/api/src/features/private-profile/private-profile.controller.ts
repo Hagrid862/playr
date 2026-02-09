@@ -2,7 +2,7 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreatePrivateProfileCommand } from './commands/impl/create-private-profile.command';
 import { CreatePrivateProfileResponseDto } from './dto/create-private-profile.response.dto';
@@ -12,7 +12,10 @@ import { GetPrivateProfileQuery } from './queries/impl/get-private-profile.query
 @ApiTags('Private Profile')
 @Controller('private-profile')
 export class PrivateProfileController {
-  constructor(private readonly commandBus: CommandBus) { }
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -33,7 +36,7 @@ export class PrivateProfileController {
     type: ApiErrorResponseDto,
   })
   getPrivateProfile(@CurrentUser('id') userId: string) {
-    return this.commandBus.execute(new GetPrivateProfileQuery(userId));
+    return this.queryBus.execute(new GetPrivateProfileQuery(userId));
   }
 
   @Post()
