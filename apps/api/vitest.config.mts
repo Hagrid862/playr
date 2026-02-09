@@ -1,6 +1,6 @@
 import swc from 'unplugin-swc';
-import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -11,6 +11,18 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.spec.ts',
+        'src/main.ts',
+        'src/**/*.module.ts',
+        'src/**/*.dto.ts',
+        'src/**/*.command.ts',
+        'src/**/*.query.ts',
+        'src/**/*.types.ts',
+        'src/**/*.type.ts',
+        'src/**/*.d.ts',
+      ],
     },
   },
   plugins: [
