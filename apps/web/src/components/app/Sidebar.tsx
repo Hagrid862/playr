@@ -20,15 +20,17 @@ import {
   MagnifyingGlassIcon,
   SignOutIcon,
 } from '@phosphor-icons/react';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
   const router = useRouter();
+  const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     logout();
-    router.invalidate();
+    await router.invalidate();
+    await navigate({ to: '/auth/login' });
   };
 
   return (
