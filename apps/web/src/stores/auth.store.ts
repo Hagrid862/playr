@@ -1,6 +1,7 @@
 import { ZodUser } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useLibraryStore } from './library.store';
 
 export interface AuthState {
   accessToken: string | null;
@@ -19,7 +20,10 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true }),
       updateAccessToken: (accessToken) => set({ accessToken }),
-      logout: () => set({ user: null, accessToken: null, isAuthenticated: false }),
+      logout: () => {
+        set({ user: null, accessToken: null, isAuthenticated: false });
+        useLibraryStore.getState().clearLibrary();
+      },
     }),
     {
       name: 'auth-storage',
