@@ -14,6 +14,7 @@ describe('LibraryRepository', () => {
     userId: 'user-123',
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
   };
 
   beforeEach(async () => {
