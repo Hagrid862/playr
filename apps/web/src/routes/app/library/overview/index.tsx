@@ -5,7 +5,7 @@ import { useCreateLibrary, useLibrary } from '@/hooks/api/library';
 import { ApiError } from '@/lib/api-error';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/app/library/private/')({
+export const Route = createFileRoute('/app/library/overview/')({
   component: RouteComponent,
 });
 
@@ -71,7 +71,7 @@ function RouteComponent() {
             <p className="text-muted-foreground text-lg">Welcome back to your collection.</p>
           </div>
           <div className="p-4 bg-muted/50 rounded-xl border border-border/50">
-             <p className="text-xs font-mono text-muted-foreground/70 break-all">Library ID: {libraryResponse.data.id}</p>
+            <p className="text-xs font-mono text-muted-foreground/70 break-all">Library ID: {libraryResponse.data.id}</p>
           </div>
         </div>
       );
