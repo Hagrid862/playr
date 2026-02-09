@@ -1,8 +1,8 @@
+import { ZodUser } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ZodUser } from '@repo/contracts';
 
-interface AuthState {
+export interface AuthState {
   accessToken: string | null;
   user: ZodUser | null;
   isAuthenticated: boolean;

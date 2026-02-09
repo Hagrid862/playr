@@ -1,4 +1,3 @@
-import { SidebarLayout } from '@/components/layout/sidebar-layout';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useCreateLibrary, useLibrary } from '@/hooks/api/library';
@@ -87,10 +86,8 @@ function RouteComponent() {
   };
 
   return (
-    <SidebarLayout>
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-4">
-        {renderContent()}
-      </div>
-    </SidebarLayout>
+    <div className="min-h-[70vh] flex flex-col items-center justify-center p-4">
+      {renderContent()}
+    </div>
   );
 }
