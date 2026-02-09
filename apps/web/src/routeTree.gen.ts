@@ -16,9 +16,13 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppSearchIndexRouteImport } from './routes/app/search/index'
 import { Route as AppNewIndexRouteImport } from './routes/app/new/index'
+import { Route as AppLibraryOverviewRouteImport } from './routes/app/library/overview'
 import { Route as AppLibraryArtistsRouteImport } from './routes/app/library/artists'
 import { Route as AppLibraryOverviewIndexRouteImport } from './routes/app/library/overview/index'
 import { Route as AppLibraryArtistsIndexRouteImport } from './routes/app/library/artists/index'
+import { Route as AppLibraryOverviewPublicRouteImport } from './routes/app/library/overview/public'
+import { Route as AppLibraryOverviewPrivateRouteImport } from './routes/app/library/overview/private'
+import { Route as AppLibraryOverviewCommunityRouteImport } from './routes/app/library/overview/community'
 import { Route as AppLibraryArtistsCreateRouteImport } from './routes/app/library/artists/create'
 
 const AppRoute = AppRouteImport.update({
@@ -56,21 +60,44 @@ const AppNewIndexRoute = AppNewIndexRouteImport.update({
   path: '/new/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLibraryOverviewRoute = AppLibraryOverviewRouteImport.update({
+  id: '/library/overview',
+  path: '/library/overview',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLibraryArtistsRoute = AppLibraryArtistsRouteImport.update({
   id: '/library/artists',
   path: '/library/artists',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLibraryOverviewIndexRoute = AppLibraryOverviewIndexRouteImport.update({
-  id: '/library/overview/',
-  path: '/library/overview/',
-  getParentRoute: () => AppRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppLibraryOverviewRoute,
 } as any)
 const AppLibraryArtistsIndexRoute = AppLibraryArtistsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppLibraryArtistsRoute,
 } as any)
+const AppLibraryOverviewPublicRoute =
+  AppLibraryOverviewPublicRouteImport.update({
+    id: '/public',
+    path: '/public',
+    getParentRoute: () => AppLibraryOverviewRoute,
+  } as any)
+const AppLibraryOverviewPrivateRoute =
+  AppLibraryOverviewPrivateRouteImport.update({
+    id: '/private',
+    path: '/private',
+    getParentRoute: () => AppLibraryOverviewRoute,
+  } as any)
+const AppLibraryOverviewCommunityRoute =
+  AppLibraryOverviewCommunityRouteImport.update({
+    id: '/community',
+    path: '/community',
+    getParentRoute: () => AppLibraryOverviewRoute,
+  } as any)
 const AppLibraryArtistsCreateRoute = AppLibraryArtistsCreateRouteImport.update({
   id: '/create',
   path: '/create',
@@ -84,9 +111,13 @@ export interface FileRoutesByFullPath {
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
   '/app/library/artists': typeof AppLibraryArtistsRouteWithChildren
+  '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
+  '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
+  '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
+  '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
 }
@@ -98,6 +129,9 @@ export interface FileRoutesByTo {
   '/app/new': typeof AppNewIndexRoute
   '/app/search': typeof AppSearchIndexRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
+  '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
+  '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
+  '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
   '/app/library/artists': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview': typeof AppLibraryOverviewIndexRoute
 }
@@ -109,9 +143,13 @@ export interface FileRoutesById {
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
   '/app/library/artists': typeof AppLibraryArtistsRouteWithChildren
+  '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
+  '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
+  '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
+  '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
 }
@@ -124,9 +162,13 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/app/'
     | '/app/library/artists'
+    | '/app/library/overview'
     | '/app/new/'
     | '/app/search/'
     | '/app/library/artists/create'
+    | '/app/library/overview/community'
+    | '/app/library/overview/private'
+    | '/app/library/overview/public'
     | '/app/library/artists/'
     | '/app/library/overview/'
   fileRoutesByTo: FileRoutesByTo
@@ -138,6 +180,9 @@ export interface FileRouteTypes {
     | '/app/new'
     | '/app/search'
     | '/app/library/artists/create'
+    | '/app/library/overview/community'
+    | '/app/library/overview/private'
+    | '/app/library/overview/public'
     | '/app/library/artists'
     | '/app/library/overview'
   id:
@@ -148,9 +193,13 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/app/'
     | '/app/library/artists'
+    | '/app/library/overview'
     | '/app/new/'
     | '/app/search/'
     | '/app/library/artists/create'
+    | '/app/library/overview/community'
+    | '/app/library/overview/private'
+    | '/app/library/overview/public'
     | '/app/library/artists/'
     | '/app/library/overview/'
   fileRoutesById: FileRoutesById
@@ -213,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/library/overview': {
+      id: '/app/library/overview'
+      path: '/library/overview'
+      fullPath: '/app/library/overview'
+      preLoaderRoute: typeof AppLibraryOverviewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/library/artists': {
       id: '/app/library/artists'
       path: '/library/artists'
@@ -222,10 +278,10 @@ declare module '@tanstack/react-router' {
     }
     '/app/library/overview/': {
       id: '/app/library/overview/'
-      path: '/library/overview'
+      path: '/'
       fullPath: '/app/library/overview/'
       preLoaderRoute: typeof AppLibraryOverviewIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppLibraryOverviewRoute
     }
     '/app/library/artists/': {
       id: '/app/library/artists/'
@@ -233,6 +289,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/library/artists/'
       preLoaderRoute: typeof AppLibraryArtistsIndexRouteImport
       parentRoute: typeof AppLibraryArtistsRoute
+    }
+    '/app/library/overview/public': {
+      id: '/app/library/overview/public'
+      path: '/public'
+      fullPath: '/app/library/overview/public'
+      preLoaderRoute: typeof AppLibraryOverviewPublicRouteImport
+      parentRoute: typeof AppLibraryOverviewRoute
+    }
+    '/app/library/overview/private': {
+      id: '/app/library/overview/private'
+      path: '/private'
+      fullPath: '/app/library/overview/private'
+      preLoaderRoute: typeof AppLibraryOverviewPrivateRouteImport
+      parentRoute: typeof AppLibraryOverviewRoute
+    }
+    '/app/library/overview/community': {
+      id: '/app/library/overview/community'
+      path: '/community'
+      fullPath: '/app/library/overview/community'
+      preLoaderRoute: typeof AppLibraryOverviewCommunityRouteImport
+      parentRoute: typeof AppLibraryOverviewRoute
     }
     '/app/library/artists/create': {
       id: '/app/library/artists/create'
@@ -257,20 +334,37 @@ const AppLibraryArtistsRouteChildren: AppLibraryArtistsRouteChildren = {
 const AppLibraryArtistsRouteWithChildren =
   AppLibraryArtistsRoute._addFileChildren(AppLibraryArtistsRouteChildren)
 
+interface AppLibraryOverviewRouteChildren {
+  AppLibraryOverviewCommunityRoute: typeof AppLibraryOverviewCommunityRoute
+  AppLibraryOverviewPrivateRoute: typeof AppLibraryOverviewPrivateRoute
+  AppLibraryOverviewPublicRoute: typeof AppLibraryOverviewPublicRoute
+  AppLibraryOverviewIndexRoute: typeof AppLibraryOverviewIndexRoute
+}
+
+const AppLibraryOverviewRouteChildren: AppLibraryOverviewRouteChildren = {
+  AppLibraryOverviewCommunityRoute: AppLibraryOverviewCommunityRoute,
+  AppLibraryOverviewPrivateRoute: AppLibraryOverviewPrivateRoute,
+  AppLibraryOverviewPublicRoute: AppLibraryOverviewPublicRoute,
+  AppLibraryOverviewIndexRoute: AppLibraryOverviewIndexRoute,
+}
+
+const AppLibraryOverviewRouteWithChildren =
+  AppLibraryOverviewRoute._addFileChildren(AppLibraryOverviewRouteChildren)
+
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppLibraryArtistsRoute: typeof AppLibraryArtistsRouteWithChildren
+  AppLibraryOverviewRoute: typeof AppLibraryOverviewRouteWithChildren
   AppNewIndexRoute: typeof AppNewIndexRoute
   AppSearchIndexRoute: typeof AppSearchIndexRoute
-  AppLibraryOverviewIndexRoute: typeof AppLibraryOverviewIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppLibraryArtistsRoute: AppLibraryArtistsRouteWithChildren,
+  AppLibraryOverviewRoute: AppLibraryOverviewRouteWithChildren,
   AppNewIndexRoute: AppNewIndexRoute,
   AppSearchIndexRoute: AppSearchIndexRoute,
-  AppLibraryOverviewIndexRoute: AppLibraryOverviewIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
