@@ -15,7 +15,7 @@ export class PrivateProfileController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
-  ) { }
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)

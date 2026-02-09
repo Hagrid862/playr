@@ -11,7 +11,7 @@ import { CreateLibraryResponseDto } from './dto/create-library.response.dto';
 @ApiTags('Library')
 @Controller('library')
 export class LibraryController {
-  constructor(private readonly commandBus: CommandBus) { }
+  constructor(private readonly commandBus: CommandBus) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)

@@ -10,4 +10,4 @@ import { GetPrivateProfileHandler } from './queries/handlers/get-private-profile
   providers: [CreatePrivateProfileHandler, GetPrivateProfileHandler],
   exports: [],
 })
-export class PrivateProfileModule { }
+export class PrivateProfileModule {}

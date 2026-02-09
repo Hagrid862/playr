@@ -6,7 +6,7 @@ import { PrivateProfileRepository } from './../../../../shared/repositories/priv
 
 @QueryHandler(GetPrivateProfileQuery)
 export class GetPrivateProfileHandler implements IQueryHandler<GetPrivateProfileQuery> {
-  constructor(private readonly privateProfileRepository: PrivateProfileRepository) { }
+  constructor(private readonly privateProfileRepository: PrivateProfileRepository) {}
 
   async execute(query: GetPrivateProfileQuery): Promise<UserPrivateProfile> {
     const { userId } = query;

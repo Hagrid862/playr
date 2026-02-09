@@ -6,7 +6,7 @@ import { CreatePrivateProfileCommand } from '../impl/create-private-profile.comm
 
 @CommandHandler(CreatePrivateProfileCommand)
 export class CreatePrivateProfileHandler implements ICommandHandler<CreatePrivateProfileCommand> {
-  constructor(private readonly privateProfileRepository: PrivateProfileRepository) { }
+  constructor(private readonly privateProfileRepository: PrivateProfileRepository) {}
 
   async execute(command: CreatePrivateProfileCommand): Promise<UserPrivateProfile> {
     const { userId } = command;

@@ -3,4 +3,4 @@ import { createZodDto } from 'nestjs-zod';
 
 export class CreatePrivateProfileResponseDto extends createZodDto(
   CreatePrivateProfileResponseSchema,
-) { }
+) {}

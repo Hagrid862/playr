@@ -9,4 +9,4 @@ import { PrivateProfileModule } from './private-profile/private-profile.module';
   providers: [],
   exports: [],
 })
-export class FeaturesModule { }
+export class FeaturesModule {}

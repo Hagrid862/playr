@@ -10,7 +10,7 @@ export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly hashingService: HashingService,
-  ) { }
+  ) {}
 
   async execute(query: ValidateUserQuery): Promise<User | null> {
     const { email, password } = query;
