@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { CameraIcon, InfoIcon } from '@phosphor-icons/react';
+import { useCreatePrivateProfile } from '@/hooks/api/private-profile';
+import { useLibraryStore } from '@/stores/library.store';
+import { CameraIcon, InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/artists/create')({
@@ -13,9 +15,38 @@ export const Route = createFileRoute('/app/library/artists/create')({
 });
 
 function RouteComponent() {
+  const { libraryId, privateAccountId } = useLibraryStore();
+  const { mutate: createProfile, isPending: isCreatingProfile } = useCreatePrivateProfile();
+
+  const handleCreateProfile = () => {
+    createProfile();
+  };
+
   return (
     <div className="flex items-center justify-center">
       <div className="flex flex-col gap-4 max-w-4xl">
+        {(!libraryId || !privateAccountId) && (
+          <Alert variant="destructive">
+            <WarningCircleIcon />
+            <AlertTitle>You cannot create local artist right now.</AlertTitle>
+            <AlertDescription>
+              <div>
+                <div className="mb-2">
+                  You need to have a private profile to be able to create and manage any local
+                  content. You can create it using button bellow.
+                </div>
+                <Button
+                  variant="outline"
+                  className="text-white"
+                  onClick={handleCreateProfile}
+                  disabled={isCreatingProfile}
+                >
+                  {isCreatingProfile ? 'Creating...' : 'Create private account'}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
         <Alert>
           <InfoIcon />
           <AlertTitle>You are about to create new local artist</AlertTitle>
@@ -60,7 +91,7 @@ function RouteComponent() {
         <Separator />
         <div className="flex items-center justify-between">
           <Button variant="outline">Cancel</Button>
-          <Button>Create artist</Button>
+          <Button disabled={!libraryId || !privateAccountId}>Create artist</Button>
         </div>
       </div>
     </div>

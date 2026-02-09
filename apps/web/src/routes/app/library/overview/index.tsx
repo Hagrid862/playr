@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useCreateLibrary, useLibrary } from '@/hooks/api/library';
 import { ApiError } from '@/lib/api-error';
+import { useLibraryStore } from '@/stores/library.store';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/overview/')({
@@ -11,6 +12,7 @@ export const Route = createFileRoute('/app/library/overview/')({
 function RouteComponent() {
   const { data: libraryResponse, isLoading, error } = useLibrary();
   const { mutate: createLibrary, isPending } = useCreateLibrary();
+  const libraryId = useLibraryStore((state) => state.libraryId);
 
   const handleCreateLibrary = () => {
     createLibrary({});
@@ -75,7 +77,7 @@ function RouteComponent() {
           </div>
           <div className="p-4 bg-muted/50 rounded-xl border border-border/50">
             <p className="text-xs font-mono text-muted-foreground/70 break-all">
-              Library ID: {libraryResponse.data.id}
+              Library ID: {libraryId}
             </p>
           </div>
         </div>

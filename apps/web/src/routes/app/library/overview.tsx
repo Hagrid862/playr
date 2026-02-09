@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreatePrivateProfile, usePrivateProfile } from '@/hooks/api/private-profile';
+import { useLibraryStore } from '@/stores/library.store';
 import { XIcon } from '@phosphor-icons/react';
 import { Outlet, createFileRoute, useLocation, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -23,10 +24,11 @@ function OverviewLayout() {
   const router = useRouter();
   const [isBannerClosed, setIsBannerClosed] = useState(false);
 
-  const { data: privateProfile, isLoading: isProfileLoading } = usePrivateProfile();
+  const { isLoading: isProfileLoading } = usePrivateProfile();
+  const privateAccountId = useLibraryStore((state) => state.privateAccountId);
   const { mutate: createProfile, isPending: isCreatingProfile } = useCreatePrivateProfile();
 
-  const showBanner = !isProfileLoading && !privateProfile?.data && !isBannerClosed;
+  const showBanner = !isProfileLoading && !privateAccountId && !isBannerClosed;
 
   const isIndex =
     location.pathname === '/app/library/overview' || location.pathname === '/app/library/overview/';
