@@ -8,4 +8,4 @@ import { LibraryModule } from './library/library.module';
   providers: [],
   exports: [],
 })
-export class FeaturesModule { }
+export class FeaturesModule {}

@@ -42,4 +42,4 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     JwtAuthGuard,
   ],
 })
-export class SharedModule { }
+export class SharedModule {}

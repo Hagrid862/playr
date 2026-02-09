@@ -33,7 +33,7 @@ import { RefreshTokenInterceptor } from './interceptors/refresh-token.intercepto
 @Throttle({ default: { limit: 10, ttl: 60000 } })
 @UseInterceptors(RefreshTokenInterceptor)
 export class AuthController {
-  constructor(private commandBus: CommandBus) { }
+  constructor(private commandBus: CommandBus) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })

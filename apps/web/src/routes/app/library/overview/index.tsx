@@ -32,13 +32,17 @@ function RouteComponent() {
         return (
           <div className="flex flex-col items-center justify-center text-center gap-6">
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tight">You don&apos;t have a private library yet.</h2>
-              <p className="text-muted-foreground text-lg">Create one for free and start organizing your private collection.</p>
+              <h2 className="text-3xl font-bold tracking-tight">
+                You don&apos;t have a private library yet.
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                Create one for free and start organizing your private collection.
+              </p>
             </div>
-            
-            <Button 
-              size="lg" 
-              onClick={handleCreateLibrary} 
+
+            <Button
+              size="lg"
+              onClick={handleCreateLibrary}
               disabled={isPending}
               className="min-w-40 relative overflow-hidden"
             >
@@ -71,7 +75,9 @@ function RouteComponent() {
             <p className="text-muted-foreground text-lg">Welcome back to your collection.</p>
           </div>
           <div className="p-4 bg-muted/50 rounded-xl border border-border/50">
-            <p className="text-xs font-mono text-muted-foreground/70 break-all">Library ID: {libraryResponse.data.id}</p>
+            <p className="text-xs font-mono text-muted-foreground/70 break-all">
+              Library ID: {libraryResponse.data.id}
+            </p>
           </div>
         </div>
       );
