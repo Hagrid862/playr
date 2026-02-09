@@ -35,32 +35,34 @@ export function RouteComponent() {
   };
 
   return (
-    <div className="min-w-screen min-h-screen flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-              {error.message}
-            </div>
-          )}
-          <LoginForm
-            formData={formData}
-            isLoading={isLoading}
-            isValid={isFormValid}
-            onSubmit={onSubmit}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            getFieldError={getFieldError}
-          />
-        </CardContent>
-        {/* Footer is handled inside LoginForm for button, specific link for register below */}
-      </Card>
-      <Button asChild variant="link" color="primary" className="w-full mt-4">
-        <Link to="/auth/register">Don&apos;t have an account? Sign up!</Link>
-      </Button>
+    <div className="flex min-h-screen w-full justify-center bg-background">
+      <div className="flex w-full max-w-[1920px] flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Login to your account</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                {error.message}
+              </div>
+            )}
+            <LoginForm
+              formData={formData}
+              isLoading={isLoading}
+              isValid={isFormValid}
+              onSubmit={onSubmit}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              getFieldError={getFieldError}
+            />
+          </CardContent>
+          {/* Footer is handled inside LoginForm for button, specific link for register below */}
+        </Card>
+        <Button asChild variant="link" color="primary" className="w-full mt-4">
+          <Link to="/auth/register">Don&apos;t have an account? Sign up!</Link>
+        </Button>
+      </div>
     </div>
   );
 }
