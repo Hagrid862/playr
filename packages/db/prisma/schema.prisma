@@ -27,9 +27,10 @@ model User {
   avatarId String? @unique
   avatar   Image?  @relation("UserAvatarImage", fields: [avatarId], references: [id], onDelete: SetNull)
 
-  artistProfile    ArtistProfile?    @relation("ArtistProfileUser")
-  communityProfile CommunityProfile? @relation("CommunityProfileUser")
-  moderatorAccount ModeratorAccount? @relation("UserModeratorAccount")
+  artistProfile      ArtistProfile?      @relation("ArtistProfileUser")
+  communityProfile   CommunityProfile?   @relation("CommunityProfileUser")
+  moderatorAccount   ModeratorAccount?   @relation("UserModeratorAccount")
+  userPrivateProfile UserPrivateProfile? @relation("UserPrivateProfile")
 
   emailAddresses EmailAddress[]  @relation("UserEmailAddresses")
   sessions       Session[]       @relation("UserSessions")
@@ -103,6 +104,45 @@ model RefreshToken {
 
   @@index([sessionId])
   @@map("refresh_tokens")
+}
+
+// -----------------------------------------------------------
+// --- private content ---------------------------------------
+// -----------------------------------------------------------
+
+model UserPrivateProfile {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation("UserPrivateProfile", fields: [userId], references: [id], onDelete: Cascade)
+
+  privateArtistProfiles PrivateArtistProfile[] @relation("UserPrivateProfileArtists")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@map("user_private_profiles")
+}
+
+model PrivateArtistProfile {
+  id String @id @default(cuid())
+
+  userPrivateProfileId String
+  userPrivateProfile   UserPrivateProfile @relation("UserPrivateProfileArtists", fields: [userPrivateProfileId], references: [id], onDelete: Cascade)
+
+  artistId String @unique
+  artist   Artist @relation("PrivateArtistProfileArtist", fields: [artistId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([userPrivateProfileId, artistId])
+  @@index([userPrivateProfileId])
+  @@index([artistId])
+  @@map("private_artist_profiles")
 }
 
 // -----------------------------------------------------------
@@ -270,8 +310,9 @@ model Artist {
   isCommunity Boolean @default(false)
   verified    Boolean @default(false)
 
-  artistProfile    ArtistProfile?    @relation("ArtistProfileArtist")
-  communityProfile CommunityProfile? @relation("CommunityProfileArtist")
+  artistProfile        ArtistProfile?        @relation("ArtistProfileArtist")
+  communityProfile     CommunityProfile?     @relation("CommunityProfileArtist")
+  privateArtistProfile PrivateArtistProfile? @relation("PrivateArtistProfileArtist")
 
   bannerId String? @unique
   banner   Image?  @relation("ArtistBannerImage", fields: [bannerId], references: [id], onDelete: SetNull)
