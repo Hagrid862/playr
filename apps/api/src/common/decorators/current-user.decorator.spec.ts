@@ -6,7 +6,7 @@ import { CurrentUser } from './current-user.decorator';
 // Helper to extract the factory function from the decorator
 function getParamDecoratorFactory(decorator: Function) {
   class Test {
-    testMethod(@decorator() _user: any) { }
+    testMethod(@decorator() _user: any) {}
   }
   const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'testMethod');
   return metadata[Object.keys(metadata)[0]].factory;

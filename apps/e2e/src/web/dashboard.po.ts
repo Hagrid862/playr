@@ -32,7 +32,7 @@ export class DashboardPage {
     await this.page
       .getByText("Just a sec...")
       .waitFor({ state: "visible", timeout: 2000 })
-      .catch(() => { });
+      .catch(() => {});
     await expect(this.page.getByText("Your Private Library")).toBeVisible({
       timeout: 15000,
     });

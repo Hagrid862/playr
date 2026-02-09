@@ -41,7 +41,7 @@ describe('useIsMobile', () => {
   });
 
   it('should update value when window resizes (via matchMedia event)', () => {
-    let changeHandler: () => void = () => { };
+    let changeHandler: () => void = () => {};
 
     // Mock matchMedia to capture the event listener
     window.matchMedia = vi.fn().mockImplementation(() => ({

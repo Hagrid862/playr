@@ -14,7 +14,7 @@ describe('envSchema', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'error').mockImplementation(() => { });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('should validate a correct config and return parsed data', () => {
