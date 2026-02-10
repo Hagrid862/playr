@@ -3,7 +3,7 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { GetLibraryCommand } from '../impl/get-library.command';
+import { GetLibraryQuery } from '../impl/get-library.query';
 import { GetLibraryHandler } from './get-library.handler';
 
 describe('GetLibraryHandler', () => {
@@ -22,12 +22,12 @@ describe('GetLibraryHandler', () => {
 
   it('should return library if it exists', async () => {
     const userId = 'user-123';
-    const command = new GetLibraryCommand(userId);
+    const query = new GetLibraryQuery(userId);
     const mockLibrary = { id: 'lib-123', userId } as any;
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
 
-    const result = await handler.execute(command);
+    const result = await handler.execute(query);
 
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
     expect(result).toBe(mockLibrary);
@@ -35,11 +35,11 @@ describe('GetLibraryHandler', () => {
 
   it('should throw NotFoundException if library does not exist', async () => {
     const userId = 'user-123';
-    const command = new GetLibraryCommand(userId);
+    const query = new GetLibraryQuery(userId);
 
     libraryRepository.getByUserId.mockResolvedValue(null);
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
-    await expect(handler.execute(command)).rejects.toThrow('Library not found');
+    await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
+    await expect(handler.execute(query)).rejects.toThrow('Library not found');
   });
 });

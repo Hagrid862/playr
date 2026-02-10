@@ -1,15 +1,15 @@
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { NotFoundException } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Library } from '@repo/db';
-import { GetLibraryCommand } from '../impl/get-library.command';
+import { GetLibraryQuery } from '../impl/get-library.query';
 
-@CommandHandler(GetLibraryCommand)
-export class GetLibraryHandler implements ICommandHandler<GetLibraryCommand> {
+@QueryHandler(GetLibraryQuery)
+export class GetLibraryHandler implements IQueryHandler<GetLibraryQuery> {
   constructor(private readonly libraryRepository: LibraryRepository) {}
 
-  async execute(command: GetLibraryCommand): Promise<Library> {
-    const { userId } = command;
+  async execute(query: GetLibraryQuery): Promise<Library> {
+    const { userId } = query;
 
     const library = await this.libraryRepository.getByUserId(userId);
 

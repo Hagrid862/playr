@@ -1,3 +1,3 @@
-export class GetLibraryCommand {
+export class GetLibraryQuery {
   constructor(public readonly userId: string) {}
 }
