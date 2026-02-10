@@ -14,7 +14,7 @@ export class CreateArtistHandler implements ICommandHandler<CreateArtistCommand>
   constructor(
     private readonly artistRepository: ArtistRepository,
     private readonly privateProfileRepository: PrivateProfileRepository,
-  ) { }
+  ) {}
 
   async execute(command: CreateArtistCommand): Promise<ZodArtist> {
     const { request, userId } = command;
