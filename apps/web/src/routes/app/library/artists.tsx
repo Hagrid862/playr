@@ -1,5 +1,6 @@
 import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
+import { useLibraryStore } from '@/stores/library.store';
 import { PlusIcon } from '@phosphor-icons/react';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 
@@ -12,11 +13,16 @@ function ArtistsLayout() {
   const isCreate = location.pathname.includes('/create');
   const isIndex =
     location.pathname === '/app/library/artists' || location.pathname === '/app/library/artists/';
+  const isDetail = !isCreate && !isIndex;
+  const artistId = isDetail ? location.pathname.split('/').pop() : null;
+  const artistName = useLibraryStore((state) =>
+    isDetail ? state.privateArtists.find((a) => a.id === artistId)?.name : null,
+  );
 
   return (
     <div className="flex flex-col gap-4 p-4">
       <PageHeader
-        title={isCreate ? 'Create Artist' : 'Artists'}
+        title={isCreate ? 'Create Artist' : isDetail ? (artistName ?? 'Artist Detail') : 'Artists'}
         actions={
           isIndex ? (
             <Button variant="outline" asChild>

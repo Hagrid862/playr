@@ -2,7 +2,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { usePrivateArtists } from '@/hooks/api/artists/usePrivateArtists';
 import { useLibraryStore } from '@/stores/library.store';
 import { UserIcon } from '@phosphor-icons/react';
-import { createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/artists/')({
   component: RouteComponent,
@@ -40,9 +40,11 @@ function RouteComponent() {
     <div className="flex flex-col gap-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {artists.map((artist) => (
-          <div
+          <Link
             key={artist.id}
-            className="group/artist relative p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45"
+            to="/app/library/artists/$id"
+            params={{ id: artist.id }}
+            className="group/artist relative p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
           >
             <div className="aspect-square w-full overflow-hidden bg-stone-800 rounded-md">
               {artist.avatarId ? (
@@ -63,7 +65,7 @@ function RouteComponent() {
                 {artist.isCommunity ? 'Community Artist' : 'Private Artist'}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
