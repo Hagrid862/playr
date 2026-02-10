@@ -1,17 +1,26 @@
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
-import { GetLibraryCommand } from './commands/impl/get-library.command';
 import { CreateLibraryResponseDto } from './dto/create-library.response.dto';
+import { GetLibraryArtistResponseDto } from './dto/get-library-artist.response.dto';
+import { GetLibraryArtistsRequestDto } from './dto/get-library-artists.request.dto';
+import { GetLibraryArtistsResponseDto } from './dto/get-library-artists.response.dto';
+import { GetLibraryResponseDto } from './dto/get-library.response.dto';
+import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
+import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
+import { GetLibraryQuery } from './queries/impl/get-library.query';
 
 @ApiTags('Library')
 @Controller('library')
 export class LibraryController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -46,7 +55,7 @@ export class LibraryController {
   @ApiResponse({
     status: 200,
     description: 'Library retrieved successfully',
-    type: CreateLibraryResponseDto,
+    type: GetLibraryResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -58,7 +67,41 @@ export class LibraryController {
     description: 'Forbidden',
     type: ApiErrorResponseDto,
   })
-  getAll(@CurrentUser('id') userId: string) {
-    return this.commandBus.execute(new GetLibraryCommand(userId));
+  getLibrary(@CurrentUser('id') userId: string) {
+    return this.queryBus.execute(new GetLibraryQuery(userId));
+  }
+
+  @Get('artists')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all library artists' })
+  @ApiResponse({
+    status: 200,
+    description: 'Library artists retrieved successfully',
+    type: GetLibraryArtistsResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  getArtists(@CurrentUser('id') userId: string, @Query() query: GetLibraryArtistsRequestDto) {
+    return this.queryBus.execute(new GetLibraryArtistsQuery(userId, query.page, query.limit));
+  }
+
+  @Get('artists/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get a single library artist' })
+  @ApiResponse({
+    status: 200,
+    description: 'Library artist retrieved successfully',
+    type: GetLibraryArtistResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Artist not found',
+    type: ApiErrorResponseDto,
+  })
+  getArtist(@CurrentUser('id') userId: string, @Param('id') artistId: string) {
+    return this.queryBus.execute(new GetLibraryArtistQuery(userId, artistId));
   }
 }
