@@ -1,13 +1,20 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { CreateLibraryHandler } from './commands/handlers/create-library.handler';
-import { GetLibraryHandler } from './commands/handlers/get-library.handler';
 import { LibraryController } from './library.controller';
+import { GetLibraryArtistHandler } from './queries/handlers/get-library-artist.handler';
+import { GetLibraryArtistsHandler } from './queries/handlers/get-library-artists.handler';
+import { GetLibraryHandler } from './queries/handlers/get-library.handler';
 
 @Module({
   imports: [CqrsModule],
   controllers: [LibraryController],
-  providers: [CreateLibraryHandler, GetLibraryHandler],
+  providers: [
+    CreateLibraryHandler,
+    GetLibraryHandler,
+    GetLibraryArtistsHandler,
+    GetLibraryArtistHandler,
+  ],
   exports: [],
 })
 export class LibraryModule {}
