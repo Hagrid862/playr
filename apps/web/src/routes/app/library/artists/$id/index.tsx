@@ -20,15 +20,16 @@ import { useLibraryStore } from '@/stores/library.store';
 import {
   DotsThreeIcon,
   HeartIcon,
+  PencilIcon,
   PlayIcon,
   ShuffleIcon,
   TrashIcon,
   UserIcon,
 } from '@phosphor-icons/react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
-export const Route = createFileRoute('/app/library/artists/$id')({
+export const Route = createFileRoute('/app/library/artists/$id/')({
   component: RouteComponent,
 });
 
@@ -70,8 +71,8 @@ function RouteComponent() {
               className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
             />
           ) : (
-            <div className="size-full bg-linear-to-br from-stone-900 via-stone-950 to-neutral-900 flex items-center justify-center">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
+            <div className="size-full bg-linear-to-b from-stone-950 to-neutral-900 flex items-center justify-center">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(120,119,198,0.15),transparent_70%)]" />
             </div>
           )}
           <div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent" />
@@ -80,18 +81,16 @@ function RouteComponent() {
         {/* Avatar & Quick Info */}
         <div className="px-6 -mt-24 flex flex-col md:flex-row items-end gap-6 relative z-10">
           {/* Avatar */}
-          <div className="size-44 p-1 rounded-2xl bg-background shadow-2xl shrink-0">
-            <div className="size-full rounded-xl overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
-              {artist.avatarId ? (
-                <img
-                  src={`/api/images/${artist.avatarId}`}
-                  alt={artist.name}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <UserIcon className="size-1/2 text-stone-400" weight="duotone" />
-              )}
-            </div>
+          <div className="size-44 p-1 rounded-2xl shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
+            {artist.avatarId ? (
+              <img
+                src={`/api/images/${artist.avatarId}`}
+                alt={artist.name}
+                className="size-full object-cover"
+              />
+            ) : (
+              <UserIcon className="size-1/2 text-stone-400" weight="duotone" />
+            )}
           </div>
 
           <div className="flex-1 pb-4">
@@ -124,7 +123,7 @@ function RouteComponent() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
             >
               <HeartIcon size={24} />
             </Button>
@@ -133,7 +132,7 @@ function RouteComponent() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                  className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
                 >
                   <DotsThreeIcon size={24} weight="bold" />
                 </Button>
@@ -141,7 +140,12 @@ function RouteComponent() {
               <DropdownMenuContent>
                 <DropdownMenuItem>Share</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Edit</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/app/library/artists/$id/edit" params={{ id }}>
+                    <PencilIcon className="mr-2" />
+                    Edit
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setIsDeleteDialogOpen(true)}
                   className="text-destructive focus:text-destructive"

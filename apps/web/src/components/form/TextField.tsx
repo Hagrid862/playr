@@ -10,6 +10,7 @@ interface TextFieldProps {
   error?: string;
   onChange: (value: string) => void;
   onBlur: () => void;
+  className?: string;
 }
 
 export function TextField({
@@ -20,10 +21,11 @@ export function TextField({
   error,
   onChange,
   onBlur,
+  className,
 }: TextFieldProps) {
   const id = useId();
   return (
-    <Field data-invalid={!!error}>
+    <Field data-invalid={!!error} className={className}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <FieldContent>
         <Input
