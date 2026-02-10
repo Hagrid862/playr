@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ArtistRepository } from './repositories/artist.repository';
 import { EmailAddressRepository } from './repositories/email-address.repository';
+import { LibraryArtistRepository } from './repositories/library-artist.repository';
 import { LibraryRepository } from './repositories/library.repository';
 import { PrivateProfileRepository } from './repositories/private-profile.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
@@ -28,6 +29,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     LibraryRepository,
     PrivateProfileRepository,
     ArtistRepository,
+    LibraryArtistRepository,
     // guards
     JwtAuthGuard,
   ],
@@ -44,6 +46,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     LibraryRepository,
     PrivateProfileRepository,
     ArtistRepository,
+    LibraryArtistRepository,
     // guards
     JwtAuthGuard,
   ],
