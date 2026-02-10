@@ -45,6 +45,26 @@ export class ArtistRepository {
     });
   }
 
+  async getByIdAndOwnerId(id: string, ownerId: string): Promise<Artist | null> {
+    return await this.prisma.client.artist.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+        OR: [
+          { artistProfile: { id: ownerId } },
+          { communityProfile: { id: ownerId } },
+          {
+            privateArtistProfile: {
+              userPrivateProfile: {
+                id: ownerId,
+              },
+            },
+          },
+        ],
+      },
+    });
+  }
+
   async getPrivateByUserId(userId: string): Promise<Artist[]> {
     return await this.prisma.client.artist.findMany({
       where: {
