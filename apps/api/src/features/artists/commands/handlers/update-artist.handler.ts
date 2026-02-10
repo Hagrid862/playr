@@ -26,7 +26,7 @@ export class UpdateArtistHandler implements ICommandHandler<UpdateArtistCommand>
       throw new PreconditionFailedException('User private profile not found');
     }
 
-    const artist = await this.artistRepository.getById(artistId);
+    const artist = await this.artistRepository.getByIdAndOwnerId(artistId, userPrivateProfile.id);
 
     if (!artist) {
       throw new NotFoundException('Artist not found');
