@@ -1,9 +1,9 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
 import {
-    InternalServerErrorException,
-    NotFoundException,
-    PreconditionFailedException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
