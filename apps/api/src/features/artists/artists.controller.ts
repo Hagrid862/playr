@@ -1,12 +1,14 @@
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ZodArtist } from '@repo/contracts';
 import { CreateArtistCommand } from './commands/impl/create-artist.command';
+import { DeleteArtistCommand } from './commands/impl/delete-artist.command';
 import { UpdateArtistCommand } from './commands/impl/update-artist.command';
 import { CreateArtistRequestDto } from './dto/create-artist.request.dto';
+import { DeleteArtistResponseDto } from './dto/delete-artist.response.dto';
 import { GetPrivateArtistsResponseDto } from './dto/get-private-artists.response.dto';
 import { UpdateArtistRequestDto } from './dto/update-artist.request.dto';
 import { GetPrivateArtistsQuery } from './queries/impl/get-private-artists.query';
@@ -51,6 +53,22 @@ export class ArtistsController {
     @CurrentUser('id') userId: string,
   ): Promise<ZodArtist> {
     const command = new UpdateArtistCommand(id, request, userId);
+    return this.commandBus.execute(command);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete a private artist' })
+  @ApiResponse({
+    status: 200,
+    description: 'Artist deleted successfully',
+    type: DeleteArtistResponseDto,
+  })
+  async deleteArtist(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<ZodArtist> {
+    const command = new DeleteArtistCommand(id, userId);
     return this.commandBus.execute(command);
   }
 }
