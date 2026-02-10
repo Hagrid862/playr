@@ -1,8 +1,22 @@
 import { type Playlist } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
+import { ArtistSchema, type ZodArtist } from "./artist.schema";
+import { ImageSchema, type ZodImage } from "./image.schema";
+import { LibrarySchema, type ZodLibrary } from "./library.schema";
+import {
+  PlaylistTrackSchema,
+  type ZodPlaylistTrack,
+} from "./playlist-track.schema";
 
-export const PlaylistSchema = z.object({
+export interface ZodPlaylist extends Playlist {
+  library?: ZodLibrary | null;
+  artist?: ZodArtist | null;
+  cover?: ZodImage | null;
+  tracks?: ZodPlaylistTrack[];
+}
+
+export const PlaylistSchema: z.ZodType<ZodPlaylist> = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
@@ -14,6 +28,11 @@ export const PlaylistSchema = z.object({
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
-}) satisfies z.ZodType<Playlist>;
 
-export type ZodPlaylist = z.infer<typeof PlaylistSchema>;
+  library: z.lazy(() => LibrarySchema).optional(),
+  artist: z.lazy(() => ArtistSchema).optional(),
+  cover: z.lazy(() => ImageSchema).optional(),
+  tracks: z.array(z.lazy(() => PlaylistTrackSchema)).optional(),
+});
+
+export type ZodPlaylistInfer = z.infer<typeof PlaylistSchema>;

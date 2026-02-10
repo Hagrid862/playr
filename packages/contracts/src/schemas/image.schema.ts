@@ -1,8 +1,16 @@
 import { FileBucket, ImageUploadStatus, type Image } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
+import {
+  ImageVariantSchema,
+  type ZodImageVariant,
+} from "./image-variant.schema";
 
-export const ImageSchema = z.object({
+export interface ZodImage extends Image {
+  variants?: ZodImageVariant[];
+}
+
+export const ImageSchema: z.ZodType<ZodImage> = z.object({
   id: z.string(),
   alt: z.string().nullable(),
   bucket: z.enum(FileBucket),
@@ -15,6 +23,8 @@ export const ImageSchema = z.object({
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
-}) satisfies z.ZodType<Image>;
 
-export type ZodImage = z.infer<typeof ImageSchema>;
+  variants: z.array(z.lazy(() => ImageVariantSchema)).optional(),
+});
+
+export type ZodImageInfer = z.infer<typeof ImageSchema>;

@@ -1,14 +1,21 @@
 import { CreditRole, type TrackCredit } from "@repo/db";
 import z from "zod";
 import { zodDateTime } from "../utils/zod-datetime";
+import { TrackSchema, type ZodTrack } from "./track.schema";
 
-export const TrackCreditSchema = z.object({
+export interface ZodTrackCredit extends TrackCredit {
+  track?: ZodTrack;
+}
+
+export const TrackCreditSchema: z.ZodType<ZodTrackCredit> = z.object({
   id: z.string(),
   name: z.string(),
   role: z.enum(CreditRole),
   trackId: z.string(),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
-}) satisfies z.ZodType<TrackCredit>;
 
-export type ZodTrackCredit = z.infer<typeof TrackCreditSchema>;
+  track: z.lazy(() => TrackSchema).optional(),
+});
+
+export type ZodTrackCreditInfer = z.infer<typeof TrackCreditSchema>;

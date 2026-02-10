@@ -1,8 +1,13 @@
 import { EmailStatus, EmailType, type EmailAddress } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
+import { UserSchema, type ZodUser } from "./user.schema";
 
-export const EmailAddressSchema = z.object({
+export interface ZodEmailAddress extends EmailAddress {
+  user?: ZodUser;
+}
+
+export const EmailAddressSchema: z.ZodType<ZodEmailAddress> = z.object({
   id: z.string(),
   email: z.string(),
   type: z.enum(EmailType),
@@ -12,6 +17,8 @@ export const EmailAddressSchema = z.object({
   updatedAt: zodDateTime(),
   verifiedAt: zodDateTimeNullable(),
   deletedAt: zodDateTimeNullable(),
-}) satisfies z.ZodType<EmailAddress>;
 
-export type ZodEmailAddress = z.infer<typeof EmailAddressSchema>;
+  user: z.lazy(() => UserSchema).optional(),
+});
+
+export type ZodEmailAddressInfer = z.infer<typeof EmailAddressSchema>;

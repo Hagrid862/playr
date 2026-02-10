@@ -1,8 +1,15 @@
 import { type LibraryTrack } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
+import { LibrarySchema, type ZodLibrary } from "./library.schema";
+import { TrackSchema, type ZodTrack } from "./track.schema";
 
-export const LibraryTrackSchema = z.object({
+export interface ZodLibraryTrack extends LibraryTrack {
+  library?: ZodLibrary;
+  track?: ZodTrack;
+}
+
+export const LibraryTrackSchema: z.ZodType<ZodLibraryTrack> = z.object({
   id: z.string(),
   listenedCount: z.number().int(),
   libraryId: z.string(),
@@ -11,6 +18,9 @@ export const LibraryTrackSchema = z.object({
   updatedAt: zodDateTime(),
   listenCountResetAt: zodDateTimeNullable(),
   deletedAt: zodDateTimeNullable(),
-}) satisfies z.ZodType<LibraryTrack>;
 
-export type ZodLibraryTrack = z.infer<typeof LibraryTrackSchema>;
+  library: z.lazy(() => LibrarySchema).optional(),
+  track: z.lazy(() => TrackSchema).optional(),
+});
+
+export type ZodLibraryTrackInfer = z.infer<typeof LibraryTrackSchema>;

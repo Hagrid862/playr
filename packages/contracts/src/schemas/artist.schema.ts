@@ -1,8 +1,25 @@
 import { type Artist } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
+import { AlbumSchema, type ZodAlbum } from "./album.schema";
+import { ArtistGenreSchema, type ZodArtistGenre } from "./artist-genre.schema";
+import {
+  ArtistProfileSchema,
+  type ZodArtistProfile,
+} from "./artist-profile.schema";
+import { ImageSchema, type ZodImage } from "./image.schema";
+import { TrackSchema, type ZodTrack } from "./track.schema";
 
-export const ArtistSchema = z.object({
+export interface ZodArtist extends Artist {
+  banner?: ZodImage | null;
+  avatar?: ZodImage | null;
+  artistProfile?: ZodArtistProfile | null;
+  albums?: ZodAlbum[];
+  tracks?: ZodTrack[];
+  genres?: ZodArtistGenre[];
+}
+
+export const ArtistSchema: z.ZodType<ZodArtist> = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
@@ -13,6 +30,13 @@ export const ArtistSchema = z.object({
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
-}) satisfies z.ZodType<Artist>;
 
-export type ZodArtist = z.infer<typeof ArtistSchema>;
+  banner: z.lazy(() => ImageSchema).optional(),
+  avatar: z.lazy(() => ImageSchema).optional(),
+  artistProfile: z.lazy(() => ArtistProfileSchema).optional(),
+  albums: z.array(z.lazy(() => AlbumSchema)).optional(),
+  tracks: z.array(z.lazy(() => TrackSchema)).optional(),
+  genres: z.array(z.lazy(() => ArtistGenreSchema)).optional(),
+});
+
+export type ZodArtistInfer = z.infer<typeof ArtistSchema>;
