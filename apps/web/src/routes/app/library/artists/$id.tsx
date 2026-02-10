@@ -1,4 +1,11 @@
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { useLibraryStore } from '@/stores/library.store';
 import { DotsThreeIcon, HeartIcon, PlayIcon, ShuffleIcon, UserIcon } from '@phosphor-icons/react';
@@ -91,13 +98,23 @@ function RouteComponent() {
             >
               <HeartIcon size={24} />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
-            >
-              <DotsThreeIcon size={24} weight="bold" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-10 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                >
+                  <DotsThreeIcon size={24} weight="bold" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>Share</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Edit</DropdownMenuItem>
+                <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
