@@ -1,5 +1,13 @@
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -7,9 +15,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useDeleteArtist } from '@/hooks/api/artists/useDeleteArtist';
 import { useLibraryStore } from '@/stores/library.store';
-import { DotsThreeIcon, HeartIcon, PlayIcon, ShuffleIcon, UserIcon } from '@phosphor-icons/react';
-import { createFileRoute } from '@tanstack/react-router';
+import {
+  DotsThreeIcon,
+  HeartIcon,
+  PlayIcon,
+  ShuffleIcon,
+  TrashIcon,
+  UserIcon,
+} from '@phosphor-icons/react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/app/library/artists/$id')({
   component: RouteComponent,
@@ -17,7 +34,20 @@ export const Route = createFileRoute('/app/library/artists/$id')({
 
 function RouteComponent() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const artist = useLibraryStore((state) => state.privateArtists.find((a) => a.id === id));
+  const { mutateAsync: deleteArtist, isPending: isDeleting } = useDeleteArtist();
+
+  const handleDelete = async () => {
+    try {
+      await deleteArtist(id);
+      setIsDeleteDialogOpen(false);
+      navigate({ to: '/app/library/artists' });
+    } catch (error) {
+      console.error('Failed to delete artist:', error);
+    }
+  };
 
   if (!artist) {
     return (
@@ -112,7 +142,13 @@ function RouteComponent() {
                 <DropdownMenuItem>Share</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Edit</DropdownMenuItem>
-                <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <TrashIcon className="mr-2" />
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -120,6 +156,31 @@ function RouteComponent() {
 
         <Separator className="opacity-50" />
       </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Artist</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">{artist.name}</span>? This action
+              cannot be undone and will remove all associated local data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete Artist'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
