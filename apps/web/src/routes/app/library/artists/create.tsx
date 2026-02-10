@@ -1,99 +1,103 @@
+import { CreateArtistForm } from '@/components/artists/CreateArtistForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Field, FieldContent, FieldLabel, FieldSet } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+import { useCreateArtist } from '@/hooks/api/artists/useCreateArtist';
 import { useCreatePrivateProfile } from '@/hooks/api/private-profile';
 import { useLibraryStore } from '@/stores/library.store';
-import { CameraIcon, InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { createFileRoute } from '@tanstack/react-router';
+import { InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { CreateArtistRequest } from '@repo/contracts';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/artists/create')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
   const { libraryId, privateAccountId } = useLibraryStore();
   const { mutate: createProfile, isPending: isCreatingProfile } = useCreatePrivateProfile();
+  const {
+    mutateAsync: createArtist,
+    isPending: isCreatingArtist,
+    error: apiError,
+  } = useCreateArtist();
 
   const handleCreateProfile = () => {
     createProfile();
   };
 
+  const onSubmit = async (data: CreateArtistRequest) => {
+    try {
+      await createArtist(data);
+      await navigate({ to: '/app/library/artists' });
+    } catch (err) {
+      console.error('Failed to create artist', err);
+    }
+  };
+
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex flex-col gap-4 max-w-4xl">
-        {(!libraryId || !privateAccountId) && (
-          <Alert variant="destructive">
-            <WarningCircleIcon />
-            <AlertTitle>You cannot create local artist right now.</AlertTitle>
-            <AlertDescription>
-              <div>
-                <div className="mb-2">
-                  You need to have a private profile to be able to create and manage any local
-                  content. You can create it using button bellow.
-                </div>
-                <Button
-                  variant="outline"
-                  className="text-white"
-                  onClick={handleCreateProfile}
-                  disabled={isCreatingProfile}
-                >
-                  {isCreatingProfile ? 'Creating...' : 'Create private account'}
-                </Button>
-              </div>
+    <div className="flex items-center justify-center py-10">
+      <Card className="flex flex-col gap-6 w-full max-w-2xl">
+        <CardHeader className="flex flex-col gap-1">
+          <h2 className="text-2xl font-bold text-white">New Local Artist</h2>
+          <p className="text-muted-foreground text-sm">
+            Add a new artist to your private library collection.
+          </p>
+        </CardHeader>
+
+        <Separator />
+
+        <CardContent className="flex flex-col gap-2">
+          <Alert className="bg-primary/5 border-primary/20">
+            <InfoIcon size={20} className="text-primary" />
+            <AlertTitle className="text-primary">Note on Local Artists</AlertTitle>
+            <AlertDescription className="text-muted-foreground">
+              Local artists are only visible to you and are strictly tied to your private library.
+              Use them for your custom media collection (CDs, vinyls, etc.).
             </AlertDescription>
           </Alert>
-        )}
-        <Alert>
-          <InfoIcon />
-          <AlertTitle>You are about to create new local artist</AlertTitle>
-          <AlertDescription>
-            Local artist is only visible to you. It is bounded strictly to your private library and
-            used to organize your custom music, like from CD&apos;s and other media sources. If you
-            want to create a community artist profile, please use our artist application.
-          </AlertDescription>
-        </Alert>
-        <Separator />
-        <div className="flex gap-8">
-          <div className="flex flex-col gap-2">
-            <div className="w-42 h-42 rounded-full bg-stone-700 flex items-center justify-center">
-              <CameraIcon size={72} className="text-stone-200" />
-            </div>
-            <div className="text-center">Artist avatar</div>
-          </div>
-          <div className="w-full">
-            <FieldSet>
-              <Field>
-                <FieldLabel>
-                  <Label>Artist name</Label>
-                </FieldLabel>
-                <FieldContent>
-                  <Input placeholder="Kurt Cobain" />
-                </FieldContent>
-              </Field>
-              <Field>
-                <FieldLabel>
-                  <Label>Description</Label>
-                </FieldLabel>
-                <FieldContent>
-                  <Textarea
-                    className="min-h-24"
-                    placeholder="Kurt Cobain was Nirvana's iconic frontman who defi..."
-                  />
-                </FieldContent>
-              </Field>
-            </FieldSet>
-          </div>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
-          <Button variant="outline">Cancel</Button>
-          <Button disabled={!libraryId || !privateAccountId}>Create artist</Button>
-        </div>
-      </div>
+
+          {(!libraryId || !privateAccountId) && (
+            <Alert variant="destructive">
+              <WarningCircleIcon size={20} />
+              <AlertTitle>Private Profile Required</AlertTitle>
+              <AlertDescription>
+                <div className="flex flex-col gap-3">
+                  <p>
+                    You need a private profile to create and manage local artists. Local content is
+                    stored only in your personal library.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-fit text-white"
+                    onClick={handleCreateProfile}
+                    disabled={isCreatingProfile}
+                  >
+                    {isCreatingProfile ? 'Creating Profile...' : 'Create Private Account'}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {apiError && apiError.status !== 409 && (
+            <Alert variant="destructive">
+              <WarningCircleIcon size={20} />
+              <AlertTitle>Error Creating Artist</AlertTitle>
+              <AlertDescription>{apiError.message}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+
+        <CreateArtistForm
+          isLoading={isCreatingArtist}
+          serverErrors={apiError?.status === 409 ? { name: apiError.message } : undefined}
+          onSubmit={onSubmit}
+        />
+      </Card>
     </div>
   );
 }
