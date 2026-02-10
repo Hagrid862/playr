@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
-  LibraryArtist,
-  LibraryArtistCreateInput,
-  LibraryArtistOrderByWithRelationInput,
-  LibraryArtistUpdateInput,
-  LibraryArtistWhereInput,
+    LibraryArtist,
+    LibraryArtistCreateInput,
+    LibraryArtistOrderByWithRelationInput,
+    LibraryArtistUpdateInput,
+    LibraryArtistWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -31,6 +31,9 @@ export class LibraryArtistRepository {
           artistId,
         },
       },
+      include: {
+        artist: true,
+      },
     });
   }
 
@@ -41,6 +44,9 @@ export class LibraryArtistRepository {
         library: {
           userId,
         },
+      },
+      include: {
+        artist: true,
       },
     });
   }
@@ -59,6 +65,9 @@ export class LibraryArtistRepository {
         ...filter,
         libraryId,
       },
+      include: {
+        artist: true,
+      },
       orderBy,
     });
   }
@@ -66,6 +75,9 @@ export class LibraryArtistRepository {
   async getAllByLibraryId(libraryId: string): Promise<LibraryArtist[]> {
     return await this.prisma.client.libraryArtist.findMany({
       where: { libraryId },
+      include: {
+        artist: true,
+      },
     });
   }
 
