@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {
-    Artist,
-    ArtistCreateInput,
-    ArtistCreateManyInput,
-    ArtistOrderByWithRelationInput,
-    ArtistUpdateInput,
-    ArtistWhereInput,
+  Artist,
+  ArtistCreateInput,
+  ArtistCreateManyInput,
+  ArtistOrderByWithRelationInput,
+  ArtistUpdateInput,
+  ArtistWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -18,11 +18,17 @@ export class ArtistRepository {
   // ─────────────────────────────────────────────────────────────
 
   async getById(id: string): Promise<Artist | null> {
-    return await this.prisma.client.artist.findUnique({ where: { id } });
+    return await this.prisma.client.artist.findUnique({
+      where: { id },
+      include: { avatar: true, banner: true },
+    });
   }
 
   async getByName(name: string): Promise<Artist | null> {
-    return await this.prisma.client.artist.findFirst({ where: { name } });
+    return await this.prisma.client.artist.findFirst({
+      where: { name },
+      include: { avatar: true, banner: true },
+    });
   }
 
   async getByNameAndOwnerId(name: string, ownerId: string): Promise<Artist | null> {
@@ -42,6 +48,7 @@ export class ArtistRepository {
           },
         ],
       },
+      include: { avatar: true, banner: true },
     });
   }
 
@@ -62,6 +69,7 @@ export class ArtistRepository {
           },
         ],
       },
+      include: { avatar: true, banner: true },
     });
   }
 
@@ -75,6 +83,7 @@ export class ArtistRepository {
         },
         deletedAt: null,
       },
+      include: { avatar: true, banner: true },
     });
   }
 
@@ -91,6 +100,7 @@ export class ArtistRepository {
         ...filter,
         deletedAt: null,
       },
+      include: { avatar: true, banner: true },
       orderBy,
     });
   }
