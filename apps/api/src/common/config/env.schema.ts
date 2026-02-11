@@ -16,6 +16,9 @@ export const envSchema = z.object({
   S3_ACCESS_KEY: z.string().min(1),
   S3_SECRET_KEY: z.string().min(1),
   S3_USE_SSL: z.coerce.boolean().default(false),
+  S3_PUBLIC_BUCKET: z.string().min(1),
+  S3_PRIVATE_BUCKET: z.string().min(1),
+  S3_PUBLIC_URL: z.url().optional(),
 
   // Mail
   MAIL_HOST: z.string().min(1),

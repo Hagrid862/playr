@@ -6,4 +6,6 @@ process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh
 process.env.S3_ENDPOINT = process.env.S3_ENDPOINT || 'localhost';
 process.env.S3_ACCESS_KEY = process.env.S3_ACCESS_KEY || 'minioadmin';
 process.env.S3_SECRET_KEY = process.env.S3_SECRET_KEY || 'minioadmin';
+process.env.S3_PUBLIC_BUCKET = process.env.S3_PUBLIC_BUCKET || 'public-bucket';
+process.env.S3_PRIVATE_BUCKET = process.env.S3_PRIVATE_BUCKET || 'private-bucket';
 process.env.MAIL_HOST = process.env.MAIL_HOST || 'localhost';
