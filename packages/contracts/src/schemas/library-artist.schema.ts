@@ -5,8 +5,8 @@ import { ArtistSchema, type ZodArtist } from "./artist.schema";
 import { LibrarySchema, type ZodLibrary } from "./library.schema";
 
 export interface ZodLibraryArtist extends LibraryArtist {
-  library?: ZodLibrary;
-  artist?: ZodArtist;
+  library?: ZodLibrary | null;
+  artist?: ZodArtist | null;
 }
 
 export const LibraryArtistSchema: z.ZodType<ZodLibraryArtist> = z.object({
@@ -17,8 +17,14 @@ export const LibraryArtistSchema: z.ZodType<ZodLibraryArtist> = z.object({
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
 
-  library: z.lazy(() => LibrarySchema).optional(),
-  artist: z.lazy(() => ArtistSchema).optional(),
+  library: z
+    .lazy(() => LibrarySchema)
+    .nullable()
+    .optional(),
+  artist: z
+    .lazy(() => ArtistSchema)
+    .nullable()
+    .optional(),
 });
 
 export type ZodLibraryArtistInfer = z.infer<typeof LibraryArtistSchema>;
