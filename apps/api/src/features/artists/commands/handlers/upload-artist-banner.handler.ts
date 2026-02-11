@@ -4,11 +4,11 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    Logger,
-    NotFoundException,
-    PreconditionFailedException,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ImageSchema, ZodImage } from '@repo/contracts';

@@ -61,7 +61,12 @@ describe('LibraryArtistRepository', () => {
           },
         },
         include: {
-          artist: true,
+          artist: {
+            include: {
+              avatar: true,
+              banner: true,
+            },
+          },
         },
       });
     });
@@ -84,7 +89,12 @@ describe('LibraryArtistRepository', () => {
           },
         },
         include: {
-          artist: true,
+          artist: {
+            include: {
+              avatar: true,
+              banner: true,
+            },
+          },
         },
         orderBy: undefined,
       });

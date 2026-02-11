@@ -4,8 +4,8 @@ import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 import { AlbumSchema, type ZodAlbum } from "./album.schema";
 import { ArtistGenreSchema, type ZodArtistGenre } from "./artist-genre.schema";
 import {
-    ArtistProfileSchema,
-    type ZodArtistProfile,
+  ArtistProfileSchema,
+  type ZodArtistProfile,
 } from "./artist-profile.schema";
 import { ImageSchema, type ZodImage } from "./image.schema";
 import { TrackSchema, type ZodTrack } from "./track.schema";
