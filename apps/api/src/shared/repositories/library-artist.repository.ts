@@ -30,6 +30,9 @@ export class LibraryArtistRepository {
           libraryId,
           artistId,
         },
+        artist: {
+          deletedAt: null,
+        },
       },
       include: {
         artist: true,
@@ -43,6 +46,9 @@ export class LibraryArtistRepository {
         artistId,
         library: {
           userId,
+        },
+        artist: {
+          deletedAt: null,
         },
       },
       include: {
@@ -64,6 +70,9 @@ export class LibraryArtistRepository {
       where: {
         ...filter,
         libraryId,
+        artist: {
+          deletedAt: null,
+        },
       },
       include: {
         artist: true,
@@ -74,7 +83,12 @@ export class LibraryArtistRepository {
 
   async getAllByLibraryId(libraryId: string): Promise<LibraryArtist[]> {
     return await this.prisma.client.libraryArtist.findMany({
-      where: { libraryId },
+      where: {
+        libraryId,
+        artist: {
+          deletedAt: null,
+        },
+      },
       include: {
         artist: true,
       },
@@ -105,7 +119,14 @@ export class LibraryArtistRepository {
   }
 
   async countByLibraryId(libraryId: string): Promise<number> {
-    return await this.prisma.client.libraryArtist.count({ where: { libraryId } });
+    return await this.prisma.client.libraryArtist.count({
+      where: {
+        libraryId,
+        artist: {
+          deletedAt: null,
+        },
+      },
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
