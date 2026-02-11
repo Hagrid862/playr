@@ -4,13 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CameraIcon, CircleNotchIcon, FloppyDiskIcon, ImageIcon } from '@phosphor-icons/react';
 import { UpdateArtistRequest, UpdateArtistRequestSchema, ZodArtist } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 interface EditArtistFormProps {
   artist: ZodArtist;
   isLoading: boolean;
   serverErrors?: Partial<Record<keyof UpdateArtistRequest, string>>;
-  onSubmit: (values: UpdateArtistRequest) => Promise<void>;
+  onSubmit: (values: UpdateArtistRequest, avatar?: File) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -38,6 +38,9 @@ export function EditArtistForm({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | undefined>(undefined);
+
   const form = useForm({
     defaultValues: {
       name: artist.name,
@@ -49,9 +52,18 @@ export function EditArtistForm({
       onChange: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value);
+      await onSubmit(value, selectedAvatar);
     },
   });
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      form.setFieldValue('avatarId', 'preview'); // Trigger re-render
+    }
+  };
 
   return (
     <form
@@ -67,7 +79,7 @@ export function EditArtistForm({
         ref={avatarInputRef}
         className="hidden"
         accept="image/*"
-        onChange={(e) => console.log('Avatar selected:', e.target.files?.[0])}
+        onChange={handleAvatarSelect}
       />
       <input
         type="file"
@@ -95,7 +107,7 @@ export function EditArtistForm({
               >
                 {form.getFieldValue('bannerId') ? (
                   <img
-                    src={`/api/images/${form.getFieldValue('bannerId')}`}
+                    src={artist.banner?.url || `/api/images/${form.getFieldValue('bannerId')}`}
                     className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
                   />
                 ) : (
@@ -122,9 +134,13 @@ export function EditArtistForm({
                     avatarInputRef.current?.click();
                   }}
                 >
-                  {form.getFieldValue('avatarId') ? (
+                  {avatarPreview || form.getFieldValue('avatarId') ? (
                     <img
-                      src={`/api/images/${form.getFieldValue('avatarId')}`}
+                      src={
+                        avatarPreview ||
+                        artist.avatar?.url ||
+                        `/api/images/${form.getFieldValue('avatarId')}`
+                      }
                       className="size-full object-cover group-hover:opacity-50 transition-opacity"
                     />
                   ) : (
