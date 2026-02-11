@@ -1,5 +1,5 @@
 import { Spinner } from '@/components/ui/spinner';
-import { usePrivateArtists } from '@/hooks/api/artists/usePrivateArtists';
+import { useLibraryArtists } from '@/hooks/api/library/useLibraryArtists';
 import { useLibraryStore } from '@/stores/library.store';
 import { UserIcon } from '@phosphor-icons/react';
 import { Link, createFileRoute } from '@tanstack/react-router';
@@ -9,7 +9,7 @@ export const Route = createFileRoute('/app/library/artists/')({
 });
 
 function RouteComponent() {
-  const { isLoading } = usePrivateArtists();
+  const { isLoading } = useLibraryArtists();
   const artists = useLibraryStore((state) => state.privateArtists);
 
   if (isLoading) {
