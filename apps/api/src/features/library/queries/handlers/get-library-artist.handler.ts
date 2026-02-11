@@ -25,7 +25,6 @@ export class GetLibraryArtistHandler implements IQueryHandler<GetLibraryArtistQu
       library.id,
       artistId,
     );
-
     if (!libraryArtist) {
       throw new NotFoundException('Artist not found in user library');
     }
