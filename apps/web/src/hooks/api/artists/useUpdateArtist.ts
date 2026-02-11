@@ -14,6 +14,7 @@ export const useUpdateArtist = () => {
     onSuccess: (response, { id }) => {
       // Refresh the list and detail queries
       queryClient.invalidateQueries({ queryKey: ['artists', 'private'] });
+      queryClient.invalidateQueries({ queryKey: ['library', 'artists'] });
       queryClient.invalidateQueries({ queryKey: ['artists', id] });
 
       // Update store to keep it in sync
