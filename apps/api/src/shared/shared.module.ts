@@ -11,6 +11,7 @@ import { UserRepository } from './repositories/user.repository';
 import { HashingService } from './services/hashing.service';
 import { ImageService } from './services/image.service';
 import { PrismaService } from './services/prisma.service';
+import { StorageService } from './services/storage.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
 
 @Global()
@@ -23,6 +24,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     HashingService,
     UnitOfWorkService,
     ImageService,
+    StorageService,
     // Repositories
     UserRepository,
     EmailAddressRepository,
@@ -41,6 +43,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     HashingService,
     UnitOfWorkService,
     ImageService,
+    StorageService,
     // Repositories
     UserRepository,
     EmailAddressRepository,
