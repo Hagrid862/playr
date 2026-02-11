@@ -10,7 +10,7 @@ interface EditArtistFormProps {
   artist: ZodArtist;
   isLoading: boolean;
   serverErrors?: Partial<Record<keyof UpdateArtistRequest, string>>;
-  onSubmit: (values: UpdateArtistRequest, avatar?: File) => Promise<void>;
+  onSubmit: (values: UpdateArtistRequest, avatar?: File, banner?: File) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -41,6 +41,9 @@ export function EditArtistForm({
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [selectedAvatar, setSelectedAvatar] = useState<File | undefined>(undefined);
 
+  const [bannerPreview, setBannerPreview] = useState<string | undefined>(undefined);
+  const [selectedBanner, setSelectedBanner] = useState<File | undefined>(undefined);
+
   const form = useForm({
     defaultValues: {
       name: artist.name,
@@ -52,7 +55,7 @@ export function EditArtistForm({
       onChange: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value, selectedAvatar);
+      await onSubmit(value, selectedAvatar, selectedBanner);
     },
   });
 
@@ -62,6 +65,15 @@ export function EditArtistForm({
       setSelectedAvatar(file);
       setAvatarPreview(URL.createObjectURL(file));
       form.setFieldValue('avatarId', 'preview'); // Trigger re-render
+    }
+  };
+
+  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedBanner(file);
+      setBannerPreview(URL.createObjectURL(file));
+      form.setFieldValue('bannerId', 'preview'); // Trigger re-render
     }
   };
 
@@ -86,7 +98,7 @@ export function EditArtistForm({
         ref={bannerInputRef}
         className="hidden"
         accept="image/*"
-        onChange={(e) => console.log('Banner selected:', e.target.files?.[0])}
+        onChange={handleBannerSelect}
       />
 
       <div className="grid gap-8">
@@ -105,9 +117,13 @@ export function EditArtistForm({
                 className="relative h-48 w-full rounded-xl bg-stone-900/40 border-4 border-transparent overflow-hidden group transition-all hover:border-primary/50 cursor-pointer"
                 onClick={() => bannerInputRef.current?.click()}
               >
-                {form.getFieldValue('bannerId') ? (
+                {bannerPreview || form.getFieldValue('bannerId') ? (
                   <img
-                    src={artist.banner?.url || `/api/images/${form.getFieldValue('bannerId')}`}
+                    src={
+                      bannerPreview ||
+                      artist.banner?.url ||
+                      `/api/images/${form.getFieldValue('bannerId')}`
+                    }
                     className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
                   />
                 ) : (

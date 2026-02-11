@@ -1,6 +1,7 @@
 import { EditArtistForm } from '@/components/artists/EditArtistForm';
 import { useUpdateArtist } from '@/hooks/api/artists/useUpdateArtist';
 import { useUploadArtistAvatar } from '@/hooks/api/artists/useUploadArtistAvatar';
+import { useUploadArtistBanner } from '@/hooks/api/artists/useUploadArtistBanner';
 import { useLibraryStore } from '@/stores/library.store';
 import { UpdateArtistRequest } from '@repo/contracts';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -19,7 +20,8 @@ function EditArtistComponent() {
     error: updateError,
   } = useUpdateArtist();
 
-  const { mutateAsync: uploadAvatar, isPending: isUploading } = useUploadArtistAvatar();
+  const { mutateAsync: uploadAvatar, isPending: isUploadingAvatar } = useUploadArtistAvatar();
+  const { mutateAsync: uploadBanner, isPending: isUploadingBanner } = useUploadArtistBanner();
 
   if (!artist) {
     return (
@@ -29,14 +31,23 @@ function EditArtistComponent() {
     );
   }
 
-  const handleUpdate = async (data: UpdateArtistRequest, avatar?: File) => {
+  const handleUpdate = async (data: UpdateArtistRequest, avatar?: File, banner?: File) => {
     try {
       // First update artist data
       await updateArtist({ id, data });
 
-      // If data update was successful and we have a new avatar, upload it
+      // If data update was successful, upload images in parallel (or sequential)
+      // I'll do Promise.all for better performance if they are independent
+      const uploads = [];
       if (avatar) {
-        await uploadAvatar({ id, file: avatar });
+        uploads.push(uploadAvatar({ id, file: avatar }));
+      }
+      if (banner) {
+        uploads.push(uploadBanner({ id, file: banner }));
+      }
+
+      if (uploads.length > 0) {
+        await Promise.all(uploads);
       }
 
       navigate({ to: '/app/library/artists/$id', params: { id } });
@@ -53,7 +64,7 @@ function EditArtistComponent() {
     <div className="flex flex-col gap-8 max-w-3xl mx-auto py-8 px-4">
       <EditArtistForm
         artist={artist}
-        isLoading={isUpdating || isUploading}
+        isLoading={isUpdating || isUploadingAvatar || isUploadingBanner}
         serverErrors={updateError?.status === 409 ? { name: updateError.message } : undefined}
         onSubmit={handleUpdate}
         onCancel={handleCancel}
