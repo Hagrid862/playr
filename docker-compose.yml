@@ -78,6 +78,8 @@ services:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
       S3_USE_SSL: ${S3_USE_SSL:-false}
+      S3_PUBLIC_BUCKET: ${S3_PUBLIC_BUCKET:-public}
+      S3_PRIVATE_BUCKET: ${S3_PRIVATE_BUCKET:-private}
       MAIL_HOST: mailhog
       MAIL_PORT: 1025
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-test-access-secret}
