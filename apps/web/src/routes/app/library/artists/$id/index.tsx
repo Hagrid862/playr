@@ -64,9 +64,9 @@ function RouteComponent() {
       <div className="relative w-full px-2 mt-4">
         {/* Banner with glass effect or premium stone look */}
         <div className="h-64 w-full bg-stone-900/40 rounded-2xl shadow-sm border border-border/50 overflow-hidden relative group">
-          {artist.bannerId ? (
+          {artist.banner?.url || artist.bannerId ? (
             <img
-              src={`/api/images/${artist.bannerId}`}
+              src={artist.banner?.url || `/api/images/${artist.bannerId}`}
               alt="Banner"
               className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
             />
@@ -81,10 +81,10 @@ function RouteComponent() {
         {/* Avatar & Quick Info */}
         <div className="px-6 -mt-24 flex flex-col md:flex-row items-end gap-6 relative z-10">
           {/* Avatar */}
-          <div className="size-44 p-1 rounded-2xl shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
-            {artist.avatarId ? (
+          <div className="size-44 p-0 rounded-2xl shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
+            {artist.avatar?.url || artist.avatarId ? (
               <img
-                src={`/api/images/${artist.avatarId}`}
+                src={artist.avatar?.url || `/api/images/${artist.avatarId}`}
                 alt={artist.name}
                 className="size-full object-cover"
               />
