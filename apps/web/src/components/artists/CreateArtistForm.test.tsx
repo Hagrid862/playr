@@ -2,6 +2,7 @@ import { CreateArtistRequest, CreateArtistRequestSchema } from '@repo/contracts'
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { CreateArtistForm } from './CreateArtistForm';
 
 // Mocking link because it needs router context
@@ -81,13 +82,11 @@ describe('CreateArtistForm', () => {
   it('handles multiple validation errors correctly via validateWithZod', async () => {
     const spy = vi.spyOn(CreateArtistRequestSchema, 'safeParse').mockReturnValue({
       success: false,
-      error: {
-        issues: [
-          { path: ['name'], message: 'First error', code: 'custom' },
-          { path: ['name'], message: 'Second error', code: 'custom' },
-        ],
-      },
-    } as unknown as ReturnType<typeof CreateArtistRequestSchema.safeParse>);
+      error: new z.ZodError([
+        { path: ['name'], message: 'First error', code: 'custom' },
+        { path: ['name'], message: 'Second error', code: 'custom' },
+      ]),
+    } as ReturnType<typeof CreateArtistRequestSchema.safeParse>);
 
     render(<CreateArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);

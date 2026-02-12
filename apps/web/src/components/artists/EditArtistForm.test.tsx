@@ -7,6 +7,7 @@ import {
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { EditArtistForm } from './EditArtistForm';
 
 // Global mock for URL.createObjectURL
@@ -126,13 +127,11 @@ describe('EditArtistForm', () => {
   it('handles duplicate server validation errors in validateWithZod', async () => {
     const spy = vi.spyOn(UpdateArtistRequestSchema, 'safeParse').mockReturnValue({
       success: false,
-      error: {
-        issues: [
-          { path: ['name'], message: 'Error 1', code: 'custom' },
-          { path: ['name'], message: 'Error 2', code: 'custom' },
-        ],
-      },
-    } as unknown as ReturnType<typeof UpdateArtistRequestSchema.safeParse>);
+      error: new z.ZodError([
+        { path: ['name'], message: 'Error 1', code: 'custom' },
+        { path: ['name'], message: 'Error 2', code: 'custom' },
+      ]),
+    } as ReturnType<typeof UpdateArtistRequestSchema.safeParse>);
 
     render(<EditArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
