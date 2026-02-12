@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {
-    Album,
-    AlbumCreateInput,
-    AlbumCreateManyInput,
-    AlbumOrderByWithRelationInput,
-    AlbumUpdateInput,
-    AlbumWhereInput,
+  Album,
+  AlbumCreateInput,
+  AlbumCreateManyInput,
+  AlbumOrderByWithRelationInput,
+  AlbumUpdateInput,
+  AlbumWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -91,6 +91,101 @@ export class AlbumRepository {
         artists: true,
       },
     });
+  }
+
+  async getByIdDetailed(id: string): Promise<Album | null> {
+    return await this.prisma.client.album.findUnique({
+      where: {
+        id,
+        deletedAt: null,
+      },
+      include: {
+        cover: true,
+        artists: true,
+        tracks: {
+          orderBy: {
+            trackNumber: 'asc',
+          },
+          include: {
+            artists: true,
+          },
+        },
+      },
+    });
+  }
+
+  async hasAccess(id: string, userId: string): Promise<boolean> {
+    const album = await this.prisma.client.album.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+        OR: [
+          {
+            libraryAlbums: {
+              some: {
+                library: {
+                  userId,
+                },
+              },
+            },
+          },
+          {
+            artists: {
+              some: {
+                OR: [
+                  { artistProfile: { userId } },
+                  { communityProfile: { userId } },
+                  {
+                    privateArtistProfile: {
+                      userPrivateProfile: {
+                        userId,
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      select: { id: true },
+    });
+
+    return !!album;
+  }
+
+  async checkAccess(id: string, userId?: string): Promise<boolean> {
+    const album = await this.prisma.client.album.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        artists: {
+          select: {
+            artistProfile: { select: { id: true } },
+            communityProfile: { select: { id: true } },
+            privateArtistProfile: {
+              select: {
+                userPrivateProfile: {
+                  select: {
+                    userId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!album) return false;
+
+    // An album is public if any of its artists is a Public Profile or Community Profile
+    const isPublic = album.artists.some((a) => a.artistProfile || a.communityProfile);
+    if (isPublic) return true;
+
+    // If it's private, we must have a user and they must own one of the private profiles
+    if (!userId) return false;
+
+    return album.artists.some((a) => a.privateArtistProfile?.userPrivateProfile?.userId === userId);
   }
 
   async getPrivateByUserId(userId: string): Promise<Album[]> {
