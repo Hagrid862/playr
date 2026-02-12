@@ -1,5 +1,4 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { ArtistsController } from './artists.controller';
@@ -24,7 +23,6 @@ import { GetPrivateArtistsHandler } from './queries/handlers/get-private-artists
     GetArtistAlbumsHandler,
 
     ArtistRepository,
-    PrivateProfileRepository,
   ],
   exports: [],
 })
