@@ -39,23 +39,17 @@ describe('LibraryArtistRepository', () => {
     vi.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(repository).toBeDefined();
-  });
+  describe('findOne', () => {
+    it('should return library artist matching criteria with deletedAt: null filter', async () => {
+      mockTx.libraryArtist.findFirst.mockResolvedValue(mockLibraryArtist);
 
-  describe('getByLibraryIdAndArtistId', () => {
-    it('should return library artist with deletedAt: null filter', async () => {
-      mockTx.libraryArtist.findUnique.mockResolvedValue(mockLibraryArtist);
-
-      const result = await repository.getByLibraryIdAndArtistId('lib-123', 'artist-123');
+      const result = await repository.findOne({ libraryId: 'lib-123', artistId: 'artist-123' });
 
       expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.findUnique).toHaveBeenCalledWith({
+      expect(mockTx.libraryArtist.findFirst).toHaveBeenCalledWith({
         where: {
-          libraryId_artistId: {
-            libraryId: 'lib-123',
-            artistId: 'artist-123',
-          },
+          libraryId: 'lib-123',
+          artistId: 'artist-123',
           artist: {
             deletedAt: null,
           },
@@ -72,16 +66,16 @@ describe('LibraryArtistRepository', () => {
     });
   });
 
-  describe('getByLibraryId', () => {
-    it('should return paginated library artists with deletedAt: null filter', async () => {
+  describe('findMany', () => {
+    it('should return library artists matching criteria with deletedAt: null filter', async () => {
       mockTx.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
 
-      const result = await repository.getByLibraryId('lib-123', 1, 10);
+      const result = await repository.findMany({ where: { libraryId: 'lib-123' }, take: 10 });
 
       expect(result).toEqual([mockLibraryArtist]);
       expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
         take: 10,
-        skip: 0,
+        skip: undefined,
         where: {
           libraryId: 'lib-123',
           artist: {
@@ -101,12 +95,27 @@ describe('LibraryArtistRepository', () => {
     });
   });
 
-  describe('countByLibraryId', () => {
+  describe('exists', () => {
+    it('should return true if library artist exists', async () => {
+      mockTx.libraryArtist.count.mockResolvedValue(1);
+      const result = await repository.exists({ libraryId: 'lib-123', artistId: 'artist-123' });
+      expect(result).toBe(true);
+      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
+        where: { libraryId: 'lib-123', artistId: 'artist-123' },
+      });
+    });
+
+    it('should return false if library artist does not exist', async () => {
+      mockTx.libraryArtist.count.mockResolvedValue(0);
+      const result = await repository.exists({ libraryId: 'lib-123', artistId: 'artist-123' });
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('count', () => {
     it('should count library artists with deletedAt: null filter', async () => {
       mockTx.libraryArtist.count.mockResolvedValue(1);
-
-      const result = await repository.countByLibraryId('lib-123');
-
+      const result = await repository.count({ libraryId: 'lib-123' });
       expect(result).toBe(1);
       expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
         where: {
@@ -116,104 +125,6 @@ describe('LibraryArtistRepository', () => {
           },
         },
       });
-    });
-  });
-
-  describe('getById', () => {
-    it('should return library artist by id', async () => {
-      mockTx.libraryArtist.findUnique.mockResolvedValue(mockLibraryArtist);
-      const result = await repository.getById('la-123');
-      expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.findUnique).toHaveBeenCalledWith({ where: { id: 'la-123' } });
-    });
-  });
-
-  describe('getByArtistIdAndUserId', () => {
-    it('should return library artist by artist id and user id', async () => {
-      mockTx.libraryArtist.findFirst.mockResolvedValue(mockLibraryArtist);
-      const result = await repository.getByArtistIdAndUserId('artist-123', 'user-123');
-      expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.findFirst).toHaveBeenCalledWith({
-        where: {
-          artistId: 'artist-123',
-          library: {
-            userId: 'user-123',
-          },
-          artist: {
-            deletedAt: null,
-          },
-        },
-        include: {
-          artist: {
-            include: {
-              avatar: true,
-              banner: true,
-            },
-          },
-        },
-      });
-    });
-  });
-
-  describe('getAllByLibraryId', () => {
-    it('should return all library artists by library id', async () => {
-      mockTx.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
-      const result = await repository.getAllByLibraryId('lib-123');
-      expect(result).toEqual([mockLibraryArtist]);
-      expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
-        where: {
-          libraryId: 'lib-123',
-          artist: {
-            deletedAt: null,
-          },
-        },
-        include: {
-          artist: {
-            include: {
-              avatar: true,
-              banner: true,
-            },
-          },
-        },
-      });
-    });
-  });
-
-  describe('exists', () => {
-    it('should return true if library artist exists', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(1);
-      const result = await repository.exists('la-123');
-      expect(result).toBe(true);
-      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({ where: { id: 'la-123' } });
-    });
-
-    it('should return false if library artist does not exist', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(0);
-      const result = await repository.exists('la-123');
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('existsInLibrary', () => {
-    it('should return true if artist exists in library', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(1);
-      const result = await repository.existsInLibrary('lib-123', 'artist-123');
-      expect(result).toBe(true);
-      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
-        where: {
-          libraryId: 'lib-123',
-          artistId: 'artist-123',
-        },
-      });
-    });
-  });
-
-  describe('count', () => {
-    it('should return count of library artists', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(5);
-      const result = await repository.count();
-      expect(result).toBe(5);
-      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({ where: undefined });
     });
   });
 
@@ -250,26 +161,10 @@ describe('LibraryArtistRepository', () => {
     });
   });
 
-  describe('deleteByLibraryIdAndArtistId', () => {
-    it('should delete by library id and artist id', async () => {
-      mockTx.libraryArtist.delete.mockResolvedValue(mockLibraryArtist);
-      const result = await repository.deleteByLibraryIdAndArtistId('lib-123', 'artist-123');
-      expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.delete).toHaveBeenCalledWith({
-        where: {
-          libraryId_artistId: {
-            libraryId: 'lib-123',
-            artistId: 'artist-123',
-          },
-        },
-      });
-    });
-  });
-
-  describe('deleteAllFromLibrary', () => {
-    it('should delete all from library', async () => {
+  describe('deleteMany', () => {
+    it('should delete many library artists', async () => {
       mockTx.libraryArtist.deleteMany.mockResolvedValue({ count: 5 });
-      await repository.deleteAllFromLibrary('lib-123');
+      await repository.deleteMany({ libraryId: 'lib-123' });
       expect(mockTx.libraryArtist.deleteMany).toHaveBeenCalledWith({
         where: { libraryId: 'lib-123' },
       });
