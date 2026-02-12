@@ -37,8 +37,9 @@ describe('ArtistsController', () => {
   const mockImage: ZodImage = {
     id: 'image-123',
     url: 'https://example.com/image.jpg',
+    alt: 'image-alt',
     key: 'image-key',
-    bucket: 'image-bucket',
+    bucket: 'public',
     mimeType: 'image/jpeg',
     blurhash: null,
     reportId: null,
