@@ -16,39 +16,10 @@ export class LibraryAlbumRepository {
   // QUERIES
   // ─────────────────────────────────────────────────────────────
 
-  async getById(id: string): Promise<LibraryAlbum | null> {
-    return await this.prisma.client.libraryAlbum.findUnique({ where: { id } });
-  }
-
-  async getByLibraryIdAndAlbumId(libraryId: string, albumId: string): Promise<LibraryAlbum | null> {
-    return await this.prisma.client.libraryAlbum.findUnique({
-      where: {
-        libraryId_albumId: {
-          libraryId,
-          albumId,
-        },
-        album: {
-          deletedAt: null,
-        },
-      },
-      include: {
-        album: {
-          include: {
-            cover: true,
-            artists: true,
-          },
-        },
-      },
-    });
-  }
-
-  async getByAlbumIdAndUserId(albumId: string, userId: string): Promise<LibraryAlbum | null> {
+  async findOne(where: LibraryAlbumWhereInput): Promise<LibraryAlbum | null> {
     return await this.prisma.client.libraryAlbum.findFirst({
       where: {
-        albumId,
-        library: {
-          userId,
-        },
+        ...where,
         album: {
           deletedAt: null,
         },
@@ -64,19 +35,17 @@ export class LibraryAlbumRepository {
     });
   }
 
-  async getByLibraryId(
-    libraryId: string,
-    page: number,
-    limit: number,
-    filter?: LibraryAlbumWhereInput,
-    orderBy?: LibraryAlbumOrderByWithRelationInput,
-  ): Promise<LibraryAlbum[]> {
+  async findMany(options: {
+    where?: LibraryAlbumWhereInput;
+    take?: number;
+    skip?: number;
+    orderBy?: LibraryAlbumOrderByWithRelationInput;
+  }): Promise<LibraryAlbum[]> {
     return await this.prisma.client.libraryAlbum.findMany({
-      take: limit,
-      skip: (page - 1) * limit,
+      take: options.take,
+      skip: options.skip,
       where: {
-        ...filter,
-        libraryId,
+        ...options.where,
         album: {
           deletedAt: null,
         },
@@ -89,26 +58,7 @@ export class LibraryAlbumRepository {
           },
         },
       },
-      orderBy,
-    });
-  }
-
-  async getAllByLibraryId(libraryId: string): Promise<LibraryAlbum[]> {
-    return await this.prisma.client.libraryAlbum.findMany({
-      where: {
-        libraryId,
-        album: {
-          deletedAt: null,
-        },
-      },
-      include: {
-        album: {
-          include: {
-            cover: true,
-            artists: true,
-          },
-        },
-      },
+      orderBy: options.orderBy,
     });
   }
 
@@ -116,29 +66,15 @@ export class LibraryAlbumRepository {
   // EXISTS & COUNT
   // ─────────────────────────────────────────────────────────────
 
-  async exists(id: string): Promise<boolean> {
-    const count = await this.prisma.client.libraryAlbum.count({ where: { id } });
+  async exists(where: LibraryAlbumWhereInput): Promise<boolean> {
+    const count = await this.prisma.client.libraryAlbum.count({ where });
     return count > 0;
   }
 
-  async existsInLibrary(libraryId: string, albumId: string): Promise<boolean> {
-    const count = await this.prisma.client.libraryAlbum.count({
-      where: {
-        libraryId,
-        albumId,
-      },
-    });
-    return count > 0;
-  }
-
-  async count(filter?: LibraryAlbumWhereInput): Promise<number> {
-    return await this.prisma.client.libraryAlbum.count({ where: filter });
-  }
-
-  async countByLibraryId(libraryId: string): Promise<number> {
+  async count(where?: LibraryAlbumWhereInput): Promise<number> {
     return await this.prisma.client.libraryAlbum.count({
       where: {
-        libraryId,
+        ...where,
         album: {
           deletedAt: null,
         },
@@ -170,20 +106,9 @@ export class LibraryAlbumRepository {
     return await this.prisma.client.libraryAlbum.delete({ where: { id } });
   }
 
-  async deleteByLibraryIdAndAlbumId(libraryId: string, albumId: string): Promise<LibraryAlbum> {
-    return await this.prisma.client.libraryAlbum.delete({
-      where: {
-        libraryId_albumId: {
-          libraryId,
-          albumId,
-        },
-      },
-    });
-  }
-
-  async deleteAllFromLibrary(libraryId: string): Promise<void> {
+  async deleteMany(where: LibraryAlbumWhereInput): Promise<void> {
     await this.prisma.client.libraryAlbum.deleteMany({
-      where: { libraryId },
+      where,
     });
   }
 }
