@@ -1,4 +1,4 @@
-import { AlbumType, type Album } from "@repo/db";
+import { AlbumType, Visibility, type Album } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 import { AlbumGenreSchema, type ZodAlbumGenre } from "./album-genre.schema";
@@ -11,6 +11,7 @@ export interface ZodAlbum extends Album {
   artists?: ZodArtist[];
   tracks?: ZodTrack[];
   genres?: ZodAlbumGenre[];
+  visibility: Visibility;
 }
 
 export const AlbumSchema: z.ZodType<ZodAlbum> = z.object({
@@ -22,6 +23,7 @@ export const AlbumSchema: z.ZodType<ZodAlbum> = z.object({
   totalDuration: z.number().int(),
   releaseDate: zodDateTimeNullable(),
   coverId: z.string().nullable(),
+  visibility: z.enum(Visibility),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),

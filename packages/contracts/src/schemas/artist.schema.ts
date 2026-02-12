@@ -1,4 +1,4 @@
-import { type Artist } from "@repo/db";
+import { type Artist, Visibility } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 import { AlbumSchema, type ZodAlbum } from "./album.schema";
@@ -14,6 +14,7 @@ export interface ZodArtist extends Artist {
   banner?: ZodImage | null;
   avatar?: ZodImage | null;
   artistProfile?: ZodArtistProfile | null;
+  visibility: Visibility;
   albums?: ZodAlbum[];
   tracks?: ZodTrack[];
   genres?: ZodArtistGenre[];
@@ -27,6 +28,7 @@ export const ArtistSchema: z.ZodType<ZodArtist> = z.object({
   verified: z.boolean(),
   bannerId: z.string().nullable(),
   avatarId: z.string().nullable(),
+  visibility: z.enum(Visibility),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
