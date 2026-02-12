@@ -28,7 +28,10 @@ export const AlbumSchema: z.ZodType<ZodAlbum> = z.object({
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
 
-  cover: z.lazy(() => ImageSchema).optional(),
+  cover: z
+    .lazy(() => ImageSchema)
+    .nullable()
+    .optional(),
   artists: z.array(z.lazy(() => ArtistSchema)).optional(),
   tracks: z.array(z.lazy(() => TrackSchema)).optional(),
   genres: z.array(z.lazy(() => AlbumGenreSchema)).optional(),
