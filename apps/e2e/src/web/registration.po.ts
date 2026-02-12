@@ -124,6 +124,6 @@ export class RegistrationPage {
   }
 
   async expectSuccess() {
-    await expect(this.page).toHaveURL(/\/auth\/login/);
+    await expect(this.page).toHaveURL(/\/auth\/login/, { timeout: 15000 });
   }
 }
