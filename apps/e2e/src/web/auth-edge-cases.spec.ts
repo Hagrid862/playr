@@ -17,14 +17,23 @@ test.describe("Auth Edge Cases", () => {
     await loginPage.goto();
     // Use a random email that doesn't exist
     // Password must meet complexity requirements: 8 chars, 1 upper, 1 lower, 1 number
-    await loginPage.login(`nonexistent_${Date.now()}@example.com`, "WrongPass123!");
-    
+    await loginPage.login(
+      `nonexistent_${Date.now()}@example.com`,
+      "WrongPass123!",
+    );
+
     // Expect global error message
-    await expect(page.locator('.text-destructive')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('.text-destructive')).toHaveText(/Invalid credentials|User not found/i);
+    await expect(page.locator(".text-destructive")).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.locator(".text-destructive")).toHaveText(
+      /Invalid credentials|User not found/i,
+    );
   });
 
-  test("should show error for correct email but wrong password", async ({ page }) => {
+  test("should show error for correct email but wrong password", async ({
+    page,
+  }) => {
     // 1. Create a user first
     const timestamp = Date.now();
     const user = {
@@ -50,10 +59,14 @@ test.describe("Auth Edge Cases", () => {
     // 2. Try to login with wrong password
     // MUST meet complexity requirements to enable the login button
     await loginPage.goto();
-    await loginPage.login(user.email, "WrongPassword123!"); 
-    
-    await expect(page.locator('.text-destructive')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('.text-destructive')).toHaveText(/Invalid credentials/i);
+    await loginPage.login(user.email, "WrongPassword123!");
+
+    await expect(page.locator(".text-destructive")).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.locator(".text-destructive")).toHaveText(
+      /Invalid credentials/i,
+    );
   });
 
   // ─── Registration Conflicts ──────────────────────────────────────
@@ -104,8 +117,10 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.submit();
 
     // Expect global error message for conflict
-    await expect(page.locator('.text-destructive').first()).toBeVisible();
-    await expect(page.locator('.text-destructive').first()).toHaveText(/taken|exists|duplicate/i);
+    await expect(page.locator(".text-destructive").first()).toBeVisible();
+    await expect(page.locator(".text-destructive").first()).toHaveText(
+      /taken|exists|duplicate/i,
+    );
   });
 
   test("should prevent duplicate email registration", async ({ page }) => {
@@ -154,16 +169,20 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.submit();
 
     // Expect global error message
-    await expect(page.locator('.text-destructive').first()).toBeVisible();
-    await expect(page.locator('.text-destructive').first()).toHaveText(/taken|exists|duplicate/i);
+    await expect(page.locator(".text-destructive").first()).toBeVisible();
+    await expect(page.locator(".text-destructive").first()).toHaveText(
+      /taken|exists|duplicate/i,
+    );
   });
 
   // ─── Session Handling ────────────────────────────────────────────
 
-  test("should redirect to login when accessing protected route without session", async ({ page }) => {
+  test("should redirect to login when accessing protected route without session", async ({
+    page,
+  }) => {
     // Ensure we are logged out (new context/page always starts clean, but good to be explicit mentally)
     await page.goto("/app/library/overview");
-    
+
     // Should be redirected to login
     await expect(page).toHaveURL(/\/auth\/login/);
   });

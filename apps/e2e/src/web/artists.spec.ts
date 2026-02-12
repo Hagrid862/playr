@@ -77,7 +77,9 @@ test.describe("Artist CRUD Workflow", () => {
     await page.waitForLoadState("networkidle");
 
     const lockedState = page.getByText("Private Library Locked");
-    const contentState = page.getByText("No content in your private library yet");
+    const contentState = page.getByText(
+      "No content in your private library yet",
+    );
 
     // Wait for either state to load
     await expect(lockedState.or(contentState)).toBeVisible({ timeout: 10000 });

@@ -5,9 +5,9 @@ import { PrivateProfileRepository } from '@/shared/repositories/private-profile.
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import {
-    ConflictException,
-    InternalServerErrorException,
-    PreconditionFailedException,
+  ConflictException,
+  InternalServerErrorException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ZodArtist } from '@repo/contracts';

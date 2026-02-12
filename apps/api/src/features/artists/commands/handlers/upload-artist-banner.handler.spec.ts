@@ -4,10 +4,10 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    NotFoundException,
-    PreconditionFailedException,
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';

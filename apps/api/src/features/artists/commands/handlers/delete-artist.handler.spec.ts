@@ -2,9 +2,9 @@ import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import {
-    InternalServerErrorException,
-    NotFoundException,
-    PreconditionFailedException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ZodArtist } from '@repo/contracts';
