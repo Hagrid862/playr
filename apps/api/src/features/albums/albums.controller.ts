@@ -3,11 +3,12 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { AlbumAccessGuard } from '@/shared/guards/album-access.guard';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodAlbum } from '@repo/contracts';
 import { CreateAlbumCommand } from './commands/impl/create-album.command';
+import { DeleteAlbumCommand } from './commands/impl/delete-album.command';
 import { UpdateAlbumCommand } from './commands/impl/update-album.command';
 import { CreateAlbumRequestDto } from './dto/create-album.request.dto';
 import { CreateAlbumResponseDto } from './dto/create-album.response.dto';
@@ -99,6 +100,34 @@ export class AlbumsController {
     @CurrentUser('id') userId: string,
   ): Promise<ZodAlbum> {
     const command = new UpdateAlbumCommand(id, body, userId);
+    return this.commandBus.execute(command);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete a private album' })
+  @ApiResponse({
+    status: 200,
+    description: 'Album deleted successfully',
+    type: GetAlbumResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album not found',
+    type: ApiErrorResponseDto,
+  })
+  async deleteAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
+    const command = new DeleteAlbumCommand(id, userId);
     return this.commandBus.execute(command);
   }
 
