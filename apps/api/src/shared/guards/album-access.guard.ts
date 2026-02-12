@@ -1,5 +1,11 @@
 import { CHECK_ALBUM_ACCESS_KEY } from '@/common/decorators/check-album-access.decorator';
-import { CanActivate, ExecutionContext, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AlbumRepository } from '../repositories/album.repository';
 
@@ -19,7 +25,7 @@ export class AlbumAccessGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const albumId = request.params[paramName];
-    const userId = request.user?.id;
+    const userId = request.user?.user?.id;
 
     if (!albumId) {
       return true;
@@ -28,7 +34,12 @@ export class AlbumAccessGuard implements CanActivate {
     const hasAccess = await this.albumRepository.checkAccess(albumId, userId);
 
     if (!hasAccess) {
-      throw new NotFoundException('Album not found');
+      // We check if it exists at all to give a better error message.
+      const exists = await this.albumRepository.exists(albumId);
+      if (!exists) {
+        throw new NotFoundException('Album not found');
+      }
+      throw new ForbiddenException('You do not have access to this album');
     }
 
     return true;
