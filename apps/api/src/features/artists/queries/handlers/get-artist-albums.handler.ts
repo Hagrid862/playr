@@ -9,6 +9,21 @@ export class GetArtistAlbumsHandler implements IQueryHandler<GetArtistAlbumsQuer
 
   async execute(query: GetArtistAlbumsQuery): Promise<ZodAlbum[]> {
     const { artistId, userId } = query;
-    return this.albumRepository.getByArtistIdAndUserId(artistId, userId);
+    return this.albumRepository.findMany({
+      where: {
+        artists: { some: { id: artistId } },
+        OR: [
+          { visibility: 'PUBLIC' },
+          { access: { some: { userId } } },
+          {
+            artists: {
+              some: {
+                access: { some: { userId } },
+              },
+            },
+          },
+        ],
+      },
+    });
   }
 }

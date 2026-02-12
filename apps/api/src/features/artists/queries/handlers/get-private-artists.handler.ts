@@ -9,6 +9,12 @@ export class GetPrivateArtistsHandler implements IQueryHandler<GetPrivateArtists
 
   async execute(query: GetPrivateArtistsQuery): Promise<ZodArtist[]> {
     const { userId } = query;
-    return this.artistRepository.getPrivateByUserId(userId);
+    return this.artistRepository.findMany({
+      where: {
+        access: {
+          some: { userId },
+        },
+      },
+    });
   }
 }
