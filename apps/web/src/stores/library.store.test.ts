@@ -7,6 +7,7 @@ const mockArtist: ZodArtist = {
   name: 'Test Artist',
   description: 'A test artist',
   isCommunity: false,
+  visibility: 'PUBLIC',
   verified: true,
   avatarId: null,
   bannerId: null,
