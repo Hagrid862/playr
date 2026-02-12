@@ -299,4 +299,38 @@ describe('UploadArtistAvatarHandler', () => {
       expect.any(Error),
     );
   });
+
+  it('should handle orphaned old avatar (exists in artist but not in image table) successfully', async () => {
+    const command = new UploadArtistAvatarCommand(
+      'artist-123',
+      Buffer.from('test'),
+      'image/jpeg',
+      'user-123',
+    );
+
+    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
+    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({
+      id: 'artist-123',
+      avatarId: 'img-old',
+    } as any);
+    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue(null); // Orphaned
+    vi.mocked(imageService.validateImage).mockResolvedValue(true);
+    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
+    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    const result = await handler.execute(command);
+    const expectedNewKey = `artists/artist-123/avatar-${new Date('2024-01-01').getTime()}.webp`;
+
+    expect(result.id).toBe('img-new');
+    expect(storageService.uploadFile).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      FileBucket.public,
+      expectedNewKey,
+      expect.any(Object),
+    );
+    expect(mockTx.image.delete).toHaveBeenCalledWith({ where: { id: 'img-old' } });
+
+    // Should NOT attempt to delete old file from storage because it wasn't found
+    expect(storageService.deleteFile).not.toHaveBeenCalledWith(FileBucket.public, 'old-key');
+  });
 });
