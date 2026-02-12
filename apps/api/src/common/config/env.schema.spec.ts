@@ -39,6 +39,7 @@ describe('envSchema', () => {
       MAIL_HOST: 'mail.example.com',
       MAIL_PORT: 1025,
       MAIL_FROM: 'noreply@playr.com',
+      THROTTLE_ENABLED: true,
     });
   });
 

@@ -20,6 +20,7 @@ import { SharedModule } from './shared/shared.module';
       {
         ttl: 60000,
         limit: 120,
+        skipIf: () => process.env.THROTTLE_ENABLED === 'false',
       },
     ]),
     FeaturesModule,

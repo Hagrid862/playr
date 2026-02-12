@@ -26,6 +26,9 @@ export const envSchema = z.object({
   MAIL_USER: z.string().optional(),
   MAIL_PASS: z.string().optional(),
   MAIL_FROM: z.string().default('noreply@playr.com'),
+
+  // Throttling
+  THROTTLE_ENABLED: z.coerce.boolean().default(true),
 });
 
 export type Env = z.infer<typeof envSchema>;
