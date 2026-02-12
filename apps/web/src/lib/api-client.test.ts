@@ -265,4 +265,195 @@ describe('ApiClient', () => {
     await expect(request).rejects.toThrow(ApiError);
     await expect(request).rejects.toMatchObject({ data: {} });
   });
+
+  it('handles FormData body correctly', async () => {
+    const formData = new FormData();
+    formData.append('file', 'test-content');
+
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true }),
+      }),
+    );
+
+    const result = await api.request('upload', { body: formData });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('upload'),
+      expect.objectContaining({
+        body: formData,
+      }),
+    );
+
+    // Verify Content-Type was deleted
+    const callHeaders = mockFetch.mock.calls[0][1].headers;
+    expect(callHeaders['Content-Type']).toBeUndefined();
+    expect(result).toEqual({ success: true });
+  });
+
+  it('queues concurrent requests during refresh and retries them', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store');
+    useAuthStore.getState().logout();
+
+    // 1st request: Returns 401, starts refresh
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+
+    // 2nd request: Concurrent request also returning 401, should be queued
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+
+    // Refresh response
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { accessToken: 'shared-token' } }),
+      }),
+    );
+
+    // Two successful retries after refresh
+    mockFetch.mockResolvedValue(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true }),
+      }),
+    );
+
+    // Start both requests concurrently
+    const [res1, res2] = await Promise.all([api.request('req1'), api.request('req2')]);
+
+    expect(res1).toEqual({ success: true });
+    expect(res2).toEqual({ success: true });
+    expect(useAuthStore.getState().accessToken).toBe('shared-token');
+  });
+
+  it('rejects queued requests if refresh fails', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store');
+    useAuthStore.getState().logout();
+
+    // 1st request fails with 401
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+
+    // 2nd request concurrent
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+
+    // Refresh fails
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 500,
+        json: async () => ({}),
+      }),
+    );
+
+    const [res1, res2] = await Promise.allSettled([api.request('req1'), api.request('req2')]);
+
+    expect(res1.status).toBe('rejected');
+    expect(res2.status).toBe('rejected');
+  });
+
+  it('handles refresh response with missing token in queued requests', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store');
+    useAuthStore.getState().logout();
+
+    // 1st request: Returns 401, starts refresh
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+    // 2nd request: Concurrent, gets queued
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      }),
+    );
+
+    // Refresh returns 200 but NO token in data
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: {} }),
+      }),
+    );
+
+    const results = await Promise.allSettled([api.request('req1'), api.request('req2')]);
+
+    expect(results[0].status).toBe('rejected');
+    expect((results[0] as PromiseRejectedResult).reason.message).toBe(
+      'Refresh token response missing access token',
+    );
+    expect(results[1].status).toBe('rejected');
+    expect((results[1] as PromiseRejectedResult).reason.message).toBe(
+      'Refresh token response missing access token',
+    );
+  });
+
+  it('handles FormData with custom headers', async () => {
+    const formData = new FormData();
+    mockFetch.mockResolvedValueOnce(
+      createMock<Response>({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true }),
+      }),
+    );
+
+    await api.request('upload-custom', {
+      body: formData,
+      headers: { 'X-Custom': 'value' },
+    });
+
+    const callHeaders = mockFetch.mock.calls[0][1].headers;
+    expect(callHeaders['Content-Type']).toBeUndefined();
+    expect(callHeaders['X-Custom']).toBe('value');
+  });
+
+  // Create a type-safe accessor for private members of ApiClient for testing purposes.
+  // This avoids using 'any' and maintains code quality standards.
+  interface ApiClientInternals {
+    failedQueue: { resolve: (t: string) => void; reject: (e: unknown) => void }[];
+    processQueue: (error: unknown, token?: string | null) => void;
+  }
+
+  it('processQueue handles null token by resolving with empty string', () => {
+    const mockResolve = vi.fn();
+    const internals = api as unknown as ApiClientInternals;
+
+    internals.failedQueue = [{ resolve: mockResolve, reject: vi.fn() }];
+    internals.processQueue(null, null);
+
+    expect(mockResolve).toHaveBeenCalledWith('');
+  });
 });
