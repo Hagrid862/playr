@@ -1,13 +1,11 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
 import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-  BadRequestException,
-  InternalServerErrorException,
-  NotFoundException,
-  PreconditionFailedException,
+    BadRequestException,
+    InternalServerErrorException,
+    NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
@@ -18,7 +16,6 @@ import { UploadArtistAvatarHandler } from './upload-artist-avatar.handler';
 describe('UploadArtistAvatarHandler', () => {
   let handler: UploadArtistAvatarHandler;
   let artistRepository: ArtistRepository;
-  let privateProfileRepository: PrivateProfileRepository;
   let storageService: StorageService;
   let imageService: ImageService;
   let prismaService: PrismaService;
@@ -53,13 +50,7 @@ describe('UploadArtistAvatarHandler', () => {
         {
           provide: ArtistRepository,
           useValue: {
-            getByIdAndOwnerId: vi.fn(),
-          },
-        },
-        {
-          provide: PrivateProfileRepository,
-          useValue: {
-            getByUserId: vi.fn(),
+            findOne: vi.fn(),
           },
         },
         {
@@ -94,7 +85,6 @@ describe('UploadArtistAvatarHandler', () => {
 
     handler = module.get<UploadArtistAvatarHandler>(UploadArtistAvatarHandler);
     artistRepository = module.get<ArtistRepository>(ArtistRepository);
-    privateProfileRepository = module.get<PrivateProfileRepository>(PrivateProfileRepository);
     storageService = module.get<StorageService>(StorageService);
     imageService = module.get<ImageService>(ImageService);
     prismaService = module.get<PrismaService>(PrismaService);
@@ -116,8 +106,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({
+    vi.mocked(artistRepository.findOne).mockResolvedValue({
       id: 'artist-123',
       avatarId: 'img-old',
     } as any);
@@ -153,8 +142,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockImplementation(async (_buf, _bucket, key) => ({
@@ -170,19 +158,6 @@ describe('UploadArtistAvatarHandler', () => {
     expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.public, expectedNewKey);
   });
 
-  it('should throw PreconditionFailedException if user private profile not found', async () => {
-    const command = new UploadArtistAvatarCommand(
-      'artist-123',
-      Buffer.from('test'),
-      'image/jpeg',
-      'user-123',
-    );
-
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue(null);
-
-    await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
-  });
-
   it('should throw NotFoundException if artist not found', async () => {
     const command = new UploadArtistAvatarCommand(
       'artist-123',
@@ -191,8 +166,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue(null);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -205,8 +179,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
     vi.mocked(imageService.validateImage).mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
@@ -220,8 +193,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -247,8 +219,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({
+    vi.mocked(artistRepository.findOne).mockResolvedValue({
       id: 'artist-123',
       avatarId: 'img-old',
     } as any);
@@ -280,8 +251,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -308,8 +278,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
-    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({
+    vi.mocked(artistRepository.findOne).mockResolvedValue({
       id: 'artist-123',
       avatarId: 'img-old',
     } as any);

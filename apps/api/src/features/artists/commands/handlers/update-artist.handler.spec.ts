@@ -1,12 +1,6 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import {
-  ConflictException,
-  InternalServerErrorException,
-  NotFoundException,
-  PreconditionFailedException,
-} from '@nestjs/common';
+import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ZodArtist } from '@repo/contracts';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -16,11 +10,9 @@ import { UpdateArtistHandler } from './update-artist.handler';
 describe('UpdateArtistHandler', () => {
   let handler: UpdateArtistHandler;
   let artistRepository: DeepMocked<ArtistRepository>;
-  let privateProfileRepository: DeepMocked<PrivateProfileRepository>;
 
   const mockUserId = 'user-123';
   const mockArtistId = 'artist-123';
-  const mockProfile = { id: 'profile-123', userId: mockUserId };
   const mockArtist: ZodArtist = {
     id: mockArtistId,
     name: 'Old Name',
@@ -34,18 +26,14 @@ describe('UpdateArtistHandler', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+    visibility: 'PUBLIC',
   };
 
   beforeEach(async () => {
     artistRepository = createMock<ArtistRepository>();
-    privateProfileRepository = createMock<PrivateProfileRepository>();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UpdateArtistHandler,
-        { provide: ArtistRepository, useValue: artistRepository },
-        { provide: PrivateProfileRepository, useValue: privateProfileRepository },
-      ],
+      providers: [UpdateArtistHandler, { provide: ArtistRepository, useValue: artistRepository }],
     }).compile();
 
     handler = module.get<UpdateArtistHandler>(UpdateArtistHandler);
@@ -56,9 +44,8 @@ describe('UpdateArtistHandler', () => {
     const command = new UpdateArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
-    privateProfileRepository.getByUserId.mockResolvedValue(mockProfile as any);
-    artistRepository.getByIdAndOwnerId.mockResolvedValue(mockArtist as any);
-    artistRepository.getByNameAndOwnerId.mockResolvedValue(null);
+    artistRepository.findOne.mockResolvedValueOnce(mockArtist as any); // Check existence
+    artistRepository.findOne.mockResolvedValueOnce(null); // Check name conflict
     artistRepository.update.mockResolvedValue(mockUpdatedArtist as any);
 
     const result = await handler.execute(command);
@@ -72,31 +59,23 @@ describe('UpdateArtistHandler', () => {
     const command = new UpdateArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
-    privateProfileRepository.getByUserId.mockResolvedValue(mockProfile as any);
-    artistRepository.getByIdAndOwnerId.mockResolvedValue(mockArtist as any);
+    artistRepository.findOne.mockResolvedValue(mockArtist as any);
     artistRepository.update.mockResolvedValue(mockUpdatedArtist as any);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockUpdatedArtist);
-    expect(artistRepository.getByNameAndOwnerId).not.toHaveBeenCalled();
+    // Should call findOne only once for existence check
+    expect(artistRepository.findOne).toHaveBeenCalledTimes(1);
     expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
       name: undefined,
       description: 'New Description',
     });
   });
 
-  it('should throw PreconditionFailedException if private profile is missing', async () => {
-    const command = new UpdateArtistCommand(mockArtistId, {}, mockUserId);
-    privateProfileRepository.getByUserId.mockResolvedValue(null);
-
-    await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
-  });
-
   it('should throw NotFoundException if artist is missing', async () => {
     const command = new UpdateArtistCommand(mockArtistId, {}, mockUserId);
-    privateProfileRepository.getByUserId.mockResolvedValue(mockProfile as any);
-    artistRepository.getByIdAndOwnerId.mockResolvedValue(null);
+    artistRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -105,17 +84,15 @@ describe('UpdateArtistHandler', () => {
     const dto = { name: 'Taken Name' };
     const command = new UpdateArtistCommand(mockArtistId, dto, mockUserId);
 
-    privateProfileRepository.getByUserId.mockResolvedValue(mockProfile as any);
-    artistRepository.getByIdAndOwnerId.mockResolvedValue(mockArtist as any);
-    artistRepository.getByNameAndOwnerId.mockResolvedValue({ id: 'other-artist' } as any);
+    artistRepository.findOne.mockResolvedValueOnce(mockArtist as any); // Existence
+    artistRepository.findOne.mockResolvedValueOnce({ id: 'other-artist' } as any); // Conflict
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new UpdateArtistCommand(mockArtistId, {}, mockUserId);
-    privateProfileRepository.getByUserId.mockResolvedValue(mockProfile as any);
-    artistRepository.getByIdAndOwnerId.mockResolvedValue(mockArtist as any);
+    artistRepository.findOne.mockResolvedValue(mockArtist as any);
     artistRepository.update.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);

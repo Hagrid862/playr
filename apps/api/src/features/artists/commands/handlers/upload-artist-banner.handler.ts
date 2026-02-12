@@ -1,14 +1,12 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
 import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-  BadRequestException,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-  PreconditionFailedException,
+    BadRequestException,
+    InternalServerErrorException,
+    Logger,
+    NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ImageSchema, ZodImage } from '@repo/contracts';
@@ -21,7 +19,6 @@ export class UploadArtistBannerHandler implements ICommandHandler<UploadArtistBa
 
   constructor(
     private readonly artistRepository: ArtistRepository,
-    private readonly privateProfileRepository: PrivateProfileRepository,
     private readonly storageService: StorageService,
     private readonly imageService: ImageService,
     private readonly prisma: PrismaService,
@@ -30,14 +27,11 @@ export class UploadArtistBannerHandler implements ICommandHandler<UploadArtistBa
   async execute(command: UploadArtistBannerCommand): Promise<ZodImage> {
     const { artistId, file, userId } = command;
 
-    // Validate user has a private profile
-    const userPrivateProfile = await this.privateProfileRepository.getByUserId(userId);
-    if (!userPrivateProfile) {
-      throw new PreconditionFailedException('User private profile not found');
-    }
-
     // Validate artist existence and ownership
-    const artist = await this.artistRepository.getByIdAndOwnerId(artistId, userPrivateProfile.id);
+    const artist = await this.artistRepository.findOne({
+      id: artistId,
+      access: { some: { userId, role: 'OWNER' } },
+    });
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
