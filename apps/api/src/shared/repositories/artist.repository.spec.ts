@@ -17,6 +17,7 @@ describe('ArtistRepository', () => {
     verified: false,
     bannerId: null,
     avatarId: null,
+    visibility: 'PRIVATE',
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -44,141 +45,50 @@ describe('ArtistRepository', () => {
     vi.clearAllMocks();
   });
 
-  describe('getById', () => {
-    it('should return artist by id', async () => {
-      mockTx.artist.findUnique.mockResolvedValue(mockArtist);
-      const result = await repository.getById('artist-123');
-      expect(result).toEqual(mockArtist);
-      expect(mockTx.artist.findUnique).toHaveBeenCalledWith({
-        where: { id: 'artist-123' },
-        include: { avatar: true, banner: true },
-      });
-    });
-  });
-
-  describe('getByName', () => {
-    it('should return artist by name', async () => {
+  describe('findOne', () => {
+    it('should return artist matching where clause', async () => {
       mockTx.artist.findFirst.mockResolvedValue(mockArtist);
-      const result = await repository.getByName('Test Artist');
+      const result = await repository.findOne({ id: 'artist-123' });
       expect(result).toEqual(mockArtist);
       expect(mockTx.artist.findFirst).toHaveBeenCalledWith({
-        where: { name: 'Test Artist' },
+        where: { id: 'artist-123', deletedAt: null },
         include: { avatar: true, banner: true },
       });
     });
   });
 
-  describe('getByNameAndOwnerId', () => {
-    it('should return artist by name and owner id', async () => {
-      mockTx.artist.findFirst.mockResolvedValue(mockArtist);
-      const result = await repository.getByNameAndOwnerId('Test Artist', 'owner-123');
-      expect(result).toEqual(mockArtist);
-      expect(mockTx.artist.findFirst).toHaveBeenCalledWith({
-        where: {
-          name: 'Test Artist',
-          deletedAt: null,
-          OR: [
-            { artistProfile: { id: 'owner-123' } },
-            { communityProfile: { id: 'owner-123' } },
-            {
-              privateArtistProfile: {
-                userPrivateProfile: {
-                  id: 'owner-123',
-                },
-              },
-            },
-          ],
-        },
-        include: { avatar: true, banner: true },
-      });
-    });
-  });
-
-  describe('getByIdAndOwnerId', () => {
-    it('should return artist by id and owner id', async () => {
-      mockTx.artist.findFirst.mockResolvedValue(mockArtist);
-      const result = await repository.getByIdAndOwnerId('artist-123', 'owner-123');
-      expect(result).toEqual(mockArtist);
-      expect(mockTx.artist.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: 'artist-123',
-          deletedAt: null,
-          OR: [
-            { artistProfile: { id: 'owner-123' } },
-            { communityProfile: { id: 'owner-123' } },
-            {
-              privateArtistProfile: {
-                userPrivateProfile: {
-                  id: 'owner-123',
-                },
-              },
-            },
-          ],
-        },
-        include: { avatar: true, banner: true },
-      });
-    });
-  });
-
-  describe('getPrivateByUserId', () => {
-    it('should return private artists by user id', async () => {
+  describe('findMany', () => {
+    it('should return multiple artists matching options', async () => {
       mockTx.artist.findMany.mockResolvedValue([mockArtist]);
-      const result = await repository.getPrivateByUserId('user-123');
+      const result = await repository.findMany({ take: 5 });
       expect(result).toEqual([mockArtist]);
       expect(mockTx.artist.findMany).toHaveBeenCalledWith({
-        where: {
-          privateArtistProfile: {
-            userPrivateProfile: {
-              userId: 'user-123',
-            },
-          },
-          deletedAt: null,
-        },
+        where: { deletedAt: null },
+        take: 5,
+        skip: undefined,
         include: { avatar: true, banner: true },
+        orderBy: { createdAt: 'desc' },
       });
     });
   });
 
-  describe('getPaginated', () => {
-    it('should return paginated artists with deletedAt: null filter', async () => {
-      mockTx.artist.findMany.mockResolvedValue([mockArtist]);
-
-      const result = await repository.getPaginated(1, 10);
-
-      expect(result).toEqual([mockArtist]);
-      expect(mockTx.artist.findMany).toHaveBeenCalledWith({
-        take: 10,
-        skip: 0,
-        where: {
-          deletedAt: null,
-        },
-        include: {
-          avatar: true,
-          banner: true,
-        },
-        orderBy: undefined,
-      });
+  describe('checkAccess', () => {
+    it('should return true if artist is public', async () => {
+      mockTx.artist.findFirst.mockResolvedValue({ id: 'artist-123' } as any);
+      const result = await repository.checkAccess('artist-123');
+      expect(result).toBe(true);
     });
 
-    it('should merge provided filter with deletedAt: null', async () => {
-      mockTx.artist.findMany.mockResolvedValue([]);
-      const customFilter = { name: { contains: 'Test' } };
+    it('should return true if user has access', async () => {
+      mockTx.artist.findFirst.mockResolvedValue({ id: 'artist-123' } as any);
+      const result = await repository.checkAccess('artist-123', 'user-123');
+      expect(result).toBe(true);
+    });
 
-      await repository.getPaginated(1, 10, customFilter);
-
-      expect(mockTx.artist.findMany).toHaveBeenCalledWith({
-        take: 10,
-        skip: 0,
-        where: {
-          name: { contains: 'Test' },
-          deletedAt: null,
-        },
-        include: {
-          avatar: true,
-          banner: true,
-        },
-        orderBy: undefined,
-      });
+    it('should return false if no access', async () => {
+      mockTx.artist.findFirst.mockResolvedValue(null);
+      const result = await repository.checkAccess('artist-123', 'user-123');
+      expect(result).toBe(false);
     });
   });
 
@@ -215,7 +125,7 @@ describe('ArtistRepository', () => {
   describe('create', () => {
     it('should create an artist', async () => {
       mockTx.artist.create.mockResolvedValue(mockArtist);
-      const data = { name: 'New Artist' };
+      const data = { name: 'New Artist', visibility: 'PRIVATE' } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockArtist);
       expect(mockTx.artist.create).toHaveBeenCalledWith({ data });
@@ -225,7 +135,7 @@ describe('ArtistRepository', () => {
   describe('createMany', () => {
     it('should create many artists', async () => {
       mockTx.artist.createManyAndReturn.mockResolvedValue([mockArtist]);
-      const data = [{ name: 'Artist 1' }];
+      const data = [{ name: 'Artist 1', visibility: 'PRIVATE' }] as any;
       const result = await repository.createMany(data);
       expect(result).toEqual([mockArtist]);
       expect(mockTx.artist.createManyAndReturn).toHaveBeenCalledWith({ data });
