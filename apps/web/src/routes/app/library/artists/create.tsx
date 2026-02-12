@@ -1,10 +1,8 @@
 import { CreateArtistForm } from '@/components/artists/CreateArtistForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCreateArtist } from '@/hooks/api/artists/useCreateArtist';
-import { useCreatePrivateProfile } from '@/hooks/api/private-profile';
 import { useLibraryStore } from '@/stores/library.store';
 import { InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { CreateArtistRequest } from '@repo/contracts';
@@ -16,17 +14,12 @@ export const Route = createFileRoute('/app/library/artists/create')({
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const { libraryId, privateAccountId } = useLibraryStore();
-  const { mutate: createProfile, isPending: isCreatingProfile } = useCreatePrivateProfile();
+  const { libraryId } = useLibraryStore();
   const {
     mutateAsync: createArtist,
     isPending: isCreatingArtist,
     error: apiError,
   } = useCreateArtist();
-
-  const handleCreateProfile = () => {
-    createProfile();
-  };
 
   const onSubmit = async (data: CreateArtistRequest) => {
     try {
@@ -59,26 +52,12 @@ function RouteComponent() {
             </AlertDescription>
           </Alert>
 
-          {(!libraryId || !privateAccountId) && (
+          {!libraryId && (
             <Alert variant="destructive">
               <WarningCircleIcon size={20} />
-              <AlertTitle>Private Profile Required</AlertTitle>
+              <AlertTitle>Library unavailable</AlertTitle>
               <AlertDescription>
-                <div className="flex flex-col gap-3">
-                  <p>
-                    You need a private profile to create and manage local artists. Local content is
-                    stored only in your personal library.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-fit text-white"
-                    onClick={handleCreateProfile}
-                    disabled={isCreatingProfile}
-                  >
-                    {isCreatingProfile ? 'Creating Profile...' : 'Create Private Account'}
-                  </Button>
-                </div>
+                Your library is not ready yet. Please try again later.
               </AlertDescription>
             </Alert>
           )}

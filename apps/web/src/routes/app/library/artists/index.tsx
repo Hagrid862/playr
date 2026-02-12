@@ -28,7 +28,7 @@ function RouteComponent() {
 
   if (artists.length === 0) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 bg-stone-900/30 p-12 text-center backdrop-blur-sm">
+      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl p-12 text-center backdrop-blur-sm">
         <div className="mb-6 rounded-full bg-stone-800/50 p-6 ring-1 ring-white/5">
           <UserIcon className="size-12 text-muted-foreground" weight="duotone" />
         </div>
