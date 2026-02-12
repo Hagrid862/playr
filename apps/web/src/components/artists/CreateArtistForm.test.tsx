@@ -138,11 +138,11 @@ describe('CreateArtistForm', () => {
     expect(screen.queryByText('Artist name is required')).not.toBeInTheDocument();
   });
 
-  it('handles undefined value in description validator', () => {
+  it('handles null/undefined value in description validator', () => {
     render(<CreateArtistForm {...defaultProps} />);
-    // Just trigger change with empty string to hit the length check
     const descInput = screen.getByLabelText(/Description/i);
-    fireEvent.change(descInput, { target: { value: '' } });
+    // Directly fire change with null to trigger the ?? 0 fallback
+    fireEvent.change(descInput, { target: { value: null } });
     fireEvent.blur(descInput);
   });
 

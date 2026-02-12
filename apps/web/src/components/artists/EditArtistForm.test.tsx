@@ -287,4 +287,14 @@ describe('EditArtistForm', () => {
       await screen.findByText('Description must be 2048 characters or less'),
     ).toBeInTheDocument();
   });
+
+  it('handles null description value in validator', () => {
+    const artistWithNullDesc = { ...mockArtist, description: null };
+    render(
+      <EditArtistForm {...defaultProps} artist={artistWithNullDesc as unknown as ZodArtist} />,
+    );
+    const descInput = screen.getByLabelText(/Description/i);
+    fireEvent.change(descInput, { target: { value: null } });
+    fireEvent.blur(descInput);
+  });
 });

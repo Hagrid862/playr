@@ -225,10 +225,12 @@ export function EditArtistForm({
             <form.Field
               name="description"
               validators={{
-                onChange: ({ value }) =>
-                  (value?.length || 0) > 2048
-                    ? 'Description must be 2048 characters or less'
-                    : undefined,
+                onChange: ({ value }) => {
+                  if (value && value.length > 2048) {
+                    return 'Description must be 2048 characters or less';
+                  }
+                  return undefined;
+                },
               }}
             >
               {(field) => (
