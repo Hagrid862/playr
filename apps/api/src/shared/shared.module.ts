@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { AlbumAccessGuard } from './guards/album-access.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AlbumRepository } from './repositories/album.repository';
 import { ArtistRepository } from './repositories/artist.repository';
@@ -39,9 +40,9 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     AlbumRepository,
     LibraryArtistRepository,
     LibraryAlbumRepository,
-
     // guards
     JwtAuthGuard,
+    AlbumAccessGuard,
   ],
   exports: [
     // Services
@@ -61,9 +62,9 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     AlbumRepository,
     LibraryArtistRepository,
     LibraryAlbumRepository,
-
     // guards
     JwtAuthGuard,
+    AlbumAccessGuard,
   ],
 })
 export class SharedModule {}
