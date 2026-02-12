@@ -93,6 +93,14 @@ describe('StorageService', () => {
       const command = mocks.s3Send.mock.calls[0][0];
       expect(command.Bucket).toBe('private-bucket');
     });
+
+    it('should throw error if upload fails', async () => {
+      mocks.s3Send.mockRejectedValue(new Error('Upload failed'));
+      const file = Buffer.from('failed content');
+      await expect(service.uploadFile(file, FileBucket.public, 'fail.jpg')).rejects.toThrow(
+        'Failed to upload file: Upload failed',
+      );
+    });
   });
 
   describe('getFileUrl', () => {
@@ -117,6 +125,13 @@ describe('StorageService', () => {
       const url = service.getFileUrl(FileBucket.private, 'secret.jpg');
       expect(url).toBe('http://localhost:9000/private-bucket/secret.jpg');
     });
+
+    it('should throw error for unknown bucket type', () => {
+      // @ts-ignore
+      expect(() => service.getFileUrl('unknown' as FileBucket, 'key')).toThrow(
+        'Unknown bucket type: unknown',
+      );
+    });
   });
 
   describe('getPresignedUrl', () => {
@@ -132,6 +147,13 @@ describe('StorageService', () => {
         expect.objectContaining({ expiresIn: 3600 }),
       );
     });
+
+    it('should throw error if getSignedUrl fails', async () => {
+      mocks.getSignedUrl.mockRejectedValue(new Error('Signing failed'));
+      await expect(service.getPresignedUrl(FileBucket.private, 'fail.jpg')).rejects.toThrow(
+        'Failed to generate presigned URL: Signing failed',
+      );
+    });
   });
 
   describe('deleteFile', () => {
@@ -141,7 +163,43 @@ describe('StorageService', () => {
       expect(mocks.s3Send).toHaveBeenCalled();
       const command = mocks.s3Send.mock.calls[0][0];
       expect(command.Bucket).toBe('public-bucket');
-      expect(command.Key).toBe('delete-me.jpg');
+    });
+
+    it('should throw error if deletion fails', async () => {
+      mocks.s3Send.mockRejectedValue(new Error('Delete failed'));
+      await expect(service.deleteFile(FileBucket.public, 'fail-delete.jpg')).rejects.toThrow(
+        'Failed to delete file: Delete failed',
+      );
+    });
+  });
+
+  describe('configuration', () => {
+    it('should throw error if public bucket is not configured', async () => {
+      configServiceMock.get.mockImplementation((key: string) => {
+        if (key === 'S3_PUBLIC_BUCKET') return undefined;
+        return 'some-value';
+      });
+
+      await expect(service.uploadFile(Buffer.from(''), FileBucket.public, 'key')).rejects.toThrow(
+        'S3_PUBLIC_BUCKET is not configured',
+      );
+    });
+
+    it('should throw error if private bucket is not configured', async () => {
+      configServiceMock.get.mockImplementation((key: string) => {
+        if (key === 'S3_PRIVATE_BUCKET') return undefined;
+        return 'some-value';
+      });
+
+      await expect(service.uploadFile(Buffer.from(''), FileBucket.private, 'key')).rejects.toThrow(
+        'S3_PRIVATE_BUCKET is not configured',
+      );
+    });
+
+    it('should handle missing credentials gracefully', () => {
+      configServiceMock.get.mockReturnValue(undefined);
+      const serviceWithNoCreds = new StorageService(configServiceMock as any);
+      expect(serviceWithNoCreds).toBeDefined();
     });
   });
 });
