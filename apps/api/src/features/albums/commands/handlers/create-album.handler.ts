@@ -1,12 +1,11 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-  ConflictException,
-  InternalServerErrorException,
-  PreconditionFailedException,
+    ConflictException,
+    InternalServerErrorException,
+    PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
@@ -19,30 +18,25 @@ export class CreateAlbumHandler implements ICommandHandler<CreateAlbumCommand> {
     private readonly libraryRepository: LibraryRepository,
     private readonly albumRepository: AlbumRepository,
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
-    private readonly privateProfileRepository: PrivateProfileRepository,
   ) {}
 
   async execute(command: CreateAlbumCommand): Promise<ZodAlbum> {
     const { request, userId } = command;
 
-    const [userPrivateProfile, library] = await Promise.all([
-      this.privateProfileRepository.getByUserId(userId),
-      this.libraryRepository.getByUserId(userId),
-    ]);
-
-    if (!userPrivateProfile) {
-      throw new PreconditionFailedException('User private profile not found');
-    }
+    const library = await this.libraryRepository.getByUserId(userId);
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
     }
 
     const album = await this.unitOfWork.runInTransaction(async () => {
-      const existingAlbum = await this.albumRepository.getByNameAndOwnerId(
-        request.name,
-        userPrivateProfile.id,
-      );
+      const existingAlbum = await this.albumRepository.findOne({
+        name: request.name,
+        OR: [
+          { access: { some: { userId, role: 'OWNER' } } },
+          { artists: { some: { access: { some: { userId, role: 'OWNER' } } } } },
+        ],
+      });
 
       if (existingAlbum) {
         throw new ConflictException('This album name is already taken');
@@ -53,6 +47,13 @@ export class CreateAlbumHandler implements ICommandHandler<CreateAlbumCommand> {
         description: request.description,
         type: request.type,
         releaseDate: request.releaseDate,
+        visibility: 'PRIVATE',
+        access: {
+          create: {
+            userId: userId,
+            role: 'OWNER',
+          },
+        },
         artists: {
           connect: {
             id: request.artistId,
