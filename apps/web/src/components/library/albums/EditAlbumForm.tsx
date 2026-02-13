@@ -1,7 +1,13 @@
 import { DatePickerField, SelectField, TextAreaField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CameraIcon, CircleNotchIcon, FloppyDiskIcon, MusicNotesIcon } from '@phosphor-icons/react';
+import { Separator } from '@/components/ui/separator';
+import {
+  CameraIcon,
+  CircleNotchIcon,
+  FloppyDiskIcon,
+  MusicNotesIcon,
+  TrashIcon,
+} from '@phosphor-icons/react';
 import {
   UpdateLibraryAlbumRequest,
   UpdateLibraryAlbumRequestSchema,
@@ -75,6 +81,14 @@ export function EditAlbumForm({
     }
   };
 
+  const handleRemoveCover = () => {
+    setSelectedCover(undefined);
+    setCoverPreview(undefined);
+    if (coverInputRef.current) {
+      coverInputRef.current.value = '';
+    }
+  };
+
   const currentCoverUrl = coverPreview || album.cover?.url;
 
   return (
@@ -94,150 +108,175 @@ export function EditAlbumForm({
         onChange={handleCoverSelect}
       />
 
-      <div className="grid gap-8">
-        {/* Cover Art Section */}
-        <Card className="border-border/50 bg-stone-900/10 backdrop-blur-sm overflow-hidden">
-          <CardHeader>
-            <CardTitle>Cover Art</CardTitle>
-            <CardDescription>Update your album cover artwork.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center gap-4">
-              <div
-                className="group relative size-48 rounded-2xl bg-stone-900 border-4 border-stone-800 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all cursor-pointer shadow-2xl"
-                onClick={() => coverInputRef.current?.click()}
-              >
-                {currentCoverUrl ? (
-                  <img
-                    src={currentCoverUrl}
-                    alt={album.name}
-                    className="size-full object-cover group-hover:opacity-50 transition-opacity"
-                  />
-                ) : (
-                  <MusicNotesIcon
-                    size={48}
-                    className="text-muted-foreground group-hover:text-primary transition-colors"
-                    weight="duotone"
-                  />
-                )}
-                <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <div className="flex flex-col items-center gap-2">
-                    <CameraIcon size={24} className="text-white" />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                      {currentCoverUrl ? 'Change Cover' : 'Upload Cover'}
-                    </span>
-                  </div>
+      {/* Hero section — cover art with glow + title field */}
+      <div className="flex flex-col md:flex-row gap-8 md:gap-10">
+        {/* Cover art */}
+        <div className="flex flex-col items-center gap-3 shrink-0">
+          <div className="relative">
+            {/* Glow behind the cover */}
+            {currentCoverUrl && (
+              <img
+                src={currentCoverUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 size-40 rounded-2xl object-cover blur-xl opacity-40 scale-105 translate-y-2 saturate-150 pointer-events-none"
+              />
+            )}
+            <div
+              className="group relative size-40 rounded-2xl bg-stone-900 border-2 border-stone-700/60 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all cursor-pointer shadow-xl"
+              onClick={() => coverInputRef.current?.click()}
+            >
+              {currentCoverUrl ? (
+                <img
+                  src={currentCoverUrl}
+                  alt={album.name}
+                  className="size-full object-cover group-hover:opacity-60 transition-opacity"
+                />
+              ) : (
+                <MusicNotesIcon
+                  size={44}
+                  className="text-muted-foreground group-hover:text-primary transition-colors"
+                  weight="duotone"
+                />
+              )}
+              <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <div className="flex flex-col items-center gap-1.5">
+                  <CameraIcon size={22} className="text-white" />
+                  <span className="text-[9px] font-bold text-white uppercase tracking-widest">
+                    {currentCoverUrl ? 'Change Cover' : 'Upload Cover'}
+                  </span>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Details Section */}
-        <Card className="border-border/50 bg-stone-900/10 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>Album Details</CardTitle>
-            <CardDescription>Manage your album title, description, and metadata.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6">
-            <form.Field name="name">
-              {(field) => (
-                <TextField
-                  label="Album Title"
-                  placeholder="e.g. Nevermind"
-                  value={field.state.value || ''}
-                  error={
-                    (field.state.meta.isTouched && field.state.meta.errors.length > 0
-                      ? String(field.state.meta.errors[0])
-                      : undefined) ||
-                    (field.state.meta.isTouched && form.state.errors.length > 0
-                      ? (form.state.errors[0] as Record<string, string>)?.[field.name]
-                      : undefined) ||
-                    serverErrors?.name
-                  }
-                  onChange={field.handleChange}
-                  onBlur={field.handleBlur}
-                  className="max-w-md"
-                />
-              )}
-            </form.Field>
-
-            <form.Field
-              name="description"
-              validators={{
-                onChange: ({ value }) => {
-                  if (value && value.length > 2048) {
-                    return 'Description must be 2048 characters or less';
-                  }
-                  return undefined;
-                },
-              }}
+          {coverPreview ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={handleRemoveCover}
+              className="text-xs text-muted-foreground hover:text-red-400 gap-1"
             >
-              {(field) => (
-                <TextAreaField
-                  label="Description"
-                  placeholder="Tell something about this album..."
-                  value={field.state.value || ''}
-                  error={
-                    field.state.meta.isTouched
-                      ? String(field.state.meta.errors[0] || '') ||
-                        (form.state.errors[0] as Record<string, string>)?.[field.name]
-                      : serverErrors?.description
-                  }
-                  onChange={field.handleChange}
-                  onBlur={field.handleBlur}
-                  className="min-h-32"
-                />
-              )}
-            </form.Field>
+              <TrashIcon size={12} />
+              Remove
+            </Button>
+          ) : (
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+              Artwork
+            </span>
+          )}
+        </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <form.Field name="type">
-                {(field) => (
-                  <SelectField
-                    label="Album Type"
-                    placeholder="Select type"
-                    value={field.state.value || AlbumType.album}
-                    options={albumTypeOptions}
-                    error={
-                      field.state.meta.isTouched && field.state.meta.errors.length > 0
-                        ? String(field.state.meta.errors[0])
-                        : undefined
-                    }
-                    onChange={(value) => {
-                      if (value in AlbumType) {
-                        field.handleChange(value as AlbumType);
-                      }
-                    }}
-                    onBlur={field.handleBlur}
-                  />
-                )}
-              </form.Field>
+        {/* Title + description alongside cover */}
+        <div className="flex-1 flex flex-col gap-5">
+          <form.Field name="name">
+            {(field) => (
+              <TextField
+                label="Album Title"
+                placeholder="e.g. Nevermind"
+                value={field.state.value || ''}
+                error={
+                  (field.state.meta.isTouched && field.state.meta.errors.length > 0
+                    ? String(field.state.meta.errors[0])
+                    : undefined) ||
+                  (field.state.meta.isTouched && form.state.errors.length > 0
+                    ? (form.state.errors[0] as Record<string, string>)?.[field.name]
+                    : undefined) ||
+                  serverErrors?.name
+                }
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+              />
+            )}
+          </form.Field>
 
-              <form.Field name="releaseDate">
-                {(field) => (
-                  <DatePickerField
-                    label="Release Date"
-                    value={field.state.value ? new Date(field.state.value) : undefined}
-                    error={
-                      field.state.meta.isTouched && field.state.meta.errors.length > 0
-                        ? String(field.state.meta.errors[0])
-                        : undefined
-                    }
-                    onChange={(date) => {
-                      const isoValue = date?.toISOString() ?? null;
-                      field.handleChange(isoValue as typeof field.state.value);
-                    }}
-                    onBlur={field.handleBlur}
-                  />
-                )}
-              </form.Field>
-            </div>
-          </CardContent>
-        </Card>
+          <form.Field
+            name="description"
+            validators={{
+              onChange: ({ value }) => {
+                if (value && value.length > 2048) {
+                  return 'Description must be 2048 characters or less';
+                }
+                return undefined;
+              },
+            }}
+          >
+            {(field) => (
+              <TextAreaField
+                label="Description"
+                placeholder="Tell something about this album..."
+                value={field.state.value || ''}
+                error={
+                  field.state.meta.isTouched
+                    ? String(field.state.meta.errors[0] || '') ||
+                      (form.state.errors[0] as Record<string, string>)?.[field.name]
+                    : serverErrors?.description
+                }
+                onChange={field.handleChange}
+                onBlur={field.handleBlur}
+                className="min-h-28"
+              />
+            )}
+          </form.Field>
+        </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/50">
+      <Separator className="opacity-50" />
+
+      {/* Metadata section */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground/80 uppercase tracking-wider mb-4">
+          Metadata
+        </h3>
+        <div className="grid gap-5 md:grid-cols-2">
+          <form.Field name="type">
+            {(field) => (
+              <SelectField
+                label="Album Type"
+                placeholder="Select type"
+                value={field.state.value || AlbumType.album}
+                options={albumTypeOptions}
+                error={
+                  field.state.meta.isTouched && field.state.meta.errors.length > 0
+                    ? String(field.state.meta.errors[0])
+                    : undefined
+                }
+                onChange={(value) => {
+                  if (value in AlbumType) {
+                    field.handleChange(value as AlbumType);
+                  }
+                }}
+                onBlur={field.handleBlur}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="releaseDate">
+            {(field) => (
+              <DatePickerField
+                label="Release Date"
+                value={field.state.value ? new Date(field.state.value) : undefined}
+                error={
+                  field.state.meta.isTouched && field.state.meta.errors.length > 0
+                    ? String(field.state.meta.errors[0])
+                    : undefined
+                }
+                onChange={(date) => {
+                  const isoValue = date?.toISOString() ?? null;
+                  field.handleChange(isoValue as typeof field.state.value);
+                }}
+                onBlur={field.handleBlur}
+              />
+            )}
+          </form.Field>
+        </div>
+      </div>
+
+      <Separator className="opacity-50" />
+
+      {/* Actions */}
+      <div className="flex items-center justify-end gap-3">
         <Button variant="ghost" type="button" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>
