@@ -33,8 +33,8 @@ import { UpdateAlbumResponseDto } from './dto/update-album.response.dto';
 import { UploadAlbumCoverResponseDto } from './dto/upload-album-cover.response.dto';
 import { GetAlbumQuery } from './queries/impl/get-album.query';
 
-@ApiTags('Albums')
-@Controller('albums')
+@ApiTags('Library Albums')
+@Controller('library/albums')
 export class AlbumsController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -75,6 +75,30 @@ export class AlbumsController {
   ): Promise<ZodAlbum> {
     const command = new CreateAlbumCommand(body, userId);
     return this.commandBus.execute(command);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, AlbumAccessGuard)
+  @CheckAlbumAccess('id')
+  @ApiOperation({ summary: 'Get album details with songs' })
+  @ApiResponse({
+    status: 200,
+    description: 'Album details retrieved successfully',
+    type: GetAlbumResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album not found',
+    type: ApiErrorResponseDto,
+  })
+  async getAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
+    const query = new GetAlbumQuery(id, userId);
+    return this.queryBus.execute(query);
   }
 
   @Patch(':id')
@@ -191,29 +215,5 @@ export class AlbumsController {
   async deleteAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
     const command = new DeleteAlbumCommand(id, userId);
     return this.commandBus.execute(command);
-  }
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, AlbumAccessGuard)
-  @CheckAlbumAccess('id')
-  @ApiOperation({ summary: 'Get album details with songs' })
-  @ApiResponse({
-    status: 200,
-    description: 'Album details retrieved successfully',
-    type: GetAlbumResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-    type: ApiErrorResponseDto,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Album not found',
-    type: ApiErrorResponseDto,
-  })
-  async getAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
-    const query = new GetAlbumQuery(id, userId);
-    return this.queryBus.execute(query);
   }
 }

@@ -3,9 +3,9 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-    ConflictException,
-    InternalServerErrorException,
-    PreconditionFailedException,
+  ConflictException,
+  InternalServerErrorException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
