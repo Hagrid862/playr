@@ -15,7 +15,7 @@ export class GetLibraryArtistAlbumsHandler implements IQueryHandler<GetLibraryAr
   async execute(
     query: GetLibraryArtistAlbumsQuery,
   ): Promise<GetLibraryArtistAlbumsResponseDto['data']> {
-    const { userId, artistId, page, limit } = query;
+    const { userId, artistId, page, limit, type } = query;
 
     const library = await this.libraryRepository.getByUserId(userId);
 
@@ -27,14 +27,14 @@ export class GetLibraryArtistAlbumsHandler implements IQueryHandler<GetLibraryAr
       this.libraryAlbumRepository.findMany({
         where: {
           libraryId: library.id,
-          album: { artists: { some: { id: artistId } } },
+          album: { artists: { some: { id: artistId } }, type: type },
         },
         take: limit,
         skip: (page - 1) * limit,
       }),
       this.libraryAlbumRepository.count({
         libraryId: library.id,
-        album: { artists: { some: { id: artistId } } },
+        album: { artists: { some: { id: artistId } }, type: type },
       }),
     ]);
 
