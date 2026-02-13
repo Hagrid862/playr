@@ -1,23 +1,23 @@
 import { TextAreaField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import { CameraIcon, CircleNotchIcon, PlusIcon } from '@phosphor-icons/react';
-import { CreateArtistRequest, CreateArtistRequestSchema } from '@repo/contracts';
+import { CreateLibraryArtistRequest, CreateLibraryArtistRequestSchema } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { CardContent, CardFooter } from '../ui/card';
 
 interface CreateArtistFormProps {
   isLoading: boolean;
-  serverErrors?: Partial<Record<keyof CreateArtistRequest, string>>;
-  onSubmit: (values: CreateArtistRequest) => Promise<void>;
+  serverErrors?: Partial<Record<keyof CreateLibraryArtistRequest, string>>;
+  onSubmit: (values: CreateLibraryArtistRequest) => Promise<void>;
 }
 
 /**
  * Zod validation helper for TanStack Form.
  * Maps Zod issues to the flat error object format expected by form-level validators.
  */
-const validateWithZod = (value: CreateArtistRequest) => {
-  const result = CreateArtistRequestSchema.safeParse(value);
+const validateWithZod = (value: CreateLibraryArtistRequest) => {
+  const result = CreateLibraryArtistRequestSchema.safeParse(value);
   if (result.success) return undefined;
 
   const errors: Record<string, string> = {};
@@ -35,7 +35,7 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
     defaultValues: {
       name: '',
       description: '',
-    } as CreateArtistRequest,
+    } as CreateLibraryArtistRequest,
     validators: {
       onChange: ({ value }) => validateWithZod(value),
     },

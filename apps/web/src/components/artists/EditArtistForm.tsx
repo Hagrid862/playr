@@ -2,20 +2,24 @@ import { TextAreaField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CameraIcon, CircleNotchIcon, FloppyDiskIcon, ImageIcon } from '@phosphor-icons/react';
-import { UpdateArtistRequest, UpdateArtistRequestSchema, ZodArtist } from '@repo/contracts';
+import {
+  UpdateLibraryArtistRequest,
+  UpdateLibraryArtistRequestSchema,
+  ZodArtist,
+} from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { useRef, useState } from 'react';
 
 interface EditArtistFormProps {
   artist: ZodArtist;
   isLoading: boolean;
-  serverErrors?: Partial<Record<keyof UpdateArtistRequest, string>>;
-  onSubmit: (values: UpdateArtistRequest, avatar?: File, banner?: File) => Promise<void>;
+  serverErrors?: Partial<Record<keyof UpdateLibraryArtistRequest, string>>;
+  onSubmit: (values: UpdateLibraryArtistRequest, avatar?: File, banner?: File) => Promise<void>;
   onCancel: () => void;
 }
 
-const validateWithZod = (value: UpdateArtistRequest) => {
-  const result = UpdateArtistRequestSchema.safeParse(value);
+const validateWithZod = (value: UpdateLibraryArtistRequest) => {
+  const result = UpdateLibraryArtistRequestSchema.safeParse(value);
   if (result.success) return undefined;
 
   const errors: Record<string, string> = {};
@@ -48,9 +52,7 @@ export function EditArtistForm({
     defaultValues: {
       name: artist.name,
       description: artist.description || '',
-      avatarId: artist.avatarId,
-      bannerId: artist.bannerId,
-    } as UpdateArtistRequest,
+    } as UpdateLibraryArtistRequest,
     validators: {
       onChange: ({ value }) => validateWithZod(value),
     },
@@ -64,17 +66,9 @@ export function EditArtistForm({
     if (file) {
       setSelectedAvatar(file);
       setAvatarPreview(URL.createObjectURL(file));
-      form.setFieldValue('avatarId', 'preview'); // Trigger re-render
     } else {
-      // Handle case where no file is selected (e.g., user cancels file dialog)
       setSelectedAvatar(undefined);
       setAvatarPreview(undefined);
-      // If there was a previous avatar, revert to it or clear the field
-      if (artist.avatarId) {
-        form.setFieldValue('avatarId', artist.avatarId);
-      } else {
-        form.setFieldValue('avatarId', undefined);
-      }
     }
   };
 
@@ -83,16 +77,9 @@ export function EditArtistForm({
     if (file) {
       setSelectedBanner(file);
       setBannerPreview(URL.createObjectURL(file));
-      form.setFieldValue('bannerId', 'preview'); // Trigger re-render
     } else {
-      // Handle case where no file is selected
       setSelectedBanner(undefined);
       setBannerPreview(undefined);
-      if (artist.bannerId) {
-        form.setFieldValue('bannerId', artist.bannerId);
-      } else {
-        form.setFieldValue('bannerId', undefined);
-      }
     }
   };
 
@@ -136,13 +123,9 @@ export function EditArtistForm({
                 className="relative h-48 w-full rounded-xl bg-stone-900/40 border-4 border-transparent overflow-hidden group transition-all hover:border-primary/50 cursor-pointer"
                 onClick={() => bannerInputRef.current?.click()}
               >
-                {bannerPreview || form.getFieldValue('bannerId') ? (
+                {bannerPreview || artist.bannerId ? (
                   <img
-                    src={
-                      bannerPreview ||
-                      artist.banner?.url ||
-                      `/api/images/${form.getFieldValue('bannerId')}`
-                    }
+                    src={bannerPreview || artist.banner?.url || `/api/images/${artist.bannerId}`}
                     className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
                   />
                 ) : (
@@ -169,13 +152,9 @@ export function EditArtistForm({
                     avatarInputRef.current?.click();
                   }}
                 >
-                  {avatarPreview || form.getFieldValue('avatarId') ? (
+                  {avatarPreview || artist.avatarId ? (
                     <img
-                      src={
-                        avatarPreview ||
-                        artist.avatar?.url ||
-                        `/api/images/${form.getFieldValue('avatarId')}`
-                      }
+                      src={avatarPreview || artist.avatar?.url || `/api/images/${artist.avatarId}`}
                       className="size-full object-cover group-hover:opacity-50 transition-opacity"
                     />
                   ) : (

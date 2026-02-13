@@ -1,5 +1,5 @@
 import { Spinner } from '@/components/ui/spinner';
-import { useLibraryArtists } from '@/hooks/api/library/useLibraryArtists';
+import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists';
 import { useLibraryStore } from '@/stores/library.store';
 import { UserIcon } from '@phosphor-icons/react';
 import { Link, createFileRoute } from '@tanstack/react-router';

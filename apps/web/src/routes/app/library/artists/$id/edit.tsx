@@ -1,9 +1,9 @@
 import { EditArtistForm } from '@/components/artists/EditArtistForm';
-import { useUpdateArtist } from '@/hooks/api/artists/useUpdateArtist';
-import { useUploadArtistAvatar } from '@/hooks/api/artists/useUploadArtistAvatar';
-import { useUploadArtistBanner } from '@/hooks/api/artists/useUploadArtistBanner';
+import { useUpdateLibraryArtist } from '@/hooks/api/library-artists/useUpdateLibraryArtist';
+import { useUploadLibraryArtistAvatar } from '@/hooks/api/library-artists/useUploadLibraryArtistAvatar';
+import { useUploadLibraryArtistBanner } from '@/hooks/api/library-artists/useUploadLibraryArtistBanner';
 import { useLibraryStore } from '@/stores/library.store';
-import { UpdateArtistRequest } from '@repo/contracts';
+import { UpdateLibraryArtistRequest } from '@repo/contracts';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/artists/$id/edit')({
@@ -18,10 +18,12 @@ function EditArtistComponent() {
     mutateAsync: updateArtist,
     isPending: isUpdating,
     error: updateError,
-  } = useUpdateArtist();
+  } = useUpdateLibraryArtist();
 
-  const { mutateAsync: uploadAvatar, isPending: isUploadingAvatar } = useUploadArtistAvatar();
-  const { mutateAsync: uploadBanner, isPending: isUploadingBanner } = useUploadArtistBanner();
+  const { mutateAsync: uploadAvatar, isPending: isUploadingAvatar } =
+    useUploadLibraryArtistAvatar();
+  const { mutateAsync: uploadBanner, isPending: isUploadingBanner } =
+    useUploadLibraryArtistBanner();
 
   if (!artist) {
     return (
@@ -31,7 +33,7 @@ function EditArtistComponent() {
     );
   }
 
-  const handleUpdate = async (data: UpdateArtistRequest, avatar?: File, banner?: File) => {
+  const handleUpdate = async (data: UpdateLibraryArtistRequest, avatar?: File, banner?: File) => {
     try {
       // First update artist data
       await updateArtist({ id, data });
