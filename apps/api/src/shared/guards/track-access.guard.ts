@@ -1,10 +1,10 @@
 import { CHECK_TRACK_ACCESS_KEY } from '@/common/decorators/check-track-access.decorator';
 import {
-    CanActivate,
-    ExecutionContext,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { TrackRepository } from '../repositories/track.repository';

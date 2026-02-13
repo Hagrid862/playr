@@ -1,11 +1,11 @@
 import { PageHeader } from '@/components/app/PageHeader';
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Outlet, createFileRoute, useLocation, useRouter } from '@tanstack/react-router';
 
