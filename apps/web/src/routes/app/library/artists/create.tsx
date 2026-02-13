@@ -1,6 +1,7 @@
 import { CreateArtistForm } from '@/components/artists/CreateArtistForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLibraryArtist';
+import { useUploadLibraryArtistAvatar } from '@/hooks/api/library-artists/useUploadLibraryArtistAvatar';
 import { useLibraryStore } from '@/stores/library.store';
 import { InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { CreateLibraryArtistRequest } from '@repo/contracts';
@@ -19,14 +20,22 @@ function RouteComponent() {
     error: apiError,
   } = useCreateLibraryArtist();
 
-  const onSubmit = async (data: CreateLibraryArtistRequest) => {
+  const { mutateAsync: uploadArtistAvatar, isPending: isUploadingAvatar } =
+    useUploadLibraryArtistAvatar();
+
+  const onSubmit = async (data: CreateLibraryArtistRequest, avatarFile?: File) => {
     try {
-      await createArtist(data);
+      const response = await createArtist(data);
+      if (avatarFile && response.data) {
+        await uploadArtistAvatar({ id: response.data.id, file: avatarFile });
+      }
       await navigate({ to: '/app/library/artists' });
     } catch (err) {
-      console.error('Failed to create artist', err);
+      console.error('Failed to create artist or upload avatar', err);
     }
   };
+
+  const isLoading = isCreatingArtist || isUploadingAvatar;
 
   return (
     <div className="flex items-center justify-center py-10">
@@ -61,7 +70,7 @@ function RouteComponent() {
         </div>
 
         <CreateArtistForm
-          isLoading={isCreatingArtist}
+          isLoading={isLoading}
           serverErrors={apiError?.status === 409 ? { name: apiError.message } : undefined}
           onSubmit={onSubmit}
         />
