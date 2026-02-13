@@ -11,17 +11,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import {
-  CalendarBlankIcon,
   DiscIcon,
   DotsThreeIcon,
   HeartIcon,
-  MusicNotesIcon,
   PencilIcon,
   PlayIcon,
   ShareIcon,
@@ -30,6 +29,7 @@ import {
 } from '@phosphor-icons/react';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 
 export const Route = createFileRoute('/app/library/albums/$id/')({
   component: RouteComponent,
@@ -63,15 +63,9 @@ function RouteComponent() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col w-full px-6 mt-6 animate-pulse">
-        <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
-          <div className="size-56 bg-stone-800 rounded-2xl" />
-          <div className="flex-1 space-y-4 pb-2">
-            <div className="h-4 w-24 bg-stone-800 rounded" />
-            <div className="h-10 w-64 bg-stone-800 rounded" />
-            <div className="h-4 w-40 bg-stone-800 rounded" />
-          </div>
-        </div>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
+        <Spinner className="size-8" />
+        <p className="text-muted-foreground animate-pulse">Loading album details...</p>
       </div>
     );
   }
@@ -88,78 +82,61 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col w-full min-h-full pb-8">
-      {/* Header Area */}
-      <div className="relative w-full px-6 mt-6">
+      {/* Header Area - No Banner, Restore Blurred Glow */}
+      <div className="relative w-full px-6 mt-8">
         <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
-          {/* Cover Art with Glow Shadow */}
+          {/* Cover Art with Blurred Glow Shadow */}
           <div className="relative shrink-0">
-            {/* Blurred glow underneath the artwork */}
             {album.cover?.url && (
               <img
                 src={album.cover.url}
                 alt=""
                 aria-hidden="true"
-                className="absolute inset-0 size-56 rounded-2xl object-cover blur-lg opacity-30 scale-100 translate-y-2 saturate-150 pointer-events-none"
+                className="absolute inset-0 size-48 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
               />
             )}
-            {/* Actual cover */}
-            <div className="relative size-56 rounded-2xl overflow-hidden bg-stone-800 flex items-center justify-center border border-white/10 ring-1 ring-white/5">
+            <div className="relative size-48 p-0 rounded-2xl shadow-xl shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-white/10">
               {album.cover?.url ? (
                 <img src={album.cover.url} alt={album.name} className="size-full object-cover" />
               ) : (
-                <DiscIcon className="size-1/2 text-stone-600" weight="duotone" />
+                <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
               )}
             </div>
           </div>
 
-          {/* Album Info */}
-          <div className="flex-1 pb-2 min-w-0 text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary/90">
+          {/* Quick Info */}
+          <div className="flex-1 pb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-primary">
                 {album.type || 'Album'}
               </p>
               {releaseYear && (
                 <>
-                  <span className="text-stone-600">•</span>
-                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    <CalendarBlankIcon /> {releaseYear}
-                  </p>
+                  <span className="text-stone-600 font-bold">•</span>
+                  <p className="text-xs font-bold text-muted-foreground uppercase">{releaseYear}</p>
                 </>
               )}
             </div>
-
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-3 truncate">
+            <h2 className="text-3xl font-bold text-white opacity-90 truncate max-w-2xl mb-1">
               {album.name}
             </h2>
-
-            {album.description && (
-              <p className="text-sm text-stone-400 mb-3 line-clamp-2 max-w-lg">
-                {album.description}
-              </p>
-            )}
-
-            <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-stone-300 font-medium flex-wrap">
-              {album.artists && album.artists.length > 0 ? (
-                album.artists.map((artist, i) => (
-                  <span key={artist.id} className="flex items-center">
-                    {i > 0 && <span className="mx-1 text-stone-500">,</span>}
-                    <Link
-                      to="/app/library/artists/$id"
-                      params={{ id: artist.id }}
-                      className="hover:text-primary hover:underline transition-colors"
-                    >
-                      {artist.name}
-                    </Link>
-                  </span>
-                ))
-              ) : (
-                <span className="text-muted-foreground">Unknown Artist</span>
-              )}
-
+            <div className="flex items-center gap-1.5 text-sm text-stone-400 font-medium">
+              {album.artists?.map((artist, i) => (
+                <span key={artist.id} className="flex items-center">
+                  {i > 0 && <span className="mr-1.5">•</span>}
+                  <Link
+                    to="/app/library/artists/$id"
+                    params={{ id: artist.id }}
+                    className="hover:text-primary transition-colors hover:underline"
+                  >
+                    {artist.name}
+                  </Link>
+                </span>
+              ))}
               {album.tracks && album.tracks.length > 0 && (
                 <>
-                  <span className="text-stone-600">•</span>
-                  <span className="text-muted-foreground">
+                  <span className="mx-1.5">•</span>
+                  <span>
                     {album.tracks.length} {album.tracks.length === 1 ? 'song' : 'songs'}
                   </span>
                 </>
@@ -170,30 +147,30 @@ function RouteComponent() {
       </div>
 
       {/* Actions & Content */}
-      <div className="px-6 md:px-8 mt-10 flex flex-col gap-8">
-        {/* Action Buttons */}
+      <div className="px-6 mt-12 flex flex-col gap-8">
+        {/* Unified Action Buttons */}
         <div className="flex items-center gap-3">
           <Button
             size="lg"
-            className="h-14 rounded-full gap-2 px-8 text-lg font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 hover:scale-105 active:scale-95 transition-all bg-primary text-primary-foreground"
+            className="h-12 rounded-xl gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
           >
-            <PlayIcon weight="fill" size={24} /> Play
+            <PlayIcon weight="fill" size={20} /> Play
           </Button>
           <Button
-            variant="secondary"
+            variant="outline"
             size="lg"
-            className="h-14 rounded-full gap-2 px-6 text-base font-semibold bg-stone-800/50 hover:bg-stone-800 text-white border border-white/5 backdrop-blur-md transition-all active:scale-95"
+            className="h-12 rounded-xl gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
           >
-            <ShuffleIcon weight="bold" size={24} />
+            <ShuffleIcon weight="bold" size={20} /> Shuffle
           </Button>
 
-          <div className="flex items-center gap-1 ml-4">
+          <div className="flex items-center gap-1 ml-2">
             <Button
               variant="ghost"
               size="icon"
-              className="size-12 rounded-full text-stone-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-95"
+              className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
             >
-              <HeartIcon size={28} weight="regular" />
+              <HeartIcon size={24} />
             </Button>
 
             <DropdownMenu>
@@ -201,54 +178,49 @@ function RouteComponent() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-12 rounded-full text-stone-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+                  className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
                 >
-                  <DotsThreeIcon size={28} weight="bold" />
+                  <DotsThreeIcon size={24} weight="bold" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48 p-2" align="start">
-                <DropdownMenuItem className="gap-2 cursor-pointer">
-                  <ShareIcon size={18} /> Share Album
+              <DropdownMenuContent className="w-48">
+                <DropdownMenuItem className="gap-2">
+                  <ShareIcon size={18} /> Share
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <Link to="/app/library/albums/$id/edit" params={{ id: album.id }}>
-                  <DropdownMenuItem className="gap-2 cursor-pointer">
-                    <PencilIcon size={18} /> Edit Details
+                  <DropdownMenuItem className="gap-2">
+                    <PencilIcon size={18} /> Edit
                   </DropdownMenuItem>
                 </Link>
                 <DropdownMenuItem
                   onClick={() => setIsDeleteDialogOpen(true)}
-                  className="gap-2 text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
+                  className="gap-2 text-destructive focus:text-destructive"
                 >
-                  <TrashIcon size={18} /> Delete Album
+                  <TrashIcon size={18} /> Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
 
-        <Separator className="bg-white/5" />
+        <Separator className="opacity-50" />
 
         {/* Tracks List */}
-        <div className="flex flex-col pb-20">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <MusicNotesIcon className="text-primary" weight="duotone" />
-              Tracks
-            </h3>
-            <span className="text-sm text-muted-foreground font-medium">
-              {album.tracks?.length || 0} songs
-            </span>
+        <div className="flex flex-col gap-6 px-0 md:px-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-white/90">Tracks</h3>
           </div>
 
           {!album.tracks || album.tracks.length === 0 ? (
-            <div className="py-16 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-2xl bg-stone-900/20">
-              <p className="text-muted-foreground font-medium">No tracks available</p>
+            <div className="py-12 flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl bg-stone-900/10">
+              <p className="text-muted-foreground text-sm font-medium">No tracks available</p>
             </div>
           ) : (
             <div className="flex flex-col">
               {/* Header Row */}
-              <div className="grid grid-cols-[auto_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-white/5 mb-2">
-                <div className="w-8 text-center">#</div>
+              <div className="grid grid-cols-[3rem_1fr_auto] gap-4 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-white/5 mb-2">
+                <div className="text-center">#</div>
                 <div>Title</div>
                 <div className="pr-2">Time</div>
               </div>
@@ -257,28 +229,29 @@ function RouteComponent() {
               {album.tracks.map((track, i) => (
                 <div
                   key={track.id}
-                  className="group grid grid-cols-[auto_1fr_auto] gap-4 items-center px-4 py-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer active:bg-white/10"
+                  className="group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[0.99]"
                 >
-                  <div className="w-8 text-center text-stone-500 font-medium group-hover:text-white transition-colors">
+                  <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors">
                     <span className="group-hover:hidden">{track.trackNumber || i + 1}</span>
                     <PlayIcon
-                      className="hidden group-hover:block mx-auto text-primary"
+                      className="hidden group-hover:block mx-auto"
                       weight="fill"
+                      size={16}
                     />
                   </div>
 
                   <div className="min-w-0">
-                    <div className="font-medium text-stone-200 group-hover:text-white truncate text-base">
+                    <div className="font-bold text-stone-200 group-hover:text-white truncate text-base">
                       {track.title}
                     </div>
-                    {track.artists && track.artists.length > 0 && (
-                      <div className="text-xs text-muted-foreground truncate group-hover:text-stone-400">
+                    {track.artists && (
+                      <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
                         {track.artists.map((a) => a.name).join(', ')}
                       </div>
                     )}
                   </div>
 
-                  <div className="text-sm text-stone-500 font-variant-numeric tabular-nums group-hover:text-stone-300">
+                  <div className="text-sm font-bold text-stone-500 tabular-nums group-hover:text-stone-300">
                     {formatDuration(track.duration)}
                   </div>
                 </div>
