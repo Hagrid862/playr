@@ -25,12 +25,12 @@ import { CreateAlbumCommand } from './commands/impl/create-album.command';
 import { DeleteAlbumCommand } from './commands/impl/delete-album.command';
 import { UpdateAlbumCommand } from './commands/impl/update-album.command';
 import { UploadAlbumCoverCommand } from './commands/impl/upload-album-cover.command';
-import { CreateAlbumRequestDto } from './dto/request/create-library-album.request.dto';
-import { UpdateAlbumRequestDto } from './dto/request/update-library-album.request.dto';
-import { CreateAlbumResponseDto } from './dto/response/create-library-album.response.dto';
-import { GetAlbumResponseDto } from './dto/response/get-library-album.response.dto';
-import { UpdateAlbumResponseDto } from './dto/response/update-library-album.response.dto';
-import { UploadAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
+import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
+import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
+import { CreateLibraryAlbumResponseDto } from './dto/response/create-library-album.response.dto';
+import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.response.dto';
+import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
+import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
 import { GetAlbumQuery } from './queries/impl/get-album.query';
 
 @ApiTags('Library Albums')
@@ -47,7 +47,7 @@ export class AlbumsController {
   @ApiResponse({
     status: 201,
     description: 'Album created successfully',
-    type: CreateAlbumResponseDto,
+    type: CreateLibraryAlbumResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -70,7 +70,7 @@ export class AlbumsController {
     type: ApiErrorResponseDto,
   })
   async createAlbum(
-    @Body() body: CreateAlbumRequestDto,
+    @Body() body: CreateLibraryAlbumRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodAlbum> {
     const command = new CreateAlbumCommand(body, userId);
@@ -84,7 +84,7 @@ export class AlbumsController {
   @ApiResponse({
     status: 200,
     description: 'Album details retrieved successfully',
-    type: GetAlbumResponseDto,
+    type: GetLibraryAlbumResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -107,7 +107,7 @@ export class AlbumsController {
   @ApiResponse({
     status: 200,
     description: 'Album details updated successfully',
-    type: UpdateAlbumResponseDto,
+    type: UpdateLibraryAlbumResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -136,7 +136,7 @@ export class AlbumsController {
   })
   async updateAlbum(
     @Param('id') id: string,
-    @Body() body: UpdateAlbumRequestDto,
+    @Body() body: UpdateLibraryAlbumRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodAlbum> {
     const command = new UpdateAlbumCommand(id, body, userId);
@@ -151,7 +151,7 @@ export class AlbumsController {
   @ApiResponse({
     status: 201,
     description: 'Cover uploaded successfully',
-    type: UploadAlbumCoverResponseDto,
+    type: UploadLibraryAlbumCoverResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -195,7 +195,7 @@ export class AlbumsController {
   @ApiResponse({
     status: 200,
     description: 'Album deleted successfully',
-    type: GetAlbumResponseDto,
+    type: GetLibraryAlbumResponseDto,
   })
   @ApiResponse({
     status: 401,

@@ -1,10 +1,10 @@
 import { ICommand } from '@nestjs/cqrs';
-import { UpdateAlbumRequestDto } from '../../dto/request/update-library-album.request.dto';
+import { UpdateLibraryAlbumRequestDto } from '../../dto/request/update-library-album.request.dto';
 
 export class UpdateAlbumCommand implements ICommand {
   constructor(
     public readonly id: string,
-    public readonly request: UpdateAlbumRequestDto,
+    public readonly request: UpdateLibraryAlbumRequestDto,
     public readonly userId: string,
   ) {}
 }
