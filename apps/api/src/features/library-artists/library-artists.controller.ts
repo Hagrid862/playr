@@ -35,10 +35,11 @@ import { GetLibraryArtistsResponseDto } from './dto/response/get-library-artists
 import { UpdateLibraryArtistResponseDto } from './dto/response/update-library-artist.response.dto';
 import { UploadLibraryArtistAvatarResponseDto } from './dto/response/upload-library-artist-avatar.response.dto';
 import { UploadLibraryArtistBannerResponseDto } from './dto/response/upload-library-artist-banner.response.dto';
+import { GetLibraryArtistAlbumsRequestDto } from './dto/request/get-library-artist-albums.request.dto';
+import { GetLibraryArtistAlbumsResponseDto } from './dto/response/get-library-artist-albums.response.dto';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
 import { GetLibraryArtistAlbumsQuery } from './queries/impl/get-library-artist-albums.query';
-import { GetLibraryArtistAlbumsResponseDto } from './dto/response/get-library-artist-albums.response.dto';
 
 @ApiTags('Library Artists')
 @Controller('library/artists')
@@ -142,10 +143,10 @@ export class LibraryArtistsController {
   getLibraryArtistAlbums(
     @CurrentUser('id') userId: string,
     @Param('id') artistId: string,
-    @Query() query: contracts.GetLibraryArtistAlbumsRequestDto,
+    @Query() query: GetLibraryArtistAlbumsRequestDto,
   ) {
     return this.queryBus.execute(
-      new GetLibraryArtistAlbumsQuery(userId, artistId, query.page, query.limit),
+      new GetLibraryArtistAlbumsQuery(userId, artistId, query.page, query.limit, query.type),
     );
   }
 
