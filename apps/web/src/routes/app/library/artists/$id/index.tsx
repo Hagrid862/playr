@@ -22,6 +22,8 @@ import {
   HeartIcon,
   PencilIcon,
   PlayIcon,
+  PlusIcon,
+  ShareIcon,
   ShuffleIcon,
   TrashIcon,
   UserIcon,
@@ -137,8 +139,16 @@ function RouteComponent() {
                   <DotsThreeIcon size={24} weight="bold" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>Share</DropdownMenuItem>
+              <DropdownMenuContent className="w-36">
+                <DropdownMenuItem>
+                  <ShareIcon size={20} /> Share
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/app/library/artists/$id/add-content" params={{ id }}>
+                    <PlusIcon className="mr-2" />
+                    Add Content
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/app/library/artists/$id/edit" params={{ id }}>
