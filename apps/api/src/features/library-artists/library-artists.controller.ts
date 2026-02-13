@@ -23,18 +23,18 @@ import { DeleteArtistCommand } from './commands/impl/delete-artist.command';
 import { UpdateArtistCommand } from './commands/impl/update-artist.command';
 import { UploadArtistAvatarCommand } from './commands/impl/upload-artist-avatar.command';
 import { UploadArtistBannerCommand } from './commands/impl/upload-artist-banner.command';
-import { CreateArtistRequestDto } from './dto/request/create-artist.request.dto';
+import { CreateLibraryArtistRequestDto } from './dto/request/create-library-artist.request.dto';
 import { GetLibraryArtistsRequestDto } from './dto/request/get-library-artists.request.dto';
-import { UpdateArtistRequestDto } from './dto/request/update-artist.request.dto';
-import { UploadArtistAvatarRequestDto } from './dto/request/upload-artist-avatar.request.dto';
-import { UploadArtistBannerRequestDto } from './dto/request/upload-artist-banner.request.dto';
-import { CreateArtistResponseDto } from './dto/response/create-artist.response.dto';
-import { DeleteArtistResponseDto } from './dto/response/delete-artist.response.dto';
+import { UpdateLibraryArtistRequestDto } from './dto/request/update-library-artist.request.dto';
+import { UploadLibraryArtistAvatarRequestDto } from './dto/request/upload-library-artist-avatar.request.dto';
+import { UploadLibraryArtistBannerRequestDto } from './dto/request/upload-library-artist-banner.request.dto';
+import { CreateLibraryArtistResponseDto } from './dto/response/create-library-artist.response.dto';
+import { DeleteLibraryArtistResponseDto } from './dto/response/delete-library-artist.response.dto';
 import { GetLibraryArtistResponseDto } from './dto/response/get-library-artist.response.dto';
 import { GetLibraryArtistsResponseDto } from './dto/response/get-library-artists.response.dto';
-import { UpdateArtistResponseDto } from './dto/response/update-artist.response.dto';
-import { UploadArtistAvatarResponseDto } from './dto/response/upload-artist-avatar.response.dto';
-import { UploadArtistBannerResponseDto } from './dto/response/upload-artist-banner.response.dto';
+import { UpdateLibraryArtistResponseDto } from './dto/response/update-library-artist.response.dto';
+import { UploadLibraryArtistAvatarResponseDto } from './dto/response/upload-library-artist-avatar.response.dto';
+import { UploadLibraryArtistBannerResponseDto } from './dto/response/upload-library-artist-banner.response.dto';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
 
@@ -52,7 +52,7 @@ export class LibraryArtistsController {
   @ApiResponse({
     status: 201,
     description: 'Artist created successfully',
-    type: CreateArtistResponseDto,
+    type: CreateLibraryArtistResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -75,7 +75,7 @@ export class LibraryArtistsController {
     type: ApiErrorResponseDto,
   })
   async createArtist(
-    @Body() request: CreateArtistRequestDto,
+    @Body() request: CreateLibraryArtistRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodArtist> {
     const command = new CreateArtistCommand(request, userId);
@@ -95,7 +95,10 @@ export class LibraryArtistsController {
     description: 'Unauthorized',
     type: ApiErrorResponseDto,
   })
-  getArtists(@CurrentUser('id') userId: string, @Query() query: GetLibraryArtistsRequestDto) {
+  getLibraryArtists(
+    @CurrentUser('id') userId: string,
+    @Query() query: GetLibraryArtistsRequestDto,
+  ) {
     return this.queryBus.execute(new GetLibraryArtistsQuery(userId, query.page, query.limit));
   }
 
@@ -112,7 +115,7 @@ export class LibraryArtistsController {
     description: 'Artist not found',
     type: ApiErrorResponseDto,
   })
-  getArtist(@CurrentUser('id') userId: string, @Param('id') artistId: string) {
+  getLibraryArtist(@CurrentUser('id') userId: string, @Param('id') artistId: string) {
     return this.queryBus.execute(new GetLibraryArtistQuery(userId, artistId));
   }
 
@@ -122,7 +125,7 @@ export class LibraryArtistsController {
   @ApiResponse({
     status: 200,
     description: 'Artist details updated successfully',
-    type: UpdateArtistResponseDto,
+    type: UpdateLibraryArtistResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -151,7 +154,7 @@ export class LibraryArtistsController {
   })
   async updateArtist(
     @Param('id') id: string,
-    @Body() request: UpdateArtistRequestDto,
+    @Body() request: UpdateLibraryArtistRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodArtist> {
     const command = new UpdateArtistCommand(id, request, userId);
@@ -164,7 +167,7 @@ export class LibraryArtistsController {
   @ApiResponse({
     status: 200,
     description: 'Artist deleted successfully',
-    type: DeleteArtistResponseDto,
+    type: DeleteLibraryArtistResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -192,12 +195,12 @@ export class LibraryArtistsController {
   @ApiOperation({ summary: 'Upload artist avatar' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    type: UploadArtistAvatarRequestDto,
+    type: UploadLibraryArtistAvatarRequestDto,
   })
   @ApiResponse({
     status: 201,
     description: 'Avatar uploaded successfully',
-    type: UploadArtistAvatarResponseDto,
+    type: UploadLibraryArtistAvatarResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -234,12 +237,12 @@ export class LibraryArtistsController {
   @ApiOperation({ summary: 'Upload artist banner' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    type: UploadArtistBannerRequestDto,
+    type: UploadLibraryArtistBannerRequestDto,
   })
   @ApiResponse({
     status: 201,
     description: 'Banner uploaded successfully',
-    type: UploadArtistBannerResponseDto,
+    type: UploadLibraryArtistBannerResponseDto,
   })
   @ApiResponse({
     status: 400,
