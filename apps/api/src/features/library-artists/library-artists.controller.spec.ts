@@ -2,9 +2,9 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CreateArtistCommand } from './commands/impl/create-library-artist.command';
-import { DeleteArtistCommand } from './commands/impl/delete-library-artist.command';
-import { UpdateArtistCommand } from './commands/impl/update-library-artist.command';
+import { CreateLibraryArtistCommand } from './commands/impl/create-library-artist.command';
+import { DeleteLibraryArtistCommand } from './commands/impl/delete-library-artist.command';
+import { UpdateLibraryArtistCommand } from './commands/impl/update-library-artist.command';
 import { LibraryArtistsController } from './library-artists.controller';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
@@ -39,7 +39,7 @@ describe('LibraryArtistsController', () => {
       const result = await controller.createArtist(request as any, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
-        new CreateArtistCommand(request as any, userId),
+        new CreateLibraryArtistCommand(request as any, userId),
       );
       expect(result).toBe(expectedResult);
     });
@@ -91,7 +91,7 @@ describe('LibraryArtistsController', () => {
       const result = await controller.updateArtist(artistId, request as any, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
-        new UpdateArtistCommand(artistId, request as any, userId),
+        new UpdateLibraryArtistCommand(artistId, request as any, userId),
       );
       expect(result).toBe(expectedResult);
     });
@@ -105,7 +105,9 @@ describe('LibraryArtistsController', () => {
 
       await controller.deleteArtist(artistId, userId);
 
-      expect(commandBus.execute).toHaveBeenCalledWith(new DeleteArtistCommand(artistId, userId));
+      expect(commandBus.execute).toHaveBeenCalledWith(
+        new DeleteLibraryArtistCommand(artistId, userId),
+      );
     });
   });
 });

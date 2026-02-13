@@ -10,11 +10,11 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
 import { vi } from 'vitest';
-import { UploadArtistBannerCommand } from '../impl/upload-library-artist-banner.command';
-import { UploadArtistBannerHandler } from './upload-library-artist-banner.handler';
+import { UploadLibraryArtistBannerCommand } from '../impl/upload-library-artist-banner.command';
+import { UploadLibraryArtistBannerHandler } from './upload-library-artist-banner.handler';
 
-describe('UploadArtistBannerHandler', () => {
-  let handler: UploadArtistBannerHandler;
+describe('UploadLibraryArtistBannerHandler', () => {
+  let handler: UploadLibraryArtistBannerHandler;
   let artistRepository: ArtistRepository;
   let storageService: StorageService;
   let imageService: ImageService;
@@ -46,7 +46,7 @@ describe('UploadArtistBannerHandler', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UploadArtistBannerHandler,
+        UploadLibraryArtistBannerHandler,
         {
           provide: ArtistRepository,
           useValue: {
@@ -83,7 +83,7 @@ describe('UploadArtistBannerHandler', () => {
       ],
     }).compile();
 
-    handler = module.get<UploadArtistBannerHandler>(UploadArtistBannerHandler);
+    handler = module.get<UploadLibraryArtistBannerHandler>(UploadLibraryArtistBannerHandler);
     artistRepository = module.get<ArtistRepository>(ArtistRepository);
     storageService = module.get<StorageService>(StorageService);
     imageService = module.get<ImageService>(ImageService);
@@ -99,7 +99,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should upload artist banner and cleanup old one successfully', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -135,7 +135,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should cleanup newly uploaded file if transaction fails', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -159,7 +159,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should throw NotFoundException if artist not found', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -172,7 +172,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should throw BadRequestException if image is invalid', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -186,7 +186,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should throw InternalServerErrorException if created image is invalid', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -210,7 +210,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should log error if old file cleanup fails', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -242,7 +242,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should log error if new file cleanup fails after DB error', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -268,7 +268,7 @@ describe('UploadArtistBannerHandler', () => {
   });
 
   it('should handle orphaned old banner (exists in artist but not in image table) successfully', async () => {
-    const command = new UploadArtistBannerCommand(
+    const command = new UploadLibraryArtistBannerCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
