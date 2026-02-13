@@ -6,6 +6,6 @@ export class GetLibraryArtistAlbumsQuery {
     public readonly artistId: string,
     public readonly page: number,
     public readonly limit: number,
-    public readonly type: AlbumType,
+    public readonly type?: AlbumType,
   ) {}
 }
