@@ -31,8 +31,14 @@ export const ArtistSchema: z.ZodType<ZodArtist> = z.object({
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
 
-  banner: z.lazy(() => ImageSchema).optional(),
-  avatar: z.lazy(() => ImageSchema).optional(),
+  banner: z
+    .lazy(() => ImageSchema)
+    .nullable()
+    .optional(),
+  avatar: z
+    .lazy(() => ImageSchema)
+    .nullable()
+    .optional(),
   artistProfile: z.lazy(() => ArtistProfileSchema).optional(),
   albums: z.array(z.lazy(() => AlbumSchema)).optional(),
   tracks: z.array(z.lazy(() => TrackSchema)).optional(),

@@ -3,6 +3,7 @@ import { useLibraryArtists } from '@/hooks/api/library/useLibraryArtists';
 import { useLibraryStore } from '@/stores/library.store';
 import { UserIcon } from '@phosphor-icons/react';
 import { Link, createFileRoute } from '@tanstack/react-router';
+import { useEffect } from 'react';
 
 export const Route = createFileRoute('/app/library/artists/')({
   component: RouteComponent,
@@ -11,6 +12,10 @@ export const Route = createFileRoute('/app/library/artists/')({
 function RouteComponent() {
   const { isLoading } = useLibraryArtists();
   const artists = useLibraryStore((state) => state.privateArtists);
+
+  useEffect(() => {
+    console.log('artists', artists);
+  }, [artists]);
 
   if (isLoading) {
     return (
@@ -47,11 +52,11 @@ function RouteComponent() {
             className="group/artist relative p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
           >
             <div className="aspect-square w-full overflow-hidden bg-stone-800 rounded-md">
-              {artist.avatarId ? (
+              {artist.avatar?.url ? (
                 <img
-                  src={`/api/images/${artist.avatarId}`}
+                  src={artist.avatar?.url}
                   alt={artist.name}
-                  className="size-full object-cover transition-transform group-hover/artist:scale-105"
+                  className="size-full object-cover"
                 />
               ) : (
                 <div className="flex size-full items-center justify-center">

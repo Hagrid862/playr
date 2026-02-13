@@ -17,6 +17,9 @@
     "S3_ACCESS_KEY",
     "S3_SECRET_KEY",
     "S3_USE_SSL",
+    "S3_PUBLIC_BUCKET",
+    "S3_PRIVATE_BUCKET",
+    "S3_PUBLIC_URL",
     "MAIL_HOST",
     "MAIL_PORT",
     "MAIL_USER",
@@ -29,14 +32,11 @@
   ],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
@@ -45,29 +45,19 @@
       "persistent": true
     },
     "lint": {
-      "dependsOn": [
-        "^lint"
-      ]
+      "dependsOn": ["^lint"]
     },
     "test:unit": {
-      "dependsOn": [
-        "^test:unit"
-      ]
+      "dependsOn": ["^test:unit"]
     },
     "test:integration": {
-      "dependsOn": [
-        "^test:integration"
-      ]
+      "dependsOn": ["^test:integration"]
     },
     "test:e2e": {
-      "dependsOn": [
-        "^test:e2e"
-      ]
+      "dependsOn": ["^test:e2e"]
     },
     "test:coverage": {
-      "dependsOn": [
-        "^test:coverage"
-      ]
+      "dependsOn": ["^test:coverage"]
     },
     "test:watch": {
       "cache": false,
@@ -87,16 +77,10 @@
       "persistent": true
     },
     "check-types": {
-      "dependsOn": [
-        "^build",
-        "^check-types"
-      ]
+      "dependsOn": ["^build", "^check-types"]
     },
     "start": {
-      "dependsOn": [
-        "build",
-        "^build"
-      ],
+      "dependsOn": ["build", "^build"],
       "persistent": true
     }
   }

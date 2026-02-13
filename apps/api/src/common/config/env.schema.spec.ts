@@ -9,6 +9,8 @@ describe('envSchema', () => {
     S3_ENDPOINT: 's3.example.com',
     S3_ACCESS_KEY: 'access-key',
     S3_SECRET_KEY: 'secret-key',
+    S3_PUBLIC_BUCKET: 'public-bucket',
+    S3_PRIVATE_BUCKET: 'private-bucket',
     MAIL_HOST: 'mail.example.com',
   };
 
@@ -32,6 +34,8 @@ describe('envSchema', () => {
       S3_ACCESS_KEY: 'access-key',
       S3_SECRET_KEY: 'secret-key',
       S3_USE_SSL: false,
+      S3_PUBLIC_BUCKET: 'public-bucket',
+      S3_PRIVATE_BUCKET: 'private-bucket',
       MAIL_HOST: 'mail.example.com',
       MAIL_PORT: 1025,
       MAIL_FROM: 'noreply@playr.com',
@@ -76,5 +80,15 @@ describe('envSchema', () => {
     const result = validateEnv(config);
     expect(result.MAIL_USER).toBe('test-user');
     expect(result.MAIL_PASS).toBe('test-pass');
+  });
+
+  it('should validate S3_PUBLIC_URL if provided', () => {
+    const config = {
+      ...validConfig,
+      S3_PUBLIC_URL: 'https://cdn.example.com',
+    };
+
+    const result = validateEnv(config);
+    expect(result.S3_PUBLIC_URL).toBe('https://cdn.example.com');
   });
 });

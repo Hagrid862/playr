@@ -9,7 +9,9 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { SessionRepository } from './repositories/session.repository';
 import { UserRepository } from './repositories/user.repository';
 import { HashingService } from './services/hashing.service';
+import { ImageService } from './services/image.service';
 import { PrismaService } from './services/prisma.service';
+import { StorageService } from './services/storage.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
 
 @Global()
@@ -21,6 +23,8 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     PrismaService,
     HashingService,
     UnitOfWorkService,
+    ImageService,
+    StorageService,
     // Repositories
     UserRepository,
     EmailAddressRepository,
@@ -38,6 +42,8 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     PrismaService,
     HashingService,
     UnitOfWorkService,
+    ImageService,
+    StorageService,
     // Repositories
     UserRepository,
     EmailAddressRepository,

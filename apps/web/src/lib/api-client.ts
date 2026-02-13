@@ -52,7 +52,14 @@ class ApiClient {
     };
 
     if (body) {
-      config.body = JSON.stringify(body);
+      if (body instanceof FormData) {
+        config.body = body;
+        if (config.headers && typeof config.headers === 'object') {
+          delete (config.headers as Record<string, string>)['Content-Type'];
+        }
+      } else {
+        config.body = JSON.stringify(body);
+      }
     }
 
     const response = await fetch(`${this.baseUrl}/${endpoint}`, config);

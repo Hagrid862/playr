@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
-    LibraryArtist,
-    LibraryArtistCreateInput,
-    LibraryArtistOrderByWithRelationInput,
-    LibraryArtistUpdateInput,
-    LibraryArtistWhereInput,
+  LibraryArtist,
+  LibraryArtistCreateInput,
+  LibraryArtistOrderByWithRelationInput,
+  LibraryArtistUpdateInput,
+  LibraryArtistWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -35,7 +35,12 @@ export class LibraryArtistRepository {
         },
       },
       include: {
-        artist: true,
+        artist: {
+          include: {
+            avatar: true,
+            banner: true,
+          },
+        },
       },
     });
   }
@@ -52,7 +57,12 @@ export class LibraryArtistRepository {
         },
       },
       include: {
-        artist: true,
+        artist: {
+          include: {
+            avatar: true,
+            banner: true,
+          },
+        },
       },
     });
   }
@@ -75,7 +85,12 @@ export class LibraryArtistRepository {
         },
       },
       include: {
-        artist: true,
+        artist: {
+          include: {
+            avatar: true,
+            banner: true,
+          },
+        },
       },
       orderBy,
     });
@@ -90,7 +105,12 @@ export class LibraryArtistRepository {
         },
       },
       include: {
-        artist: true,
+        artist: {
+          include: {
+            avatar: true,
+            banner: true,
+          },
+        },
       },
     });
   }

@@ -56,6 +56,10 @@ describe('ArtistRepository', () => {
         where: {
           deletedAt: null,
         },
+        include: {
+          avatar: true,
+          banner: true,
+        },
         orderBy: undefined,
       });
     });
@@ -72,6 +76,10 @@ describe('ArtistRepository', () => {
         where: {
           name: { contains: 'Test' },
           deletedAt: null,
+        },
+        include: {
+          avatar: true,
+          banner: true,
         },
         orderBy: undefined,
       });
