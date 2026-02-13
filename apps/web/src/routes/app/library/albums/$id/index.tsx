@@ -99,7 +99,7 @@ function RouteComponent() {
                 src={album.cover.url}
                 alt=""
                 aria-hidden="true"
-                className="absolute inset-0 size-56 rounded-2xl object-cover blur-2xl opacity-50 scale-105 translate-y-4 saturate-150 pointer-events-none"
+                className="absolute inset-0 size-56 rounded-2xl object-cover blur-lg opacity-30 scale-100 translate-y-2 saturate-150 pointer-events-none"
               />
             )}
             {/* Actual cover */}
