@@ -1,0 +1,45 @@
+import { LibraryRepository } from '@/shared/repositories/library.repository';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { GetLibraryCommand } from '../impl/get-library.command';
+import { GetLibraryHandler } from './get-library.handler';
+
+describe('GetLibraryHandler', () => {
+  let handler: GetLibraryHandler;
+  let libraryRepository: DeepMocked<LibraryRepository>;
+
+  beforeEach(async () => {
+    libraryRepository = createMock<LibraryRepository>();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [GetLibraryHandler, { provide: LibraryRepository, useValue: libraryRepository }],
+    }).compile();
+
+    handler = module.get<GetLibraryHandler>(GetLibraryHandler);
+  });
+
+  it('should return library if it exists', async () => {
+    const userId = 'user-123';
+    const command = new GetLibraryCommand(userId);
+    const mockLibrary = { id: 'lib-123', userId } as any;
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+
+    const result = await handler.execute(command);
+
+    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
+    expect(result).toBe(mockLibrary);
+  });
+
+  it('should throw NotFoundException if library does not exist', async () => {
+    const userId = 'user-123';
+    const command = new GetLibraryCommand(userId);
+
+    libraryRepository.getByUserId.mockResolvedValue(null);
+
+    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+    await expect(handler.execute(command)).rejects.toThrow('Library not found');
+  });
+});

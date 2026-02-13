@@ -3,6 +3,7 @@ import './setup-env';
 import { INestApplication } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from '../src/app.module';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
@@ -27,6 +28,7 @@ export async function createIntegrationApp(): Promise<{
     .compile();
 
   const app = moduleFixture.createNestApplication();
+  app.use(cookieParser());
 
   // Replicate global setup from main.ts
   app.useGlobalFilters(new GlobalExceptionFilter());

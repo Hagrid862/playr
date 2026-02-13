@@ -1,0 +1,118 @@
+import { createMock } from '@golevelup/ts-vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RouteComponent } from './login';
+
+// Mock hooks
+const mockValues = createMock<{
+  mutateAsync: ReturnType<typeof vi.fn>;
+  isPending: boolean;
+  error: { message: string } | null;
+}>({
+  mutateAsync: vi.fn(),
+  isPending: false,
+  error: null,
+});
+
+vi.mock('@/hooks/api/auth', () => ({
+  useLogin: () => mockValues,
+}));
+
+// Mock useNavigate
+const mockNavigate = vi.fn();
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    createFileRoute: (path: string) => (options: Record<string, unknown>) => ({
+      ...options,
+      path,
+    }),
+    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+      <a href={to}>{children}</a>
+    ),
+  };
+});
+
+describe('Login Page Integration', () => {
+  const Component = RouteComponent;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockValues.mutateAsync.mockResolvedValue({
+      data: {
+        user: { id: '1', username: 'testuser' },
+        accessToken: 'token',
+      },
+    });
+    mockValues.isPending = false;
+    mockValues.error = null;
+  });
+
+  it('renders the login form', () => {
+    render(<Component />);
+    expect(screen.getByText('Login to your account')).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+  });
+
+  it('validates and submits the form successfully', async () => {
+    const user = userEvent.setup();
+    render(<Component />);
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'Password123!');
+
+    const submitBtn = screen.getByRole('button', { name: /login/i });
+    await waitFor(() => expect(submitBtn).toBeEnabled());
+
+    await user.click(submitBtn);
+
+    expect(mockValues.mutateAsync).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'Password123!',
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
+    });
+  });
+
+  it('shows error message on login failure', async () => {
+    mockValues.error = { message: 'Invalid credentials' };
+    render(<Component />);
+    expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+  });
+
+  it('logs error to console on submission exception', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockValues.mutateAsync.mockRejectedValue(new Error('Network error'));
+
+    const user = userEvent.setup();
+    render(<Component />);
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'Password123!');
+
+    const submitBtn = screen.getByRole('button', { name: /login/i });
+    await waitFor(() => expect(submitBtn).toBeEnabled());
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Login failed', expect.any(Error));
+    });
+    consoleSpy.mockRestore();
+  });
+
+  it('handles manual form submission (coverage for handleSubmit check)', async () => {
+    const { container } = render(<Component />);
+    const form = container.querySelector('form');
+    if (form) {
+      fireEvent.submit(form);
+    }
+    // Should not call mutateAsync because form is empty/invalid
+    expect(mockValues.mutateAsync).not.toHaveBeenCalled();
+  });
+});

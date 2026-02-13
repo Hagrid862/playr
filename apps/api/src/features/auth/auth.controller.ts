@@ -1,3 +1,4 @@
+import { AuthenticatedUser } from '@/common/types/auth.types';
 import {
   Body,
   Controller,
@@ -11,10 +12,10 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { User } from '@repo/db';
 import { Throttle } from '@nestjs/throttler';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiErrorResponseDto } from '../../common/dto/api-error.response.dto';
+import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { LoginCommand } from './commands/impl/login.command';
 import { LogoutCommand } from './commands/impl/logout.command';
 import { RefreshTokensCommand } from './commands/impl/refresh-tokens.command';
@@ -24,7 +25,6 @@ import { LogoutResponseDto } from './dto/logout.response.dto';
 import { RefreshResponseDto } from './dto/refresh.response.dto';
 import { RegisterRequestDto } from './dto/register.request.dto';
 import { RegisterResponseDto } from './dto/register.response.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshTokenInterceptor } from './interceptors/refresh-token.interceptor';
 
@@ -69,8 +69,8 @@ export class AuthController {
     description: 'Invalid credentials or email not verified',
     type: ApiErrorResponseDto,
   })
-  async login(@Request() req: ExpressRequest & { user: User; sessionId: string }) {
-    return this.commandBus.execute(new LoginCommand(req.user));
+  async login(@Request() req: ExpressRequest & { user: AuthenticatedUser }) {
+    return this.commandBus.execute(new LoginCommand(req.user.user));
   }
 
   @Post('logout')
@@ -83,10 +83,12 @@ export class AuthController {
     type: LogoutResponseDto,
   })
   async logout(
-    @Request() req: ExpressRequest & { user: { id: string }; sessionId: string },
+    @Request() req: ExpressRequest & { user: AuthenticatedUser },
     @Response({ passthrough: true }) res: ExpressResponse,
   ) {
-    await this.commandBus.execute(new LogoutCommand(req.sessionId));
+    if (req.user.sessionId) {
+      await this.commandBus.execute(new LogoutCommand(req.user.sessionId));
+    }
     res.clearCookie('refreshToken', { path: '/auth/refresh' });
   }
 

@@ -1,10 +1,12 @@
 import { Global, Module } from '@nestjs/common';
-import { PrismaService } from './services/prisma.service';
-import { HashingService } from './services/hashing.service';
-import { UserRepository } from './repositories/user.repository';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { EmailAddressRepository } from './repositories/email-address.repository';
-import { SessionRepository } from './repositories/session.repository';
+import { LibraryRepository } from './repositories/library.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
+import { SessionRepository } from './repositories/session.repository';
+import { UserRepository } from './repositories/user.repository';
+import { HashingService } from './services/hashing.service';
+import { PrismaService } from './services/prisma.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
 
 @Global()
@@ -21,6 +23,9 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     EmailAddressRepository,
     SessionRepository,
     RefreshTokenRepository,
+    LibraryRepository,
+    // guards
+    JwtAuthGuard,
   ],
   exports: [
     // Services
@@ -32,6 +37,9 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     EmailAddressRepository,
     SessionRepository,
     RefreshTokenRepository,
+    LibraryRepository,
+    // guards
+    JwtAuthGuard,
   ],
 })
 export class SharedModule {}

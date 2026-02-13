@@ -1,9 +1,9 @@
-import { useAuthStore } from '@/stores/auth.store';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLogin } from '@/hooks/api/auth';
 import { useLoginForm } from '@/hooks/forms/useLoginForm';
+import { useAuthStore } from '@/stores/auth.store';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { SyntheticEvent } from 'react';
 
@@ -11,7 +11,7 @@ export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
 });
 
-function RouteComponent() {
+export function RouteComponent() {
   const navigate = useNavigate();
   const { mutateAsync: loginUser, isPending: isLoading, error } = useLogin();
   const { formData, isFormValid, handleChange, handleBlur, handleSubmit, getFieldError } =

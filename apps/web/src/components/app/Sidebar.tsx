@@ -20,15 +20,17 @@ import {
   MagnifyingGlassIcon,
   SignOutIcon,
 } from '@phosphor-icons/react';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
   const router = useRouter();
+  const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     logout();
-    router.invalidate();
+    await router.invalidate();
+    await navigate({ to: '/auth/login' });
   };
 
   return (
@@ -78,9 +80,9 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/library/private" activeProps={{ 'data-active': 'true' }}>
+                  <Link to="/app/library/overview" activeProps={{ 'data-active': 'true' }}>
                     <BooksIcon />
-                    <span>Private Library</span>
+                    <span>Overview</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

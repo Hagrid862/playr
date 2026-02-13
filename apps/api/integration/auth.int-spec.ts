@@ -1,9 +1,11 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { EmailAddress, EmailStatus, EmailType, Gender, User } from '@repo/db';
 import request from 'supertest';
-import { createIntegrationApp } from './test-utils';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
-import { Gender, User, EmailAddress, EmailType, EmailStatus } from '@repo/db';
 import { vi } from 'vitest';
+import { PrismaServiceMock } from './mocks/prisma.service.mock';
+import { createIntegrationApp } from './test-utils';
 
 describe('AuthController (Integration)', () => {
   let app: INestApplication;
@@ -148,6 +150,178 @@ describe('AuthController (Integration)', () => {
         .post('/auth/register')
         .send(invalidRegistration)
         .expect(400);
+    });
+  });
+
+  describe('POST /auth/login', () => {
+    const loginData = {
+      email: 'test@example.com',
+      password: 'Password123!',
+    };
+
+    it('should login successfully and return tokens (200)', async () => {
+      const { ...userBase } = {
+        id: 'user-123',
+        username: 'testuser',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        birthDate: '1990-01-01',
+        gender: Gender.male,
+        description: null,
+        avatarId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      };
+
+      const hashedPassword = await import('argon2').then((a) => a.hash(loginData.password));
+
+      // Mock repository response
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+        id: 'email-123',
+        email: loginData.email,
+        userId: 'user-123',
+        status: EmailStatus.verified,
+        type: EmailType.primary,
+        user: {
+          ...userBase,
+          password: hashedPassword,
+        },
+      } as any);
+
+      // Mock session creation
+      prismaMock.client.session.create.mockResolvedValue({
+        id: 'session-123',
+        userId: 'user-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        revokedAt: null,
+      } as any);
+
+      // Mock refresh token creation
+      prismaMock.client.refreshToken.create.mockResolvedValue({} as any);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send(loginData)
+        .expect(201); // Controller login method actually returns 201 by default unless @HttpCode is used
+
+      expect(response.body.data.accessToken).toBeDefined();
+      expect(response.body.data.user.username).toBe(userBase.username);
+
+      // Check refresh token cookie
+      const cookies = response.get('Set-Cookie');
+      expect(cookies).toBeDefined();
+      expect(cookies?.some((c) => c.includes('refreshToken'))).toBe(true);
+    });
+
+    it('should return 401 for invalid password', async () => {
+      const hashedPassword = await import('argon2').then((a) => a.hash('different-password'));
+
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+        email: loginData.email,
+        status: EmailStatus.verified,
+        user: {
+          password: hashedPassword,
+        },
+      } as any);
+
+      await request(app.getHttpServer()).post('/auth/login').send(loginData).expect(401);
+    });
+  });
+
+  describe('POST /auth/refresh', () => {
+    it('should refresh tokens successfully (200)', async () => {
+      const sessionId = 'session-123';
+      const userId = 'user-123';
+
+      // Mock JWT verify for refresh token
+      const jwtService = app.get(JwtService);
+      const config = app.get(ConfigService);
+      const signedToken = await jwtService.signAsync(
+        { sub: userId, username: 'testuser', sessionId },
+        {
+          secret: config.get('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
+      );
+
+      // Mock database checks
+      prismaMock.client.refreshToken.findUnique.mockResolvedValue({
+        token: signedToken,
+        sessionId,
+        revokedAt: null,
+        deletedAt: null,
+        session: {
+          id: sessionId,
+          userId,
+          revokedAt: null,
+          deletedAt: null,
+        },
+      } as any);
+
+      prismaMock.client.session.findUnique.mockResolvedValue({
+        id: sessionId,
+        userId,
+        revokedAt: null,
+        deletedAt: null,
+      } as any);
+
+      prismaMock.client.user.findUnique.mockResolvedValue({
+        id: userId,
+        username: 'testuser',
+      } as any);
+
+      // Mock rotation (revoking old, creating new)
+      prismaMock.client.refreshToken.update.mockResolvedValue({} as any);
+      prismaMock.client.refreshToken.create.mockResolvedValue({} as any);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Cookie', `refreshToken=${signedToken}`)
+        .expect(201);
+
+      expect(response.body.data.accessToken).toBeDefined();
+      expect(response.body.data.refreshToken).toBeUndefined();
+
+      const cookies = response.get('Set-Cookie');
+      expect(cookies?.some((c) => c.includes('refreshToken'))).toBe(true);
+    });
+
+    it('should return 401 if refresh token is missing', async () => {
+      await request(app.getHttpServer()).post('/auth/refresh').expect(401);
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    it('should logout successfully (204)', async () => {
+      const userId = 'user-123';
+      const sessionId = 'session-123';
+
+      // Need a valid Access Token to hit logout (it's guarded by JwtAuthGuard)
+      const jwtService = app.get(JwtService);
+      const config = app.get(ConfigService);
+      const accessToken = await jwtService.signAsync(
+        { sub: userId, username: 'testuser', sessionId },
+        {
+          secret: config.get('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        },
+      );
+
+      // Mock session revocation
+      prismaMock.client.session.update.mockResolvedValue({} as any);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
+
+      // Check cookie cleared
+      const cookies = response.get('Set-Cookie');
+      expect(cookies?.some((c) => c.includes('refreshToken=;'))).toBe(true);
     });
   });
 });

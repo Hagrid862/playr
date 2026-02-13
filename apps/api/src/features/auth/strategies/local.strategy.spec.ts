@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { LocalStrategy } from './local.strategy';
-import { QueryBus } from '@nestjs/cqrs';
-import { UnauthorizedException } from '@nestjs/common';
-import { ValidateUserQuery } from '../queries/impl/validate-user.query';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { User, Gender } from '@repo/db';
+import { UnauthorizedException } from '@nestjs/common';
+import { QueryBus } from '@nestjs/cqrs';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Gender, User } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ValidateUserQuery } from '../queries/impl/validate-user.query';
+import { LocalStrategy } from './local.strategy';
 
 describe('LocalStrategy', () => {
   let strategy: LocalStrategy;
@@ -54,7 +54,7 @@ describe('LocalStrategy', () => {
 
       // Assert
       expect(queryBus.execute).toHaveBeenCalledWith(expect.any(ValidateUserQuery));
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ user: mockUser });
     });
 
     it('should throw UnauthorizedException if validation query returns null', async () => {

@@ -15,7 +15,7 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppSearchIndexRouteImport } from './routes/app/search/index'
 import { Route as AppNewIndexRouteImport } from './routes/app/new/index'
-import { Route as AppLibraryPrivateIndexRouteImport } from './routes/app/library/private/index'
+import { Route as AppLibraryOverviewIndexRouteImport } from './routes/app/library/overview/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,9 +47,9 @@ const AppNewIndexRoute = AppNewIndexRouteImport.update({
   path: '/app/new/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppLibraryPrivateIndexRoute = AppLibraryPrivateIndexRouteImport.update({
-  id: '/app/library/private/',
-  path: '/app/library/private/',
+const AppLibraryOverviewIndexRoute = AppLibraryOverviewIndexRouteImport.update({
+  id: '/app/library/overview/',
+  path: '/app/library/overview/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -60,7 +60,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
-  '/app/library/private/': typeof AppLibraryPrivateIndexRoute
+  '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -69,7 +69,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/new': typeof AppNewIndexRoute
   '/app/search': typeof AppSearchIndexRoute
-  '/app/library/private': typeof AppLibraryPrivateIndexRoute
+  '/app/library/overview': typeof AppLibraryOverviewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,7 +79,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
-  '/app/library/private/': typeof AppLibraryPrivateIndexRoute
+  '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,7 +90,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/new/'
     | '/app/search/'
-    | '/app/library/private/'
+    | '/app/library/overview/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -99,7 +99,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/new'
     | '/app/search'
-    | '/app/library/private'
+    | '/app/library/overview'
   id:
     | '__root__'
     | '/'
@@ -108,7 +108,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/new/'
     | '/app/search/'
-    | '/app/library/private/'
+    | '/app/library/overview/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,7 +118,7 @@ export interface RootRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppNewIndexRoute: typeof AppNewIndexRoute
   AppSearchIndexRoute: typeof AppSearchIndexRoute
-  AppLibraryPrivateIndexRoute: typeof AppLibraryPrivateIndexRoute
+  AppLibraryOverviewIndexRoute: typeof AppLibraryOverviewIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,11 +165,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/library/private/': {
-      id: '/app/library/private/'
-      path: '/app/library/private'
-      fullPath: '/app/library/private/'
-      preLoaderRoute: typeof AppLibraryPrivateIndexRouteImport
+    '/app/library/overview/': {
+      id: '/app/library/overview/'
+      path: '/app/library/overview'
+      fullPath: '/app/library/overview/'
+      preLoaderRoute: typeof AppLibraryOverviewIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -182,7 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppNewIndexRoute: AppNewIndexRoute,
   AppSearchIndexRoute: AppSearchIndexRoute,
-  AppLibraryPrivateIndexRoute: AppLibraryPrivateIndexRoute,
+  AppLibraryOverviewIndexRoute: AppLibraryOverviewIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
