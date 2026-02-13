@@ -1,9 +1,9 @@
-import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { ValidateUserQuery } from '../impl/validate-user.query';
 import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
-import { EmailStatus, User } from '@repo/db';
 import { UnauthorizedException } from '@nestjs/common';
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { EmailStatus, User } from '@repo/db';
+import { ValidateUserQuery } from '../impl/validate-user.query';
 
 @QueryHandler(ValidateUserQuery)
 export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {

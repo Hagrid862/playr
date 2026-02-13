@@ -9,6 +9,8 @@ import './styles.css';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { useAuthStore } from './stores/auth.store';
+
 // Create a client
 const queryClient = new QueryClient();
 
@@ -17,6 +19,8 @@ const router = createRouter({
   routeTree,
   context: {
     queryClient,
+    auth: undefined!, // This will be set in the Provider if using a custom hook,
+    // but for TanStack Router we usually pass it here updated by the store.
   },
   defaultPreload: 'intent',
   scrollRestoration: true,
@@ -33,12 +37,18 @@ declare module '@tanstack/react-router' {
 
 // Render the app
 const rootElement = document.getElementById('app');
+
+function Root() {
+  const auth = useAuthStore();
+  return <RouterProvider router={router} context={{ auth }} />;
+}
+
 if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <Root />
       </QueryClientProvider>
     </StrictMode>,
   );
