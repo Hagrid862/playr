@@ -19,7 +19,8 @@ import { SharedModule } from './shared/shared.module';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 120,
+        limit: 600,
+        skipIf: () => process.env.THROTTLE_ENABLED === 'false',
       },
     ]),
     FeaturesModule,

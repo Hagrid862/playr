@@ -105,4 +105,160 @@ describe('LibraryController (Integration)', () => {
         .expect(404);
     });
   });
+
+  describe('GET /library/artists', () => {
+    it('should return paginated library artists (200)', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.library.findUnique.mockResolvedValue({
+        id: 'lib-123',
+        userId: 'user-123',
+      } as any);
+
+      const mockArtists = [
+        {
+          id: 'la-1',
+          libraryId: 'lib-123',
+          artistId: 'artist-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          artist: {
+            id: 'artist-1',
+            name: 'Artist One',
+            avatar: null,
+            banner: null,
+          },
+        },
+        {
+          id: 'la-2',
+          libraryId: 'lib-123',
+          artistId: 'artist-2',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          artist: {
+            id: 'artist-2',
+            name: 'Artist Two',
+            avatar: null,
+            banner: null,
+          },
+        },
+      ];
+
+      prismaMock.client.libraryArtist.findMany.mockResolvedValue(mockArtists as any);
+      prismaMock.client.libraryArtist.count.mockResolvedValue(2);
+
+      const response = await request(app.getHttpServer())
+        .get('/library/artists')
+        .query({ page: 1, limit: 10 })
+        .set('Authorization', authHeader)
+        .expect(200);
+
+      expect(response.body.data.items).toHaveLength(2);
+      expect(response.body.data.total).toBe(2);
+      expect(response.body.data.page).toBe(1);
+      expect(response.body.data.limit).toBe(10);
+    });
+
+    it('should return empty list when no artists in library (200)', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.library.findUnique.mockResolvedValue({
+        id: 'lib-123',
+        userId: 'user-123',
+      } as any);
+
+      prismaMock.client.libraryArtist.findMany.mockResolvedValue([]);
+      prismaMock.client.libraryArtist.count.mockResolvedValue(0);
+
+      const response = await request(app.getHttpServer())
+        .get('/library/artists')
+        .query({ page: 1, limit: 10 })
+        .set('Authorization', authHeader)
+        .expect(200);
+
+      expect(response.body.data.items).toHaveLength(0);
+      expect(response.body.data.total).toBe(0);
+    });
+
+    it('should return 412 if user library not found', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.library.findUnique.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .get('/library/artists')
+        .query({ page: 1, limit: 10 })
+        .set('Authorization', authHeader)
+        .expect(412);
+    });
+
+    it('should return 401 if unauthorized', async () => {
+      await request(app.getHttpServer()).get('/library/artists').expect(401);
+    });
+  });
+
+  describe('GET /library/artists/:id', () => {
+    it('should return a single library artist (200)', async () => {
+      const authHeader = await getAuthHeader();
+      const artistId = 'artist-1';
+
+      prismaMock.client.library.findUnique.mockResolvedValue({
+        id: 'lib-123',
+        userId: 'user-123',
+      } as any);
+
+      prismaMock.client.libraryArtist.findUnique.mockResolvedValue({
+        id: 'la-1',
+        libraryId: 'lib-123',
+        artistId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        artist: {
+          id: artistId,
+          name: 'Artist One',
+          avatar: null,
+          banner: null,
+        },
+      } as any);
+
+      const response = await request(app.getHttpServer())
+        .get(`/library/artists/${artistId}`)
+        .set('Authorization', authHeader)
+        .expect(200);
+
+      expect(response.body.data.artistId).toBe(artistId);
+      expect(response.body.data.artist.name).toBe('Artist One');
+    });
+
+    it('should return 404 if artist not found in library', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.library.findUnique.mockResolvedValue({
+        id: 'lib-123',
+        userId: 'user-123',
+      } as any);
+
+      prismaMock.client.libraryArtist.findUnique.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .get('/library/artists/nonexistent-artist')
+        .set('Authorization', authHeader)
+        .expect(404);
+    });
+
+    it('should return 412 if user library not found', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.library.findUnique.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .get('/library/artists/artist-1')
+        .set('Authorization', authHeader)
+        .expect(412);
+    });
+
+    it('should return 401 if unauthorized', async () => {
+      await request(app.getHttpServer()).get('/library/artists/artist-1').expect(401);
+    });
+  });
 });

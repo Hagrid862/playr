@@ -65,6 +65,16 @@ export function EditArtistForm({
       setSelectedAvatar(file);
       setAvatarPreview(URL.createObjectURL(file));
       form.setFieldValue('avatarId', 'preview'); // Trigger re-render
+    } else {
+      // Handle case where no file is selected (e.g., user cancels file dialog)
+      setSelectedAvatar(undefined);
+      setAvatarPreview(undefined);
+      // If there was a previous avatar, revert to it or clear the field
+      if (artist.avatarId) {
+        form.setFieldValue('avatarId', artist.avatarId);
+      } else {
+        form.setFieldValue('avatarId', undefined);
+      }
     }
   };
 
@@ -74,6 +84,15 @@ export function EditArtistForm({
       setSelectedBanner(file);
       setBannerPreview(URL.createObjectURL(file));
       form.setFieldValue('bannerId', 'preview'); // Trigger re-render
+    } else {
+      // Handle case where no file is selected
+      setSelectedBanner(undefined);
+      setBannerPreview(undefined);
+      if (artist.bannerId) {
+        form.setFieldValue('bannerId', artist.bannerId);
+      } else {
+        form.setFieldValue('bannerId', undefined);
+      }
     }
   };
 
@@ -190,7 +209,11 @@ export function EditArtistForm({
                   error={
                     (field.state.meta.isTouched && field.state.meta.errors.length > 0
                       ? String(field.state.meta.errors[0])
-                      : undefined) || serverErrors?.name
+                      : undefined) ||
+                    (field.state.meta.isTouched && form.state.errors.length > 0
+                      ? (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      : undefined) ||
+                    serverErrors?.name
                   }
                   onChange={field.handleChange}
                   onBlur={field.handleBlur}
@@ -199,16 +222,27 @@ export function EditArtistForm({
               )}
             </form.Field>
 
-            <form.Field name="description">
+            <form.Field
+              name="description"
+              validators={{
+                onChange: ({ value }) => {
+                  if (value && value.length > 2048) {
+                    return 'Description must be 2048 characters or less';
+                  }
+                  return undefined;
+                },
+              }}
+            >
               {(field) => (
                 <TextAreaField
                   label="Description"
                   placeholder="Tell something about the artist..."
                   value={field.state.value || ''}
                   error={
-                    field.state.meta.isTouched && field.state.meta.errors.length > 0
-                      ? String(field.state.meta.errors[0])
-                      : undefined
+                    field.state.meta.isTouched
+                      ? (field.state.meta.errors[0] as unknown as string) ||
+                        (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      : serverErrors?.description
                   }
                   onChange={field.handleChange}
                   onBlur={field.handleBlur}

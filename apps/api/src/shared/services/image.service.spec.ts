@@ -1,6 +1,18 @@
 import sharp from 'sharp';
 import { ImageService } from './image.service';
 
+vi.mock('sharp', async (importOriginal) => {
+  const mod = await importOriginal<any>();
+  const fn = vi.fn((input, options) => {
+    return mod.default(input, options);
+  });
+  Object.assign(fn, mod.default);
+  return {
+    ...mod,
+    default: fn,
+  };
+});
+
 describe('ImageService', () => {
   let service: ImageService;
   let testImage: Buffer;
@@ -28,6 +40,18 @@ describe('ImageService', () => {
       expect(metadata.format).toBe('jpeg');
       expect(metadata.size).toBeGreaterThan(0);
     });
+
+    it('should return default values when metadata is missing', async () => {
+      vi.mocked(sharp).mockReturnValueOnce({
+        metadata: vi.fn().mockResolvedValue({}),
+      } as any);
+
+      const result = await service.getMetadata(Buffer.from('test'));
+      expect(result.width).toBe(0);
+      expect(result.height).toBe(0);
+      expect(result.format).toBe('');
+      expect(result.size).toBe(4);
+    });
   });
 
   describe('resizeImage', () => {
@@ -47,6 +71,14 @@ describe('ImageService', () => {
       });
       const metadata = await service.getMetadata(converted);
       expect(metadata.format).toBe('webp');
+    });
+
+    it('should convert to png', async () => {
+      const converted = await service.resizeImage(testImage, {
+        format: 'png',
+      });
+      const metadata = await service.getMetadata(converted);
+      expect(metadata.format).toBe('png');
     });
   });
 
@@ -86,6 +118,36 @@ describe('ImageService', () => {
       expect(metadata.width).toBe(50);
       expect(metadata.height).toBe(100);
     });
+
+    it('should return original image (converted) if already smaller than maxDimension', async () => {
+      const smallImage = await sharp({
+        create: {
+          width: 50,
+          height: 50,
+          channels: 3,
+          background: { r: 0, g: 0, b: 0 },
+        },
+      })
+        .jpeg()
+        .toBuffer();
+
+      const result = await service.resizeToMaxDimension(smallImage, 100);
+      const metadata = await service.getMetadata(result);
+
+      // It basically just calls convertFormat -> resizeImage, so dimensions should stay same
+      expect(metadata.width).toBe(50);
+      expect(metadata.height).toBe(50);
+    });
+  });
+
+  describe('createThumbnail', () => {
+    it('should create a thumbnail with specified dimensions', async () => {
+      const thumbnail = await service.createThumbnail(testImage, 50, 50);
+      const metadata = await service.getMetadata(thumbnail);
+      // createThumbnail uses 'inside' fit, so it will fit within the box
+      expect(metadata.width).toBeLessThanOrEqual(50);
+      expect(metadata.height).toBeLessThanOrEqual(50);
+    });
   });
 
   describe('validateImage', () => {
@@ -97,6 +159,31 @@ describe('ImageService', () => {
     it('should return false for too large images', async () => {
       const isValid = await service.validateImage(testImage, 0.000001); // Extremely small limit
       expect(isValid).toBe(false);
+    });
+
+    it('should return false for unsupported image formats', async () => {
+      // Create a TIFF image which is not in the allowed list
+      const tiffImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 3,
+          background: { r: 0, g: 0, b: 0 },
+        },
+      })
+        .tiff()
+        .toBuffer();
+
+      const isValid = await service.validateImage(tiffImage);
+      expect(isValid).toBe(false);
+    });
+  });
+
+  describe('convertFormat', () => {
+    it('should convert image format', async () => {
+      const converted = await service.convertFormat(testImage, 'png');
+      const metadata = await service.getMetadata(converted);
+      expect(metadata.format).toBe('png');
     });
   });
 
@@ -118,6 +205,20 @@ describe('ImageService', () => {
       expect(updates?.update?.[0].where.id).toBe('1');
       expect(updates?.create).toHaveLength(1);
       expect(updates?.create?.[0].url).toBe('url3');
+    });
+
+    it('should return undefined if incoming images are missing', () => {
+      // @ts-expect-error Testing invalid input
+      expect(service.prepareImageUpdates([], undefined)).toBeUndefined();
+    });
+
+    it('should handle empty lists correctly', () => {
+      const updates = service.prepareImageUpdates([], []);
+      expect(updates).toEqual({
+        deleteMany: undefined,
+        create: undefined,
+        update: undefined,
+      });
     });
   });
 });

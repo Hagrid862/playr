@@ -5,6 +5,7 @@ import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
   BadRequestException,
+  InternalServerErrorException,
   NotFoundException,
   PreconditionFailedException,
 } from '@nestjs/common';
@@ -209,5 +210,127 @@ describe('UploadArtistAvatarHandler', () => {
     vi.mocked(imageService.validateImage).mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should throw InternalServerErrorException if created image is invalid', async () => {
+    const command = new UploadArtistAvatarCommand(
+      'artist-123',
+      Buffer.from('test'),
+      'image/jpeg',
+      'user-123',
+    );
+
+    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
+    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(imageService.validateImage).mockResolvedValue(true);
+    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
+    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    // Mock create to return invalid image (missing required fields for ZodImage)
+    vi.mocked(mockTx.image.create).mockResolvedValueOnce({
+      id: 'img-new',
+      // missing other required fields
+    } as any);
+
+    await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
+
+    // Cleanup should be called
+    const expectedNewKey = `artists/artist-123/avatar-${new Date('2024-01-01').getTime()}.webp`;
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.public, expectedNewKey);
+  });
+
+  it('should log error if old file cleanup fails', async () => {
+    const command = new UploadArtistAvatarCommand(
+      'artist-123',
+      Buffer.from('test'),
+      'image/jpeg',
+      'user-123',
+    );
+
+    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
+    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({
+      id: 'artist-123',
+      avatarId: 'img-old',
+    } as any);
+    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue({
+      id: 'img-old',
+      bucket: FileBucket.public,
+      key: 'old-key',
+    } as any);
+    vi.mocked(imageService.validateImage).mockResolvedValue(true);
+    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
+    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    const loggerSpy = vi.spyOn((handler as any).logger, 'error').mockImplementation(() => {});
+    vi.mocked(storageService.deleteFile).mockRejectedValue(new Error('Delete error'));
+
+    await handler.execute(command);
+
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to cleanup old avatar file'),
+      expect.any(Error),
+    );
+  });
+
+  it('should log error if new file cleanup fails after DB error', async () => {
+    const command = new UploadArtistAvatarCommand(
+      'artist-123',
+      Buffer.from('test'),
+      'image/jpeg',
+      'user-123',
+    );
+
+    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
+    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(imageService.validateImage).mockResolvedValue(true);
+    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
+    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    vi.mocked(prismaService.mainClient.$transaction).mockRejectedValue(new Error('DB Error'));
+
+    const loggerSpy = vi.spyOn((handler as any).logger, 'error').mockImplementation(() => {});
+    vi.mocked(storageService.deleteFile).mockRejectedValue(new Error('Delete error'));
+
+    // Should still throw the original DB error
+    await expect(handler.execute(command)).rejects.toThrow('DB Error');
+
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to cleanup new avatar file'),
+      expect.any(Error),
+    );
+  });
+
+  it('should handle orphaned old avatar (exists in artist but not in image table) successfully', async () => {
+    const command = new UploadArtistAvatarCommand(
+      'artist-123',
+      Buffer.from('test'),
+      'image/jpeg',
+      'user-123',
+    );
+
+    vi.mocked(privateProfileRepository.getByUserId).mockResolvedValue({ id: 'pp-123' } as any);
+    vi.mocked(artistRepository.getByIdAndOwnerId).mockResolvedValue({
+      id: 'artist-123',
+      avatarId: 'img-old',
+    } as any);
+    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue(null); // Orphaned
+    vi.mocked(imageService.validateImage).mockResolvedValue(true);
+    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
+    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    const result = await handler.execute(command);
+    const expectedNewKey = `artists/artist-123/avatar-${new Date('2024-01-01').getTime()}.webp`;
+
+    expect(result.id).toBe('img-new');
+    expect(storageService.uploadFile).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      FileBucket.public,
+      expectedNewKey,
+      expect.any(Object),
+    );
+    expect(mockTx.image.delete).toHaveBeenCalledWith({ where: { id: 'img-old' } });
+
+    // Should NOT attempt to delete old file from storage because it wasn't found
+    expect(storageService.deleteFile).not.toHaveBeenCalledWith(FileBucket.public, 'old-key');
   });
 });

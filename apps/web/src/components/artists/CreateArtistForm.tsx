@@ -79,9 +79,10 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
                   placeholder="e.g. Kurt Cobain"
                   value={field.state.value}
                   error={
-                    (field.state.meta.isTouched && field.state.meta.errors.length > 0
-                      ? String(field.state.meta.errors[0])
-                      : undefined) || serverErrors?.name
+                    field.state.meta.isTouched
+                      ? (field.state.meta.errors[0] as unknown as string) ||
+                        (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      : serverErrors?.name
                   }
                   onChange={field.handleChange}
                   onBlur={field.handleBlur}
@@ -89,16 +90,27 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
               )}
             </form.Field>
 
-            <form.Field name="description">
+            <form.Field
+              name="description"
+              validators={{
+                onChange: ({ value }) => {
+                  if (value && value.length > 2048) {
+                    return 'Description must be 2048 characters or less';
+                  }
+                  return undefined;
+                },
+              }}
+            >
               {(field) => (
                 <TextAreaField
                   label="Description"
                   placeholder="Tell something about the artist..."
                   value={field.state.value || ''}
                   error={
-                    field.state.meta.isTouched && field.state.meta.errors.length > 0
-                      ? String(field.state.meta.errors[0])
-                      : undefined
+                    field.state.meta.isTouched
+                      ? (field.state.meta.errors[0] as unknown as string) ||
+                        (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      : serverErrors?.description
                   }
                   onChange={field.handleChange}
                   onBlur={field.handleBlur}

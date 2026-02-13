@@ -24,8 +24,8 @@ class ApiClient {
     this.failedQueue.forEach((prom) => {
       if (error) {
         prom.reject(error);
-      } else if (token) {
-        prom.resolve(token);
+      } else {
+        prom.resolve(token ?? '');
       }
     });
 
@@ -54,9 +54,7 @@ class ApiClient {
     if (body) {
       if (body instanceof FormData) {
         config.body = body;
-        if (config.headers && typeof config.headers === 'object') {
-          delete (config.headers as Record<string, string>)['Content-Type'];
-        }
+        delete (config.headers as Record<string, string>)['Content-Type'];
       } else {
         config.body = JSON.stringify(body);
       }
@@ -101,7 +99,11 @@ class ApiClient {
 
           if (refreshResponse.ok) {
             const refreshData = await refreshResponse.json();
-            const newAccessToken = refreshData.data.accessToken;
+            const newAccessToken = refreshData.data?.accessToken;
+
+            if (!newAccessToken) {
+              throw new Error('Refresh token response missing access token');
+            }
 
             useAuthStore.getState().updateAccessToken(newAccessToken);
             this.processQueue(null, newAccessToken);
@@ -118,6 +120,7 @@ class ApiClient {
         } catch (error) {
           this.processQueue(error);
           useAuthStore.getState().logout();
+          throw error;
         } finally {
           this.isRefreshing = false;
         }
