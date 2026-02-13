@@ -1,7 +1,5 @@
 import { CreateArtistForm } from '@/components/artists/CreateArtistForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLibraryArtist';
 import { useLibraryStore } from '@/stores/library.store';
 import { InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
@@ -32,17 +30,8 @@ function RouteComponent() {
 
   return (
     <div className="flex items-center justify-center py-10">
-      <Card className="flex flex-col gap-6 w-full max-w-2xl">
-        <CardHeader className="flex flex-col gap-1">
-          <h2 className="text-2xl font-bold text-white">New Local Artist</h2>
-          <p className="text-muted-foreground text-sm">
-            Add a new artist to your private library collection.
-          </p>
-        </CardHeader>
-
-        <Separator />
-
-        <CardContent className="flex flex-col gap-2">
+      <div className="flex flex-col gap-6 w-full max-w-2xl">
+        <div className="flex flex-col gap-2">
           <Alert className="bg-primary/5 border-primary/20">
             <InfoIcon size={20} className="text-primary" />
             <AlertTitle className="text-primary">Note on Local Artists</AlertTitle>
@@ -69,14 +58,14 @@ function RouteComponent() {
               <AlertDescription>{apiError.message}</AlertDescription>
             </Alert>
           )}
-        </CardContent>
+        </div>
 
         <CreateArtistForm
           isLoading={isCreatingArtist}
           serverErrors={apiError?.status === 409 ? { name: apiError.message } : undefined}
           onSubmit={onSubmit}
         />
-      </Card>
+      </div>
     </div>
   );
 }
