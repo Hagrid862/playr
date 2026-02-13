@@ -1,10 +1,8 @@
 import { AlbumType } from "@repo/db";
 import { z } from "zod";
-import { createApiResponseSchema } from "../api";
-import { AlbumSchema } from "../schemas";
-import { zodDateTimeNullable } from "../utils";
+import { zodDateTimeNullable } from "../../utils";
 
-export const UpdateAlbumRequestSchema = z.object({
+export const UpdateLibraryAlbumRequestSchema = z.object({
   name: z
     .string()
     .min(1, "Album name cannot be empty")
@@ -19,8 +17,6 @@ export const UpdateAlbumRequestSchema = z.object({
   coverId: z.string().nullable().optional(),
 });
 
-export type UpdateAlbumRequest = z.infer<typeof UpdateAlbumRequestSchema>;
-
-export const UpdateAlbumResponseSchema = createApiResponseSchema(AlbumSchema);
-
-export type UpdateAlbumResponse = z.infer<typeof UpdateAlbumResponseSchema>;
+export type UpdateLibraryAlbumRequest = z.infer<
+  typeof UpdateLibraryAlbumRequestSchema
+>;

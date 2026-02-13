@@ -1,11 +1,9 @@
 import { AlbumType } from "@repo/db";
 import { z } from "zod";
-import { createApiResponseSchema } from "../api";
-import { AlbumSchema } from "../schemas";
-import { zodDateTimeNullable } from "../utils";
-import { zodRequiredString } from "../utils/zod-shared";
+import { zodDateTimeNullable } from "../../utils";
+import { zodRequiredString } from "../../utils/zod-shared";
 
-export const CreateAlbumRequestSchema = z.object({
+export const CreateLibraryAlbumRequestSchema = z.object({
   name: zodRequiredString("Album name is required").pipe(
     z
       .string()
@@ -21,8 +19,6 @@ export const CreateAlbumRequestSchema = z.object({
   releaseDate: zodDateTimeNullable(),
 });
 
-export type CreateAlbumRequest = z.infer<typeof CreateAlbumRequestSchema>;
-
-export const CreateAlbumResponseSchema = createApiResponseSchema(AlbumSchema);
-
-export type CreateAlbumResponse = z.infer<typeof CreateAlbumResponseSchema>;
+export type CreateLibraryAlbumRequest = z.infer<
+  typeof CreateLibraryAlbumRequestSchema
+>;
