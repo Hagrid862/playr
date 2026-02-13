@@ -48,7 +48,7 @@ function RouteComponent() {
   const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryArtistAlbums(
     id,
     1,
-    50,
+    10,
     AlbumType.album,
   );
 

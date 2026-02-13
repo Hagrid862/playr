@@ -31,6 +31,11 @@ export class GetLibraryArtistAlbumsHandler implements IQueryHandler<GetLibraryAr
         },
         take: limit,
         skip: (page - 1) * limit,
+        orderBy: {
+          album: {
+            releaseDate: 'desc',
+          },
+        },
       }),
       this.libraryAlbumRepository.count({
         libraryId: library.id,
