@@ -36,7 +36,7 @@ function RouteComponent() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Card className="overflow-hidden border-none shadow-xl bg-stone-900/40 backdrop-blur-md">
+      <div className="overflow-hidden">
         <CreateAlbumForm
           formData={formData}
           isLoading={isLoading}
@@ -46,7 +46,7 @@ function RouteComponent() {
           onBlur={handleBlur}
           getFieldError={getFieldError}
         />
-      </Card>
+      </div>
     </div>
   );
 }

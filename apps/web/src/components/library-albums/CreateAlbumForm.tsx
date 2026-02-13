@@ -1,10 +1,10 @@
 import { DatePickerField, TextAreaField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
-import { CardContent, CardFooter } from '@/components/ui/card';
 import { FormData } from '@/hooks/forms/useCreateAlbumForm';
 import { CircleNotchIcon, MusicNotesIcon, PlusIcon } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import { SyntheticEvent } from 'react';
+import { Separator } from '@/components/ui/separator';
 
 interface CreateAlbumFormProps {
   id?: string;
@@ -29,7 +29,7 @@ export function CreateAlbumForm({
 }: CreateAlbumFormProps) {
   return (
     <form id={id} className="flex flex-col gap-8" onSubmit={onSubmit}>
-      <CardContent className="pt-6">
+      <div className="pt-6">
         <div className="flex flex-col md:flex-row gap-10">
           <div className="flex flex-col items-center gap-3">
             <div className="group relative w-32 h-32 rounded-lg bg-stone-800 border-2 border-dashed border-stone-700 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
@@ -76,9 +76,11 @@ export function CreateAlbumForm({
             />
           </div>
         </div>
-      </CardContent>
+      </div>
 
-      <CardFooter className="flex items-center justify-between gap-4 bg-muted/30 p-6">
+      <Separator />
+
+      <div className="flex items-center justify-between gap-4">
         <Button asChild variant="secondary" type="button" className="min-w-32">
           <Link to=".." search={(prev) => prev}>
             Cancel
@@ -97,7 +99,7 @@ export function CreateAlbumForm({
             </>
           )}
         </Button>
-      </CardFooter>
+      </div>
     </form>
   );
 }
