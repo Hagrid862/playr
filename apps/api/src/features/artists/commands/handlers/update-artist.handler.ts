@@ -1,42 +1,30 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { PrivateProfileRepository } from '@/shared/repositories/private-profile.repository';
-import {
-  ConflictException,
-  InternalServerErrorException,
-  NotFoundException,
-  PreconditionFailedException,
-} from '@nestjs/common';
+import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
 import { UpdateArtistCommand } from '../impl/update-artist.command';
 
 @CommandHandler(UpdateArtistCommand)
 export class UpdateArtistHandler implements ICommandHandler<UpdateArtistCommand> {
-  constructor(
-    private readonly artistRepository: ArtistRepository,
-    private readonly privateProfileRepository: PrivateProfileRepository,
-  ) {}
+  constructor(private readonly artistRepository: ArtistRepository) {}
 
   async execute(command: UpdateArtistCommand): Promise<ZodArtist> {
     const { artistId, request, userId } = command;
 
-    const userPrivateProfile = await this.privateProfileRepository.getByUserId(userId);
-
-    if (!userPrivateProfile) {
-      throw new PreconditionFailedException('User private profile not found');
-    }
-
-    const artist = await this.artistRepository.getByIdAndOwnerId(artistId, userPrivateProfile.id);
+    const artist = await this.artistRepository.findOne({
+      id: artistId,
+      access: { some: { userId, role: 'OWNER' } },
+    });
 
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
 
     if (request.name && request.name !== artist.name) {
-      const existingArtistWithName = await this.artistRepository.getByNameAndOwnerId(
-        request.name,
-        userPrivateProfile.id,
-      );
+      const existingArtistWithName = await this.artistRepository.findOne({
+        name: request.name,
+        access: { some: { userId, role: 'OWNER' } },
+      });
 
       if (existingArtistWithName) {
         throw new ConflictException('This artist name is already taken');

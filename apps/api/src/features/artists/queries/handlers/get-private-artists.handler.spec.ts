@@ -25,6 +25,7 @@ describe('GetPrivateArtistsHandler', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
+      visibility: 'PRIVATE',
     },
     {
       id: 'artist-2',
@@ -39,6 +40,7 @@ describe('GetPrivateArtistsHandler', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
+      visibility: 'PRIVATE',
     },
   ];
 
@@ -57,21 +59,37 @@ describe('GetPrivateArtistsHandler', () => {
 
   it('should return private artists for the user', async () => {
     const query = new GetPrivateArtistsQuery(mockUserId);
-    artistRepository.getPrivateByUserId.mockResolvedValue(mockArtists as any);
+    artistRepository.findMany.mockResolvedValue(mockArtists as any);
 
     const result = await handler.execute(query);
 
     expect(result).toEqual(mockArtists);
-    expect(artistRepository.getPrivateByUserId).toHaveBeenCalledWith(mockUserId);
+    expect(artistRepository.findMany).toHaveBeenCalledWith({
+      where: {
+        access: {
+          some: {
+            userId: mockUserId,
+          },
+        },
+      },
+    });
   });
 
   it('should return empty array if no artists found', async () => {
     const query = new GetPrivateArtistsQuery(mockUserId);
-    artistRepository.getPrivateByUserId.mockResolvedValue([]);
+    artistRepository.findMany.mockResolvedValue([]);
 
     const result = await handler.execute(query);
 
     expect(result).toEqual([]);
-    expect(artistRepository.getPrivateByUserId).toHaveBeenCalledWith(mockUserId);
+    expect(artistRepository.findMany).toHaveBeenCalledWith({
+      where: {
+        access: {
+          some: {
+            userId: mockUserId,
+          },
+        },
+      },
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { type Track } from "@repo/db";
+import { type Track, Visibility } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 import { AlbumSchema, type ZodAlbum } from "./album.schema";
@@ -18,6 +18,7 @@ export interface ZodTrack extends Track {
   credits?: ZodTrackCredit[];
   genres?: ZodTrackGenre[];
   playlistTracks?: ZodPlaylistTrack[];
+  visibility: Visibility;
 }
 
 export const TrackSchema: z.ZodType<ZodTrack> = z.object({
@@ -30,6 +31,7 @@ export const TrackSchema: z.ZodType<ZodTrack> = z.object({
   explicit: z.boolean(),
   lyrics: z.string().nullable(),
   albumId: z.string(),
+  visibility: z.enum(Visibility),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),

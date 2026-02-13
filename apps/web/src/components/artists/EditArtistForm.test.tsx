@@ -1,8 +1,8 @@
 import {
-  UpdateArtistRequest,
-  UpdateArtistRequestSchema,
-  ZodArtist,
-  ZodImage,
+    UpdateArtistRequest,
+    UpdateArtistRequestSchema,
+    ZodArtist,
+    ZodImage,
 } from '@repo/contracts';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -42,6 +42,7 @@ describe('EditArtistForm', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+    visibility: 'PUBLIC',
   };
 
   const mockOnSubmit =

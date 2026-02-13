@@ -15,17 +15,12 @@ import {
 } from "./email-address.schema";
 import { ImageSchema, type ZodImage } from "./image.schema";
 import { LibrarySchema, type ZodLibrary } from "./library.schema";
-import {
-  UserPrivateProfileSchema,
-  type ZodUserPrivateProfile,
-} from "./user-private-profile.schema";
 
 export interface ZodUser extends Omit<User, "password"> {
   library?: ZodLibrary | null;
   avatar?: ZodImage | null;
   artistProfile?: ZodArtistProfile | null;
   communityProfile?: ZodCommunityProfile | null;
-  userPrivateProfile?: ZodUserPrivateProfile | null;
   emailAddresses?: ZodEmailAddress[];
 }
 
@@ -46,7 +41,6 @@ export const UserSchema: z.ZodType<ZodUser> = z.object({
   avatar: z.lazy(() => ImageSchema).optional(),
   artistProfile: z.lazy(() => ArtistProfileSchema).optional(),
   communityProfile: z.lazy(() => CommunityProfileSchema).optional(),
-  userPrivateProfile: z.lazy(() => UserPrivateProfileSchema).optional(),
   emailAddresses: z.array(z.lazy(() => EmailAddressSchema)).optional(),
 });
 

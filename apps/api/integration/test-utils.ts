@@ -2,7 +2,7 @@ import './setup-env';
 
 import { INestApplication } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from '../src/app.module';
@@ -15,17 +15,22 @@ import { PrismaServiceMock } from './mocks/prisma.service.mock';
  * Creates a NestJS application configured for integration testing.
  * Uses a mocked PrismaService to avoid database dependencies.
  */
-export async function createIntegrationApp(): Promise<{
+export async function createIntegrationApp(
+  builder: (module: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
+): Promise<{
   app: INestApplication;
   moduleFixture: TestingModule;
   prismaMock: PrismaServiceMock;
 }> {
-  const moduleFixture: TestingModule = await Test.createTestingModule({
+  let moduleBuilder = Test.createTestingModule({
     imports: [AppModule],
   })
     .overrideProvider(PrismaService)
-    .useClass(PrismaServiceMock)
-    .compile();
+    .useClass(PrismaServiceMock);
+
+  moduleBuilder = builder(moduleBuilder);
+
+  const moduleFixture = await moduleBuilder.compile();
 
   const app = moduleFixture.createNestApplication();
   app.use(cookieParser());

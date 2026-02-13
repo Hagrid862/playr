@@ -24,8 +24,8 @@ describe('GetLibraryArtistsHandler', () => {
         {
           provide: LibraryArtistRepository,
           useValue: {
-            getByLibraryId: vi.fn(),
-            countByLibraryId: vi.fn(),
+            findMany: vi.fn(),
+            count: vi.fn(),
           },
         },
       ],
@@ -49,8 +49,8 @@ describe('GetLibraryArtistsHandler', () => {
     const mockTotal = 2;
 
     vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary as any);
-    vi.mocked(libraryArtistRepository.getByLibraryId).mockResolvedValue(mockItems as any);
-    vi.mocked(libraryArtistRepository.countByLibraryId).mockResolvedValue(mockTotal);
+    vi.mocked(libraryArtistRepository.findMany).mockResolvedValue(mockItems as any);
+    vi.mocked(libraryArtistRepository.count).mockResolvedValue(mockTotal);
 
     const query = new GetLibraryArtistsQuery(userId, page, limit);
     const result = await handler.execute(query);
@@ -62,8 +62,12 @@ describe('GetLibraryArtistsHandler', () => {
       limit,
     });
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.getByLibraryId).toHaveBeenCalledWith(libraryId, page, limit);
-    expect(libraryArtistRepository.countByLibraryId).toHaveBeenCalledWith(libraryId);
+    expect(libraryArtistRepository.findMany).toHaveBeenCalledWith({
+      where: { libraryId },
+      skip: 0,
+      take: limit,
+    });
+    expect(libraryArtistRepository.count).toHaveBeenCalledWith({ libraryId });
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
@@ -77,7 +81,7 @@ describe('GetLibraryArtistsHandler', () => {
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.getByLibraryId).not.toHaveBeenCalled();
-    expect(libraryArtistRepository.countByLibraryId).not.toHaveBeenCalled();
+    expect(libraryArtistRepository.findMany).not.toHaveBeenCalled();
+    expect(libraryArtistRepository.count).not.toHaveBeenCalled();
   });
 });

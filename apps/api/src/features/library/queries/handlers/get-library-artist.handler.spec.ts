@@ -24,7 +24,7 @@ describe('GetLibraryArtistHandler', () => {
         {
           provide: LibraryArtistRepository,
           useValue: {
-            getByLibraryIdAndArtistId: vi.fn(),
+            findOne: vi.fn(),
           },
         },
       ],
@@ -43,19 +43,17 @@ describe('GetLibraryArtistHandler', () => {
     const mockLibraryArtist = { id: 'la-123', artistId, libraryId };
 
     vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary as any);
-    vi.mocked(libraryArtistRepository.getByLibraryIdAndArtistId).mockResolvedValue(
-      mockLibraryArtist as any,
-    );
+    vi.mocked(libraryArtistRepository.findOne).mockResolvedValue(mockLibraryArtist as any);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
     const result = await handler.execute(query);
 
     expect(result).toEqual(mockLibraryArtist);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.getByLibraryIdAndArtistId).toHaveBeenCalledWith(
+    expect(libraryArtistRepository.findOne).toHaveBeenCalledWith({
       libraryId,
       artistId,
-    );
+    });
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
@@ -68,7 +66,7 @@ describe('GetLibraryArtistHandler', () => {
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.getByLibraryIdAndArtistId).not.toHaveBeenCalled();
+    expect(libraryArtistRepository.findOne).not.toHaveBeenCalled();
   });
 
   it('should throw NotFoundException if artist not found in library', async () => {
@@ -78,15 +76,15 @@ describe('GetLibraryArtistHandler', () => {
     const mockLibrary = { id: libraryId };
 
     vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary as any);
-    vi.mocked(libraryArtistRepository.getByLibraryIdAndArtistId).mockResolvedValue(null);
+    vi.mocked(libraryArtistRepository.findOne).mockResolvedValue(null);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.getByLibraryIdAndArtistId).toHaveBeenCalledWith(
+    expect(libraryArtistRepository.findOne).toHaveBeenCalledWith({
       libraryId,
       artistId,
-    );
+    });
   });
 });

@@ -22,8 +22,12 @@ export class GetLibraryArtistsHandler implements IQueryHandler<GetLibraryArtists
     }
 
     const [items, total] = await Promise.all([
-      this.libraryArtistRepository.getByLibraryId(library.id, page, limit),
-      this.libraryArtistRepository.countByLibraryId(library.id),
+      this.libraryArtistRepository.findMany({
+        where: { libraryId: library.id },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      this.libraryArtistRepository.count({ libraryId: library.id }),
     ]);
 
     return {

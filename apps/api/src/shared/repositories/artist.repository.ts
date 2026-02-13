@@ -17,92 +17,49 @@ export class ArtistRepository {
   // QUERIES
   // ─────────────────────────────────────────────────────────────
 
-  async getById(id: string): Promise<Artist | null> {
-    return await this.prisma.client.artist.findUnique({
-      where: { id },
+  async findOne(where: ArtistWhereInput): Promise<Artist | null> {
+    return await this.prisma.client.artist.findFirst({
+      where: { ...where, deletedAt: null },
       include: { avatar: true, banner: true },
     });
   }
 
-  async getByName(name: string): Promise<Artist | null> {
-    return await this.prisma.client.artist.findFirst({
-      where: { name },
+  async findMany(options: {
+    where?: ArtistWhereInput;
+    take?: number;
+    skip?: number;
+    orderBy?: ArtistOrderByWithRelationInput;
+  }): Promise<Artist[]> {
+    return await this.prisma.client.artist.findMany({
+      where: { ...options.where, deletedAt: null },
+      take: options.take,
+      skip: options.skip,
       include: { avatar: true, banner: true },
+      orderBy: options.orderBy ?? { createdAt: 'desc' },
     });
   }
 
-  async getByNameAndOwnerId(name: string, ownerId: string): Promise<Artist | null> {
-    return await this.prisma.client.artist.findFirst({
-      where: {
-        name,
-        deletedAt: null,
-        OR: [
-          { artistProfile: { id: ownerId } },
-          { communityProfile: { id: ownerId } },
-          {
-            privateArtistProfile: {
-              userPrivateProfile: {
-                id: ownerId,
-              },
-            },
-          },
-        ],
-      },
-      include: { avatar: true, banner: true },
-    });
-  }
+  async checkAccess(id: string, userId?: string): Promise<boolean> {
+    const guestId = 'GUEST';
+    const activeUserId = userId ?? guestId;
 
-  async getByIdAndOwnerId(id: string, ownerId: string): Promise<Artist | null> {
-    return await this.prisma.client.artist.findFirst({
+    const artist = await this.prisma.client.artist.findFirst({
       where: {
         id,
         deletedAt: null,
         OR: [
-          { artistProfile: { id: ownerId } },
-          { communityProfile: { id: ownerId } },
+          { visibility: 'PUBLIC' },
           {
-            privateArtistProfile: {
-              userPrivateProfile: {
-                id: ownerId,
-              },
+            access: {
+              some: { userId: activeUserId },
             },
           },
         ],
       },
-      include: { avatar: true, banner: true },
+      select: { id: true },
     });
-  }
 
-  async getPrivateByUserId(userId: string): Promise<Artist[]> {
-    return await this.prisma.client.artist.findMany({
-      where: {
-        privateArtistProfile: {
-          userPrivateProfile: {
-            userId,
-          },
-        },
-        deletedAt: null,
-      },
-      include: { avatar: true, banner: true },
-    });
-  }
-
-  async getPaginated(
-    page: number,
-    limit: number,
-    filter?: ArtistWhereInput,
-    orderBy?: ArtistOrderByWithRelationInput,
-  ): Promise<Artist[]> {
-    return await this.prisma.client.artist.findMany({
-      take: limit,
-      skip: (page - 1) * limit,
-      where: {
-        ...filter,
-        deletedAt: null,
-      },
-      include: { avatar: true, banner: true },
-      orderBy,
-    });
+    return !!artist;
   }
 
   // ─────────────────────────────────────────────────────────────

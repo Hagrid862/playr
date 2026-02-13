@@ -27,10 +27,9 @@ model User {
   avatarId String? @unique
   avatar   Image?  @relation("UserAvatarImage", fields: [avatarId], references: [id], onDelete: SetNull)
 
-  artistProfile      ArtistProfile?      @relation("ArtistProfileUser")
-  communityProfile   CommunityProfile?   @relation("CommunityProfileUser")
-  moderatorAccount   ModeratorAccount?   @relation("UserModeratorAccount")
-  userPrivateProfile UserPrivateProfile? @relation("UserPrivateProfile")
+  artistProfile    ArtistProfile?    @relation("ArtistProfileUser")
+  communityProfile CommunityProfile? @relation("CommunityProfileUser")
+  moderatorAccount ModeratorAccount? @relation("UserModeratorAccount")
 
   emailAddresses EmailAddress[]  @relation("UserEmailAddresses")
   sessions       Session[]       @relation("UserSessions")
@@ -40,6 +39,10 @@ model User {
   notifications  Notification[]  @relation("UserNotifications")
 
   reportTargets ReportTarget[] @relation("UserReportTargets")
+
+  artistAccess ArtistAccess[]
+  albumAccess  AlbumAccess[]
+  trackAccess  TrackAccess[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -104,45 +107,6 @@ model RefreshToken {
 
   @@index([sessionId])
   @@map("refresh_tokens")
-}
-
-// -----------------------------------------------------------
-// --- private content ---------------------------------------
-// -----------------------------------------------------------
-
-model UserPrivateProfile {
-  id String @id @default(cuid())
-
-  userId String @unique
-  user   User   @relation("UserPrivateProfile", fields: [userId], references: [id], onDelete: Cascade)
-
-  privateArtistProfiles PrivateArtistProfile[] @relation("UserPrivateProfileArtists")
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([userId])
-  @@map("user_private_profiles")
-}
-
-model PrivateArtistProfile {
-  id String @id @default(cuid())
-
-  userPrivateProfileId String
-  userPrivateProfile   UserPrivateProfile @relation("UserPrivateProfileArtists", fields: [userPrivateProfileId], references: [id], onDelete: Cascade)
-
-  artistId String @unique
-  artist   Artist @relation("PrivateArtistProfileArtist", fields: [artistId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@unique([userPrivateProfileId, artistId])
-  @@index([userPrivateProfileId])
-  @@index([artistId])
-  @@map("private_artist_profiles")
 }
 
 // -----------------------------------------------------------
@@ -279,6 +243,64 @@ model LibraryTrack {
 }
 
 // -----------------------------------------------------------
+// --- access control list (acl) -----------------------------
+// -----------------------------------------------------------
+
+model ArtistAccess {
+  id       String     @id @default(cuid())
+  artistId String
+  userId   String
+  role     AccessRole @default(VIEWER)
+
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([artistId, userId])
+  @@index([artistId])
+  @@index([userId])
+  @@map("artist_access")
+}
+
+model AlbumAccess {
+  id      String     @id @default(cuid())
+  albumId String
+  userId  String
+  role    AccessRole @default(VIEWER)
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([albumId, userId])
+  @@index([albumId])
+  @@index([userId])
+  @@map("album_access")
+}
+
+model TrackAccess {
+  id      String     @id @default(cuid())
+  trackId String
+  userId  String
+  role    AccessRole @default(VIEWER)
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([trackId, userId])
+  @@index([trackId])
+  @@index([userId])
+  @@map("track_access")
+}
+
+// -----------------------------------------------------------
 // --- professional artist -----------------------------------
 // -----------------------------------------------------------
 
@@ -304,15 +326,15 @@ model ArtistProfile {
 // -----------------------------------------------------------
 
 model Artist {
-  id          String  @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
-  description String? @db.Text
-  isCommunity Boolean @default(false)
-  verified    Boolean @default(false)
+  description String?    @db.Text
+  isCommunity Boolean    @default(false)
+  verified    Boolean    @default(false)
+  visibility  Visibility @default(PUBLIC)
 
-  artistProfile        ArtistProfile?        @relation("ArtistProfileArtist")
-  communityProfile     CommunityProfile?     @relation("CommunityProfileArtist")
-  privateArtistProfile PrivateArtistProfile? @relation("PrivateArtistProfileArtist")
+  artistProfile    ArtistProfile?    @relation("ArtistProfileArtist")
+  communityProfile CommunityProfile? @relation("CommunityProfileArtist")
 
   bannerId String? @unique
   banner   Image?  @relation("ArtistBannerImage", fields: [bannerId], references: [id], onDelete: SetNull)
@@ -322,6 +344,7 @@ model Artist {
 
   albums         Album[]         @relation("AlbumArtists")
   tracks         Track[]         @relation("TrackArtists")
+  access         ArtistAccess[]
   libraryArtists LibraryArtist[] @relation("LibraryArtistArtist")
   libraryPins    LibraryPin[]    @relation("LibraryPinArtist")
   playlists      Playlist[]      @relation("ArtistPlaylists")
@@ -340,19 +363,21 @@ model Artist {
 }
 
 model Album {
-  id            String    @id @default(cuid())
+  id            String     @id @default(cuid())
   name          String
-  description   String?   @db.Text
-  type          AlbumType @default(album)
-  totalTracks   Int       @default(0)
-  totalDuration Int       @default(0)
+  description   String?    @db.Text
+  type          AlbumType  @default(album)
+  totalTracks   Int        @default(0)
+  totalDuration Int        @default(0)
   releaseDate   DateTime?
+  visibility    Visibility @default(PUBLIC)
 
   coverId String? @unique
   cover   Image?  @relation("AlbumCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
 
   artists       Artist[]           @relation("AlbumArtists")
   tracks        Track[]            @relation("AlbumTracks")
+  access        AlbumAccess[]
   libraryAlbums LibraryAlbum[]     @relation("LibraryAlbumAlbum")
   libraryPins   LibraryPin[]       @relation("LibraryPinAlbum")
   comments      CommunityComment[] @relation("AlbumComments")
@@ -371,14 +396,15 @@ model Album {
 }
 
 model Track {
-  id            String  @id @default(cuid())
+  id            String     @id @default(cuid())
   title         String
-  trackNumber   Int     @default(0)
-  diskNumber    Int     @default(0)
-  duration      Int     @default(0)
-  listenedCount Int     @default(0)
-  explicit      Boolean @default(false)
-  lyrics        String? @db.Text
+  trackNumber   Int        @default(0)
+  diskNumber    Int        @default(0)
+  duration      Int        @default(0)
+  listenedCount Int        @default(0)
+  explicit      Boolean    @default(false)
+  lyrics        String?    @db.Text
+  visibility    Visibility @default(PUBLIC)
 
   albumId String
   album   Album  @relation("AlbumTracks", fields: [albumId], references: [id], onDelete: Cascade)
@@ -393,7 +419,8 @@ model Track {
   credits        TrackCredit[]      @relation("TrackCredits")
   audioFiles     AudioFile[]        @relation("TrackAudioFiles")
 
-  artists Artist[] @relation("TrackArtists")
+  artists Artist[]      @relation("TrackArtists")
+  access  TrackAccess[]
 
   reportTargets ReportTarget[] @relation("TrackReportTargets")
 
@@ -1028,4 +1055,16 @@ enum ProcessingStatus {
   processing
   complete
   failed
+}
+
+enum AccessRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  COMMUNITY
 }

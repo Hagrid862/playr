@@ -32,6 +32,7 @@ describe('ArtistsController', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+    visibility: 'PUBLIC',
   };
 
   const mockImage: ZodImage = {

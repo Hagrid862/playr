@@ -2,21 +2,21 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ZodArtist, ZodImage } from '@repo/contracts';
+import { ZodAlbum, ZodArtist, ZodImage } from '@repo/contracts';
 import { CreateArtistCommand } from './commands/impl/create-artist.command';
 import { DeleteArtistCommand } from './commands/impl/delete-artist.command';
 import { UpdateArtistCommand } from './commands/impl/update-artist.command';
@@ -25,6 +25,7 @@ import { UploadArtistBannerCommand } from './commands/impl/upload-artist-banner.
 import { CreateArtistRequestDto } from './dto/create-artist.request.dto';
 import { CreateArtistResponseDto } from './dto/create-artist.response.dto';
 import { DeleteArtistResponseDto } from './dto/delete-artist.response.dto';
+import { GetArtistAlbumsResponseDto } from './dto/get-artist-albums.response.dto';
 import { GetPrivateArtistsResponseDto } from './dto/get-private-artists.response.dto';
 import { UpdateArtistRequestDto } from './dto/update-artist.request.dto';
 import { UpdateArtistResponseDto } from './dto/update-artist.response.dto';
@@ -32,6 +33,7 @@ import { UploadArtistAvatarRequestDto } from './dto/upload-artist-avatar.request
 import { UploadArtistAvatarResponseDto } from './dto/upload-artist-avatar.response.dto';
 import { UploadArtistBannerRequestDto } from './dto/upload-artist-banner.request.dto';
 import { UploadArtistBannerResponseDto } from './dto/upload-artist-banner.response.dto';
+import { GetArtistAlbumsQuery } from './queries/impl/get-artist-albums.query';
 import { GetPrivateArtistsQuery } from './queries/impl/get-private-artists.query';
 
 @ApiTags('Artists')
@@ -253,5 +255,31 @@ export class ArtistsController {
   ): Promise<ZodImage> {
     const command = new UploadArtistBannerCommand(id, file.buffer, file.mimetype, userId);
     return this.commandBus.execute(command);
+  }
+
+  @Get(':id/albums')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get artist albums' })
+  @ApiResponse({
+    status: 200,
+    description: 'Artist albums retrieved successfully',
+    type: GetArtistAlbumsResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ApiErrorResponseDto,
+  })
+  async getArtistAlbums(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<ZodAlbum[]> {
+    const query = new GetArtistAlbumsQuery(id, userId);
+    return this.queryBus.execute(query);
   }
 }

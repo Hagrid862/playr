@@ -21,10 +21,10 @@ export class GetLibraryArtistHandler implements IQueryHandler<GetLibraryArtistQu
       throw new PreconditionFailedException('User library not found');
     }
 
-    const libraryArtist = await this.libraryArtistRepository.getByLibraryIdAndArtistId(
-      library.id,
+    const libraryArtist = await this.libraryArtistRepository.findOne({
+      libraryId: library.id,
       artistId,
-    );
+    });
     if (!libraryArtist) {
       throw new NotFoundException('Artist not found in user library');
     }

@@ -28,6 +28,7 @@ const mockArtistBase = {
   deletedAt: null,
   avatar: null,
   banner: null,
+  visibility: 'PUBLIC',
 };
 
 describe('ArtistsController (Integration)', () => {
@@ -71,11 +72,6 @@ describe('ArtistsController (Integration)', () => {
     it('should create an artist successfully (201)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
-
       prismaMock.client.library.findUnique.mockResolvedValue({
         id: 'lib-123',
         userId: 'user-123',
@@ -113,11 +109,6 @@ describe('ArtistsController (Integration)', () => {
     it('should return 409 if artist name is already taken', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
-
       prismaMock.client.library.findUnique.mockResolvedValue({
         id: 'lib-123',
         userId: 'user-123',
@@ -140,29 +131,8 @@ describe('ArtistsController (Integration)', () => {
         .expect(409);
     });
 
-    it('should return 412 if user private profile not found', async () => {
-      const authHeader = await getAuthHeader();
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue(null);
-      prismaMock.client.library.findUnique.mockResolvedValue({
-        id: 'lib-123',
-        userId: 'user-123',
-      } as any);
-
-      await request(app.getHttpServer())
-        .post('/artists')
-        .set('Authorization', authHeader)
-        .send({ name: 'New Artist' })
-        .expect(412);
-    });
-
     it('should return 412 if user library not found', async () => {
       const authHeader = await getAuthHeader();
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
 
       prismaMock.client.library.findUnique.mockResolvedValue(null);
 
@@ -238,11 +208,6 @@ describe('ArtistsController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const artistId = 'artist-123';
 
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
-
       // Artist exists and is owned by this user
       prismaMock.client.artist.findFirst.mockResolvedValueOnce({
         ...mockArtistBase,
@@ -271,11 +236,6 @@ describe('ArtistsController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const artistId = 'artist-123';
 
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
-
       prismaMock.client.artist.findFirst.mockResolvedValue({
         ...mockArtistBase,
         id: artistId,
@@ -299,11 +259,6 @@ describe('ArtistsController (Integration)', () => {
     it('should return 404 if artist not found', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
-
       // Artist not found
       prismaMock.client.artist.findFirst.mockResolvedValue(null);
 
@@ -317,11 +272,6 @@ describe('ArtistsController (Integration)', () => {
     it('should return 409 if new name is already taken', async () => {
       const authHeader = await getAuthHeader();
       const artistId = 'artist-123';
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
 
       // Artist being updated
       prismaMock.client.artist.findFirst.mockResolvedValueOnce({
@@ -344,18 +294,6 @@ describe('ArtistsController (Integration)', () => {
         .expect(409);
     });
 
-    it('should return 412 if user private profile not found', async () => {
-      const authHeader = await getAuthHeader();
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue(null);
-
-      await request(app.getHttpServer())
-        .patch('/artists/artist-123')
-        .set('Authorization', authHeader)
-        .send({ name: 'Updated' })
-        .expect(412);
-    });
-
     it('should return 401 if unauthorized', async () => {
       await request(app.getHttpServer())
         .patch('/artists/artist-123')
@@ -372,11 +310,6 @@ describe('ArtistsController (Integration)', () => {
     it('should soft-delete an artist successfully (200)', async () => {
       const authHeader = await getAuthHeader();
       const artistId = 'artist-123';
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
 
       prismaMock.client.artist.findFirst.mockResolvedValue({
         ...mockArtistBase,
@@ -402,28 +335,12 @@ describe('ArtistsController (Integration)', () => {
     it('should return 404 if artist not found', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
-
       prismaMock.client.artist.findFirst.mockResolvedValue(null);
 
       await request(app.getHttpServer())
         .delete('/artists/nonexistent')
         .set('Authorization', authHeader)
         .expect(404);
-    });
-
-    it('should return 412 if user private profile not found', async () => {
-      const authHeader = await getAuthHeader();
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue(null);
-
-      await request(app.getHttpServer())
-        .delete('/artists/artist-123')
-        .set('Authorization', authHeader)
-        .expect(412);
     });
 
     it('should return 401 if unauthorized', async () => {
@@ -439,11 +356,6 @@ describe('ArtistsController (Integration)', () => {
     it('should upload artist avatar successfully (201)', async () => {
       const authHeader = await getAuthHeader();
       const artistId = 'artist-123';
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
 
       prismaMock.client.artist.findFirst.mockResolvedValue({
         ...mockArtistBase,
@@ -506,11 +418,6 @@ describe('ArtistsController (Integration)', () => {
     it('should upload artist banner successfully (201)', async () => {
       const authHeader = await getAuthHeader();
       const artistId = 'artist-123';
-
-      prismaMock.client.userPrivateProfile.findUnique.mockResolvedValue({
-        id: 'pp-123',
-        userId: 'user-123',
-      } as any);
 
       prismaMock.client.artist.findFirst.mockResolvedValue({
         ...mockArtistBase,
