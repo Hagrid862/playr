@@ -3,8 +3,8 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { NotFoundException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { vi } from 'vitest';
-import { GetLibraryArtistHandler } from '../get-library-artist.handler';
 import { GetLibraryArtistQuery } from '../impl/get-library-artist.query';
+import { GetLibraryArtistHandler } from './get-library-artist.handler';
 
 describe('GetLibraryArtistHandler', () => {
   let handler: GetLibraryArtistHandler;

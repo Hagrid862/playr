@@ -73,7 +73,6 @@ describe('UploadAlbumCoverHandler', () => {
     storageService.uploadFile.mockResolvedValue({
       url: 'http://bucket/key.webp',
       key: 'key.webp',
-      bucket: FileBucket.public,
     });
 
     prisma.client.image.create.mockResolvedValue(mockImageRecord as any);
@@ -104,7 +103,6 @@ describe('UploadAlbumCoverHandler', () => {
     storageService.uploadFile.mockResolvedValue({
       url: 'new-url',
       key: 'new-key',
-      bucket: FileBucket.public,
     });
 
     prisma.client.image.findUnique.mockResolvedValue({
