@@ -207,7 +207,7 @@ describe('LibraryController (Integration)', () => {
         userId: 'user-123',
       } as any);
 
-      prismaMock.client.libraryArtist.findUnique.mockResolvedValue({
+      prismaMock.client.libraryArtist.findFirst.mockResolvedValue({
         id: 'la-1',
         libraryId: 'lib-123',
         artistId,
@@ -238,7 +238,7 @@ describe('LibraryController (Integration)', () => {
         userId: 'user-123',
       } as any);
 
-      prismaMock.client.libraryArtist.findUnique.mockResolvedValue(null);
+      prismaMock.client.libraryArtist.findFirst.mockResolvedValue(null);
 
       await request(app.getHttpServer())
         .get('/library/artists/nonexistent-artist')

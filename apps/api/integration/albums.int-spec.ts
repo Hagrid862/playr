@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { vi } from 'vitest';
+import { ImageService } from '../src/shared/services/image.service';
+import { StorageService } from '../src/shared/services/storage.service';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
+import './setup-env';
 import { createIntegrationApp } from './test-utils';
 
 describe('AlbumsController (Integration)', () => {
@@ -11,9 +14,27 @@ describe('AlbumsController (Integration)', () => {
   let prismaMock: PrismaServiceMock;
   let jwtService: JwtService;
   let config: ConfigService;
+  let storageServiceMock: { uploadFile: any; deleteFile: any };
+  let imageServiceMock: { validateImage: any; resizeToMaxDimension: any };
 
   beforeAll(async () => {
-    const setup = await createIntegrationApp();
+    storageServiceMock = {
+      uploadFile: vi.fn(),
+      deleteFile: vi.fn().mockResolvedValue(undefined),
+    };
+    imageServiceMock = {
+      validateImage: vi.fn(),
+      resizeToMaxDimension: vi.fn(),
+    };
+
+    const setup = await createIntegrationApp((builder) => {
+      return builder
+        .overrideProvider(StorageService)
+        .useValue(storageServiceMock)
+        .overrideProvider(ImageService)
+        .useValue(imageServiceMock);
+    });
+
     app = setup.app;
     prismaMock = setup.prismaMock;
     jwtService = app.get(JwtService);
@@ -104,6 +125,72 @@ describe('AlbumsController (Integration)', () => {
 
     it('should return 401 if unauthorized', async () => {
       await request(app.getHttpServer()).delete('/albums/album-123').expect(401);
+    });
+  });
+
+  describe('POST /albums/:id/cover', () => {
+    it('should upload album cover successfully (201)', async () => {
+      const authHeader = await getAuthHeader();
+      const albumId = 'album-123';
+      const mockFile = Buffer.from('test-image');
+
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum as any);
+
+      imageServiceMock.validateImage.mockResolvedValue(true);
+      imageServiceMock.resizeToMaxDimension.mockResolvedValue(mockFile);
+      storageServiceMock.uploadFile.mockResolvedValue({
+        url: 'https://cdn.example.com/cover.webp',
+        key: 'cover.webp',
+      });
+
+      // Transaction simulation
+      prismaMock.mainClient.$transaction.mockImplementation(async (cb: any) =>
+        cb(prismaMock.client),
+      );
+
+      prismaMock.client.image.create.mockResolvedValue({
+        id: 'img-123',
+        alt: null,
+        bucket: 'public',
+        key: 'cover.webp',
+        url: 'https://cdn.example.com/cover.webp',
+        mimeType: 'image/webp',
+        blurhash: null,
+        reportId: null,
+        uploadStatus: 'uploaded',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      } as any);
+
+      prismaMock.client.album.update.mockResolvedValue({
+        ...mockAlbum,
+        coverId: 'img-123',
+      } as any);
+
+      const response = await request(app.getHttpServer())
+        .post(`/albums/${albumId}/cover`)
+        .set('Authorization', authHeader)
+        .attach('file', mockFile, 'cover.png')
+        .expect(201);
+
+      expect(response.body.data.id).toBe('img-123');
+      expect(response.body.data.url).toBe('https://cdn.example.com/cover.webp');
+    });
+
+    it('should return 400 if image validation fails', async () => {
+      const authHeader = await getAuthHeader();
+      const albumId = 'album-123';
+      const mockFile = Buffer.from('invalid-image');
+
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum as any);
+      imageServiceMock.validateImage.mockResolvedValue(false);
+
+      await request(app.getHttpServer())
+        .post(`/albums/${albumId}/cover`)
+        .set('Authorization', authHeader)
+        .attach('file', mockFile, 'cover.txt')
+        .expect(400);
     });
   });
 });
