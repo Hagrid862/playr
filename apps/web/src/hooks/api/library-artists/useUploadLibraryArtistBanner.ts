@@ -8,9 +8,13 @@ export const useUploadLibraryArtistBanner = () => {
 
   return useMutation<UploadLibraryArtistBannerResponse, ApiError, { id: string; file: File }>({
     mutationFn: ({ id, file }) => uploadLibraryArtistBanner(id, file),
-    onSuccess: (_, { id }) => {
+    onSuccess: (response, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['library', 'artists'] });
       queryClient.invalidateQueries({ queryKey: ['library', 'artists', id] });
+
+      if (response.data) {
+        queryClient.fetchQuery({ queryKey: ['library', 'artists', id] });
+      }
     },
   });
 };

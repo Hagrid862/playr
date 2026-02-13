@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteLibraryArtist } from '@/hooks/api/library-artists/useDeleteLibraryArtist';
-import { useLibraryStore } from '@/stores/library.store';
 import {
   DiscIcon,
   DotsThreeIcon,
@@ -31,9 +30,11 @@ import {
 } from '@phosphor-icons/react';
 import { AlbumType } from '@repo/db';
 import { useLibraryArtistAlbums } from '@/hooks/api/library-artists/useLibraryArtistAlbums';
+import { useLibraryArtist } from '@/hooks/api/library-artists/useLibraryArtist';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { MediaCard } from '@/components/library/MediaCard';
+import { Spinner } from '@/components/ui/spinner';
 
 export const Route = createFileRoute('/app/library/artists/$id/')({
   component: RouteComponent,
@@ -43,12 +44,15 @@ function RouteComponent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const artist = useLibraryStore((state) => state.privateArtists.find((a) => a.id === id));
+
+  const { data: artistResponse, isLoading: isArtistLoading } = useLibraryArtist(id);
+  const artist = artistResponse?.data?.artist;
+
   const { mutateAsync: deleteArtist, isPending: isDeleting } = useDeleteLibraryArtist();
   const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryArtistAlbums(
     id,
     1,
-    50,
+    10,
     AlbumType.album,
   );
 
@@ -63,6 +67,15 @@ function RouteComponent() {
       console.error('Failed to delete artist:', error);
     }
   };
+
+  if (isArtistLoading) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4">
+        <Spinner className="size-8" />
+        <p className="text-muted-foreground animate-pulse">Loading artist details...</p>
+      </div>
+    );
+  }
 
   if (!artist) {
     return (

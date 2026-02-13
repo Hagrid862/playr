@@ -4,12 +4,13 @@ import { CameraIcon, CircleNotchIcon, PlusIcon } from '@phosphor-icons/react';
 import { CreateLibraryArtistRequest, CreateLibraryArtistRequestSchema } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
 import { Separator } from '../ui/separator';
 
 interface CreateArtistFormProps {
   isLoading: boolean;
   serverErrors?: Partial<Record<keyof CreateLibraryArtistRequest, string>>;
-  onSubmit: (values: CreateLibraryArtistRequest) => Promise<void>;
+  onSubmit: (values: CreateLibraryArtistRequest, avatarFile?: File) => Promise<void>;
 }
 
 /**
@@ -31,6 +32,10 @@ const validateWithZod = (value: CreateLibraryArtistRequest) => {
 };
 
 export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateArtistFormProps) {
+  const [avatarFile, setAvatarFile] = useState<File>();
+  const [previewUrl, setPreviewUrl] = useState<string>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm({
     defaultValues: {
       name: '',
@@ -40,9 +45,32 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
       onChange: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value);
+      await onSubmit(value, avatarFile);
     },
   });
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+    }
+  };
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setPreviewUrl(undefined);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setPreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [avatarFile]);
 
   return (
     <form
@@ -55,14 +83,32 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
     >
       <div className="flex flex-col md:flex-row gap-10">
         <div className="flex flex-col items-center gap-3">
-          <div className="group relative w-32 h-32 rounded-full bg-stone-800 border-2 border-dashed border-border flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors cursor-pointer">
-            <CameraIcon
-              size={40}
-              className="text-muted-foreground group-hover:text-primary transition-colors"
-              weight="duotone"
-            />
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+          />
+          <div
+            onClick={handleAvatarClick}
+            className="group relative w-32 h-32 rounded-full bg-stone-800 border-2 border-dashed border-border flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors cursor-pointer"
+          >
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="Avatar preview"
+                className="w-full h-full object-cover group-hover:opacity-40 transition-opacity"
+              />
+            ) : (
+              <CameraIcon
+                size={40}
+                className="text-muted-foreground group-hover:text-primary transition-colors"
+                weight="duotone"
+              />
+            )}
             <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[10px] text-white font-medium uppercase tracking-wider">
-              Upload Photo
+              {previewUrl ? 'Change Photo' : 'Upload Photo'}
             </div>
           </div>
           <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">

@@ -7,12 +7,26 @@ import { routeTree } from './routeTree.gen';
 
 import './styles.css';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, MutationCache } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { ApiError } from '@/lib/api-error';
 
 import { useAuthStore } from './stores/auth.store';
 
 // Create a client
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('An unexpected error occurred');
+      }
+    },
+  }),
+});
 
 // Create a new router instance
 const router = createRouter({

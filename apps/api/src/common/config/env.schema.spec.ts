@@ -30,7 +30,6 @@ describe('envSchema', () => {
       JWT_ACCESS_EXPIRES_IN: '15m',
       JWT_REFRESH_EXPIRES_IN: '7d',
       S3_ENDPOINT: 's3.example.com',
-      S3_PORT: 9000,
       S3_ACCESS_KEY: 'access-key',
       S3_SECRET_KEY: 'secret-key',
       S3_USE_SSL: false,
@@ -54,14 +53,12 @@ describe('envSchema', () => {
     const config = {
       ...validConfig,
       PORT: '9000',
-      S3_PORT: '9001',
       S3_USE_SSL: 'true',
     };
 
     const result = validateEnv(config);
 
     expect(result.PORT).toBe(9000);
-    expect(result.S3_PORT).toBe(9001);
     expect(result.S3_USE_SSL).toBe(true);
   });
 

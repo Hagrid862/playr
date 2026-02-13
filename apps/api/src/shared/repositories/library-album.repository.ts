@@ -17,10 +17,12 @@ export class LibraryAlbumRepository {
   // ─────────────────────────────────────────────────────────────
 
   async findOne(where: LibraryAlbumWhereInput): Promise<LibraryAlbum | null> {
+    const { album, ...rest } = where;
     return await this.prisma.client.libraryAlbum.findFirst({
       where: {
-        ...where,
+        ...rest,
         album: {
+          ...(album as any),
           deletedAt: null,
         },
       },
@@ -41,12 +43,14 @@ export class LibraryAlbumRepository {
     skip?: number;
     orderBy?: LibraryAlbumOrderByWithRelationInput;
   }): Promise<LibraryAlbum[]> {
+    const { album, ...rest } = options.where || {};
     return await this.prisma.client.libraryAlbum.findMany({
       take: options.take,
       skip: options.skip,
       where: {
-        ...options.where,
+        ...rest,
         album: {
+          ...(album as any),
           deletedAt: null,
         },
       },
@@ -72,10 +76,12 @@ export class LibraryAlbumRepository {
   }
 
   async count(where?: LibraryAlbumWhereInput): Promise<number> {
+    const { album, ...rest } = where || {};
     return await this.prisma.client.libraryAlbum.count({
       where: {
-        ...where,
+        ...rest,
         album: {
+          ...(album as any),
           deletedAt: null,
         },
       },
