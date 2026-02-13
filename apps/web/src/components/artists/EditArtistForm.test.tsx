@@ -1,8 +1,8 @@
 import {
-    UpdateArtistRequest,
-    UpdateArtistRequestSchema,
-    ZodArtist,
-    ZodImage,
+  UpdateLibraryArtistRequest,
+  UpdateLibraryArtistRequestSchema,
+  ZodArtist,
+  ZodImage,
 } from '@repo/contracts';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -46,7 +46,7 @@ describe('EditArtistForm', () => {
   };
 
   const mockOnSubmit =
-    vi.fn<(values: UpdateArtistRequest, avatar?: File, banner?: File) => Promise<void>>();
+    vi.fn<(values: UpdateLibraryArtistRequest, avatar?: File, banner?: File) => Promise<void>>();
   const mockOnCancel = vi.fn();
 
   const defaultProps = {
@@ -117,7 +117,7 @@ describe('EditArtistForm', () => {
   });
 
   it('displays server errors if provided even if not touched', () => {
-    const serverErrors: Partial<Record<keyof UpdateArtistRequest, string>> = {
+    const serverErrors: Partial<Record<keyof UpdateLibraryArtistRequest, string>> = {
       name: 'Server error name',
     };
     render(<EditArtistForm {...defaultProps} serverErrors={serverErrors} />);
@@ -126,13 +126,13 @@ describe('EditArtistForm', () => {
   });
 
   it('handles duplicate server validation errors in validateWithZod', async () => {
-    const spy = vi.spyOn(UpdateArtistRequestSchema, 'safeParse').mockReturnValue({
+    const spy = vi.spyOn(UpdateLibraryArtistRequestSchema, 'safeParse').mockReturnValue({
       success: false,
       error: new z.ZodError([
         { path: ['name'], message: 'Error 1', code: 'custom' },
         { path: ['name'], message: 'Error 2', code: 'custom' },
       ]),
-    } as ReturnType<typeof UpdateArtistRequestSchema.safeParse>);
+    } as ReturnType<typeof UpdateLibraryArtistRequestSchema.safeParse>);
 
     render(<EditArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);

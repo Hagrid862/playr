@@ -1,7 +1,7 @@
-import { CreateArtistRequest, CreateArtistRequestSchema } from '@repo/contracts';
+import { CreateLibraryArtistRequest, CreateLibraryArtistRequestSchema } from '@repo/contracts';
 import { useCallback, useMemo, useState } from 'react';
 
-export type FormData = CreateArtistRequest;
+export type FormData = CreateLibraryArtistRequest;
 
 export const useCreateArtistForm = () => {
   const [formData, setFormData] = useState<FormData>({ name: '', description: '' });
@@ -16,7 +16,7 @@ export const useCreateArtistForm = () => {
   }, []);
 
   const errors = useMemo(() => {
-    const result = CreateArtistRequestSchema.safeParse(formData);
+    const result = CreateLibraryArtistRequestSchema.safeParse(formData);
     if (result.success) return {};
 
     const errs: Partial<Record<keyof FormData, string>> = {};
@@ -30,7 +30,7 @@ export const useCreateArtistForm = () => {
 
   const handleSubmit = useCallback(() => {
     setTouched({ name: true, description: true });
-    const result = CreateArtistRequestSchema.safeParse(formData);
+    const result = CreateLibraryArtistRequestSchema.safeParse(formData);
     return result.success ? result.data : null;
   }, [formData]);
 

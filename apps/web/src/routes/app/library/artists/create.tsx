@@ -2,10 +2,10 @@ import { CreateArtistForm } from '@/components/artists/CreateArtistForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useCreateArtist } from '@/hooks/api/artists/useCreateArtist';
+import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLibraryArtist';
 import { useLibraryStore } from '@/stores/library.store';
 import { InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { CreateArtistRequest } from '@repo/contracts';
+import { CreateLibraryArtistRequest } from '@repo/contracts';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/artists/create')({
@@ -19,9 +19,9 @@ function RouteComponent() {
     mutateAsync: createArtist,
     isPending: isCreatingArtist,
     error: apiError,
-  } = useCreateArtist();
+  } = useCreateLibraryArtist();
 
-  const onSubmit = async (data: CreateArtistRequest) => {
+  const onSubmit = async (data: CreateLibraryArtistRequest) => {
     try {
       await createArtist(data);
       await navigate({ to: '/app/library/artists' });

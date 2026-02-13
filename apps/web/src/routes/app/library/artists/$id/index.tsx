@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { useDeleteArtist } from '@/hooks/api/artists/useDeleteArtist';
+import { useDeleteLibraryArtist } from '@/hooks/api/library-artists/useDeleteLibraryArtist';
 import { useLibraryStore } from '@/stores/library.store';
 import {
   DotsThreeIcon,
@@ -38,7 +38,7 @@ function RouteComponent() {
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const artist = useLibraryStore((state) => state.privateArtists.find((a) => a.id === id));
-  const { mutateAsync: deleteArtist, isPending: isDeleting } = useDeleteArtist();
+  const { mutateAsync: deleteArtist, isPending: isDeleting } = useDeleteLibraryArtist();
 
   const handleDelete = async () => {
     try {

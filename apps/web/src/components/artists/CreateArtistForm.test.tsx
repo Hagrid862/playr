@@ -1,4 +1,4 @@
-import { CreateArtistRequest, CreateArtistRequestSchema } from '@repo/contracts';
+import { CreateLibraryArtistRequest, CreateLibraryArtistRequestSchema } from '@repo/contracts';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,7 +13,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('CreateArtistForm', () => {
-  const mockOnSubmit = vi.fn<(values: CreateArtistRequest) => Promise<void>>();
+  const mockOnSubmit = vi.fn<(values: CreateLibraryArtistRequest) => Promise<void>>();
   const defaultProps = {
     isLoading: false,
     onSubmit: mockOnSubmit,
@@ -71,7 +71,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('displays server errors if provided even if not touched', () => {
-    const serverErrors: Partial<Record<keyof CreateArtistRequest, string>> = {
+    const serverErrors: Partial<Record<keyof CreateLibraryArtistRequest, string>> = {
       name: 'Server error name',
     };
     render(<CreateArtistForm {...defaultProps} serverErrors={serverErrors} />);
@@ -80,13 +80,13 @@ describe('CreateArtistForm', () => {
   });
 
   it('handles multiple validation errors correctly via validateWithZod', async () => {
-    const spy = vi.spyOn(CreateArtistRequestSchema, 'safeParse').mockReturnValue({
+    const spy = vi.spyOn(CreateLibraryArtistRequestSchema, 'safeParse').mockReturnValue({
       success: false,
       error: new z.ZodError([
         { path: ['name'], message: 'First error', code: 'custom' },
         { path: ['name'], message: 'Second error', code: 'custom' },
       ]),
-    } as ReturnType<typeof CreateArtistRequestSchema.safeParse>);
+    } as ReturnType<typeof CreateLibraryArtistRequestSchema.safeParse>);
 
     render(<CreateArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
