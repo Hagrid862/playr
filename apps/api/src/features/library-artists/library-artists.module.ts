@@ -8,6 +8,7 @@ import { UploadLibraryArtistBannerHandler } from './commands/handlers/upload-lib
 import { LibraryArtistsController } from './library-artists.controller';
 import { GetLibraryArtistHandler } from './queries/handlers/get-library-artist.handler';
 import { GetLibraryArtistsHandler } from './queries/handlers/get-library-artists.handler';
+import { GetLibraryArtistAlbumsHandler } from './queries/handlers/get-library-artist-albums.handler';
 
 @Module({
   imports: [CqrsModule],
@@ -15,6 +16,7 @@ import { GetLibraryArtistsHandler } from './queries/handlers/get-library-artists
   providers: [
     GetLibraryArtistHandler,
     GetLibraryArtistsHandler,
+    GetLibraryArtistAlbumsHandler,
     CreateLibraryArtistHandler,
     DeleteLibraryArtistHandler,
     UpdateLibraryArtistHandler,

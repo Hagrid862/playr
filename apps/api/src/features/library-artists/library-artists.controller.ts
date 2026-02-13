@@ -16,7 +16,7 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ZodArtist, ZodImage } from '@repo/contracts';
+import * as contracts from '@repo/contracts';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { CreateLibraryArtistCommand } from './commands/impl/create-library-artist.command';
 import { DeleteLibraryArtistCommand } from './commands/impl/delete-library-artist.command';
@@ -37,6 +37,8 @@ import { UploadLibraryArtistAvatarResponseDto } from './dto/response/upload-libr
 import { UploadLibraryArtistBannerResponseDto } from './dto/response/upload-library-artist-banner.response.dto';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
+import { GetLibraryArtistAlbumsQuery } from './queries/impl/get-library-artist-albums.query';
+import { GetLibraryArtistAlbumsResponseDto } from './dto/response/get-library-artist-albums.response.dto';
 
 @ApiTags('Library Artists')
 @Controller('library/artists')
@@ -77,7 +79,7 @@ export class LibraryArtistsController {
   async createArtist(
     @Body() request: CreateLibraryArtistRequestDto,
     @CurrentUser('id') userId: string,
-  ): Promise<ZodArtist> {
+  ): Promise<contracts.ZodArtist> {
     const command = new CreateLibraryArtistCommand(request, userId);
     return this.commandBus.execute(command);
   }
@@ -111,12 +113,40 @@ export class LibraryArtistsController {
     type: GetLibraryArtistResponseDto,
   })
   @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
     status: 404,
     description: 'Artist not found',
     type: ApiErrorResponseDto,
   })
   getLibraryArtist(@CurrentUser('id') userId: string, @Param('id') artistId: string) {
     return this.queryBus.execute(new GetLibraryArtistQuery(userId, artistId));
+  }
+
+  @Get(':id/albums')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all library artist albums' })
+  @ApiResponse({
+    status: 200,
+    description: 'Library artist albums retrieved successfully',
+    type: GetLibraryArtistAlbumsResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  getLibraryArtistAlbums(
+    @CurrentUser('id') userId: string,
+    @Param('id') artistId: string,
+    @Query() query: contracts.GetLibraryArtistAlbumsRequestDto,
+  ) {
+    return this.queryBus.execute(
+      new GetLibraryArtistAlbumsQuery(userId, artistId, query.page, query.limit),
+    );
   }
 
   @Patch(':id')
@@ -156,7 +186,7 @@ export class LibraryArtistsController {
     @Param('id') id: string,
     @Body() request: UpdateLibraryArtistRequestDto,
     @CurrentUser('id') userId: string,
-  ): Promise<ZodArtist> {
+  ): Promise<contracts.ZodArtist> {
     const command = new UpdateLibraryArtistCommand(id, request, userId);
     return this.commandBus.execute(command);
   }
@@ -182,6 +212,11 @@ export class LibraryArtistsController {
   @ApiResponse({
     status: 404,
     description: 'Artist not found',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 412,
+    description: 'User private profile not found',
     type: ApiErrorResponseDto,
   })
   async deleteArtist(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<void> {
@@ -226,7 +261,7 @@ export class LibraryArtistsController {
     @Param('id') id: string,
     @UploadedFile() file: { buffer: Buffer; mimetype: string },
     @CurrentUser('id') userId: string,
-  ): Promise<ZodImage> {
+  ): Promise<contracts.ZodImage> {
     const command = new UploadLibraryArtistAvatarCommand(id, file.buffer, file.mimetype, userId);
     return this.commandBus.execute(command);
   }
@@ -268,7 +303,7 @@ export class LibraryArtistsController {
     @Param('id') id: string,
     @UploadedFile() file: { buffer: Buffer; mimetype: string },
     @CurrentUser('id') userId: string,
-  ): Promise<ZodImage> {
+  ): Promise<contracts.ZodImage> {
     const command = new UploadLibraryArtistBannerCommand(id, file.buffer, file.mimetype, userId);
     return this.commandBus.execute(command);
   }
