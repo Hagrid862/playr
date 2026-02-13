@@ -6,6 +6,7 @@ import { UpdateLibraryAlbumHandler } from './commands/handlers/update-library-al
 import { UploadLibraryAlbumCoverHandler } from './commands/handlers/upload-library-album-cover.handler';
 import { AlbumsController } from './library-albums.controller';
 import { GetLibraryAlbumHandler } from './queries/handlers/get-library-album.handler';
+import { GetLibraryAlbumsHandler } from './queries/handlers/get-library-albums.handler';
 
 @Module({
   imports: [CqrsModule],
@@ -15,6 +16,7 @@ import { GetLibraryAlbumHandler } from './queries/handlers/get-library-album.han
     UpdateLibraryAlbumHandler,
     DeleteLibraryAlbumHandler,
     GetLibraryAlbumHandler,
+    GetLibraryAlbumsHandler,
     UploadLibraryAlbumCoverHandler,
   ],
 
