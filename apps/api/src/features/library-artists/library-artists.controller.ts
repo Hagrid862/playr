@@ -18,11 +18,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodArtist, ZodImage } from '@repo/contracts';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
-import { CreateArtistCommand } from './commands/impl/create-artist.command';
-import { DeleteArtistCommand } from './commands/impl/delete-artist.command';
-import { UpdateArtistCommand } from './commands/impl/update-artist.command';
-import { UploadArtistAvatarCommand } from './commands/impl/upload-artist-avatar.command';
-import { UploadArtistBannerCommand } from './commands/impl/upload-artist-banner.command';
+import { CreateLibraryArtistCommand } from './commands/impl/create-library-artist.command';
+import { DeleteLibraryArtistCommand } from './commands/impl/delete-library-artist.command';
+import { UpdateLibraryArtistCommand } from './commands/impl/update-library-artist.command';
+import { UploadLibraryArtistAvatarCommand } from './commands/impl/upload-library-artist-avatar.command';
+import { UploadLibraryArtistBannerCommand } from './commands/impl/upload-library-artist-banner.command';
 import { CreateLibraryArtistRequestDto } from './dto/request/create-library-artist.request.dto';
 import { GetLibraryArtistsRequestDto } from './dto/request/get-library-artists.request.dto';
 import { UpdateLibraryArtistRequestDto } from './dto/request/update-library-artist.request.dto';
@@ -78,7 +78,7 @@ export class LibraryArtistsController {
     @Body() request: CreateLibraryArtistRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodArtist> {
-    const command = new CreateArtistCommand(request, userId);
+    const command = new CreateLibraryArtistCommand(request, userId);
     return this.commandBus.execute(command);
   }
 
@@ -157,7 +157,7 @@ export class LibraryArtistsController {
     @Body() request: UpdateLibraryArtistRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodArtist> {
-    const command = new UpdateArtistCommand(id, request, userId);
+    const command = new UpdateLibraryArtistCommand(id, request, userId);
     return this.commandBus.execute(command);
   }
 
@@ -185,7 +185,7 @@ export class LibraryArtistsController {
     type: ApiErrorResponseDto,
   })
   async deleteArtist(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<void> {
-    const command = new DeleteArtistCommand(id, userId);
+    const command = new DeleteLibraryArtistCommand(id, userId);
     return this.commandBus.execute(command);
   }
 
@@ -227,7 +227,7 @@ export class LibraryArtistsController {
     @UploadedFile() file: { buffer: Buffer; mimetype: string },
     @CurrentUser('id') userId: string,
   ): Promise<ZodImage> {
-    const command = new UploadArtistAvatarCommand(id, file.buffer, file.mimetype, userId);
+    const command = new UploadLibraryArtistAvatarCommand(id, file.buffer, file.mimetype, userId);
     return this.commandBus.execute(command);
   }
 
@@ -269,7 +269,7 @@ export class LibraryArtistsController {
     @UploadedFile() file: { buffer: Buffer; mimetype: string },
     @CurrentUser('id') userId: string,
   ): Promise<ZodImage> {
-    const command = new UploadArtistBannerCommand(id, file.buffer, file.mimetype, userId);
+    const command = new UploadLibraryArtistBannerCommand(id, file.buffer, file.mimetype, userId);
     return this.commandBus.execute(command);
   }
 }

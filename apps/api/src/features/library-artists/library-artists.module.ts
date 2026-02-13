@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
-import { CreateArtistHandler } from './commands/handlers/create-artist.handler';
-import { DeleteArtistHandler } from './commands/handlers/delete-artist.handler';
-import { UpdateArtistHandler } from './commands/handlers/update-artist.handler';
-import { UploadArtistAvatarHandler } from './commands/handlers/upload-artist-avatar.handler';
-import { UploadArtistBannerHandler } from './commands/handlers/upload-artist-banner.handler';
+import { CreateLibraryArtistHandler } from './commands/handlers/create-library-artist.handler';
+import { DeleteLibraryArtistHandler } from './commands/handlers/delete-library-artist.handler';
+import { UpdateLibraryArtistHandler } from './commands/handlers/update-library-artist.handler';
+import { UploadLibraryArtistAvatarHandler } from './commands/handlers/upload-library-artist-avatar.handler';
+import { UploadLibraryArtistBannerHandler } from './commands/handlers/upload-library-artist-banner.handler';
 import { LibraryArtistsController } from './library-artists.controller';
 import { GetLibraryArtistHandler } from './queries/handlers/get-library-artist.handler';
 import { GetLibraryArtistsHandler } from './queries/handlers/get-library-artists.handler';
@@ -15,11 +15,11 @@ import { GetLibraryArtistsHandler } from './queries/handlers/get-library-artists
   providers: [
     GetLibraryArtistHandler,
     GetLibraryArtistsHandler,
-    CreateArtistHandler,
-    DeleteArtistHandler,
-    UpdateArtistHandler,
-    UploadArtistAvatarHandler,
-    UploadArtistBannerHandler,
+    CreateLibraryArtistHandler,
+    DeleteLibraryArtistHandler,
+    UpdateLibraryArtistHandler,
+    UploadLibraryArtistAvatarHandler,
+    UploadLibraryArtistBannerHandler,
   ],
   exports: [],
 })
