@@ -57,10 +57,13 @@ describe('CreateArtistForm', () => {
 
     await user.click(submitButton);
 
-    expect(mockOnSubmit).toHaveBeenCalledWith({
-      name: 'Nirvana',
-      description: 'Grunge band from Seattle',
-    });
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      {
+        name: 'Nirvana',
+        description: 'Grunge band from Seattle',
+      },
+      undefined,
+    );
   });
 
   it('shows loading state on submit button', () => {
