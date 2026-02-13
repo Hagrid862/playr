@@ -2,13 +2,13 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
-import { GetAlbumQuery } from '../impl/get-album.query';
+import { GetLibraryAlbumQuery } from '../impl/get-library-album.query';
 
-@QueryHandler(GetAlbumQuery)
-export class GetAlbumHandler implements IQueryHandler<GetAlbumQuery> {
+@QueryHandler(GetLibraryAlbumQuery)
+export class GetLibraryAlbumHandler implements IQueryHandler<GetLibraryAlbumQuery> {
   constructor(private readonly albumRepository: AlbumRepository) {}
 
-  async execute(query: GetAlbumQuery): Promise<ZodAlbum> {
+  async execute(query: GetLibraryAlbumQuery): Promise<ZodAlbum> {
     const { id } = query;
 
     const album = await this.albumRepository.findOne({ id }, true);
@@ -21,7 +21,7 @@ export class GetAlbumHandler implements IQueryHandler<GetAlbumQuery> {
 
     if (!parsed.success) {
       console.error(
-        '[GetAlbumHandler] Zod validation failed:',
+        '[GetLibraryAlbumHandler] Zod validation failed:',
         JSON.stringify(parsed.error.format(), null, 2),
       );
       throw new InternalServerErrorException('Failed to parse album');

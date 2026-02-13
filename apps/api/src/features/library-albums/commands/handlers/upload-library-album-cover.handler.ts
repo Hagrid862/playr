@@ -3,19 +3,19 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    Logger,
-    NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ImageSchema, ZodImage } from '@repo/contracts';
 import { FileBucket } from '@repo/db';
-import { UploadAlbumCoverCommand } from '../impl/upload-album-cover.command';
+import { UploadLibraryAlbumCoverCommand } from '../impl/upload-library-album-cover.command';
 
-@CommandHandler(UploadAlbumCoverCommand)
-export class UploadAlbumCoverHandler implements ICommandHandler<UploadAlbumCoverCommand> {
-  private readonly logger = new Logger(UploadAlbumCoverHandler.name);
+@CommandHandler(UploadLibraryAlbumCoverCommand)
+export class UploadLibraryAlbumCoverHandler implements ICommandHandler<UploadLibraryAlbumCoverCommand> {
+  private readonly logger = new Logger(UploadLibraryAlbumCoverHandler.name);
 
   constructor(
     private readonly albumRepository: AlbumRepository,
@@ -24,7 +24,7 @@ export class UploadAlbumCoverHandler implements ICommandHandler<UploadAlbumCover
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(command: UploadAlbumCoverCommand): Promise<ZodImage> {
+  async execute(command: UploadLibraryAlbumCoverCommand): Promise<ZodImage> {
     const { albumId, file, userId } = command;
 
     // Validate album existence and ownership

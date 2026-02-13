@@ -7,11 +7,11 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { UploadAlbumCoverCommand } from '../impl/upload-album-cover.command';
-import { UploadAlbumCoverHandler } from './upload-album-cover.handler';
+import { UploadLibraryAlbumCoverCommand } from '../impl/upload-library-album-cover.command';
+import { UploadLibraryAlbumCoverHandler } from './upload-library-album-cover.handler';
 
-describe('UploadAlbumCoverHandler', () => {
-  let handler: UploadAlbumCoverHandler;
+describe('UploadLibraryAlbumCoverHandler', () => {
+  let handler: UploadLibraryAlbumCoverHandler;
   let albumRepository: DeepMocked<AlbumRepository>;
   let storageService: DeepMocked<StorageService>;
   let imageService: DeepMocked<ImageService>;
@@ -50,7 +50,7 @@ describe('UploadAlbumCoverHandler', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UploadAlbumCoverHandler,
+        UploadLibraryAlbumCoverHandler,
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: StorageService, useValue: storageService },
         { provide: ImageService, useValue: imageService },
@@ -58,14 +58,19 @@ describe('UploadAlbumCoverHandler', () => {
       ],
     }).compile();
 
-    handler = module.get<UploadAlbumCoverHandler>(UploadAlbumCoverHandler);
+    handler = module.get<UploadLibraryAlbumCoverHandler>(UploadLibraryAlbumCoverHandler);
 
     // Mock Prisma Transaction
     prisma.mainClient.$transaction.mockImplementation(async (cb) => cb(prisma.client));
   });
 
   it('should upload album cover successfully', async () => {
-    const command = new UploadAlbumCoverCommand(mockAlbumId, mockBuffer, mockMimeType, mockUserId);
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
 
     albumRepository.findOne.mockResolvedValue(mockAlbum as any);
     imageService.validateImage.mockResolvedValue(true);
@@ -94,7 +99,12 @@ describe('UploadAlbumCoverHandler', () => {
   });
 
   it('should cleanup old cover if exists', async () => {
-    const command = new UploadAlbumCoverCommand(mockAlbumId, mockBuffer, mockMimeType, mockUserId);
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
     const mockAlbumWithCover = { ...mockAlbum, coverId: 'old-cover-id' };
 
     albumRepository.findOne.mockResolvedValue(mockAlbumWithCover as any);
@@ -131,14 +141,24 @@ describe('UploadAlbumCoverHandler', () => {
   });
 
   it('should throw NotFoundException if album not found', async () => {
-    const command = new UploadAlbumCoverCommand(mockAlbumId, mockBuffer, mockMimeType, mockUserId);
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
     albumRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw BadRequestException if image invalid', async () => {
-    const command = new UploadAlbumCoverCommand(mockAlbumId, mockBuffer, mockMimeType, mockUserId);
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
     albumRepository.findOne.mockResolvedValue(mockAlbum as any);
     imageService.validateImage.mockResolvedValue(false);
 

@@ -9,10 +9,10 @@ import {
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
-import { CreateAlbumCommand } from '../impl/create-album.command';
+import { CreateLibraryAlbumCommand } from '../impl/create-library-album.command';
 
-@CommandHandler(CreateAlbumCommand)
-export class CreateAlbumHandler implements ICommandHandler<CreateAlbumCommand> {
+@CommandHandler(CreateLibraryAlbumCommand)
+export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryAlbumCommand> {
   constructor(
     private readonly unitOfWork: UnitOfWorkService,
     private readonly libraryRepository: LibraryRepository,
@@ -20,7 +20,7 @@ export class CreateAlbumHandler implements ICommandHandler<CreateAlbumCommand> {
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
   ) {}
 
-  async execute(command: CreateAlbumCommand): Promise<ZodAlbum> {
+  async execute(command: CreateLibraryAlbumCommand): Promise<ZodAlbum> {
     const { request, userId } = command;
 
     const library = await this.libraryRepository.getByUserId(userId);

@@ -2,13 +2,13 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
-import { UpdateAlbumCommand } from '../impl/update-album.command';
+import { UpdateLibraryAlbumCommand } from '../impl/update-library-album.command';
 
-@CommandHandler(UpdateAlbumCommand)
-export class UpdateAlbumHandler implements ICommandHandler<UpdateAlbumCommand> {
+@CommandHandler(UpdateLibraryAlbumCommand)
+export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryAlbumCommand> {
   constructor(private readonly albumRepository: AlbumRepository) {}
 
-  async execute(command: UpdateAlbumCommand): Promise<ZodAlbum> {
+  async execute(command: UpdateLibraryAlbumCommand): Promise<ZodAlbum> {
     const { id, request, userId } = command;
 
     const album = await this.albumRepository.findOne({

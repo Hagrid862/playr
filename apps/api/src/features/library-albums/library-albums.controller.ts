@@ -21,17 +21,17 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodAlbum, ZodImage } from '@repo/contracts';
-import { CreateAlbumCommand } from './commands/impl/create-album.command';
-import { DeleteAlbumCommand } from './commands/impl/delete-album.command';
-import { UpdateAlbumCommand } from './commands/impl/update-album.command';
-import { UploadAlbumCoverCommand } from './commands/impl/upload-album-cover.command';
+import { CreateLibraryAlbumCommand } from './commands/impl/create-library-album.command';
+import { DeleteLibraryAlbumCommand } from './commands/impl/delete-library-album.command';
+import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.command';
+import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
 import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
 import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
 import { CreateLibraryAlbumResponseDto } from './dto/response/create-library-album.response.dto';
 import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.response.dto';
 import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
 import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
-import { GetAlbumQuery } from './queries/impl/get-album.query';
+import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
 
 @ApiTags('Library Albums')
 @Controller('library/albums')
@@ -73,7 +73,7 @@ export class AlbumsController {
     @Body() body: CreateLibraryAlbumRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodAlbum> {
-    const command = new CreateAlbumCommand(body, userId);
+    const command = new CreateLibraryAlbumCommand(body, userId);
     return this.commandBus.execute(command);
   }
 
@@ -97,7 +97,7 @@ export class AlbumsController {
     type: ApiErrorResponseDto,
   })
   async getAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
-    const query = new GetAlbumQuery(id, userId);
+    const query = new GetLibraryAlbumQuery(id, userId);
     return this.queryBus.execute(query);
   }
 
@@ -139,7 +139,7 @@ export class AlbumsController {
     @Body() body: UpdateLibraryAlbumRequestDto,
     @CurrentUser('id') userId: string,
   ): Promise<ZodAlbum> {
-    const command = new UpdateAlbumCommand(id, body, userId);
+    const command = new UpdateLibraryAlbumCommand(id, body, userId);
     return this.commandBus.execute(command);
   }
 
@@ -185,7 +185,7 @@ export class AlbumsController {
     file: Express.Multer.File,
     @CurrentUser('id') userId: string,
   ): Promise<ZodImage> {
-    const command = new UploadAlbumCoverCommand(id, file.buffer, file.mimetype, userId);
+    const command = new UploadLibraryAlbumCoverCommand(id, file.buffer, file.mimetype, userId);
     return this.commandBus.execute(command);
   }
 
@@ -213,7 +213,7 @@ export class AlbumsController {
     type: ApiErrorResponseDto,
   })
   async deleteAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
-    const command = new DeleteAlbumCommand(id, userId);
+    const command = new DeleteLibraryAlbumCommand(id, userId);
     return this.commandBus.execute(command);
   }
 }

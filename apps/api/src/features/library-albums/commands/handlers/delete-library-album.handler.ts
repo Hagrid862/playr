@@ -2,13 +2,13 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
-import { DeleteAlbumCommand } from '../impl/delete-album.command';
+import { DeleteLibraryAlbumCommand } from '../impl/delete-library-album.command';
 
-@CommandHandler(DeleteAlbumCommand)
-export class DeleteAlbumHandler implements ICommandHandler<DeleteAlbumCommand> {
+@CommandHandler(DeleteLibraryAlbumCommand)
+export class DeleteLibraryAlbumHandler implements ICommandHandler<DeleteLibraryAlbumCommand> {
   constructor(private readonly albumRepository: AlbumRepository) {}
 
-  async execute(command: DeleteAlbumCommand): Promise<ZodAlbum> {
+  async execute(command: DeleteLibraryAlbumCommand): Promise<ZodAlbum> {
     const { id, userId } = command;
 
     const album = await this.albumRepository.findOne({
