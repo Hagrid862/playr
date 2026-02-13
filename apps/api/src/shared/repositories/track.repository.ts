@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
-    Track,
-    TrackCreateInput,
-    TrackOrderByWithRelationInput,
-    TrackUpdateInput,
-    TrackWhereInput,
+  Track,
+  TrackCreateInput,
+  TrackOrderByWithRelationInput,
+  TrackUpdateInput,
+  TrackWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 

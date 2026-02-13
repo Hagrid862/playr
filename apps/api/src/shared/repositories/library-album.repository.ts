@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
-    LibraryAlbum,
-    LibraryAlbumCreateInput,
-    LibraryAlbumOrderByWithRelationInput,
-    LibraryAlbumUpdateInput,
-    LibraryAlbumWhereInput,
+  LibraryAlbum,
+  LibraryAlbumCreateInput,
+  LibraryAlbumOrderByWithRelationInput,
+  LibraryAlbumUpdateInput,
+  LibraryAlbumWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 

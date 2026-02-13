@@ -1,10 +1,10 @@
 import { CHECK_ARTIST_ACCESS_KEY } from '@/common/decorators/check-artist-access.decorator';
 import {
-    CanActivate,
-    ExecutionContext,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ArtistRepository } from '../repositories/artist.repository';

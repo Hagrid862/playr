@@ -103,7 +103,7 @@ describe('AlbumsController (Integration)', () => {
       // Yes, I implemented soft delete via albumRepository.update().
 
       const response = await request(app.getHttpServer())
-        .delete(`/albums/${albumId}`)
+        .delete(`/library/albums/${albumId}`)
         .set('Authorization', authHeader)
         .expect(200);
 
@@ -118,13 +118,13 @@ describe('AlbumsController (Integration)', () => {
       prismaMock.client.album.findFirst.mockResolvedValue(null);
 
       await request(app.getHttpServer())
-        .delete(`/albums/${albumId}`)
+        .delete(`/library/albums/${albumId}`)
         .set('Authorization', authHeader)
         .expect(404);
     });
 
     it('should return 401 if unauthorized', async () => {
-      await request(app.getHttpServer()).delete('/albums/album-123').expect(401);
+      await request(app.getHttpServer()).delete('/library/albums/album-123').expect(401);
     });
   });
 
@@ -169,7 +169,7 @@ describe('AlbumsController (Integration)', () => {
       } as any);
 
       const response = await request(app.getHttpServer())
-        .post(`/albums/${albumId}/cover`)
+        .post(`/library/albums/${albumId}/cover`)
         .set('Authorization', authHeader)
         .attach('file', mockFile, 'cover.png')
         .expect(201);
@@ -187,7 +187,7 @@ describe('AlbumsController (Integration)', () => {
       imageServiceMock.validateImage.mockResolvedValue(false);
 
       await request(app.getHttpServer())
-        .post(`/albums/${albumId}/cover`)
+        .post(`/library/albums/${albumId}/cover`)
         .set('Authorization', authHeader)
         .attach('file', mockFile, 'cover.txt')
         .expect(400);

@@ -13,6 +13,7 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -27,11 +28,14 @@ import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
 import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
 import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
+import { GetLibraryAlbumsRequestDto } from './dto/request/get-library-albums.request.dto';
 import { CreateLibraryAlbumResponseDto } from './dto/response/create-library-album.response.dto';
 import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.response.dto';
+import { GetLibraryAlbumsResponseDto } from './dto/response/get-library-albums.response.dto';
 import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
 import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
 import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
+import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
 
 @ApiTags('Library Albums')
 @Controller('library/albums')
@@ -40,6 +44,23 @@ export class AlbumsController {
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
   ) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all library albums' })
+  @ApiResponse({
+    status: 200,
+    description: 'Library albums retrieved successfully',
+    type: GetLibraryAlbumsResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  getAlbums(@CurrentUser('id') userId: string, @Query() query: GetLibraryAlbumsRequestDto) {
+    return this.queryBus.execute(new GetLibraryAlbumsQuery(userId, query.page, query.limit));
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)

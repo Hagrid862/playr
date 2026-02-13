@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
-    LibraryArtist,
-    LibraryArtistCreateInput,
-    LibraryArtistOrderByWithRelationInput,
-    LibraryArtistUpdateInput,
-    LibraryArtistWhereInput,
+  LibraryArtist,
+  LibraryArtistCreateInput,
+  LibraryArtistOrderByWithRelationInput,
+  LibraryArtistUpdateInput,
+  LibraryArtistWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
