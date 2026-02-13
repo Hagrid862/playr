@@ -1,5 +1,6 @@
 export * from "./schemas";
 
+export * from "./artists";
 export * from "./auth";
 export * from "./library";
 export * from "./private-profile";
