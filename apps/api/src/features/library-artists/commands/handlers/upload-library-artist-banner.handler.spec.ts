@@ -3,15 +3,15 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
 import { vi } from 'vitest';
-import { UploadArtistBannerCommand } from '../impl/upload-artist-banner.command';
-import { UploadArtistBannerHandler } from './upload-artist-banner.handler';
+import { UploadArtistBannerCommand } from '../impl/upload-library-artist-banner.command';
+import { UploadArtistBannerHandler } from './upload-library-artist-banner.handler';
 
 describe('UploadArtistBannerHandler', () => {
   let handler: UploadArtistBannerHandler;

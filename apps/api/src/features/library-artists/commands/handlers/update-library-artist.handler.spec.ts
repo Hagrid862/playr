@@ -4,11 +4,11 @@ import { ConflictException, InternalServerErrorException, NotFoundException } fr
 import { Test, TestingModule } from '@nestjs/testing';
 import { ZodArtist } from '@repo/contracts';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { UpdateArtistCommand } from '../impl/update-artist.command';
-import { UpdateArtistHandler } from './update-artist.handler';
+import { UpdateLibraryArtistCommand } from '../impl/update-library-artist.command';
+import { UpdateLibraryArtistHandler } from './update-library-artist.handler';
 
-describe('UpdateArtistHandler', () => {
-  let handler: UpdateArtistHandler;
+describe('UpdateLibraryArtistHandler', () => {
+  let handler: UpdateLibraryArtistHandler;
   let artistRepository: DeepMocked<ArtistRepository>;
 
   const mockUserId = 'user-123';
@@ -33,15 +33,18 @@ describe('UpdateArtistHandler', () => {
     artistRepository = createMock<ArtistRepository>();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UpdateArtistHandler, { provide: ArtistRepository, useValue: artistRepository }],
+      providers: [
+        UpdateLibraryArtistHandler,
+        { provide: ArtistRepository, useValue: artistRepository },
+      ],
     }).compile();
 
-    handler = module.get<UpdateArtistHandler>(UpdateArtistHandler);
+    handler = module.get<UpdateLibraryArtistHandler>(UpdateLibraryArtistHandler);
   });
 
   it('should update an artist successfully', async () => {
     const dto = { name: 'New Name', description: 'New Description' };
-    const command = new UpdateArtistCommand(mockArtistId, dto, mockUserId);
+    const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
     artistRepository.findOne.mockResolvedValueOnce(mockArtist as any); // Check existence
@@ -56,7 +59,7 @@ describe('UpdateArtistHandler', () => {
 
   it('should update an artist description only without checking name conflict', async () => {
     const dto = { description: 'New Description' };
-    const command = new UpdateArtistCommand(mockArtistId, dto, mockUserId);
+    const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
     artistRepository.findOne.mockResolvedValue(mockArtist as any);
@@ -74,7 +77,7 @@ describe('UpdateArtistHandler', () => {
   });
 
   it('should throw NotFoundException if artist is missing', async () => {
-    const command = new UpdateArtistCommand(mockArtistId, {}, mockUserId);
+    const command = new UpdateLibraryArtistCommand(mockArtistId, {}, mockUserId);
     artistRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
@@ -82,7 +85,7 @@ describe('UpdateArtistHandler', () => {
 
   it('should throw ConflictException if new name is already taken by another artist', async () => {
     const dto = { name: 'Taken Name' };
-    const command = new UpdateArtistCommand(mockArtistId, dto, mockUserId);
+    const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
 
     artistRepository.findOne.mockResolvedValueOnce(mockArtist as any); // Existence
     artistRepository.findOne.mockResolvedValueOnce({ id: 'other-artist' } as any); // Conflict
@@ -91,7 +94,7 @@ describe('UpdateArtistHandler', () => {
   });
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
-    const command = new UpdateArtistCommand(mockArtistId, {}, mockUserId);
+    const command = new UpdateLibraryArtistCommand(mockArtistId, {}, mockUserId);
     artistRepository.findOne.mockResolvedValue(mockArtist as any);
     artistRepository.update.mockResolvedValue({ invalid: 'data' } as any);
 

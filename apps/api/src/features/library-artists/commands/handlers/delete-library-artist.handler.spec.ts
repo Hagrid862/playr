@@ -4,11 +4,11 @@ import { InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing';
 import { ZodArtist } from '@repo/contracts';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DeleteArtistCommand } from '../impl/delete-artist.command';
-import { DeleteArtistHandler } from './delete-artist.handler';
+import { DeleteLibraryArtistCommand } from '../impl/delete-library-artist.command';
+import { DeleteLibraryArtistHandler } from './delete-library-artist.handler';
 
-describe('DeleteArtistHandler', () => {
-  let handler: DeleteArtistHandler;
+describe('DeleteLibraryArtistHandler', () => {
+  let handler: DeleteLibraryArtistHandler;
   let artistRepository: DeepMocked<ArtistRepository>;
 
   const mockUserId = 'user-123';
@@ -33,14 +33,17 @@ describe('DeleteArtistHandler', () => {
     artistRepository = createMock<ArtistRepository>();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DeleteArtistHandler, { provide: ArtistRepository, useValue: artistRepository }],
+      providers: [
+        DeleteLibraryArtistHandler,
+        { provide: ArtistRepository, useValue: artistRepository },
+      ],
     }).compile();
 
-    handler = module.get<DeleteArtistHandler>(DeleteArtistHandler);
+    handler = module.get<DeleteLibraryArtistHandler>(DeleteLibraryArtistHandler);
   });
 
   it('should delete an artist successfully', async () => {
-    const command = new DeleteArtistCommand(mockArtistId, mockUserId);
+    const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
     const mockDeletedArtist = { ...mockArtist, deletedAt: new Date() };
 
     artistRepository.findOne.mockResolvedValue(mockArtist as any);
@@ -55,14 +58,14 @@ describe('DeleteArtistHandler', () => {
   });
 
   it('should throw NotFoundException if artist is missing or permission denied', async () => {
-    const command = new DeleteArtistCommand(mockArtistId, mockUserId);
+    const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
     artistRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
-    const command = new DeleteArtistCommand(mockArtistId, mockUserId);
+    const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
     artistRepository.findOne.mockResolvedValue(mockArtist as any);
     artistRepository.update.mockResolvedValue({ invalid: 'data' } as any);
 

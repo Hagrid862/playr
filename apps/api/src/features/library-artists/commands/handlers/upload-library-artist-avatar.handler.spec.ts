@@ -3,18 +3,18 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
 import { vi } from 'vitest';
-import { UploadArtistAvatarCommand } from '../impl/upload-artist-avatar.command';
-import { UploadArtistAvatarHandler } from './upload-artist-avatar.handler';
+import { UploadLibraryArtistAvatarCommand } from '../impl/upload-library-artist-avatar.command';
+import { UploadLibraryArtistAvatarHandler } from './upload-library-artist-avatar.handler';
 
 describe('UploadArtistAvatarHandler', () => {
-  let handler: UploadArtistAvatarHandler;
+  let handler: UploadLibraryArtistAvatarHandler;
   let artistRepository: ArtistRepository;
   let storageService: StorageService;
   let imageService: ImageService;
@@ -46,7 +46,7 @@ describe('UploadArtistAvatarHandler', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UploadArtistAvatarHandler,
+        UploadLibraryArtistAvatarHandler,
         {
           provide: ArtistRepository,
           useValue: {
@@ -83,7 +83,7 @@ describe('UploadArtistAvatarHandler', () => {
       ],
     }).compile();
 
-    handler = module.get<UploadArtistAvatarHandler>(UploadArtistAvatarHandler);
+    handler = module.get<UploadLibraryArtistAvatarHandler>(UploadLibraryArtistAvatarHandler);
     artistRepository = module.get<ArtistRepository>(ArtistRepository);
     storageService = module.get<StorageService>(StorageService);
     imageService = module.get<ImageService>(ImageService);
@@ -99,7 +99,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should upload artist avatar and cleanup old one successfully', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -135,7 +135,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should cleanup newly uploaded file if transaction fails', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -159,7 +159,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should throw NotFoundException if artist not found', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -172,7 +172,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should throw BadRequestException if image is invalid', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -186,7 +186,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should throw InternalServerErrorException if created image is invalid', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -212,7 +212,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should log error if old file cleanup fails', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -244,7 +244,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should log error if new file cleanup fails after DB error', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
@@ -271,7 +271,7 @@ describe('UploadArtistAvatarHandler', () => {
   });
 
   it('should handle orphaned old avatar (exists in artist but not in image table) successfully', async () => {
-    const command = new UploadArtistAvatarCommand(
+    const command = new UploadLibraryArtistAvatarCommand(
       'artist-123',
       Buffer.from('test'),
       'image/jpeg',
