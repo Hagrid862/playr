@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { useDeleteLibraryArtist } from '@/hooks/api/library-artists/useDeleteLibraryArtist';
 import { useLibraryStore } from '@/stores/library.store';
 import {
+  DiscIcon,
   DotsThreeIcon,
   HeartIcon,
   PencilIcon,
@@ -28,6 +29,8 @@ import {
   TrashIcon,
   UserIcon,
 } from '@phosphor-icons/react';
+import { AlbumType } from '@repo/db';
+import { useLibraryArtistAlbums } from '@/hooks/api/library-artists/useLibraryArtistAlbums';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -41,6 +44,14 @@ function RouteComponent() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const artist = useLibraryStore((state) => state.privateArtists.find((a) => a.id === id));
   const { mutateAsync: deleteArtist, isPending: isDeleting } = useDeleteLibraryArtist();
+  const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    50,
+    AlbumType.album,
+  );
+
+  const albums = albumsData?.data?.items?.map((item) => item.album) || [];
 
   const handleDelete = async () => {
     try {
@@ -169,6 +180,76 @@ function RouteComponent() {
         </div>
 
         <Separator className="opacity-50" />
+
+        {/* Albums Section */}
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-white/90">Albums</h3>
+            {albums.length > 5 && (
+              <Button
+                variant="link"
+                className="text-muted-foreground hover:text-primary p-0 h-auto"
+              >
+                Show all
+              </Button>
+            )}
+          </div>
+
+          {isAlbumsLoading ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                  <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                  <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : albums.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+              {albums.map((album) => {
+                if (!album) return null;
+                return (
+                  <Link
+                    key={album.id}
+                    to="/app/library/artists/$id"
+                    params={{ id: album.id }}
+                    className="group/artist relative p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
+                  >
+                    <div className="aspect-square w-full overflow-hidden bg-stone-800 rounded-md">
+                      {album.cover?.url ? (
+                        <img
+                          src={album.cover?.url}
+                          alt={album.name}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex size-full items-center justify-center">
+                          <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="pt-4">
+                      <h3 className="line-clamp-1 text-sm font-semibold">{album.name}</h3>
+                      <p className="line-clamp-1 text-xs text-muted-foreground">
+                        {album.releaseDate?.getFullYear() ?? 'Unknown'}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-12 flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl bg-stone-900/10">
+              <p className="text-muted-foreground text-sm font-medium">No albums yet</p>
+              <Button variant="link" asChild className="mt-2 h-auto p-0 text-primary">
+                <Link to="/app/library/artists/$id/add-content" params={{ id }}>
+                  Add your first album
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
