@@ -2,10 +2,10 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { GetLibraryArtistQuery } from '../library-artists/queries/impl/get-library-artist.query';
+import { GetLibraryArtistsQuery } from '../library-artists/queries/impl/get-library-artists.query';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
 import { LibraryController } from './library.controller';
-import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
-import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
 import { GetLibraryQuery } from './queries/impl/get-library.query';
 
 describe('LibraryController', () => {
