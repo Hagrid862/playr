@@ -14,6 +14,7 @@ export const useDeleteArtist = () => {
     onSuccess: (_, artistId) => {
       // Refresh the list
       queryClient.invalidateQueries({ queryKey: ['artists', 'private'] });
+      queryClient.invalidateQueries({ queryKey: ['library', 'artists'] });
 
       // Update store to keep it in sync
       setPrivateArtists(privateArtists.filter((a) => a.id !== artistId));

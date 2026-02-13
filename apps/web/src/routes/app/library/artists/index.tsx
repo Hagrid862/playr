@@ -1,5 +1,5 @@
 import { Spinner } from '@/components/ui/spinner';
-import { usePrivateArtists } from '@/hooks/api/artists/usePrivateArtists';
+import { useLibraryArtists } from '@/hooks/api/library/useLibraryArtists';
 import { useLibraryStore } from '@/stores/library.store';
 import { UserIcon } from '@phosphor-icons/react';
 import { Link, createFileRoute } from '@tanstack/react-router';
@@ -9,7 +9,7 @@ export const Route = createFileRoute('/app/library/artists/')({
 });
 
 function RouteComponent() {
-  const { isLoading } = usePrivateArtists();
+  const { isLoading } = useLibraryArtists();
   const artists = useLibraryStore((state) => state.privateArtists);
 
   if (isLoading) {
@@ -38,7 +38,7 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
         {artists.map((artist) => (
           <Link
             key={artist.id}

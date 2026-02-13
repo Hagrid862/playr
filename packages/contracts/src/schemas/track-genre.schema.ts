@@ -1,13 +1,23 @@
 import { type TrackGenre } from "@repo/db";
 import z from "zod";
 import { zodDateTime } from "../utils/zod-datetime";
+import { GenreSchema, type ZodGenre } from "./genre.schema";
+import { TrackSchema, type ZodTrack } from "./track.schema";
 
-export const TrackGenreSchema = z.object({
+export interface ZodTrackGenre extends TrackGenre {
+  track?: ZodTrack;
+  genre?: ZodGenre;
+}
+
+export const TrackGenreSchema: z.ZodType<ZodTrackGenre> = z.object({
   id: z.string(),
   trackId: z.string(),
   genreId: z.string(),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
-}) satisfies z.ZodType<TrackGenre>;
 
-export type ZodTrackGenre = z.infer<typeof TrackGenreSchema>;
+  track: z.lazy(() => TrackSchema).optional(),
+  genre: z.lazy(() => GenreSchema).optional(),
+});
+
+export type ZodTrackGenreInfer = z.infer<typeof TrackGenreSchema>;

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {
-  Artist,
-  ArtistCreateInput,
-  ArtistCreateManyInput,
-  ArtistOrderByWithRelationInput,
-  ArtistUpdateInput,
-  ArtistWhereInput,
+    Artist,
+    ArtistCreateInput,
+    ArtistCreateManyInput,
+    ArtistOrderByWithRelationInput,
+    ArtistUpdateInput,
+    ArtistWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -87,7 +87,10 @@ export class ArtistRepository {
     return await this.prisma.client.artist.findMany({
       take: limit,
       skip: (page - 1) * limit,
-      where: filter,
+      where: {
+        ...filter,
+        deletedAt: null,
+      },
       orderBy,
     });
   }
@@ -102,7 +105,12 @@ export class ArtistRepository {
   }
 
   async count(filter?: ArtistWhereInput): Promise<number> {
-    return await this.prisma.client.artist.count({ where: filter });
+    return await this.prisma.client.artist.count({
+      where: {
+        ...filter,
+        deletedAt: null,
+      },
+    });
   }
 
   // ─────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ export const useCreateArtist = () => {
     onSuccess: (response) => {
       // Optimistically update or just refresh the list
       queryClient.invalidateQueries({ queryKey: ['artists', 'private'] });
+      queryClient.invalidateQueries({ queryKey: ['library', 'artists'] });
 
       // Update store as well if we want to keep it in sync manually
       if (response.data) {

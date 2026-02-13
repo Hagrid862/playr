@@ -7,8 +7,13 @@ import {
 } from "@repo/db";
 import z from "zod";
 import { zodDateTime } from "../utils/zod-datetime";
+import { TrackSchema, type ZodTrack } from "./track.schema";
 
-export const AudioFileSchema = z.object({
+export interface ZodAudioFile extends AudioFile {
+  track?: ZodTrack;
+}
+
+export const AudioFileSchema: z.ZodType<ZodAudioFile> = z.object({
   id: z.string(),
   bucket: z.enum(FileBucket),
   key: z.string(),
@@ -26,6 +31,8 @@ export const AudioFileSchema = z.object({
   status: z.enum(ProcessingStatus),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
-}) satisfies z.ZodType<AudioFile>;
 
-export type ZodAudioFile = z.infer<typeof AudioFileSchema>;
+  track: z.lazy(() => TrackSchema).optional(),
+});
+
+export type ZodAudioFileInfer = z.infer<typeof AudioFileSchema>;
