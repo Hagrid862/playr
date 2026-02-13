@@ -2,13 +2,13 @@ import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
-import { DeleteArtistCommand } from '../impl/delete-artist.command';
+import { DeleteLibraryArtistCommand } from '../impl/delete-library-artist.command';
 
-@CommandHandler(DeleteArtistCommand)
-export class DeleteArtistHandler implements ICommandHandler<DeleteArtistCommand> {
+@CommandHandler(DeleteLibraryArtistCommand)
+export class DeleteLibraryArtistHandler implements ICommandHandler<DeleteLibraryArtistCommand> {
   constructor(private readonly artistRepository: ArtistRepository) {}
 
-  async execute(command: DeleteArtistCommand): Promise<ZodArtist> {
+  async execute(command: DeleteLibraryArtistCommand): Promise<ZodArtist> {
     const { artistId, userId } = command;
 
     const artist = await this.artistRepository.findOne({

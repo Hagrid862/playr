@@ -3,19 +3,19 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    Logger,
-    NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ImageSchema, ZodImage } from '@repo/contracts';
 import { FileBucket } from '@repo/db';
-import { UploadArtistAvatarCommand } from '../impl/upload-artist-avatar.command';
+import { UploadLibraryArtistAvatarCommand } from '../impl/upload-library-artist-avatar.command';
 
-@CommandHandler(UploadArtistAvatarCommand)
-export class UploadArtistAvatarHandler implements ICommandHandler<UploadArtistAvatarCommand> {
-  private readonly logger = new Logger(UploadArtistAvatarHandler.name);
+@CommandHandler(UploadLibraryArtistAvatarCommand)
+export class UploadLibraryArtistAvatarHandler implements ICommandHandler<UploadLibraryArtistAvatarCommand> {
+  private readonly logger = new Logger(UploadLibraryArtistAvatarHandler.name);
 
   constructor(
     private readonly artistRepository: ArtistRepository,
@@ -24,7 +24,7 @@ export class UploadArtistAvatarHandler implements ICommandHandler<UploadArtistAv
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(command: UploadArtistAvatarCommand): Promise<ZodImage> {
+  async execute(command: UploadLibraryArtistAvatarCommand): Promise<ZodImage> {
     const { artistId, file, userId } = command;
 
     // Validate artist existence and ownership

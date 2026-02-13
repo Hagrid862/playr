@@ -3,16 +3,16 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-    ConflictException,
-    InternalServerErrorException,
-    PreconditionFailedException,
+  ConflictException,
+  InternalServerErrorException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
-import { CreateArtistCommand } from '../impl/create-artist.command';
+import { CreateLibraryArtistCommand } from '../impl/create-library-artist.command';
 
-@CommandHandler(CreateArtistCommand)
-export class CreateArtistHandler implements ICommandHandler<CreateArtistCommand> {
+@CommandHandler(CreateLibraryArtistCommand)
+export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibraryArtistCommand> {
   constructor(
     private readonly unitOfWork: UnitOfWorkService,
     private readonly artistRepository: ArtistRepository,
@@ -20,7 +20,7 @@ export class CreateArtistHandler implements ICommandHandler<CreateArtistCommand>
     private readonly libraryArtistRepository: LibraryArtistRepository,
   ) {}
 
-  async execute(command: CreateArtistCommand): Promise<ZodArtist> {
+  async execute(command: CreateLibraryArtistCommand): Promise<ZodArtist> {
     const { request, userId } = command;
 
     const library = await this.libraryRepository.getByUserId(userId);

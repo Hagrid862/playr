@@ -3,19 +3,19 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    Logger,
-    NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ImageSchema, ZodImage } from '@repo/contracts';
 import { FileBucket } from '@repo/db';
-import { UploadArtistBannerCommand } from '../impl/upload-artist-banner.command';
+import { UploadLibraryArtistBannerCommand } from '../impl/upload-library-artist-banner.command';
 
-@CommandHandler(UploadArtistBannerCommand)
-export class UploadArtistBannerHandler implements ICommandHandler<UploadArtistBannerCommand> {
-  private readonly logger = new Logger(UploadArtistBannerHandler.name);
+@CommandHandler(UploadLibraryArtistBannerCommand)
+export class UploadLibraryArtistBannerHandler implements ICommandHandler<UploadLibraryArtistBannerCommand> {
+  private readonly logger = new Logger(UploadLibraryArtistBannerHandler.name);
 
   constructor(
     private readonly artistRepository: ArtistRepository,
@@ -24,7 +24,7 @@ export class UploadArtistBannerHandler implements ICommandHandler<UploadArtistBa
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(command: UploadArtistBannerCommand): Promise<ZodImage> {
+  async execute(command: UploadLibraryArtistBannerCommand): Promise<ZodImage> {
     const { artistId, file, userId } = command;
 
     // Validate artist existence and ownership

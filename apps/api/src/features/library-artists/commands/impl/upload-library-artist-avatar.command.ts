@@ -1,4 +1,4 @@
-export class UploadArtistAvatarCommand {
+export class UploadLibraryArtistAvatarCommand {
   constructor(
     public readonly artistId: string,
     public readonly file: Buffer,

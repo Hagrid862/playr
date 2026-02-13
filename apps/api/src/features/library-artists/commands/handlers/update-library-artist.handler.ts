@@ -2,13 +2,13 @@ import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
-import { UpdateArtistCommand } from '../impl/update-artist.command';
+import { UpdateLibraryArtistCommand } from '../impl/update-library-artist.command';
 
-@CommandHandler(UpdateArtistCommand)
-export class UpdateArtistHandler implements ICommandHandler<UpdateArtistCommand> {
+@CommandHandler(UpdateLibraryArtistCommand)
+export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibraryArtistCommand> {
   constructor(private readonly artistRepository: ArtistRepository) {}
 
-  async execute(command: UpdateArtistCommand): Promise<ZodArtist> {
+  async execute(command: UpdateLibraryArtistCommand): Promise<ZodArtist> {
     const { artistId, request, userId } = command;
 
     const artist = await this.artistRepository.findOne({
