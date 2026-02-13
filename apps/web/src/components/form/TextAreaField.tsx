@@ -1,11 +1,10 @@
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useId } from 'react';
 
-interface TextFieldProps {
+interface TextAreaFieldProps {
   label: string;
   placeholder: string;
-  type?: 'text' | 'email' | 'password';
   value: string;
   error?: string;
   onChange: (value: string) => void;
@@ -13,29 +12,27 @@ interface TextFieldProps {
   className?: string;
 }
 
-export function TextField({
+export function TextAreaField({
   label,
   placeholder,
-  type = 'text',
   value,
   error,
   onChange,
   onBlur,
   className,
-}: TextFieldProps) {
+}: TextAreaFieldProps) {
   const id = useId();
   return (
-    <Field data-invalid={!!error} className={className}>
+    <Field data-invalid={!!error}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <FieldContent>
-        <Input
+        <Textarea
           id={id}
-          type={type}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          className={error ? 'border-destructive focus-visible:ring-destructive/50' : ''}
+          className={`${className} ${error ? 'border-destructive focus-visible:ring-destructive/50' : ''}`}
         />
       </FieldContent>
       {error && <FieldError>{error}</FieldError>}

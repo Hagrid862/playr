@@ -12,6 +12,8 @@ export const UpdateArtistRequestSchema = z.object({
     .string()
     .max(2048, "Description must be 2048 characters or less")
     .optional(),
+  avatarId: z.string().nullable().optional(),
+  bannerId: z.string().nullable().optional(),
 });
 
 export type UpdateArtistRequest = z.infer<typeof UpdateArtistRequestSchema>;
