@@ -1,5 +1,5 @@
 import { ICommand } from '@nestjs/cqrs';
-import { UpdateAlbumRequestDto } from '../../dto/update-album.request.dto';
+import { UpdateAlbumRequestDto } from '../../dto/request/update-library-album.request.dto';
 
 export class UpdateAlbumCommand implements ICommand {
   constructor(

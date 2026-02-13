@@ -25,12 +25,12 @@ import { CreateAlbumCommand } from './commands/impl/create-album.command';
 import { DeleteAlbumCommand } from './commands/impl/delete-album.command';
 import { UpdateAlbumCommand } from './commands/impl/update-album.command';
 import { UploadAlbumCoverCommand } from './commands/impl/upload-album-cover.command';
-import { CreateAlbumRequestDto } from './dto/create-album.request.dto';
-import { CreateAlbumResponseDto } from './dto/create-album.response.dto';
-import { GetAlbumResponseDto } from './dto/get-album.response.dto';
-import { UpdateAlbumRequestDto } from './dto/update-album.request.dto';
-import { UpdateAlbumResponseDto } from './dto/update-album.response.dto';
-import { UploadAlbumCoverResponseDto } from './dto/upload-album-cover.response.dto';
+import { CreateAlbumRequestDto } from './dto/request/create-library-album.request.dto';
+import { UpdateAlbumRequestDto } from './dto/request/update-library-album.request.dto';
+import { CreateAlbumResponseDto } from './dto/response/create-library-album.response.dto';
+import { GetAlbumResponseDto } from './dto/response/get-library-album.response.dto';
+import { UpdateAlbumResponseDto } from './dto/response/update-library-album.response.dto';
+import { UploadAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
 import { GetAlbumQuery } from './queries/impl/get-album.query';
 
 @ApiTags('Library Albums')
