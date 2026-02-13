@@ -9,8 +9,8 @@ export const useLibraryArtistAlbums = (id: string, page = 1, limit = 20, type?: 
   const setPrivateAlbums = useLibraryStore((state) => state.setPrivateAlbums);
 
   const query = useQuery<GetLibraryArtistAlbumsResponseDto, Error>({
-    queryKey: ['library', 'artists', id, 'albums', page, limit],
-    queryFn: () => getLibraryArtistAlbums(id, page, limit),
+    queryKey: ['library', 'artists', id, 'albums', page, limit, type],
+    queryFn: () => getLibraryArtistAlbums(id, page, limit, type),
     enabled: !!id,
   });
 
