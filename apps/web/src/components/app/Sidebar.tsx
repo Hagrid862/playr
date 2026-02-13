@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import {
   BooksIcon,
+  DiscIcon,
   GridFourIcon,
   HouseIcon,
   MagnifyingGlassIcon,
@@ -92,6 +93,14 @@ export function AppSidebar() {
                   <Link to="/app/library/artists" activeProps={{ 'data-active': 'true' }}>
                     <MicrophoneStageIcon />
                     <span>Artists</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/app/library/albums" activeProps={{ 'data-active': 'true' }}>
+                    <DiscIcon />
+                    <span>Albums</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

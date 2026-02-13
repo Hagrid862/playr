@@ -18,14 +18,19 @@ import { Route as AppSearchIndexRouteImport } from './routes/app/search/index'
 import { Route as AppNewIndexRouteImport } from './routes/app/new/index'
 import { Route as AppLibraryOverviewRouteImport } from './routes/app/library/overview'
 import { Route as AppLibraryArtistsRouteImport } from './routes/app/library/artists'
+import { Route as AppLibraryAlbumsRouteImport } from './routes/app/library/albums'
 import { Route as AppLibraryOverviewIndexRouteImport } from './routes/app/library/overview/index'
 import { Route as AppLibraryArtistsIndexRouteImport } from './routes/app/library/artists/index'
+import { Route as AppLibraryAlbumsIndexRouteImport } from './routes/app/library/albums/index'
 import { Route as AppLibraryOverviewPublicRouteImport } from './routes/app/library/overview/public'
 import { Route as AppLibraryOverviewPrivateRouteImport } from './routes/app/library/overview/private'
 import { Route as AppLibraryOverviewCommunityRouteImport } from './routes/app/library/overview/community'
 import { Route as AppLibraryArtistsCreateRouteImport } from './routes/app/library/artists/create'
+import { Route as AppLibraryAlbumsCreateRouteImport } from './routes/app/library/albums/create'
 import { Route as AppLibraryArtistsIdIndexRouteImport } from './routes/app/library/artists/$id/index'
+import { Route as AppLibraryAlbumsIdIndexRouteImport } from './routes/app/library/albums/$id/index'
 import { Route as AppLibraryArtistsIdEditRouteImport } from './routes/app/library/artists/$id/edit'
+import { Route as AppLibraryAlbumsIdEditRouteImport } from './routes/app/library/albums/$id/edit'
 import { Route as AppLibraryArtistsIdAddContentIndexRouteImport } from './routes/app/library/artists/$id/add-content/index'
 import { Route as AppLibraryArtistsIdAddContentSingleRouteImport } from './routes/app/library/artists/$id/add-content/single'
 import { Route as AppLibraryArtistsIdAddContentEpRouteImport } from './routes/app/library/artists/$id/add-content/ep'
@@ -77,6 +82,11 @@ const AppLibraryArtistsRoute = AppLibraryArtistsRouteImport.update({
   path: '/library/artists',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLibraryAlbumsRoute = AppLibraryAlbumsRouteImport.update({
+  id: '/library/albums',
+  path: '/library/albums',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLibraryOverviewIndexRoute = AppLibraryOverviewIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -86,6 +96,11 @@ const AppLibraryArtistsIndexRoute = AppLibraryArtistsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppLibraryArtistsRoute,
+} as any)
+const AppLibraryAlbumsIndexRoute = AppLibraryAlbumsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppLibraryAlbumsRoute,
 } as any)
 const AppLibraryOverviewPublicRoute =
   AppLibraryOverviewPublicRouteImport.update({
@@ -110,16 +125,31 @@ const AppLibraryArtistsCreateRoute = AppLibraryArtistsCreateRouteImport.update({
   path: '/create',
   getParentRoute: () => AppLibraryArtistsRoute,
 } as any)
+const AppLibraryAlbumsCreateRoute = AppLibraryAlbumsCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => AppLibraryAlbumsRoute,
+} as any)
 const AppLibraryArtistsIdIndexRoute =
   AppLibraryArtistsIdIndexRouteImport.update({
     id: '/$id/',
     path: '/$id/',
     getParentRoute: () => AppLibraryArtistsRoute,
   } as any)
+const AppLibraryAlbumsIdIndexRoute = AppLibraryAlbumsIdIndexRouteImport.update({
+  id: '/$id/',
+  path: '/$id/',
+  getParentRoute: () => AppLibraryAlbumsRoute,
+} as any)
 const AppLibraryArtistsIdEditRoute = AppLibraryArtistsIdEditRouteImport.update({
   id: '/$id/edit',
   path: '/$id/edit',
   getParentRoute: () => AppLibraryArtistsRoute,
+} as any)
+const AppLibraryAlbumsIdEditRoute = AppLibraryAlbumsIdEditRouteImport.update({
+  id: '/$id/edit',
+  path: '/$id/edit',
+  getParentRoute: () => AppLibraryAlbumsRoute,
 } as any)
 const AppLibraryArtistsIdAddContentIndexRoute =
   AppLibraryArtistsIdAddContentIndexRouteImport.update({
@@ -158,17 +188,22 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
+  '/app/library/albums': typeof AppLibraryAlbumsRouteWithChildren
   '/app/library/artists': typeof AppLibraryArtistsRouteWithChildren
   '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
+  '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
   '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
   '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
+  '/app/library/albums/': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
+  '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
+  '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
   '/app/library/artists/$id/': typeof AppLibraryArtistsIdIndexRoute
   '/app/library/artists/$id/add-content/album': typeof AppLibraryArtistsIdAddContentAlbumRoute
   '/app/library/artists/$id/add-content/compilation': typeof AppLibraryArtistsIdAddContentCompilationRoute
@@ -183,13 +218,17 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/new': typeof AppNewIndexRoute
   '/app/search': typeof AppSearchIndexRoute
+  '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
   '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
   '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
+  '/app/library/albums': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview': typeof AppLibraryOverviewIndexRoute
+  '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
+  '/app/library/albums/$id': typeof AppLibraryAlbumsIdIndexRoute
   '/app/library/artists/$id': typeof AppLibraryArtistsIdIndexRoute
   '/app/library/artists/$id/add-content/album': typeof AppLibraryArtistsIdAddContentAlbumRoute
   '/app/library/artists/$id/add-content/compilation': typeof AppLibraryArtistsIdAddContentCompilationRoute
@@ -204,17 +243,22 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/app/': typeof AppIndexRoute
+  '/app/library/albums': typeof AppLibraryAlbumsRouteWithChildren
   '/app/library/artists': typeof AppLibraryArtistsRouteWithChildren
   '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
+  '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
   '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
   '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
+  '/app/library/albums/': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
+  '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
+  '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
   '/app/library/artists/$id/': typeof AppLibraryArtistsIdIndexRoute
   '/app/library/artists/$id/add-content/album': typeof AppLibraryArtistsIdAddContentAlbumRoute
   '/app/library/artists/$id/add-content/compilation': typeof AppLibraryArtistsIdAddContentCompilationRoute
@@ -230,17 +274,22 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/app/'
+    | '/app/library/albums'
     | '/app/library/artists'
     | '/app/library/overview'
     | '/app/new/'
     | '/app/search/'
+    | '/app/library/albums/create'
     | '/app/library/artists/create'
     | '/app/library/overview/community'
     | '/app/library/overview/private'
     | '/app/library/overview/public'
+    | '/app/library/albums/'
     | '/app/library/artists/'
     | '/app/library/overview/'
+    | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
+    | '/app/library/albums/$id/'
     | '/app/library/artists/$id/'
     | '/app/library/artists/$id/add-content/album'
     | '/app/library/artists/$id/add-content/compilation'
@@ -255,13 +304,17 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/new'
     | '/app/search'
+    | '/app/library/albums/create'
     | '/app/library/artists/create'
     | '/app/library/overview/community'
     | '/app/library/overview/private'
     | '/app/library/overview/public'
+    | '/app/library/albums'
     | '/app/library/artists'
     | '/app/library/overview'
+    | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
+    | '/app/library/albums/$id'
     | '/app/library/artists/$id'
     | '/app/library/artists/$id/add-content/album'
     | '/app/library/artists/$id/add-content/compilation'
@@ -275,17 +328,22 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/app/'
+    | '/app/library/albums'
     | '/app/library/artists'
     | '/app/library/overview'
     | '/app/new/'
     | '/app/search/'
+    | '/app/library/albums/create'
     | '/app/library/artists/create'
     | '/app/library/overview/community'
     | '/app/library/overview/private'
     | '/app/library/overview/public'
+    | '/app/library/albums/'
     | '/app/library/artists/'
     | '/app/library/overview/'
+    | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
+    | '/app/library/albums/$id/'
     | '/app/library/artists/$id/'
     | '/app/library/artists/$id/add-content/album'
     | '/app/library/artists/$id/add-content/compilation'
@@ -366,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryArtistsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/library/albums': {
+      id: '/app/library/albums'
+      path: '/library/albums'
+      fullPath: '/app/library/albums'
+      preLoaderRoute: typeof AppLibraryAlbumsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/library/overview/': {
       id: '/app/library/overview/'
       path: '/'
@@ -379,6 +444,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/library/artists/'
       preLoaderRoute: typeof AppLibraryArtistsIndexRouteImport
       parentRoute: typeof AppLibraryArtistsRoute
+    }
+    '/app/library/albums/': {
+      id: '/app/library/albums/'
+      path: '/'
+      fullPath: '/app/library/albums/'
+      preLoaderRoute: typeof AppLibraryAlbumsIndexRouteImport
+      parentRoute: typeof AppLibraryAlbumsRoute
     }
     '/app/library/overview/public': {
       id: '/app/library/overview/public'
@@ -408,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryArtistsCreateRouteImport
       parentRoute: typeof AppLibraryArtistsRoute
     }
+    '/app/library/albums/create': {
+      id: '/app/library/albums/create'
+      path: '/create'
+      fullPath: '/app/library/albums/create'
+      preLoaderRoute: typeof AppLibraryAlbumsCreateRouteImport
+      parentRoute: typeof AppLibraryAlbumsRoute
+    }
     '/app/library/artists/$id/': {
       id: '/app/library/artists/$id/'
       path: '/$id'
@@ -415,12 +494,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryArtistsIdIndexRouteImport
       parentRoute: typeof AppLibraryArtistsRoute
     }
+    '/app/library/albums/$id/': {
+      id: '/app/library/albums/$id/'
+      path: '/$id'
+      fullPath: '/app/library/albums/$id/'
+      preLoaderRoute: typeof AppLibraryAlbumsIdIndexRouteImport
+      parentRoute: typeof AppLibraryAlbumsRoute
+    }
     '/app/library/artists/$id/edit': {
       id: '/app/library/artists/$id/edit'
       path: '/$id/edit'
       fullPath: '/app/library/artists/$id/edit'
       preLoaderRoute: typeof AppLibraryArtistsIdEditRouteImport
       parentRoute: typeof AppLibraryArtistsRoute
+    }
+    '/app/library/albums/$id/edit': {
+      id: '/app/library/albums/$id/edit'
+      path: '/$id/edit'
+      fullPath: '/app/library/albums/$id/edit'
+      preLoaderRoute: typeof AppLibraryAlbumsIdEditRouteImport
+      parentRoute: typeof AppLibraryAlbumsRoute
     }
     '/app/library/artists/$id/add-content/': {
       id: '/app/library/artists/$id/add-content/'
@@ -459,6 +552,23 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppLibraryAlbumsRouteChildren {
+  AppLibraryAlbumsCreateRoute: typeof AppLibraryAlbumsCreateRoute
+  AppLibraryAlbumsIndexRoute: typeof AppLibraryAlbumsIndexRoute
+  AppLibraryAlbumsIdEditRoute: typeof AppLibraryAlbumsIdEditRoute
+  AppLibraryAlbumsIdIndexRoute: typeof AppLibraryAlbumsIdIndexRoute
+}
+
+const AppLibraryAlbumsRouteChildren: AppLibraryAlbumsRouteChildren = {
+  AppLibraryAlbumsCreateRoute: AppLibraryAlbumsCreateRoute,
+  AppLibraryAlbumsIndexRoute: AppLibraryAlbumsIndexRoute,
+  AppLibraryAlbumsIdEditRoute: AppLibraryAlbumsIdEditRoute,
+  AppLibraryAlbumsIdIndexRoute: AppLibraryAlbumsIdIndexRoute,
+}
+
+const AppLibraryAlbumsRouteWithChildren =
+  AppLibraryAlbumsRoute._addFileChildren(AppLibraryAlbumsRouteChildren)
 
 interface AppLibraryArtistsRouteChildren {
   AppLibraryArtistsCreateRoute: typeof AppLibraryArtistsCreateRoute
@@ -510,6 +620,7 @@ const AppLibraryOverviewRouteWithChildren =
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppLibraryAlbumsRoute: typeof AppLibraryAlbumsRouteWithChildren
   AppLibraryArtistsRoute: typeof AppLibraryArtistsRouteWithChildren
   AppLibraryOverviewRoute: typeof AppLibraryOverviewRouteWithChildren
   AppNewIndexRoute: typeof AppNewIndexRoute
@@ -518,6 +629,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppLibraryAlbumsRoute: AppLibraryAlbumsRouteWithChildren,
   AppLibraryArtistsRoute: AppLibraryArtistsRouteWithChildren,
   AppLibraryOverviewRoute: AppLibraryOverviewRouteWithChildren,
   AppNewIndexRoute: AppNewIndexRoute,

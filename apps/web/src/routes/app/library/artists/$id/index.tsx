@@ -33,6 +33,7 @@ import { AlbumType } from '@repo/db';
 import { useLibraryArtistAlbums } from '@/hooks/api/library-artists/useLibraryArtistAlbums';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { MediaCard } from '@/components/library/MediaCard';
 
 export const Route = createFileRoute('/app/library/artists/$id/')({
   component: RouteComponent,
@@ -210,32 +211,17 @@ function RouteComponent() {
               {albums.map((album) => {
                 if (!album) return null;
                 return (
-                  <Link
+                  <MediaCard
                     key={album.id}
-                    to="/app/library/artists/$id"
-                    params={{ id: album.id }}
-                    className="group/artist relative p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
-                  >
-                    <div className="aspect-square w-full overflow-hidden bg-stone-800 rounded-md">
-                      {album.cover?.url ? (
-                        <img
-                          src={album.cover?.url}
-                          alt={album.name}
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex size-full items-center justify-center">
-                          <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="pt-4">
-                      <h3 className="line-clamp-1 text-sm font-semibold">{album.name}</h3>
-                      <p className="line-clamp-1 text-xs text-muted-foreground">
-                        {album.releaseDate?.getFullYear() ?? 'Unknown'}
-                      </p>
-                    </div>
-                  </Link>
+                    id={album.id}
+                    title={album.name}
+                    subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                    coverUrl={album.cover?.url ?? undefined}
+                    link={`/app/library/albums/${album.id}`}
+                    placeholderIcon={
+                      <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
+                    }
+                  />
                 );
               })}
             </div>

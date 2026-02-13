@@ -122,9 +122,7 @@ export function CreateAlbumForm({
 
       <div className="flex items-center justify-between gap-4">
         <Button asChild variant="secondary" type="button" className="min-w-32">
-          <Link to=".." search={(prev) => prev}>
-            Cancel
-          </Link>
+          <Link to="..">Cancel</Link>
         </Button>
         <Button type="submit" disabled={!isValid || isLoading} className="min-w-32 group">
           {isLoading ? (
