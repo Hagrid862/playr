@@ -3,18 +3,34 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { AlbumAccessGuard } from '@/shared/guards/album-access.guard';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  MaxFileSizeValidator,
+  Param,
+  ParseFilePipe,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ZodAlbum } from '@repo/contracts';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ZodAlbum, ZodImage } from '@repo/contracts';
 import { CreateAlbumCommand } from './commands/impl/create-album.command';
 import { DeleteAlbumCommand } from './commands/impl/delete-album.command';
 import { UpdateAlbumCommand } from './commands/impl/update-album.command';
+import { UploadAlbumCoverCommand } from './commands/impl/upload-album-cover.command';
 import { CreateAlbumRequestDto } from './dto/create-album.request.dto';
 import { CreateAlbumResponseDto } from './dto/create-album.response.dto';
 import { GetAlbumResponseDto } from './dto/get-album.response.dto';
 import { UpdateAlbumRequestDto } from './dto/update-album.request.dto';
 import { UpdateAlbumResponseDto } from './dto/update-album.response.dto';
+import { UploadAlbumCoverResponseDto } from './dto/upload-album-cover.response.dto';
 import { GetAlbumQuery } from './queries/impl/get-album.query';
 
 @ApiTags('Albums')
@@ -100,6 +116,52 @@ export class AlbumsController {
     @CurrentUser('id') userId: string,
   ): Promise<ZodAlbum> {
     const command = new UpdateAlbumCommand(id, body, userId);
+    return this.commandBus.execute(command);
+  }
+
+  @Post(':id/cover')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Upload album cover' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiResponse({
+    status: 201,
+    description: 'Cover uploaded successfully',
+    type: UploadAlbumCoverResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request (invalid file)',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album not found',
+    type: ApiErrorResponseDto,
+  })
+  async uploadCover(
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @CurrentUser('id') userId: string,
+  ): Promise<ZodImage> {
+    const command = new UploadAlbumCoverCommand(id, file.buffer, file.mimetype, userId);
     return this.commandBus.execute(command);
   }
 
