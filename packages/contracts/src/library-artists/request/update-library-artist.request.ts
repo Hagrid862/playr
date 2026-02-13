@@ -3,7 +3,7 @@ import { z } from "zod";
 export const UpdateLibraryArtistRequestSchema = z.object({
   name: z
     .string()
-    .min(1, "Artist name must be at least 1 character")
+    .min(1, "Artist name cannot be empty")
     .max(255, "Artist name must be 255 characters or less")
     .optional(),
   description: z
