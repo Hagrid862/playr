@@ -6,8 +6,7 @@ import { updateLibraryArtist } from './requests/updateLibraryArtist';
 
 export const useUpdateLibraryArtist = () => {
   const queryClient = useQueryClient();
-  const setPrivateArtists = useLibraryStore((state) => state.setPrivateArtists);
-  const privateArtists = useLibraryStore((state) => state.privateArtists);
+  const updatePrivateArtist = useLibraryStore((state) => state.updatePrivateArtist);
 
   return useMutation<
     UpdateLibraryArtistResponse,
@@ -20,7 +19,7 @@ export const useUpdateLibraryArtist = () => {
       queryClient.invalidateQueries({ queryKey: ['library', 'artists', id] });
 
       if (response.data) {
-        setPrivateArtists(privateArtists.map((a) => (a.id === id ? response.data! : a)));
+        updatePrivateArtist(response.data);
       }
     },
   });
