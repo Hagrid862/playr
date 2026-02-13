@@ -1,4 +1,4 @@
-import { CreateAlbumForm } from '@/components/library-albums/CreateAlbumForm';
+import { CreateAlbumForm } from '@/components/library/albums/CreateAlbumForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCreateLibraryAlbum } from '@/hooks/api/library-albums/useCreateLibraryAlbum';
 import { useCreateAlbumForm } from '@/hooks/forms/useCreateAlbumForm';
