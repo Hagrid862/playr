@@ -6,10 +6,13 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
 import { CreateLibraryResponseDto } from './dto/create-library.response.dto';
+import { GetLibraryAlbumsRequestDto } from './dto/get-library-albums.request.dto';
+import { GetLibraryAlbumsResponseDto } from './dto/get-library-albums.response.dto';
 import { GetLibraryArtistResponseDto } from './dto/get-library-artist.response.dto';
 import { GetLibraryArtistsRequestDto } from './dto/get-library-artists.request.dto';
 import { GetLibraryArtistsResponseDto } from './dto/get-library-artists.response.dto';
 import { GetLibraryResponseDto } from './dto/get-library.response.dto';
+import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
 import { GetLibraryQuery } from './queries/impl/get-library.query';
@@ -103,5 +106,22 @@ export class LibraryController {
   })
   getArtist(@CurrentUser('id') userId: string, @Param('id') artistId: string) {
     return this.queryBus.execute(new GetLibraryArtistQuery(userId, artistId));
+  }
+
+  @Get('albums')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all library albums' })
+  @ApiResponse({
+    status: 200,
+    description: 'Library albums retrieved successfully',
+    type: GetLibraryAlbumsResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  getAlbums(@CurrentUser('id') userId: string, @Query() query: GetLibraryAlbumsRequestDto) {
+    return this.queryBus.execute(new GetLibraryAlbumsQuery(userId, query.page, query.limit));
   }
 }
