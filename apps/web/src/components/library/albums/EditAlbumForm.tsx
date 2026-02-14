@@ -35,12 +35,10 @@ const validateWithZod = (value: UpdateLibraryAlbumRequest) => {
   if (result.success) return undefined;
 
   const errors: Record<string, string> = {};
-  result.error.issues.forEach((issue) => {
-    const path = issue.path[0] as string;
-    if (path && !errors[path]) {
-      errors[path] = issue.message;
-    }
-  });
+  for (const issue of result.error.issues) {
+    const path = String(issue.path[0]);
+    errors[path] ??= issue.message;
+  }
   return errors;
 };
 
@@ -59,7 +57,7 @@ export function EditAlbumForm({
     defaultValues: {
       name: album.name,
       description: album.description || '',
-      type: album.type || AlbumType.album,
+      type: album.type,
       releaseDate: album.releaseDate || null,
     } satisfies UpdateLibraryAlbumRequest,
     validators: {
@@ -84,9 +82,9 @@ export function EditAlbumForm({
   const handleRemoveCover = () => {
     setSelectedCover(undefined);
     setCoverPreview(undefined);
-    if (coverInputRef.current) {
-      coverInputRef.current.value = '';
-    }
+    // Safe: the file input is always rendered, so the ref is always attached
+
+    coverInputRef.current!.value = '';
   };
 
   const currentCoverUrl = coverPreview || album.cover?.url;
@@ -235,13 +233,8 @@ export function EditAlbumForm({
               <SelectField
                 label="Album Type"
                 placeholder="Select type"
-                value={field.state.value || AlbumType.album}
+                value={field.state.value}
                 options={albumTypeOptions}
-                error={
-                  field.state.meta.isTouched && field.state.meta.errors.length > 0
-                    ? String(field.state.meta.errors[0])
-                    : undefined
-                }
                 onChange={(value) => {
                   if (value in AlbumType) {
                     field.handleChange(value as AlbumType);
@@ -257,11 +250,6 @@ export function EditAlbumForm({
               <DatePickerField
                 label="Release Date"
                 value={field.state.value ? new Date(field.state.value) : undefined}
-                error={
-                  field.state.meta.isTouched && field.state.meta.errors.length > 0
-                    ? String(field.state.meta.errors[0])
-                    : undefined
-                }
                 onChange={(date) => {
                   const isoValue = date?.toISOString() ?? null;
                   field.handleChange(isoValue as typeof field.state.value);

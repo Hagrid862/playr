@@ -14,7 +14,7 @@ export function MediaCard({
   subtitle: string | undefined;
   id: string;
   link: string;
-  placeholderIcon: React.ReactNode;
+  placeholderIcon?: React.ReactNode;
 }) {
   return (
     <Link
