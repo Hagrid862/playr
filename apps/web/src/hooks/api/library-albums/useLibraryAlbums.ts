@@ -1,5 +1,5 @@
 import { useLibraryStore } from '@/stores/library.store';
-import type { GetLibraryAlbumsResponseDto } from '@repo/contracts';
+import type { GetLibraryAlbumsResponse } from '@repo/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getLibraryAlbums } from './requests/getLibraryAlbums';
@@ -7,7 +7,7 @@ import { getLibraryAlbums } from './requests/getLibraryAlbums';
 export const useLibraryAlbums = (page = 1, limit = 20) => {
   const setPrivateAlbums = useLibraryStore((state) => state.setPrivateAlbums);
 
-  const query = useQuery<GetLibraryAlbumsResponseDto, Error>({
+  const query = useQuery<GetLibraryAlbumsResponse, Error>({
     queryKey: ['library', 'albums', page, limit],
     queryFn: () => getLibraryAlbums(page, limit),
   });
