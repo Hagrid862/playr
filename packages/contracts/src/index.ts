@@ -1,7 +1,6 @@
 export * from "./schemas";
 
 export * from "./library-albums";
-export * from "./artists";
 export * from "./auth";
 export * from "./library";
 export * from "./library-artists";
