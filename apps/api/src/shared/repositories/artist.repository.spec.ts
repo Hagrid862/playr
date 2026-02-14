@@ -17,7 +17,7 @@ describe('ArtistRepository', () => {
     verified: false,
     bannerId: null,
     avatarId: null,
-    visibility: 'PRIVATE',
+    visibility: 'private',
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -125,7 +125,7 @@ describe('ArtistRepository', () => {
   describe('create', () => {
     it('should create an artist', async () => {
       mockTx.artist.create.mockResolvedValue(mockArtist);
-      const data = { name: 'New Artist', visibility: 'PRIVATE' } as any;
+      const data = { name: 'New Artist', visibility: 'private' } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockArtist);
       expect(mockTx.artist.create).toHaveBeenCalledWith({ data });
@@ -135,7 +135,7 @@ describe('ArtistRepository', () => {
   describe('createMany', () => {
     it('should create many artists', async () => {
       mockTx.artist.createManyAndReturn.mockResolvedValue([mockArtist]);
-      const data = [{ name: 'Artist 1', visibility: 'PRIVATE' }] as any;
+      const data = [{ name: 'Artist 1', visibility: 'private' }] as any;
       const result = await repository.createMany(data);
       expect(result).toEqual([mockArtist]);
       expect(mockTx.artist.createManyAndReturn).toHaveBeenCalledWith({ data });

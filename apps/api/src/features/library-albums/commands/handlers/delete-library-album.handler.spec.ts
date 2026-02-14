@@ -22,7 +22,7 @@ describe('DeleteLibraryAlbumHandler', () => {
     totalDuration: 3000,
     releaseDate: new Date(),
     coverId: null,
-    visibility: 'PUBLIC',
+    visibility: 'public',
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,

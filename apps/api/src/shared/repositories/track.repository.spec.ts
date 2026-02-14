@@ -19,7 +19,7 @@ describe('TrackRepository', () => {
     explicit: false,
     lyrics: null,
     albumId: 'album-123',
-    visibility: 'PRIVATE',
+    visibility: 'private',
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -81,7 +81,7 @@ describe('TrackRepository', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              { visibility: 'PUBLIC' },
+              { visibility: 'public' },
               expect.objectContaining({ access: { some: { userId: 'GUEST' } } }),
               expect.objectContaining({ album: { access: { some: { userId: 'GUEST' } } } }),
               expect.objectContaining({

@@ -15,7 +15,7 @@ describe('AlbumRepository', () => {
     description: null,
     type: 'album',
     releaseDate: new Date(),
-    visibility: 'PRIVATE',
+    visibility: 'private',
     coverId: null,
     totalTracks: 0,
     totalDuration: 0,
@@ -116,7 +116,7 @@ describe('AlbumRepository', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              { visibility: 'PUBLIC' },
+              { visibility: 'public' },
               expect.objectContaining({ access: { some: { userId: 'GUEST' } } }),
               expect.objectContaining({
                 artists: { some: { access: { some: { userId: 'GUEST' } } } },
@@ -135,7 +135,7 @@ describe('AlbumRepository', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              { visibility: 'PUBLIC' },
+              { visibility: 'public' },
               expect.objectContaining({ access: { some: { userId: 'user-123' } } }),
             ]),
           }),
@@ -182,7 +182,7 @@ describe('AlbumRepository', () => {
   describe('create', () => {
     it('should create an album', async () => {
       mockTx.album.create.mockResolvedValue(mockAlbum);
-      const data = { name: 'New Album', type: 'ALBUM', visibility: 'PRIVATE' } as any;
+      const data = { name: 'New Album', type: 'album', visibility: 'private' } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockAlbum);
       expect(mockTx.album.create).toHaveBeenCalledWith({ data });
