@@ -18,7 +18,7 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
     const library = await this.libraryRepository.getByUserId(userId);
 
     if (!library) {
-      throw new PreconditionFailedException('User library not found');
+      throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
     const [items, total] = await Promise.all([
