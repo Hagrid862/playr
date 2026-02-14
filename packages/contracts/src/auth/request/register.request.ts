@@ -1,9 +1,11 @@
 import { Gender } from "@repo/db";
 import { z } from "zod";
-import { createApiResponseSchema } from "../api/response.schema";
-import { UserSchema } from "../schemas/user.schema";
-import { zodDateOnly } from "../utils/zod-date";
-import { zodEmail, zodPassword, zodRequiredString } from "../utils/zod-shared";
+import { zodDateOnly } from "../../utils/zod-date";
+import {
+  zodEmail,
+  zodPassword,
+  zodRequiredString,
+} from "../../utils/zod-shared";
 
 export const RegisterRequestSchema = z.object({
   username: zodRequiredString("Username is required")
@@ -68,7 +70,4 @@ export const RegisterRequestSchema = z.object({
   password: zodPassword(),
 });
 
-export const RegisterResponseSchema = createApiResponseSchema(UserSchema);
-
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
-export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;

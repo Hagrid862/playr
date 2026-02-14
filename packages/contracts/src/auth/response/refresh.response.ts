@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { createApiResponseSchema } from "../api/response.schema";
-import { UserSchema } from "../schemas/user.schema";
+import { createApiResponseSchema } from "../../api/response.schema";
+import { UserSchema } from "../../schemas/user.schema";
 
 export const RefreshResponseSchema = createApiResponseSchema(
   z.object({
