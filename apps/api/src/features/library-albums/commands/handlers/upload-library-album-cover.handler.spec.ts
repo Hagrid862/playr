@@ -3,12 +3,19 @@ import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
 import { UploadLibraryAlbumCoverCommand } from '../impl/upload-library-album-cover.command';
 import { UploadLibraryAlbumCoverHandler } from './upload-library-album-cover.handler';
+import { ImageSchema } from '@repo/contracts';
 
 describe('UploadLibraryAlbumCoverHandler', () => {
   let handler: UploadLibraryAlbumCoverHandler;
@@ -87,6 +94,11 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       coverId: 'img-123',
     } as any);
 
+    vi.spyOn(ImageSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: mockImageRecord,
+    } as any);
+
     const result = await handler.execute(command);
 
     expect(result.id).toBe('img-123');
@@ -128,6 +140,10 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       key: 'new-key',
     } as any);
     prisma.client.album.update.mockResolvedValue({} as any);
+    vi.spyOn(ImageSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: mockImageRecord,
+    } as any);
 
     await handler.execute(command);
 
@@ -138,6 +154,34 @@ describe('UploadLibraryAlbumCoverHandler', () => {
 
     // S3 deletion
     expect(storageService.deleteFile).toHaveBeenCalledWith('public', 'old-key');
+  });
+
+  it('should not attempt to cleanup S3 if old cover image record not found in DB', async () => {
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
+    const mockAlbumWithCover = { ...mockAlbum, coverId: 'old-cover-id' };
+
+    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover as any);
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    prisma.client.image.findUnique.mockResolvedValue(null); // Not found!
+
+    prisma.client.image.create.mockResolvedValue({ ...mockImageRecord, id: 'new-cover-id' } as any);
+    prisma.client.album.update.mockResolvedValue({} as any);
+    vi.spyOn(ImageSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: mockImageRecord,
+    } as any);
+
+    await handler.execute(command);
+
+    expect(storageService.deleteFile).not.toHaveBeenCalledWith('public', expect.any(String));
   });
 
   it('should throw NotFoundException if album not found', async () => {
@@ -163,5 +207,95 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     imageService.validateImage.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should throw InternalServerErrorException if image record parsing fails', async () => {
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
+    storageService.uploadFile.mockResolvedValue({
+      url: 'http://bucket/key.webp',
+      key: 'key.webp',
+    });
+
+    prisma.client.image.create.mockResolvedValue(mockImageRecord as any);
+    vi.spyOn(ImageSchema, 'safeParse').mockReturnValue({
+      success: false,
+      error: { format: () => ({}) },
+    } as any);
+
+    await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
+  });
+
+  it('should log error if old cover cleanup fails', async () => {
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
+    const mockAlbumWithCover = { ...mockAlbum, coverId: 'old-cover-id' };
+
+    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover as any);
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    prisma.client.image.findUnique.mockResolvedValue({
+      id: 'old-cover-id',
+      bucket: 'public',
+      key: 'old-key',
+    } as any);
+
+    prisma.client.image.create.mockResolvedValue({ ...mockImageRecord, id: 'new-cover-id' } as any);
+    prisma.client.album.update.mockResolvedValue({} as any);
+
+    const loggerSpy = vi.spyOn(Logger.prototype, 'error');
+    storageService.deleteFile.mockRejectedValueOnce(new Error('S3 delete failed'));
+    vi.spyOn(ImageSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: mockImageRecord,
+    } as any);
+
+    await handler.execute(command);
+
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to cleanup old cover file'),
+      expect.any(Error),
+    );
+  });
+
+  it('should cleanup new cover and log error if transaction fails', async () => {
+    const command = new UploadLibraryAlbumCoverCommand(
+      mockAlbumId,
+      mockBuffer,
+      mockMimeType,
+      mockUserId,
+    );
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
+
+    prisma.mainClient.$transaction.mockRejectedValue(new Error('Transaction failed'));
+
+    const loggerSpy = vi.spyOn(Logger.prototype, 'error');
+    storageService.deleteFile.mockRejectedValueOnce(new Error('Cleanup delete failed'));
+
+    await expect(handler.execute(command)).rejects.toThrow('Transaction failed');
+
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.public, expect.any(String));
+    expect(loggerSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to cleanup new cover file after transaction failure'),
+      expect.any(Error),
+    );
   });
 });
