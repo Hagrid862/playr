@@ -113,7 +113,7 @@ describe('EditAlbumForm', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    visibility: Visibility.PUBLIC,
+    visibility: Visibility.public,
     cover: null,
   };
 

@@ -73,8 +73,8 @@ export class AlbumRepository {
         deletedAt: null,
         OR: [
           // 1. Is it Public?
-          { visibility: 'PUBLIC' },
-          // 2. Direct Album Access? (VIEWER, EDITOR, or OWNER)
+          { visibility: 'public' },
+          // 2. Direct Album Access? (viewer, editor, or owner)
           {
             access: {
               some: { userId: activeUserId },

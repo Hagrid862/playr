@@ -33,8 +33,8 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
       const existingAlbum = await this.albumRepository.findOne({
         name: request.name,
         OR: [
-          { access: { some: { userId, role: 'OWNER' } } },
-          { artists: { some: { access: { some: { userId, role: 'OWNER' } } } } },
+          { access: { some: { userId, role: 'owner' } } },
+          { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
         ],
       });
 
@@ -47,11 +47,11 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
         description: request.description,
         type: request.type,
         releaseDate: request.releaseDate,
-        visibility: 'PRIVATE',
+        visibility: 'private',
         access: {
           create: {
             userId: userId,
-            role: 'OWNER',
+            role: 'owner',
           },
         },
         artists: {

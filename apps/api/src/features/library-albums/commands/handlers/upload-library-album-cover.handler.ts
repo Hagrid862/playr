@@ -30,7 +30,7 @@ export class UploadLibraryAlbumCoverHandler implements ICommandHandler<UploadLib
     // Validate album existence and ownership
     const album = await this.albumRepository.findOne({
       id: albumId,
-      access: { some: { userId, role: 'OWNER' } },
+      access: { some: { userId, role: 'owner' } },
     });
 
     if (!album) {

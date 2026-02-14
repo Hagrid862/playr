@@ -79,7 +79,7 @@ describe('AlbumsController (Integration)', () => {
     access: [
       {
         userId: 'user-123',
-        role: 'OWNER',
+        role: 'owner',
       },
     ],
   };
