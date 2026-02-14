@@ -2,7 +2,7 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { GetLibraryAlbumsResponseDto } from '@repo/contracts';
+import { GetLibraryAlbumsResponse } from '@repo/contracts';
 import { GetLibraryAlbumsQuery } from '../impl/get-library-albums.query';
 
 @QueryHandler(GetLibraryAlbumsQuery)
@@ -12,7 +12,7 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
   ) {}
 
-  async execute(query: GetLibraryAlbumsQuery): Promise<GetLibraryAlbumsResponseDto['data']> {
+  async execute(query: GetLibraryAlbumsQuery): Promise<GetLibraryAlbumsResponse['data']> {
     const { userId, page, limit } = query;
 
     const library = await this.libraryRepository.getByUserId(userId);
