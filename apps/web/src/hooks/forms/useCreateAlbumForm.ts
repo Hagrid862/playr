@@ -27,7 +27,10 @@ export const useCreateAlbumForm = (artistId: string) => {
 
     const errs: Partial<Record<keyof FormData, string>> = {};
     result.error.issues.forEach((issue) => {
-      errs[issue.path[0] as keyof FormData] = issue.message;
+      const field = issue.path[0];
+      if (typeof field === 'string' && field in formData) {
+        errs[field as keyof FormData] = issue.message;
+      }
     });
     return errs;
   }, [formData]);
