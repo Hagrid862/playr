@@ -162,14 +162,14 @@ function RouteComponent() {
         <div className="flex items-center gap-3">
           <Button
             size="lg"
-            className="h-12 rounded-xl gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
+            className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
           >
             <PlayIcon weight="fill" size={20} /> Play
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="h-12 rounded-xl gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
+            className="h-12 rounded-lg gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
           >
             <ShuffleIcon weight="bold" size={20} /> Shuffle
           </Button>
@@ -177,7 +177,7 @@ function RouteComponent() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
               aria-label="Add to favorites"
             >
               <HeartIcon size={24} />
@@ -187,7 +187,7 @@ function RouteComponent() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                  className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
                   aria-label="More options"
                 >
                   <DotsThreeIcon size={24} weight="bold" />
