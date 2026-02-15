@@ -194,4 +194,51 @@ describe('ArtistRepository', () => {
       expect(mockTx.artist.deleteMany).toHaveBeenCalledWith({ where: filter });
     });
   });
+
+  describe('softDeleteCascade', () => {
+    it('should soft delete artist and cascade to albums and tracks', async () => {
+      const albumIds = ['album-1', 'album-2'];
+      const albums = [{ id: 'album-1' }, { id: 'album-2' }];
+
+      mockTx.album.findMany.mockResolvedValue(albums as any);
+
+      // Mock transaction response and individual calls
+      mockTx.$transaction.mockResolvedValue([mockArtist, { count: 2 }, { count: 10 }]);
+      mockTx.artist.update.mockResolvedValue(mockArtist);
+      mockTx.album.updateMany.mockResolvedValue({ count: 2 });
+      mockTx.track.updateMany.mockResolvedValue({ count: 10 });
+
+      const result = await repository.softDeleteCascade('artist-123');
+
+      expect(result).toEqual(mockArtist);
+
+      // Verify finding albums
+      expect(mockTx.album.findMany).toHaveBeenCalledWith({
+        where: {
+          artists: { some: { id: 'artist-123' } },
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+
+      // Verify transaction was called
+      expect(mockTx.$transaction).toHaveBeenCalled();
+
+      // Verify individual update calls were constructed
+      expect(mockTx.artist.update).toHaveBeenCalledWith({
+        where: { id: 'artist-123' },
+        data: { deletedAt: expect.any(Date) },
+      });
+
+      expect(mockTx.album.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: albumIds } },
+        data: { deletedAt: expect.any(Date) },
+      });
+
+      expect(mockTx.track.updateMany).toHaveBeenCalledWith({
+        where: { albumId: { in: albumIds } },
+        data: { deletedAt: expect.any(Date) },
+      });
+    });
+  });
 });
