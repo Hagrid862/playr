@@ -45,7 +45,10 @@ function RouteComponent() {
             key={album.id}
             id={album.id}
             title={album.name}
-            subtitle={album.artists?.map((artist) => artist.name).join(', ')}
+            subtitle={
+              (album.artists?.map((artist) => artist.name).join(', ') ?? 'Unknown artist') +
+              ` - ${album.type}`
+            }
             coverUrl={album.cover?.url ?? undefined}
             link="/app/library/albums/$id"
             placeholderIcon={<DiscIcon className="size-1/2 text-stone-400" weight="duotone" />}
