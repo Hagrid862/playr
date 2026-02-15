@@ -151,6 +151,7 @@ function RouteComponent() {
               variant="ghost"
               size="icon"
               className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              aria-label="Add to favorites"
             >
               <HeartIcon size={24} />
             </Button>
@@ -160,6 +161,7 @@ function RouteComponent() {
                   variant="ghost"
                   size="icon"
                   className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                  aria-label="More options"
                 >
                   <DotsThreeIcon size={24} weight="bold" />
                 </Button>
