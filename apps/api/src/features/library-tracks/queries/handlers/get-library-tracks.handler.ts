@@ -29,7 +29,7 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
         },
         take: limit,
         skip: (page - 1) * limit,
-        orderBy: { track: { trackNumber: 'asc' } }, // Optional: sort by track number
+        orderBy: { track: { trackNumber: 'asc' } }, // Sort by track number
       }),
       this.libraryTrackRepository.count({
         libraryId: library.id,
