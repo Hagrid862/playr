@@ -11,6 +11,7 @@ import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
 import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.command';
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
 import { DeleteLibraryAlbumCommand } from './commands/impl/delete-library-album.command';
+import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
 
 describe('AlbumsController', () => {
   let controller: AlbumsController;
@@ -72,5 +73,10 @@ describe('AlbumsController', () => {
   it('deleteAlbum should execute DeleteLibraryAlbumCommand', async () => {
     await controller.deleteAlbum(mockAlbumId, mockUserId);
     expect(commandBus.execute).toHaveBeenCalledWith(expect.any(DeleteLibraryAlbumCommand));
+  });
+
+  it('getAlbumTracks should execute GetLibraryAlbumTracksQuery', async () => {
+    await controller.getAlbumTracks(mockAlbumId, mockUserId);
+    expect(queryBus.execute).toHaveBeenCalledWith(expect.any(GetLibraryAlbumTracksQuery));
   });
 });
