@@ -8,6 +8,7 @@ import { ArtistRepository } from './repositories/artist.repository';
 import { EmailAddressRepository } from './repositories/email-address.repository';
 import { LibraryAlbumRepository } from './repositories/library-album.repository';
 import { LibraryArtistRepository } from './repositories/library-artist.repository';
+import { LibraryTrackRepository } from './repositories/library-track.repository';
 
 import { LibraryRepository } from './repositories/library.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
@@ -41,6 +42,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     AlbumRepository,
     LibraryArtistRepository,
     LibraryAlbumRepository,
+    LibraryTrackRepository,
     TrackRepository,
     // guards
     JwtAuthGuard,
@@ -65,6 +67,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     AlbumRepository,
     LibraryArtistRepository,
     LibraryAlbumRepository,
+    LibraryTrackRepository,
     TrackRepository,
     // guards
     JwtAuthGuard,

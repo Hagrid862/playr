@@ -16,9 +16,10 @@ export class TrackRepository {
   // QUERIES
   // ─────────────────────────────────────────────────────────────
 
-  async findOne(where: TrackWhereInput): Promise<Track | null> {
+  async findOne(where: TrackWhereInput, includeRelations = false): Promise<Track | null> {
     return await this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
+      include: includeRelations ? { artists: true, album: true } : undefined,
     });
   }
 
