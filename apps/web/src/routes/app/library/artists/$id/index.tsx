@@ -20,6 +20,9 @@ import {
   DiscIcon,
   DotsThreeIcon,
   HeartIcon,
+  ListBulletsIcon,
+  MusicNoteIcon,
+  MusicNotesIcon,
   PencilIcon,
   PlayIcon,
   PlusIcon,
@@ -314,7 +317,7 @@ function RouteComponent() {
                       coverUrl={album.cover?.url ?? undefined}
                       link={`/app/library/albums/${album.id}`}
                       placeholderIcon={
-                        <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
+                        <MusicNotesIcon className="size-1/2 text-stone-400" weight="duotone" />
                       }
                     />
                   );
@@ -362,7 +365,7 @@ function RouteComponent() {
                       coverUrl={album.cover?.url ?? undefined}
                       link={`/app/library/albums/${album.id}`}
                       placeholderIcon={
-                        <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
+                        <MusicNoteIcon className="size-1/2 text-stone-400" weight="duotone" />
                       }
                     />
                   );
@@ -410,7 +413,7 @@ function RouteComponent() {
                       coverUrl={album.cover?.url ?? undefined}
                       link={`/app/library/albums/${album.id}`}
                       placeholderIcon={
-                        <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
+                        <ListBulletsIcon className="size-1/2 text-stone-400" weight="duotone" />
                       }
                     />
                   );
