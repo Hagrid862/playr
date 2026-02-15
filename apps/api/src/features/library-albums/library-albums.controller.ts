@@ -34,8 +34,10 @@ import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.res
 import { GetLibraryAlbumsResponseDto } from './dto/response/get-library-albums.response.dto';
 import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
 import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
+import { GetLibraryAlbumTracksResponseDto } from './dto/response/get-library-album-tracks.response.dto';
 import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
 import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
+import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
 
 @ApiTags('Library Albums')
 @Controller('library/albums')
@@ -120,6 +122,29 @@ export class AlbumsController {
   async getAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
     const query = new GetLibraryAlbumQuery(id, userId);
     return this.queryBus.execute(query);
+  }
+
+  @Get(':id/tracks')
+  @UseGuards(JwtAuthGuard, AlbumAccessGuard)
+  @CheckAlbumAccess('id')
+  @ApiOperation({ summary: 'Get album tracks' })
+  @ApiResponse({
+    status: 200,
+    description: 'Album tracks retrieved successfully',
+    type: GetLibraryAlbumTracksResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album not found',
+    type: ApiErrorResponseDto,
+  })
+  async getAlbumTracks(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.queryBus.execute(new GetLibraryAlbumTracksQuery(userId, id));
   }
 
   @Patch(':id')
