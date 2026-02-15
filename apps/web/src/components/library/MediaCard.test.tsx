@@ -69,4 +69,16 @@ describe('MediaCard', () => {
 
     expect(screen.getByText('Unknown')).toBeInTheDocument();
   });
+  it('applies correct class for coverStyle', () => {
+    const { container: circleContainer } = render(
+      <MediaCard {...defaultProps} coverStyle="circle" coverUrl={undefined} />,
+    );
+    expect(circleContainer.querySelector('.rounded-full')).toBeInTheDocument();
+
+    const { container: squareContainer } = render(
+      <MediaCard {...defaultProps} coverStyle="square" coverUrl={undefined} />,
+    );
+    expect(squareContainer.querySelector('.rounded')).toBeInTheDocument();
+    expect(squareContainer.querySelector('.rounded-full')).not.toBeInTheDocument();
+  });
 });
