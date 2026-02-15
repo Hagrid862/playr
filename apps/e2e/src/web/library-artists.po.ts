@@ -1,6 +1,6 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
-export class ArtistsPage {
+export class LibraryArtistsPage {
   readonly page: Page;
 
   // Artists list page
@@ -34,7 +34,7 @@ export class ArtistsPage {
       name: "No artists found",
     });
 
-    // Create form
+    // Create form (CreateArtistForm.tsx)
     this.artistNameInput = page.getByLabel("Artist Name");
     this.descriptionTextarea = page.getByLabel("Description");
     this.createArtistSubmitButton = page.getByRole("button", {
@@ -43,14 +43,13 @@ export class ArtistsPage {
     this.createArtistCancelButton = page.getByRole("link", { name: "Cancel" });
 
     // Artist detail
-    this.artistDetailName = page.locator("h2.text-2xl.font-bold.text-white");
+    this.artistDetailName = page.locator("h2.text-2xl.font-bold");
     this.playButton = page.getByRole("button", { name: "Play" });
     this.shuffleButton = page.getByRole("button", { name: "Shuffle" });
-    this.moreOptionsButton = page.locator(
-      'button:has([data-icon="DotsThree"])',
-    );
+    // The menu trigger in detail page
+    this.moreOptionsButton = page.getByRole("button", { name: "More options" });
 
-    // Edit form (same labels, different page context — use same locators)
+    // Edit form (EditArtistForm.tsx - same labels)
     this.editArtistNameInput = page.getByLabel("Artist Name");
     this.editDescriptionTextarea = page.getByLabel("Description");
     this.saveChangesButton = page.getByRole("button", {
@@ -87,9 +86,9 @@ export class ArtistsPage {
 
   async createArtist(data: { name: string; description?: string }) {
     await this.fillCreateForm(data);
-    await expect(this.createArtistSubmitButton).toBeEnabled({ timeout: 5000 });
+    await expect(this.createArtistSubmitButton).toBeEnabled();
     await this.submitCreateForm();
-    // Wait for redirect back to the artists list
+    // Redirects to list based on frontend code
     await expect(this.page).toHaveURL(/\/app\/library\/artists\/?$/, {
       timeout: 15000,
     });
@@ -106,6 +105,7 @@ export class ArtistsPage {
       .locator("a")
       .filter({ has: this.page.getByRole("heading", { name }) })
       .click();
+    // Redirects to detail page
     await expect(this.page).toHaveURL(/\/app\/library\/artists\/[^/]+\/?$/, {
       timeout: 10000,
     });
@@ -116,10 +116,7 @@ export class ArtistsPage {
   }
 
   async openMoreOptionsMenu() {
-    // Find the last contextual dots-three button in the action bar
-    const actionBar = this.page.locator(".flex.items-center.gap-1");
-    const dotsInBar = actionBar.locator("button").last();
-    await dotsInBar.click();
+    await this.moreOptionsButton.click();
   }
 
   async clickEditFromMenu() {
@@ -144,7 +141,7 @@ export class ArtistsPage {
 
   async submitEditForm() {
     await this.saveChangesButton.click();
-    // Wait for redirect back to artist detail page
+    // Redirects back to artist detail page
     await expect(this.page).toHaveURL(/\/app\/library\/artists\/[^/]+\/?$/, {
       timeout: 15000,
     });
@@ -162,7 +159,7 @@ export class ArtistsPage {
     const dialog = this.page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await dialog.getByRole("button", { name: "Delete Artist" }).click();
-    // Wait for redirect back to artists list
+    // Redirects back to artists list
     await expect(this.page).toHaveURL(/\/app\/library\/artists\/?$/, {
       timeout: 15000,
     });
@@ -176,7 +173,7 @@ export class ArtistsPage {
 
   async expectFieldError(label: string, error: string) {
     const field = this.page
-      .locator('div[data-slot="field"]')
+      .locator('div[data-slot="field"]') // Assuming default shadcn form structure, adjust if needed
       .filter({ has: this.page.locator(`label:text-is("${label}")`) });
     await expect(field.locator('[data-slot="field-error"]')).toHaveText(error);
   }
