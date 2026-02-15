@@ -25,6 +25,9 @@ export class LibraryArtistsPage {
   readonly saveChangesButton: Locator;
   readonly editCancelButton: Locator;
 
+  readonly avatarInput: Locator;
+  readonly bannerInput: Locator;
+
   constructor(page: Page) {
     this.page = page;
 
@@ -56,6 +59,24 @@ export class LibraryArtistsPage {
       name: "Save Changes",
     });
     this.editCancelButton = page.getByRole("button", { name: "Cancel" });
+
+    // Inputs for file upload
+    this.avatarInput = page
+      .locator('input[type="file"][accept="image/*"]')
+      .first();
+    this.bannerInput = page
+      .locator('input[type="file"][accept="image/*"]')
+      .nth(1);
+  }
+
+  async uploadAvatar(filePath: string) {
+    await this.avatarInput.setInputFiles(filePath);
+  }
+
+  async uploadBanner(filePath: string) {
+    // In edit form, we expect two inputs. In create form, likely one (avatar).
+    // This simple logic might need refinement if the DOM order changes, but works for now.
+    await this.bannerInput.setInputFiles(filePath);
   }
 
   async gotoArtistsList() {
