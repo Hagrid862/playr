@@ -1,8 +1,9 @@
+import { MediaCard } from '@/components/library/MediaCard';
 import { Spinner } from '@/components/ui/spinner';
 import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists';
 import { useLibraryStore } from '@/stores/library.store';
 import { UserIcon } from '@phosphor-icons/react';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEffect } from 'react';
 
 export const Route = createFileRoute('/app/library/artists/')({
@@ -45,32 +46,16 @@ function RouteComponent() {
     <div className="flex flex-col gap-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
         {artists.map((artist) => (
-          <Link
+          <MediaCard
             key={artist.id}
-            to="/app/library/artists/$id"
-            params={{ id: artist.id }}
-            className="group/artist relative p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
-          >
-            <div className="aspect-square w-full overflow-hidden bg-stone-800 rounded-md">
-              {artist.avatar?.url ? (
-                <img
-                  src={artist.avatar?.url}
-                  alt={artist.name}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <div className="flex size-full items-center justify-center">
-                  <UserIcon className="size-1/2 text-stone-400" weight="duotone" />
-                </div>
-              )}
-            </div>
-            <div className="pt-4">
-              <h3 className="line-clamp-1 text-sm font-semibold">{artist.name}</h3>
-              <p className="line-clamp-1 text-xs text-muted-foreground">
-                {artist.isCommunity ? 'Community Artist' : 'Private Artist'}
-              </p>
-            </div>
-          </Link>
+            id={artist.id}
+            title={artist.name}
+            subtitle={artist.isCommunity ? 'Community Artist' : 'Private Artist'}
+            coverUrl={artist.avatar?.url ?? undefined}
+            link={`/app/library/artists/${artist.id}`}
+            coverStyle="circle"
+            placeholderIcon={<UserIcon className="size-1/2 text-stone-400" weight="duotone" />}
+          />
         ))}
       </div>
     </div>
