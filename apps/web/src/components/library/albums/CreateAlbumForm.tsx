@@ -11,6 +11,7 @@ interface CreateAlbumFormProps {
   formData: FormData;
   isLoading: boolean;
   isValid: boolean;
+  type?: FormData['type'];
   onSubmit: (e: SyntheticEvent<HTMLFormElement>) => void | Promise<void>;
   onChange: <K extends keyof FormData>(field: K, value: FormData[K]) => void;
   onBlur: (field: keyof FormData) => void;
@@ -22,6 +23,7 @@ export function CreateAlbumForm({
   formData,
   isLoading,
   isValid,
+  type = 'album',
   onSubmit,
   onChange,
   onBlur,
@@ -30,6 +32,8 @@ export function CreateAlbumForm({
 }: CreateAlbumFormProps & { onFileSelect?: (file: File | null) => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,7 +93,7 @@ export function CreateAlbumForm({
 
           <div className="flex-1 flex flex-col gap-6">
             <TextField
-              label="Album Title"
+              label={`${typeLabel} Title`}
               placeholder="e.g. Nevermind"
               value={formData.name}
               error={getFieldError('name')}
@@ -99,7 +103,7 @@ export function CreateAlbumForm({
 
             <TextAreaField
               label="Description"
-              placeholder="Tell something about this album..."
+              placeholder={`Tell something about this ${type}...`}
               value={formData.description || ''}
               error={getFieldError('description')}
               onChange={(value) => onChange('description', value)}
@@ -133,7 +137,7 @@ export function CreateAlbumForm({
           ) : (
             <>
               <PlusIcon className="mr-2 h-4 w-4 transition-transform group-hover:rotate-90" />
-              Create Album
+              Create {typeLabel}
             </>
           )}
         </Button>

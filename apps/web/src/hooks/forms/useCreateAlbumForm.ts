@@ -3,11 +3,14 @@ import { useCallback, useMemo, useState } from 'react';
 
 export type FormData = CreateLibraryAlbumRequest;
 
-export const useCreateAlbumForm = (artistId: string) => {
+export const useCreateAlbumForm = (
+  artistId: string,
+  initialType: CreateLibraryAlbumRequest['type'] = 'album',
+) => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
-    type: 'album',
+    type: initialType,
     artistId: artistId,
     releaseDate: null,
   });
