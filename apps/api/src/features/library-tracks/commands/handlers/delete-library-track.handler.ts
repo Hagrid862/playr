@@ -12,7 +12,7 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
     private readonly unitOfWork: UnitOfWorkService,
     private readonly trackRepository: TrackRepository,
     private readonly libraryTrackRepository: LibraryTrackRepository,
-  ) { }
+  ) {}
 
   async execute(command: DeleteLibraryTrackCommand): Promise<ZodTrack> {
     const { id, userId } = command;

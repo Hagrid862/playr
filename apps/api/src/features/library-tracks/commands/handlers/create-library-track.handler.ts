@@ -17,7 +17,7 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     private readonly albumRepository: AlbumRepository,
     private readonly trackRepository: TrackRepository,
     private readonly libraryTrackRepository: LibraryTrackRepository,
-  ) { }
+  ) {}
 
   async execute(command: CreateLibraryTrackCommand): Promise<ZodTrack> {
     const { body, userId } = command;

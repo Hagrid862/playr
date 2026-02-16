@@ -50,10 +50,7 @@ function AlbumLayout() {
             </Button>
           ) : album?.visibility === 'private' && isDetail && albumId ? (
             <Button variant="outline" asChild>
-              <Link
-                to="/app/library/albums/$id/add-content"
-                params={{ id: albumId }}
-              >
+              <Link to="/app/library/albums/$id/add-content" params={{ id: albumId }}>
                 <PlusIcon />
                 Add Content
               </Link>

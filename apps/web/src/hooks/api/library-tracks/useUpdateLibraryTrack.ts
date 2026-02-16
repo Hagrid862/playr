@@ -1,7 +1,4 @@
-import {
-  type UpdateLibraryTrackRequest,
-  type UpdateLibraryTrackResponse,
-} from '@repo/contracts';
+import { type UpdateLibraryTrackRequest, type UpdateLibraryTrackResponse } from '@repo/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateLibraryTrack } from './requests/updateLibraryTrack';
 
