@@ -45,7 +45,7 @@ export function SongCard({
       <ContextMenuTrigger>
         <div
           onClick={onClick}
-          className="group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[0.99]"
+          className="group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[0.99] hover:scale-101"
         >
           <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors">
             <span className="group-hover:hidden">{trackNumber}</span>
