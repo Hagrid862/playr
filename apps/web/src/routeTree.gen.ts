@@ -31,6 +31,7 @@ import { Route as AppLibraryArtistsIdIndexRouteImport } from './routes/app/libra
 import { Route as AppLibraryAlbumsIdIndexRouteImport } from './routes/app/library/albums/$id/index'
 import { Route as AppLibraryArtistsIdEditRouteImport } from './routes/app/library/artists/$id/edit'
 import { Route as AppLibraryAlbumsIdEditRouteImport } from './routes/app/library/albums/$id/edit'
+import { Route as AppLibraryAlbumsIdAddContentRouteImport } from './routes/app/library/albums/$id/add-content'
 import { Route as AppLibraryArtistsIdAddContentIndexRouteImport } from './routes/app/library/artists/$id/add-content/index'
 import { Route as AppLibraryArtistsIdAddContentSingleRouteImport } from './routes/app/library/artists/$id/add-content/single'
 import { Route as AppLibraryArtistsIdAddContentEpRouteImport } from './routes/app/library/artists/$id/add-content/ep'
@@ -151,6 +152,12 @@ const AppLibraryAlbumsIdEditRoute = AppLibraryAlbumsIdEditRouteImport.update({
   path: '/$id/edit',
   getParentRoute: () => AppLibraryAlbumsRoute,
 } as any)
+const AppLibraryAlbumsIdAddContentRoute =
+  AppLibraryAlbumsIdAddContentRouteImport.update({
+    id: '/$id/add-content',
+    path: '/$id/add-content',
+    getParentRoute: () => AppLibraryAlbumsRoute,
+  } as any)
 const AppLibraryArtistsIdAddContentIndexRoute =
   AppLibraryArtistsIdAddContentIndexRouteImport.update({
     id: '/$id/add-content/',
@@ -201,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/app/library/albums/': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
+  '/app/library/albums/$id/add-content': typeof AppLibraryAlbumsIdAddContentRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
@@ -226,6 +234,7 @@ export interface FileRoutesByTo {
   '/app/library/albums': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview': typeof AppLibraryOverviewIndexRoute
+  '/app/library/albums/$id/add-content': typeof AppLibraryAlbumsIdAddContentRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id': typeof AppLibraryAlbumsIdIndexRoute
@@ -256,6 +265,7 @@ export interface FileRoutesById {
   '/app/library/albums/': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
+  '/app/library/albums/$id/add-content': typeof AppLibraryAlbumsIdAddContentRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/app/library/albums/'
     | '/app/library/artists/'
     | '/app/library/overview/'
+    | '/app/library/albums/$id/add-content'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id/'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/app/library/albums'
     | '/app/library/artists'
     | '/app/library/overview'
+    | '/app/library/albums/$id/add-content'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id'
@@ -341,6 +353,7 @@ export interface FileRouteTypes {
     | '/app/library/albums/'
     | '/app/library/artists/'
     | '/app/library/overview/'
+    | '/app/library/albums/$id/add-content'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id/'
@@ -515,6 +528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryAlbumsIdEditRouteImport
       parentRoute: typeof AppLibraryAlbumsRoute
     }
+    '/app/library/albums/$id/add-content': {
+      id: '/app/library/albums/$id/add-content'
+      path: '/$id/add-content'
+      fullPath: '/app/library/albums/$id/add-content'
+      preLoaderRoute: typeof AppLibraryAlbumsIdAddContentRouteImport
+      parentRoute: typeof AppLibraryAlbumsRoute
+    }
     '/app/library/artists/$id/add-content/': {
       id: '/app/library/artists/$id/add-content/'
       path: '/$id/add-content'
@@ -556,6 +576,7 @@ declare module '@tanstack/react-router' {
 interface AppLibraryAlbumsRouteChildren {
   AppLibraryAlbumsCreateRoute: typeof AppLibraryAlbumsCreateRoute
   AppLibraryAlbumsIndexRoute: typeof AppLibraryAlbumsIndexRoute
+  AppLibraryAlbumsIdAddContentRoute: typeof AppLibraryAlbumsIdAddContentRoute
   AppLibraryAlbumsIdEditRoute: typeof AppLibraryAlbumsIdEditRoute
   AppLibraryAlbumsIdIndexRoute: typeof AppLibraryAlbumsIdIndexRoute
 }
@@ -563,6 +584,7 @@ interface AppLibraryAlbumsRouteChildren {
 const AppLibraryAlbumsRouteChildren: AppLibraryAlbumsRouteChildren = {
   AppLibraryAlbumsCreateRoute: AppLibraryAlbumsCreateRoute,
   AppLibraryAlbumsIndexRoute: AppLibraryAlbumsIndexRoute,
+  AppLibraryAlbumsIdAddContentRoute: AppLibraryAlbumsIdAddContentRoute,
   AppLibraryAlbumsIdEditRoute: AppLibraryAlbumsIdEditRoute,
   AppLibraryAlbumsIdIndexRoute: AppLibraryAlbumsIdIndexRoute,
 }
