@@ -212,7 +212,7 @@ function RouteComponent() {
               <p className="text-muted-foreground text-sm font-medium">No tracks available</p>
             </div>
           ) : (
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-8">
               {/* Header Row */}
               <div className="grid grid-cols-[3rem_1fr_auto] gap-4 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-white/5 mb-2">
                 <div className="text-center">#</div>
@@ -220,17 +220,46 @@ function RouteComponent() {
                 <div className="pr-2">Time</div>
               </div>
 
-              {/* Tracks */}
-              {album.tracks.map((track, i) => (
-                <SongCard
-                  key={track.id}
-                  trackNumber={track.trackNumber || i + 1}
-                  title={track.title}
-                  artists={track.artists}
-                  duration={track.duration}
-                  explicit={track.explicit}
-                />
-              ))}
+              {(() => {
+                const tracks = album.tracks || [];
+                const discs = [...new Set(tracks.map((t) => t.diskNumber || 1))].sort(
+                  (a, b) => a - b,
+                );
+                const hasMultipleDiscs = discs.length > 1;
+
+                return discs.map((discNumber) => {
+                  const discTracks = tracks
+                    .filter((t) => (t.diskNumber || 1) === discNumber)
+                    .sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+
+                  if (discTracks.length === 0) return null;
+
+                  return (
+                    <div key={discNumber} className="flex flex-col gap-2">
+                      {hasMultipleDiscs && (
+                        <div className="flex items-center gap-4 px-4 py-2 mt-4 first:mt-0">
+                          <DiscIcon size={20} className="text-primary" weight="duotone" />
+                          <h4 className="text-sm font-bold uppercase tracking-widest text-white/60">
+                            Disc {discNumber}
+                          </h4>
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        {discTracks.map((track, i) => (
+                          <SongCard
+                            key={track.id}
+                            trackNumber={track.trackNumber || i + 1}
+                            title={track.title}
+                            artists={track.artists}
+                            duration={track.duration}
+                            explicit={track.explicit}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
