@@ -17,6 +17,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
+import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
 import {
   DiscIcon,
   DotsThreeIcon,
@@ -27,8 +28,9 @@ import {
   ShuffleIcon,
   TrashIcon,
 } from '@phosphor-icons/react';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { SongCard } from '@/components/library/SongCard';
 
@@ -40,9 +42,11 @@ function RouteComponent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [trackToDelete, setTrackToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const { data: albumResponse, isLoading } = useLibraryAlbum(id);
   const { mutateAsync: deleteAlbum, isPending: isDeleting } = useDeleteLibraryAlbum();
+  const { mutateAsync: deleteTrack, isPending: isDeletingTrack } = useDeleteLibraryTrack();
 
   const album = albumResponse?.data;
 
@@ -51,8 +55,22 @@ function RouteComponent() {
       await deleteAlbum(id);
       setIsDeleteDialogOpen(false);
       navigate({ to: '/app/library/albums' });
+      toast.success('Album deleted successfully');
     } catch (error) {
       console.error('Failed to delete album:', error);
+      toast.error('Failed to delete album');
+    }
+  };
+
+  const handleDeleteTrack = async () => {
+    if (!trackToDelete) return;
+    try {
+      await deleteTrack(trackToDelete.id);
+      setTrackToDelete(null);
+      toast.success('Track deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete track:', error);
+      toast.error('Failed to delete track');
     }
   };
 
@@ -248,11 +266,19 @@ function RouteComponent() {
                         {discTracks.map((track, i) => (
                           <SongCard
                             key={track.id}
+                            id={track.id}
                             trackNumber={track.trackNumber || i + 1}
                             title={track.title}
                             artists={track.artists}
                             duration={track.duration}
                             explicit={track.explicit}
+                            onEdit={(songId) =>
+                              navigate({
+                                to: '/app/library/albums/$id/songs/$songId/edit',
+                                params: { id, songId },
+                              })
+                            }
+                            onDelete={(trackInfo) => setTrackToDelete(trackInfo)}
                           />
                         ))}
                       </div>
@@ -285,6 +311,31 @@ function RouteComponent() {
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Delete Album'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!trackToDelete} onOpenChange={(open) => !open && setTrackToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Track</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">{trackToDelete?.title}</span>? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTrackToDelete(null)}
+              disabled={isDeletingTrack}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteTrack} disabled={isDeletingTrack}>
+              {isDeletingTrack ? 'Deleting...' : 'Delete Track'}
             </Button>
           </DialogFooter>
         </DialogContent>
