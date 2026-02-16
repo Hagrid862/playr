@@ -1,12 +1,12 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Library, LibraryTrack, PrismaClient, TrackGetPayload } from '@repo/db';
 import request from 'supertest';
 import { vi } from 'vitest';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import './setup-env';
 import { createIntegrationApp } from './test-utils';
-import { Library, LibraryTrack, PrismaClient, TrackGetPayload } from '@repo/db';
 
 type TrackWithRelations = TrackGetPayload<{
   include: { artists: true; album: true; access: true };
@@ -248,7 +248,7 @@ describe('LibraryTracksController (Integration)', () => {
 
         .expect(200);
 
-      expect(response.body.data.success).toBe(true);
+      expect(response.body.data).toEqual(JSON.parse(JSON.stringify(mockTrack)));
     });
   });
 });

@@ -3,8 +3,8 @@ import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
 import { ZodTrack } from '@repo/contracts';
+import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
 
 @CommandHandler(DeleteLibraryTrackCommand)
 export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryTrackCommand> {
@@ -12,7 +12,7 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
     private readonly unitOfWork: UnitOfWorkService,
     private readonly trackRepository: TrackRepository,
     private readonly libraryTrackRepository: LibraryTrackRepository,
-  ) {}
+  ) { }
 
   async execute(command: DeleteLibraryTrackCommand): Promise<ZodTrack> {
     const { id, userId } = command;
