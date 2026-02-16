@@ -30,16 +30,11 @@ import {
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Spinner } from '@/components/ui/spinner';
+import { SongCard } from '@/components/library/SongCard';
 
 export const Route = createFileRoute('/app/library/albums/$id/')({
   component: RouteComponent,
 });
-
-function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
 
 function RouteComponent() {
   const { id } = Route.useParams();
@@ -227,34 +222,13 @@ function RouteComponent() {
 
               {/* Tracks */}
               {album.tracks.map((track, i) => (
-                <div
+                <SongCard
                   key={track.id}
-                  className="group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[0.99]"
-                >
-                  <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors">
-                    <span className="group-hover:hidden">{track.trackNumber || i + 1}</span>
-                    <PlayIcon
-                      className="hidden group-hover:block mx-auto"
-                      weight="fill"
-                      size={16}
-                    />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="font-bold text-stone-200 group-hover:text-white truncate text-base">
-                      {track.title}
-                    </div>
-                    {track.artists && (
-                      <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
-                        {track.artists.map((a) => a.name).join(', ')}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="text-sm font-bold text-stone-500 tabular-nums group-hover:text-stone-300">
-                    {formatDuration(track.duration)}
-                  </div>
-                </div>
+                  trackNumber={track.trackNumber || i + 1}
+                  title={track.title}
+                  artists={track.artists}
+                  duration={track.duration}
+                />
               ))}
             </div>
           )}
