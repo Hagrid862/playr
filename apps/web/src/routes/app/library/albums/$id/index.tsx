@@ -228,6 +228,7 @@ function RouteComponent() {
                   title={track.title}
                   artists={track.artists}
                   duration={track.duration}
+                  explicit={track.explicit}
                 />
               ))}
             </div>

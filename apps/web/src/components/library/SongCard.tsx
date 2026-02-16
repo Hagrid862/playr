@@ -10,6 +10,7 @@ interface SongCardProps {
   title: string;
   artists?: Artist[];
   duration: number;
+  explicit?: boolean;
   onClick?: () => void;
 }
 
@@ -19,7 +20,14 @@ function formatDuration(seconds: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-export function SongCard({ trackNumber, title, artists, duration, onClick }: SongCardProps) {
+export function SongCard({
+  trackNumber,
+  title,
+  artists,
+  duration,
+  explicit,
+  onClick,
+}: SongCardProps) {
   return (
     <div
       onClick={onClick}
@@ -31,8 +39,15 @@ export function SongCard({ trackNumber, title, artists, duration, onClick }: Son
       </div>
 
       <div className="min-w-0">
-        <div className="font-bold text-stone-200 group-hover:text-white truncate text-base">
-          {title}
+        <div className="flex items-center gap-2">
+          <div className="font-bold text-stone-200 group-hover:text-white truncate text-base">
+            {title}
+          </div>
+          {explicit && (
+            <span className="flex items-center justify-center size-3.5 bg-stone-500 text-[10px] font-bold text-stone-950 rounded-[2px] shrink-0 translate-y-px">
+              E
+            </span>
+          )}
         </div>
         {artists && artists.length > 0 && (
           <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
