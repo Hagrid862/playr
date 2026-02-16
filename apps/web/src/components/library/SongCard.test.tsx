@@ -4,6 +4,7 @@ import { SongCard } from './SongCard';
 
 describe('SongCard', () => {
   const defaultProps = {
+    id: 'test-song-id',
     trackNumber: 1,
     title: 'Test Song',
     duration: 185,
@@ -47,6 +48,30 @@ describe('SongCard', () => {
 
     fireEvent.click(screen.getByText('Test Song'));
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onEdit when edit action is clicked in context menu', () => {
+    const onEdit = vi.fn();
+    render(<SongCard {...defaultProps} onEdit={onEdit} />);
+
+    // Open context menu (right click)
+    fireEvent.contextMenu(screen.getByText('Test Song'));
+
+    // Click edit
+    fireEvent.click(screen.getByText('Edit'));
+    expect(onEdit).toHaveBeenCalledWith('test-song-id');
+  });
+
+  it('calls onDelete when delete action is clicked in context menu', () => {
+    const onDelete = vi.fn();
+    render(<SongCard {...defaultProps} onDelete={onDelete} />);
+
+    // Open context menu
+    fireEvent.contextMenu(screen.getByText('Test Song'));
+
+    // Click delete
+    fireEvent.click(screen.getByText('Delete'));
+    expect(onDelete).toHaveBeenCalledWith({ id: 'test-song-id', title: 'Test Song' });
   });
 
   it('renders track number and play icon on hover (via group classes)', () => {
