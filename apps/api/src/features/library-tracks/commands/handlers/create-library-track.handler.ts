@@ -6,6 +6,7 @@ import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
+import { Visibility } from '@repo/db';
 import { CreateLibraryTrackCommand } from '../impl/create-library-track.command';
 
 @CommandHandler(CreateLibraryTrackCommand)
@@ -16,7 +17,7 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     private readonly albumRepository: AlbumRepository,
     private readonly trackRepository: TrackRepository,
     private readonly libraryTrackRepository: LibraryTrackRepository,
-  ) {}
+  ) { }
 
   async execute(command: CreateLibraryTrackCommand): Promise<ZodTrack> {
     const { body, userId } = command;
@@ -37,10 +38,9 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
         title: body.title,
         trackNumber: body.trackNumber,
         diskNumber: body.diskNumber,
-        duration: body.duration,
+        duration: 0, // will be later calculated from the audio file
         explicit: body.explicit,
-        lyrics: body.lyrics,
-        visibility: body.visibility as any,
+        visibility: Visibility.private, // this route is used to create only private tracks
         album: {
           connect: {
             id: body.albumId,
