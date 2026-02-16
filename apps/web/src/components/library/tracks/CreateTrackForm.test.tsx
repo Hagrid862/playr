@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
-  useNavigate: vi.fn(),
+  useNavigate: vi.fn(() => vi.fn()),
 }));
 
 const mockAlbum: ZodAlbumInfer = {
@@ -145,5 +145,54 @@ describe('CreateTrackForm', () => {
     // Check if form is reset and incremented
     expect(screen.getByLabelText(/track title/i)).toHaveValue('');
     expect(screen.getByLabelText(/track no/i)).toHaveValue(2);
+  });
+
+  it('updates disk number correctly', async () => {
+    const user = userEvent.setup();
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const diskInput = screen.getByLabelText(/disk no/i);
+    await user.clear(diskInput);
+    await user.type(diskInput, '2');
+
+    expect(diskInput).toHaveValue(2);
+  });
+
+  it('displays server errors when provided', () => {
+    const serverErrors = {
+      title: 'Title already exists',
+      trackNumber: 'Invalid track number',
+    };
+
+    render(
+      <CreateTrackForm
+        album={mockAlbum}
+        isLoading={false}
+        onSubmit={onSubmit}
+        serverErrors={serverErrors}
+      />,
+    );
+
+    expect(screen.getByText(/title already exists/i)).toBeInTheDocument();
+    expect(screen.getByText(/invalid track number/i)).toBeInTheDocument();
+  });
+
+  it('handles submission error gracefully', async () => {
+    const user = userEvent.setup();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = new Error('Submission failed');
+    onSubmit.mockRejectedValue(error);
+
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText(/track title/i), 'New Song');
+    await user.click(screen.getByRole('button', { name: /add track/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', error);
+    });
+
+    consoleSpy.mockRestore();
   });
 });
