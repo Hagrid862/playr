@@ -59,17 +59,13 @@ function AddContentPage() {
         <InfoIcon size={20} className="text-primary" />
         <AlertTitle className="text-primary">Add Track to Album</AlertTitle>
         <AlertDescription className="text-muted-foreground">
-          Adding track <span className="font-medium text-foreground">{album.name}</span>. 
+          Adding track to album <span className="font-medium text-foreground">{album.name}</span>.
           Fill in the details below to add a new song to this album.
         </AlertDescription>
       </Alert>
 
       <div className="px-1">
-        <CreateTrackForm
-          album={album}
-          isLoading={isCreating}
-          onSubmit={handleSubmit}
-        />
+        <CreateTrackForm album={album} isLoading={isCreating} onSubmit={handleSubmit} />
       </div>
     </div>
   );

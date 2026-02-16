@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router';
 import { ZodAlbumInfer } from '@repo/contracts';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,6 +10,7 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
+  useNavigate: vi.fn(),
 }));
 
 const mockAlbum: ZodAlbumInfer = {
@@ -38,8 +40,8 @@ const mockAlbum: ZodAlbumInfer = {
       visibility: 'public',
       deletedAt: new Date(),
       bannerId: 'id-123',
-      avatarId: 'id-234'
-    }
+      avatarId: 'id-234',
+    },
   ],
   tracks: [],
   genres: [],
@@ -71,9 +73,9 @@ describe('CreateTrackForm', () => {
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
     await user.tab();
-    
+
     expect(await screen.findByText(/track title is required/i)).toBeInTheDocument();
-    
+
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -103,5 +105,45 @@ describe('CreateTrackForm', () => {
   it('disables submit button when loading', () => {
     render(<CreateTrackForm album={mockAlbum} isLoading={true} onSubmit={onSubmit} />);
     expect(screen.getByRole('button', { name: /adding/i })).toBeDisabled();
+  });
+
+  it('navigates away when "Add another track" is not checked', async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    vi.mocked(useNavigate).mockReturnValue(navigate);
+
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText(/track title/i), 'New Song');
+    await user.click(screen.getByRole('button', { name: /add track/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+      expect(navigate).toHaveBeenCalledWith({ to: '..' });
+    });
+  });
+
+  it('resets form and increments track number when "Add another track" is checked', async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    vi.mocked(useNavigate).mockReturnValue(navigate);
+
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    // Initial state
+    expect(screen.getByLabelText(/track no/i)).toHaveValue(1);
+
+    await user.type(screen.getByLabelText(/track title/i), 'Song 1');
+    await user.click(screen.getByLabelText(/add another track/i));
+    await user.click(screen.getByRole('button', { name: /add track/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    // Check if form is reset and incremented
+    expect(screen.getByLabelText(/track title/i)).toHaveValue('');
+    expect(screen.getByLabelText(/track no/i)).toHaveValue(2);
   });
 });

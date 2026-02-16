@@ -10,6 +10,8 @@ import {
   ZodAlbumInfer,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
+import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 
 interface CreateTrackFormProps {
@@ -39,6 +41,9 @@ export function CreateTrackForm({
   onSubmit,
   serverErrors,
 }: CreateTrackFormProps) {
+  const navigate = useNavigate();
+  const [stayOnPage, setStayOnPage] = useState(false);
+
   const form = useForm({
     defaultValues: {
       title: '',
@@ -52,7 +57,19 @@ export function CreateTrackForm({
       onBlur: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value);
+      try {
+        await onSubmit(value);
+        if (stayOnPage) {
+          form.reset();
+          form.setFieldValue('trackNumber', value.trackNumber + 1);
+          form.setFieldValue('diskNumber', value.diskNumber);
+        } else {
+          navigate({ to: '..' });
+        }
+      } catch (error) {
+        // Error handling is managed by the onSubmit prop/caller
+        console.error('Submission failed:', error);
+      }
     },
   });
 
@@ -148,29 +165,39 @@ export function CreateTrackForm({
         <Button asChild variant="secondary" type="button" className="min-w-32">
           <Link to="..">Cancel</Link>
         </Button>
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting] as const}
-        >
-          {([canSubmit, isSubmitting]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit || isLoading || isSubmitting}
-              className="min-w-32 group"
-            >
-              {isLoading || isSubmitting ? (
-                <>
-                  <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <PlusIcon className="mr-2 h-4 w-4 transition-transform group-hover:rotate-90" />
-                  Add Track
-                </>
-              )}
-            </Button>
-          )}
-        </form.Subscribe>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="stayOnPage"
+              checked={stayOnPage}
+              onCheckedChange={(checked) => setStayOnPage(!!checked)}
+            />
+            <Label htmlFor="stayOnPage" className="text-sm">
+              Add another track
+            </Label>
+          </div>
+          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
+            {([canSubmit, isSubmitting]) => (
+              <Button
+                type="submit"
+                disabled={!canSubmit || isLoading || isSubmitting}
+                className="min-w-32 group"
+              >
+                {isLoading || isSubmitting ? (
+                  <>
+                    <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <PlusIcon className="mr-2 h-4 w-4 transition-transform group-hover:rotate-90" />
+                    Add Track
+                  </>
+                )}
+              </Button>
+            )}
+          </form.Subscribe>
+        </div>
       </div>
     </form>
   );
