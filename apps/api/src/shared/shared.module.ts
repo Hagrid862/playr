@@ -10,6 +10,7 @@ import { LibraryAlbumRepository } from './repositories/library-album.repository'
 import { LibraryArtistRepository } from './repositories/library-artist.repository';
 import { LibraryTrackRepository } from './repositories/library-track.repository';
 
+import { AudioFileRepository } from './repositories/audio-file.repository';
 import { LibraryRepository } from './repositories/library.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { SessionRepository } from './repositories/session.repository';
@@ -44,6 +45,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     LibraryAlbumRepository,
     LibraryTrackRepository,
     TrackRepository,
+    AudioFileRepository,
     // guards
     JwtAuthGuard,
     AlbumAccessGuard,
@@ -69,6 +71,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     LibraryAlbumRepository,
     LibraryTrackRepository,
     TrackRepository,
+    AudioFileRepository,
     // guards
     JwtAuthGuard,
     AlbumAccessGuard,
@@ -76,4 +79,4 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     TrackAccessGuard,
   ],
 })
-export class SharedModule {}
+export class SharedModule { }
