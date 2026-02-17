@@ -1,10 +1,11 @@
+import { BullModule } from '@nestjs/bullmq';
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
-import { validateEnv } from './common/config/env.schema';
+import { Env, validateEnv } from './common/config/env.schema';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { FeaturesModule } from './features/features.module';
 import { SharedModule } from './shared/shared.module';
@@ -23,6 +24,15 @@ import { SharedModule } from './shared/shared.module';
         skipIf: () => process.env.THROTTLE_ENABLED === 'false',
       },
     ]),
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<Env>) => ({
+        connection: {
+          host: configService.get('REDIS_HOST', { infer: true }),
+          port: configService.get('REDIS_PORT', { infer: true }),
+        },
+      }),
+    }),
     FeaturesModule,
     SharedModule,
   ],
