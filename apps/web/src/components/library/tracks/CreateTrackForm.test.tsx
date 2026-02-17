@@ -195,4 +195,27 @@ describe('CreateTrackForm', () => {
 
     consoleSpy.mockRestore();
   });
+
+  it('handles album without artists gracefully', () => {
+    const albumWithoutArtists: ZodAlbumInfer = { ...mockAlbum, artists: undefined };
+    render(<CreateTrackForm album={albumWithoutArtists} isLoading={false} onSubmit={onSubmit} />);
+
+    expect(screen.getByRole('button', { name: /add track/i })).toBeInTheDocument();
+  });
+
+  it('handles validation errors correctly and hits branch logic', async () => {
+    const user = userEvent.setup();
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const titleInput = screen.getByLabelText(/track title/i);
+    // Triggering multiple issues on the same field might hit !errors[path]
+    // The current schema has min and max.
+    // Entering a long string will hit max.
+    await user.type(titleInput, 'a'.repeat(300));
+    await user.tab();
+
+    expect(
+      await screen.findByText(/track title must be 255 characters or less/i),
+    ).toBeInTheDocument();
+  });
 });
