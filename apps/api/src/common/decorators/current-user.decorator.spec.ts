@@ -5,8 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { AuthenticatedUser } from '../types/auth.types';
 import { CurrentUser } from './current-user.decorator';
 
-
-
 function getParamDecoratorFactory(decorator: (...args: any[]) => ParameterDecorator) {
   class Test {
     testMethod(@decorator() user: unknown) {
