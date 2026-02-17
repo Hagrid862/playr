@@ -930,6 +930,7 @@ model AudioFile {
   bitrate    Int?
   sampleRate Int?
   channels   Int?
+  isOriginal Boolean
 
   waveformJson String? @db.Text
 
@@ -1036,11 +1037,10 @@ enum ImageVariantType {
 
 enum AudioFormat {
   mp3
-  wav
-  aac
-  flac
-  ogg
   opus
+  flac
+  aac
+  wav
 }
 
 enum AudioQuality {
