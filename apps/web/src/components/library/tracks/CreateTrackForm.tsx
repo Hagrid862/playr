@@ -10,9 +10,8 @@ import {
   ZodAlbumInfer,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Link } from '@tanstack/react-router';
 
 interface CreateTrackFormProps {
   album: ZodAlbumInfer;
@@ -82,6 +81,14 @@ export function CreateTrackForm({
       }}
       className="flex flex-col gap-8"
     >
+      <form.Subscribe selector={(state) => state.errors}>
+        {(errors) => {
+          const error = (errors?.[0] as Record<string, string> | undefined)?.form;
+          return error ? (
+            <div className="text-destructive text-sm font-medium">{error}</div>
+          ) : null;
+        }}
+      </form.Subscribe>
       <div className="flex flex-col gap-6">
         <form.Field name="title">
           {(field) => (

@@ -1,8 +1,13 @@
+import {
+  UpdateLibraryTrackRequest,
+  UpdateLibraryTrackRequestSchema,
+  ZodTrack
+} from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
-import { ZodTrack } from '@repo/contracts';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ZodError } from 'zod';
 import { EditTrackForm } from './EditTrackForm';
 
 // Mocking link because it needs router context
@@ -177,5 +182,87 @@ describe('EditTrackForm', () => {
     );
 
     expect(screen.getByLabelText(/track title/i)).toHaveValue('Existing Song');
+  });
+
+  it('handles root validation errors', async () => {
+    const user = userEvent.setup();
+
+    // Mock safeParse to return a root error
+    const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
+    const error = new ZodError([
+      {
+        path: [],
+        message: 'Root error occurred',
+        code: 'custom',
+      },
+    ]) as ZodError<UpdateLibraryTrackRequest>;
+    safeParseSpy.mockReturnValueOnce({ success: false, error });
+
+    render(
+      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+    );
+
+    // Trigger validation
+    const titleInput = screen.getByLabelText(/track title/i);
+    await user.click(titleInput);
+    await user.tab();
+
+    expect(await screen.findByText(/root error occurred/i)).toBeInTheDocument();
+    safeParseSpy.mockRestore();
+  });
+
+  it('handles multiple validation errors for the same field', async () => {
+    const user = userEvent.setup();
+
+    // Mock safeParse to return multiple errors for the same field
+    const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
+    const error = new ZodError([
+      {
+        path: ['title'],
+        message: 'First error',
+        code: 'custom',
+      },
+      {
+        path: ['title'],
+        message: 'Second error',
+        code: 'custom',
+      },
+    ]) as ZodError<UpdateLibraryTrackRequest>;
+    safeParseSpy.mockReturnValueOnce({ success: false, error });
+
+    render(
+      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+    );
+
+    // Trigger validation
+    const titleInput = screen.getByLabelText(/track title/i);
+    await user.click(titleInput);
+    await user.tab();
+
+    expect(await screen.findByText(/first error/i)).toBeInTheDocument();
+    safeParseSpy.mockRestore();
+  });
+
+  it('handles undefined/nullish values in track prop', () => {
+    const partialTrack = {
+      ...mockTrack,
+      title: undefined,
+      trackNumber: undefined,
+      diskNumber: undefined,
+    };
+
+    render(
+      <EditTrackForm
+        // @ts-expect-error Testing runtime behavior with partial data
+        track={partialTrack}
+        albumId={albumId}
+        isLoading={false}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    expect(screen.getByLabelText(/track title/i)).toHaveValue('');
+    expect(screen.getByLabelText(/track no/i)).toHaveValue(null); // TextField handles empty as 0 or empty string depending on type
+    expect(screen.getByLabelText(/disk no/i)).toHaveValue(null);
   });
 });

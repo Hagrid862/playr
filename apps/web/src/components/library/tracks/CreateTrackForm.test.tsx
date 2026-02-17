@@ -1,8 +1,13 @@
+import {
+  CreateLibraryTrackRequest,
+  CreateLibraryTrackRequestSchema,
+  ZodAlbumInfer
+} from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
-import { ZodAlbumInfer } from '@repo/contracts';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ZodError } from 'zod';
 import { CreateTrackForm } from './CreateTrackForm';
 
 // Mocking link because it needs router context
@@ -217,5 +222,62 @@ describe('CreateTrackForm', () => {
     expect(
       await screen.findByText(/track title must be 255 characters or less/i),
     ).toBeInTheDocument();
+  });
+
+  it('handles root validation errors', async () => {
+    const user = userEvent.setup();
+
+    // Mock safeParse to return a root error
+    const safeParseSpy = vi.spyOn(CreateLibraryTrackRequestSchema, 'safeParse');
+    const error = new ZodError([
+      {
+        path: [],
+        message: 'Root error occurred',
+        code: 'custom',
+      },
+    ]) as ZodError<CreateLibraryTrackRequest>;
+    safeParseSpy.mockReturnValueOnce({ success: false, error });
+
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    // Trigger validation
+    const titleInput = screen.getByLabelText(/track title/i);
+    await user.click(titleInput);
+    await user.tab();
+
+    expect(await screen.findByText(/root error occurred/i)).toBeInTheDocument();
+    safeParseSpy.mockRestore();
+  });
+
+  it('handles multiple validation errors for the same field', async () => {
+    const user = userEvent.setup();
+
+    // Mock safeParse to return multiple errors for the same field
+    const safeParseSpy = vi.spyOn(CreateLibraryTrackRequestSchema, 'safeParse');
+    const error = new ZodError([
+      {
+        path: ['title'],
+        message: 'First error',
+        code: 'custom',
+      },
+      {
+        path: ['title'],
+        message: 'Second error',
+        code: 'custom',
+      },
+    ]) as ZodError<CreateLibraryTrackRequest>;
+    safeParseSpy.mockReturnValueOnce({ success: false, error });
+
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    // Trigger validation
+    const titleInput = screen.getByLabelText(/track title/i);
+    await user.click(titleInput);
+    await user.tab();
+
+    // This covers: if (!errors[path])
+    expect(await screen.findByText('First error')).toBeInTheDocument();
+
+    safeParseSpy.mockRestore();
   });
 });

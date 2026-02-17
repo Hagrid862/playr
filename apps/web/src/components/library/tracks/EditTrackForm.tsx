@@ -3,15 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { CircleNotchIcon, CheckIcon } from '@phosphor-icons/react';
+import { CheckIcon, CircleNotchIcon } from '@phosphor-icons/react';
 import {
-  UpdateLibraryTrackRequest,
-  UpdateLibraryTrackRequestSchema,
-  ZodTrack,
+    UpdateLibraryTrackRequest,
+    UpdateLibraryTrackRequestSchema,
+    ZodTrack,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
-import { useNavigate } from '@tanstack/react-router';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 interface EditTrackFormProps {
   track: ZodTrack;
@@ -74,6 +73,14 @@ export function EditTrackForm({
       }}
       className="flex flex-col gap-8"
     >
+      <form.Subscribe selector={(state) => state.errors}>
+        {(errors) => {
+          const error = (errors?.[0] as Record<string, string> | undefined)?.form;
+          return error ? (
+            <div className="text-destructive text-sm font-medium">{error}</div>
+          ) : null;
+        }}
+      </form.Subscribe>
       <div className="flex flex-col gap-6">
         <form.Field name="title">
           {(field) => (
