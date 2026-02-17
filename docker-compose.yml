@@ -96,7 +96,7 @@ services:
       THROTTLE_ENABLED: ${THROTTLE_ENABLED:-true}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
-    command: /bin/sh -c "corepack enable && pnpm install && pnpm turbo run dev --filter=@repo/api"
+    command: /bin/sh -c "apk add --no-cache ffmpeg && corepack enable && pnpm install && pnpm turbo run dev --filter=@repo/api"
     depends_on:
       - db
       - minio
