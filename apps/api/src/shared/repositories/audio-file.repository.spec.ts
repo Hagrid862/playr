@@ -21,6 +21,7 @@ describe('AudioFileRepository', () => {
     bitrate: 320000,
     sampleRate: 44100,
     channels: 2,
+    isOriginal: true,
     waveformJson: '[0.1, 0.2, 0.3]',
     trackId: 'track-123',
     quality: 'original',
