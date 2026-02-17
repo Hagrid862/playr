@@ -84,9 +84,7 @@ export function CreateTrackForm({
       <form.Subscribe selector={(state) => state.errors}>
         {(errors) => {
           const error = (errors?.[0] as Record<string, string> | undefined)?.form;
-          return error ? (
-            <div className="text-destructive text-sm font-medium">{error}</div>
-          ) : null;
+          return error ? <div className="text-destructive text-sm font-medium">{error}</div> : null;
         }}
       </form.Subscribe>
       <div className="flex flex-col gap-6">

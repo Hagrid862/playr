@@ -5,9 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { CheckIcon, CircleNotchIcon } from '@phosphor-icons/react';
 import {
-    UpdateLibraryTrackRequest,
-    UpdateLibraryTrackRequestSchema,
-    ZodTrack,
+  UpdateLibraryTrackRequest,
+  UpdateLibraryTrackRequestSchema,
+  ZodTrack,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -76,9 +76,7 @@ export function EditTrackForm({
       <form.Subscribe selector={(state) => state.errors}>
         {(errors) => {
           const error = (errors?.[0] as Record<string, string> | undefined)?.form;
-          return error ? (
-            <div className="text-destructive text-sm font-medium">{error}</div>
-          ) : null;
+          return error ? <div className="text-destructive text-sm font-medium">{error}</div> : null;
         }}
       </form.Subscribe>
       <div className="flex flex-col gap-6">

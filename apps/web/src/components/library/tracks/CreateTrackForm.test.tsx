@@ -1,7 +1,7 @@
 import {
   CreateLibraryTrackRequest,
   CreateLibraryTrackRequestSchema,
-  ZodAlbumInfer
+  ZodAlbumInfer,
 } from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
 import { render, screen, waitFor } from '@testing-library/react';

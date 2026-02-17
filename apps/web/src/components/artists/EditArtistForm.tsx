@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CameraIcon, CircleNotchIcon, FloppyDiskIcon, ImageIcon } from '@phosphor-icons/react';
 import {
-    UpdateLibraryArtistRequest,
-    UpdateLibraryArtistRequestSchema,
-    ZodArtist,
+  UpdateLibraryArtistRequest,
+  UpdateLibraryArtistRequestSchema,
+  ZodArtist,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { useEffect, useRef, useState } from 'react';

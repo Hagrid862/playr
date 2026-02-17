@@ -2,16 +2,16 @@ import { DatePickerField, SelectField, TextAreaField, TextField } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-    CameraIcon,
-    CircleNotchIcon,
-    FloppyDiskIcon,
-    MusicNotesIcon,
-    TrashIcon,
+  CameraIcon,
+  CircleNotchIcon,
+  FloppyDiskIcon,
+  MusicNotesIcon,
+  TrashIcon,
 } from '@phosphor-icons/react';
 import {
-    UpdateLibraryAlbumRequest,
-    UpdateLibraryAlbumRequestSchema,
-    ZodAlbum,
+  UpdateLibraryAlbumRequest,
+  UpdateLibraryAlbumRequestSchema,
+  ZodAlbum,
 } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
 import { useForm } from '@tanstack/react-form';
