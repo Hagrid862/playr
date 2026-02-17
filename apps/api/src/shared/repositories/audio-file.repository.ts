@@ -10,7 +10,7 @@ import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class AudioFileRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // ─────────────────────────────────────────────────────────────
   // QUERIES
