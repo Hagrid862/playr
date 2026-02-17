@@ -3,12 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CameraIcon, CircleNotchIcon, FloppyDiskIcon, ImageIcon } from '@phosphor-icons/react';
 import {
-  UpdateLibraryArtistRequest,
-  UpdateLibraryArtistRequestSchema,
-  ZodArtist,
+    UpdateLibraryArtistRequest,
+    UpdateLibraryArtistRequestSchema,
+    ZodArtist,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface EditArtistFormProps {
   artist: ZodArtist;
@@ -82,6 +82,18 @@ export function EditArtistForm({
       setBannerPreview(undefined);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    };
+  }, [bannerPreview]);
 
   return (
     <form

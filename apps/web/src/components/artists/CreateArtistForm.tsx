@@ -57,20 +57,21 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
     const file = e.target.files?.[0];
     if (file) {
       setAvatarFile(file);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+    } else {
+      setAvatarFile(undefined);
+      setPreviewUrl(undefined);
     }
   };
 
   useEffect(() => {
-    if (!avatarFile) {
-      setPreviewUrl(undefined);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(avatarFile);
-    setPreviewUrl(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [avatarFile]);
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <form

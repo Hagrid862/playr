@@ -1,10 +1,10 @@
 import { DatePickerField, TextAreaField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { FormData } from '@/hooks/forms/useCreateAlbumForm';
 import { CircleNotchIcon, MusicNotesIcon, PlusIcon } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
-import { SyntheticEvent, useRef, useState } from 'react';
-import { Separator } from '@/components/ui/separator';
+import { SyntheticEvent, useEffect, useRef, useState } from 'react';
 
 interface CreateAlbumFormProps {
   id?: string;
@@ -50,6 +50,12 @@ export function CreateAlbumForm({
     setPreviewUrl(null);
     onFileSelect?.(null);
   };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   return (
     <form id={id} className="flex flex-col gap-8" onSubmit={onSubmit}>

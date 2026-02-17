@@ -2,20 +2,20 @@ import { DatePickerField, SelectField, TextAreaField, TextField } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-  CameraIcon,
-  CircleNotchIcon,
-  FloppyDiskIcon,
-  MusicNotesIcon,
-  TrashIcon,
+    CameraIcon,
+    CircleNotchIcon,
+    FloppyDiskIcon,
+    MusicNotesIcon,
+    TrashIcon,
 } from '@phosphor-icons/react';
 import {
-  UpdateLibraryAlbumRequest,
-  UpdateLibraryAlbumRequestSchema,
-  ZodAlbum,
+    UpdateLibraryAlbumRequest,
+    UpdateLibraryAlbumRequestSchema,
+    ZodAlbum,
 } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
 import { useForm } from '@tanstack/react-form';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface EditAlbumFormProps {
   album: ZodAlbum;
@@ -86,6 +86,12 @@ export function EditAlbumForm({
 
     coverInputRef.current!.value = '';
   };
+
+  useEffect(() => {
+    return () => {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+    };
+  }, [coverPreview]);
 
   const currentCoverUrl = coverPreview || album.cover?.url;
 
