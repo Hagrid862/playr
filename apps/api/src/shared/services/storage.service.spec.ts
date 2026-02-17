@@ -127,7 +127,6 @@ describe('StorageService', () => {
     });
 
     it('should throw error for unknown bucket type', () => {
-      // @ts-ignore
       expect(() => service.getFileUrl('unknown' as FileBucket, 'key')).toThrow(
         'Unknown bucket type: unknown',
       );
