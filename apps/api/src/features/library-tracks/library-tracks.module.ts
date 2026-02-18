@@ -8,6 +8,7 @@ import { UploadTrackAudioHandler } from './commands/handlers/upload-track-audio.
 import { LibraryTracksController } from './library-tracks.controller';
 import { GetLibraryTrackHandler } from './queries/handlers/get-library-track.handler';
 import { GetLibraryTracksHandler } from './queries/handlers/get-library-tracks.handler';
+import { GetTrackStreamHandler } from './queries/handlers/get-track-stream.handler';
 
 export const CommandHandlers = [
   CreateLibraryTrackHandler,
@@ -16,7 +17,11 @@ export const CommandHandlers = [
   UploadTrackAudioHandler,
 ];
 
-export const QueryHandlers = [GetLibraryTrackHandler, GetLibraryTracksHandler];
+export const QueryHandlers = [
+  GetLibraryTrackHandler,
+  GetLibraryTracksHandler,
+  GetTrackStreamHandler,
+];
 
 @Module({
   imports: [CqrsModule, AudioProcessingModule],

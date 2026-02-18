@@ -15,10 +15,13 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Headers } from '@nestjs/common';
+import type { Response } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -37,6 +40,8 @@ import { UploadTrackAudioResponseDto } from './dto/response/upload-track-audio.r
 import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
 import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
+import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
+import { StreamAudioQuality } from '@repo/contracts';
 
 @ApiTags('Library Tracks')
 @Controller('library/tracks')
@@ -187,5 +192,59 @@ export class LibraryTracksController {
     file: Express.Multer.File,
   ) {
     return this.commandBus.execute(new UploadTrackAudioCommand(id, userId, file));
+  }
+
+  @Get(':id/stream')
+  @UseGuards(JwtAuthGuard, TrackAccessGuard)
+  @CheckTrackAccess('id')
+  @ApiOperation({ summary: 'Stream track audio' })
+  @ApiResponse({
+    status: 206,
+    description: 'Partial content for audio streaming',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Audio file not found or not processed',
+    type: ApiErrorResponseDto,
+  })
+  async getTrackStream(
+    @Param('id') id: string,
+    @Headers('range') range: string,
+    @Query('quality') requestedQuality: StreamAudioQuality = StreamAudioQuality.standard,
+    @Res() res: Response,
+  ) {
+    try {
+      const { stream, metadata } = await this.queryBus.execute(
+        new GetTrackStreamQuery(id, requestedQuality, range),
+      );
+
+      const { start, end, totalSize, mimeType, quality, format, isPartial } = metadata;
+
+      res.status(isPartial ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK);
+
+      const headers: Record<string, any> = {
+        'Accept-Ranges': 'bytes',
+        'Content-Length': end - start + 1,
+        'Content-Type': mimeType,
+        'X-Content-Quality': quality,
+        'X-Content-Format': format,
+      };
+
+      if (isPartial) {
+        headers['Content-Range'] = `bytes ${start}-${end}/${totalSize}`;
+      }
+
+      res.set(headers);
+
+      stream.pipe(res);
+    } catch (error: any) {
+      if (error.message === 'Requested range not satisfiable') {
+        res.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE).header({
+          'Content-Range': `bytes */*`,
+        });
+        return res.end();
+      }
+      throw error;
+    }
   }
 }
