@@ -1,6 +1,6 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Track, PrismaClient } from '@repo/db';
+import { PrismaClient, Track } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { TrackRepository } from './track.repository';
@@ -64,7 +64,7 @@ describe('TrackRepository', () => {
       expect(result).toEqual(mockTrack);
       expect(mockTx.track.findFirst).toHaveBeenCalledWith({
         where: { id: 'track-123', deletedAt: null },
-        include: { artists: true, album: true },
+        include: { artists: true, album: true, access: true },
       });
     });
   });

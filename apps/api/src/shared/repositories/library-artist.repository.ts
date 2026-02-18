@@ -22,7 +22,7 @@ export class LibraryArtistRepository {
       where: {
         ...rest,
         artist: {
-          ...(artist as any),
+          ...((artist as object) || {}),
           deletedAt: null,
         },
       },
@@ -50,7 +50,7 @@ export class LibraryArtistRepository {
       where: {
         ...rest,
         artist: {
-          ...(artist as any),
+          ...((artist as object) || {}),
           deletedAt: null,
         },
       },
@@ -81,7 +81,7 @@ export class LibraryArtistRepository {
       where: {
         ...rest,
         artist: {
-          ...(artist as any),
+          ...((artist as object) || {}),
           deletedAt: null,
         },
       },

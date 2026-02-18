@@ -34,8 +34,12 @@ const validateWithZod = (value: TrackFormValues) => {
   const result = CreateLibraryTrackRequestSchema.safeParse(metadata);
   if (result.success) return undefined;
 
-  const errors: Partial<Record<keyof TrackFormValues, string>> = {};
+  const errors: Partial<Record<keyof TrackFormValues | 'form', string>> = {};
   result.error.issues.forEach((issue) => {
+    if (issue.path.length === 0) {
+      errors.form = issue.message;
+      return;
+    }
     const path = issue.path.join('.') as keyof TrackFormValues;
     if (!errors[path]) {
       errors[path] = issue.message;
@@ -67,21 +71,27 @@ export function CreateTrackForm({
       onBlur: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
+      console.log('Form onSubmit called with value:', value);
       try {
         const { audioFile, ...metadata } = value;
+        console.log('Audio file:', audioFile);
         if (!audioFile) {
+          console.log('No audio file, setting error');
           form.setFieldMeta('audioFile', (meta) => ({
             ...meta,
             errors: ['Audio file is required'],
           }));
           return;
         }
+        console.log('Calling onSubmit with metadata:', metadata);
         await onSubmit(metadata as CreateLibraryTrackRequest, audioFile);
+        console.log('onSubmit completed, stayOnPage:', stayOnPage);
         if (stayOnPage) {
           form.reset();
           form.setFieldValue('trackNumber', value.trackNumber + 1);
           form.setFieldValue('diskNumber', value.diskNumber);
         } else {
+          console.log('Navigating away');
           navigate({ to: '..' });
         }
       } catch (error) {

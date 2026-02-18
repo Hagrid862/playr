@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SongCard } from './SongCard';
 
@@ -72,6 +72,30 @@ describe('SongCard', () => {
     // Click delete
     fireEvent.click(screen.getByText('Delete'));
     expect(onDelete).toHaveBeenCalledWith({ id: 'test-song-id', title: 'Test Song' });
+  });
+
+  it('calls onAddToQueue when add to queue action is clicked in context menu', () => {
+    const onAddToQueue = vi.fn();
+    render(<SongCard {...defaultProps} onAddToQueue={onAddToQueue} />);
+
+    // Open context menu
+    fireEvent.contextMenu(screen.getByText('Test Song'));
+
+    // Click add to queue
+    fireEvent.click(screen.getByText('Add to Queue'));
+    expect(onAddToQueue).toHaveBeenCalled();
+  });
+
+  it('calls onPlayNext when play next action is clicked in context menu', () => {
+    const onPlayNext = vi.fn();
+    render(<SongCard {...defaultProps} onPlayNext={onPlayNext} />);
+
+    // Open context menu
+    fireEvent.contextMenu(screen.getByText('Test Song'));
+
+    // Click play next
+    fireEvent.click(screen.getByText('Play Next'));
+    expect(onPlayNext).toHaveBeenCalled();
   });
 
   it('renders track number and play icon on hover (via group classes)', () => {

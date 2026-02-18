@@ -1,3 +1,7 @@
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth.store';
+import { usePlayerStore } from '@/stores/player.store';
 import {
   DotsThreeIcon,
   MusicNotesIcon,
@@ -12,21 +16,16 @@ import {
   SpeakerHighIcon,
   StarIcon,
 } from '@phosphor-icons/react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
-import { useRef, useEffect } from 'react';
-import { usePlayerStore } from '@/stores/player.store';
-import { useAuthStore } from '@/stores/auth.store';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Slider } from '../ui/slider';
 
 export function AppPlayer() {
   const isMobile = useIsMobile();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [isHoveringSlider, setIsHoveringSlider] = useState(false);
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 
   const {
     currentTrack,
@@ -40,6 +39,9 @@ export function AppPlayer() {
     setDuration,
     nextTrack,
     previousTrack,
+    setVolume,
+    isQueueOpen,
+    toggleQueue,
   } = usePlayerStore();
 
   const { accessToken } = useAuthStore();
@@ -53,7 +55,6 @@ export function AppPlayer() {
     const playPromise = async () => {
       try {
         if (isPlaying) {
-          // If we just changed tracks or the first track is loaded, ensures the audio pipeline is ready
           if (audio.readyState === 0) {
             audio.load();
           }
@@ -61,14 +62,12 @@ export function AppPlayer() {
         } else {
           audio.pause();
         }
-      } catch (err: any) {
-        // AbortError is common when switching tracks quickly or pausing before play finishes
-        if (err.name !== 'AbortError') {
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') {
           console.error('[AppPlayer] Playback Error:', {
             name: err.name,
             message: err.message,
             readyState: audio.readyState,
-            src: audio.src.split('?')[0] + '?...', // Hide token
           });
         }
       }
@@ -76,15 +75,6 @@ export function AppPlayer() {
 
     playPromise();
   }, [isPlaying, currentTrack]);
-
-  // Handle media errors
-  const handleMediaError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
-    const error = e.currentTarget.error;
-    console.error('Audio element error:', {
-      code: error?.code,
-      message: error?.message,
-    });
-  };
 
   // Sync volume
   useEffect(() => {
@@ -117,47 +107,20 @@ export function AppPlayer() {
     return `${apiBaseUrl}/library/tracks/${currentTrack.id}/stream?quality=${quality}&token=${accessToken}`;
   };
 
-  const renderActions = (isDropdown = false) => {
-    const items = [
-      { icon: StarIcon, label: 'Favorite' },
-      { icon: QuotesIcon, label: 'Lyrics' },
-      { icon: QueueIcon, label: 'Queue' },
-      { icon: SpeakerHighIcon, label: 'Volume' },
-    ];
-
-    if (isDropdown) {
-      return (
-        <DropdownMenuContent align="end" className="bg-stone-900 border-white/10 text-white">
-          {items.map((item) => (
-            <DropdownMenuItem key={item.label} className="hover:bg-white/10 cursor-pointer">
-              <item.icon className="mr-2" />
-              <span>{item.label}</span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      );
-    }
-
-    return (
-      <>
-        {items.map((item) => (
-          <Button key={item.label} size="icon-lg" variant="ghost" className="active:scale-95">
-            <item.icon />
-          </Button>
-        ))}
-      </>
-    );
-  };
-
-  const trackTitle = currentTrack?.title || 'No track selected';
-  const trackArtist = currentTrack?.artists?.map((a) => a.name).join(', ') || 'Unknown Artist';
-  const coverUrl = currentTrack?.album?.cover?.url;
-
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const formatTimeLeft = (time: number, total: number) => {
+    const timeLeft = total - time;
+    return `-${formatTime(timeLeft)}`;
+  };
+
+  const trackTitle = currentTrack?.title || 'No track selected';
+  const trackArtist = currentTrack?.artists?.map((a) => a.name).join(', ') || 'Unknown Artist';
+  const coverUrl = currentTrack?.album?.cover?.url;
 
   if (isMobile) {
     return (
@@ -169,14 +132,13 @@ export function AppPlayer() {
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={nextTrack}
-          onError={handleMediaError}
         />
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="h-10 w-10 shrink-0 bg-white/10 rounded-md flex items-center justify-center overflow-hidden border border-white/5">
+          <div className="h-10 w-10 shrink-0 bg-stone-900 rounded-md flex items-center justify-center overflow-hidden border border-white/10 shadow-lg">
             {coverUrl ? (
               <img src={coverUrl} alt="" className="size-full object-cover" />
             ) : (
-              <MusicNotesIcon size={20} />
+              <MusicNotesIcon size={20} className="text-stone-500" />
             )}
           </div>
           <div className="flex flex-col min-w-0">
@@ -197,7 +159,7 @@ export function AppPlayer() {
   }
 
   return (
-    <div className="w-full h-full bg-white/0 flex items-center justify-between gap-4">
+    <div className="w-full h-full flex items-center justify-center px-6 gap-2 bg-transparent">
       <audio
         ref={audioRef}
         src={getAudioUrl()}
@@ -205,94 +167,182 @@ export function AppPlayer() {
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={nextTrack}
       />
-      {/* Controls Section */}
-      <div className="flex flex-row gap-1 items-center justify-center shrink-0 min-w-[180px]">
+
+      {/* Island 1: Controls (Left) */}
+      <div
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 border border-white/8 shadow-lg h-14"
+        style={{ borderRadius: '2rem 0.75rem 0.75rem 2rem' }}
+      >
         <Button
           size="icon"
-          variant="ghost"
-          className="active:scale-95 text-white/70 hover:text-white"
+          className="text-white/40 bg-transparent hover:text-white hover:bg-white/2 active:bg-white/5 rounded-full h-8 w-8 active:scale-95 transition-all"
         >
-          <ShuffleIcon size={18} />
-        </Button>
-        <Button size="icon-lg" variant="ghost" className="active:scale-95" onClick={previousTrack}>
-          <SkipBackIcon weight="fill" />
-        </Button>
-        <Button size="icon-lg" variant="ghost" className="active:scale-95" onClick={togglePlay}>
-          {isPlaying ? <PauseIcon weight="fill" /> : <PlayIcon weight="fill" />}
-        </Button>
-        <Button size="icon-lg" variant="ghost" className="active:scale-95" onClick={nextTrack}>
-          <SkipForwardIcon weight="fill" />
+          <ShuffleIcon size={16} />
         </Button>
         <Button
-          size="icon-sm"
-          variant="ghost"
-          className="active:scale-95 text-white/70 hover:text-white"
+          size="icon"
+          className="text-white/60 hover:text-white bg-transparent hover:bg-white/5 active:bg-white/10 rounded-full h-9 w-9 active:scale-95 transition-all"
+          onClick={previousTrack}
+        >
+          <SkipBackIcon size={22} weight="fill" />
+        </Button>
+        <Button
+          size="icon"
+          className="bg-white/15 text-white hover:bg-white/20 active:bg-white/25 rounded-full h-11 w-11 flex items-center justify-center active:scale-95 transition-all"
+          onClick={togglePlay}
+        >
+          {isPlaying ? (
+            <PauseIcon size={24} weight="fill" />
+          ) : (
+            <PlayIcon size={24} weight="fill" className="ml-0.5" />
+          )}
+        </Button>
+        <Button
+          size="icon"
+          className="text-white/60 hover:text-white bg-transparent hover:bg-white/5 active:bg-white/10 rounded-full h-9 w-9 active:scale-95 transition-all"
+          onClick={nextTrack}
+        >
+          <SkipForwardIcon size={22} weight="fill" />
+        </Button>
+        <Button
+          size="icon"
+          className="text-white/40 bg-transparent hover:text-white hover:bg-white/2 active:bg-white/5 rounded-full h-8 w-8 active:scale-95 transition-all"
         >
           <RepeatIcon size={16} />
         </Button>
       </div>
 
-      {/* Info & Waveform Section - Grows/Shrinks */}
-      <div className="flex-1 flex flex-row gap-3 items-center min-w-0">
-        <div className="h-12 w-12 shrink-0 bg-white/10 rounded-md flex items-center justify-center overflow-hidden border border-white/5">
-          {coverUrl ? (
-            <img src={coverUrl} alt="" className="size-full object-cover" />
-          ) : (
-            <MusicNotesIcon size={28} />
-          )}
-        </div>
-        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-          <div className="text-white font-semibold truncate">{trackTitle}</div>
-          <div className="text-white/50 text-xs truncate font-medium">{trackArtist}</div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[10px] text-white/40 tabular-nums w-8">
-              {formatTime(currentTime)}
-            </span>
-            <div
-              className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden relative group cursor-pointer"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const percent = x / rect.width;
-                const newTime = percent * duration;
-                if (audioRef.current) audioRef.current.currentTime = newTime;
-                setCurrentTime(newTime);
-              }}
-            >
-              <div
-                className="absolute inset-y-0 left-0 bg-primary w-full origin-left transition-transform duration-100 ease-linear"
-                style={{ transform: `scaleX(${duration > 0 ? currentTime / duration : 0})` }}
-              />
-              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <span className="text-[10px] text-white/40 tabular-nums w-8">
-              {formatTime(duration)}
-            </span>
+      {/* Island 2: Track Info & Progress (Center) - The Main "Island" */}
+      <div
+        className={cn(
+          'flex-1 max-w-[600px] border border-white/8 bg-stone-900 flex items-stretch relative overflow-hidden shadow-xl h-14',
+        )}
+        style={{ borderRadius: '0.75rem' }}
+      >
+        {/* Floating Rounded Square Artwork */}
+        <div className="p-1.5 shrink-0">
+          <div className="h-full aspect-square bg-stone-800 rounded-lg flex items-center justify-center overflow-hidden shadow-inner">
+            {coverUrl ? (
+              <img src={coverUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <MusicNotesIcon size={20} className="text-stone-600" />
+            )}
           </div>
+        </div>
+
+        {/* Right Content Area: Stacked Rows */}
+        <div className="flex-1 flex flex-col justify-center min-w-0 pr-3 pl-0 py-1.5 relative">
+          {/* Top Row: Title & Artist / Time Reveal */}
+          <div className="flex flex-col min-w-0 flex-1 justify-center">
+            <div className="text-white font-semibold truncate text-[14px] leading-tight">
+              {trackTitle}
+            </div>
+            <div
+              className={cn(
+                'text-white/50 text-[12px] truncate font-medium transition-all duration-300',
+                isHoveringSlider || isDraggingSlider
+                  ? 'opacity-0 translate-y-1'
+                  : 'opacity-100 translate-y-0',
+              )}
+            >
+              {trackArtist}
+            </div>
+
+            {/* Hover-reveal times */}
+            <div
+              className={cn(
+                'absolute left-0 right-3 top-[26px] flex items-center justify-between text-[11px] text-white/40 tabular-nums transition-all duration-300 pointer-events-none',
+                isHoveringSlider || isDraggingSlider
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 -translate-y-1',
+              )}
+            >
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTimeLeft(currentTime, duration)}</span>
+            </div>
+          </div>
+
+          {/* Bottom Row: Progress Slider */}
+          <Slider
+            value={currentTime}
+            max={duration || 100}
+            showThumb={false}
+            onMouseEnter={() => setIsHoveringSlider(true)}
+            onMouseLeave={() => setIsHoveringSlider(false)}
+            onPointerDown={() => setIsDraggingSlider(true)}
+            onPointerUp={() => setIsDraggingSlider(false)}
+            onChange={(newTime) => {
+              if (audioRef.current) audioRef.current.currentTime = newTime;
+              setCurrentTime(newTime);
+            }}
+            className="mt-auto w-full"
+          />
         </div>
       </div>
 
-      {/* Actions Section */}
-      <div className="flex flex-row gap-1 items-center justify-end shrink-0">
-        {/* Desktop View (>= 800px) */}
-        <div className="hidden min-[1000px]:flex items-center gap-1">
-          <Button size="icon-lg" variant="ghost" className="active:scale-95">
-            <DotsThreeIcon weight="bold" />
-          </Button>
-          {renderActions()}
-        </div>
+      {/* Island 3: Actions (Right) */}
+      <div
+        className="flex h-14 items-center gap-0.5 px-2 py-2.5 bg-stone-900 border border-white/8 shadow-lg min-w-auto"
+        style={{ borderRadius: '0.75rem 2rem 2rem 0.75rem' }}
+      >
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
+        >
+          <DotsThreeIcon size={20} weight="bold" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
+        >
+          <StarIcon size={20} />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
+        >
+          <QuotesIcon size={20} />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className={cn(
+            'text-white/40 hover:text-white active:scale-95 h-9 w-9',
+            isQueueOpen && 'text-white bg-white/10',
+          )}
+          onClick={toggleQueue}
+        >
+          <QueueIcon size={20} />
+        </Button>
 
-        {/* Tablet View (< 800px) */}
-        <div className="min-[1000px]:hidden flex items-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon-lg" variant="ghost" className="active:scale-95">
-                <DotsThreeIcon weight="bold" />
-              </Button>
-            </DropdownMenuTrigger>
-            {renderActions(true)}
-          </DropdownMenu>
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-white/40 hover:text-white active:scale-95 h-9 w-9 ml-1"
+            >
+              <SpeakerHighIcon size={20} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="end"
+            className="w-40 bg-stone-900/95 backdrop-blur-xl border-white/10 p-3 mb-2 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+            sideOffset={16}
+          >
+            <Slider
+              value={volume * 100}
+              min={0}
+              max={100}
+              onChange={(val) => setVolume(val / 100)}
+              className="h-4"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

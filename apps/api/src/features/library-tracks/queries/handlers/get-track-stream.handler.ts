@@ -3,7 +3,7 @@ import { StorageService } from '@/shared/services/storage.service';
 import { NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { StreamAudioQuality } from '@repo/contracts';
-import { AudioFormat, AudioQuality, FileBucket, ProcessingStatus } from '@repo/db';
+import { AudioFile, AudioFormat, AudioQuality, FileBucket, ProcessingStatus } from '@repo/db';
 import { GetTrackStreamQuery } from '../impl/get-track-stream.query';
 
 @QueryHandler(GetTrackStreamQuery)
@@ -29,7 +29,7 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
     }
 
     // Quality mapping and selection logic
-    const getQualityScore = (file: any, target: StreamAudioQuality): number => {
+    const getQualityScore = (file: AudioFile, target: StreamAudioQuality): number => {
       const format = file.format as AudioFormat;
       const quality = file.quality as AudioQuality;
 
@@ -64,9 +64,9 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
     // Try to find the best match for the requested quality
     let selectedFile = audioFiles
-      .map((f: any) => ({ file: f, score: getQualityScore(f, requestedQuality) }))
-      .filter((f: any) => f.score > 0)
-      .sort((a: any, b: any) => b.score - a.score)[0]?.file;
+      .map((f) => ({ file: f, score: getQualityScore(f, requestedQuality) }))
+      .filter((f) => f.score > 0)
+      .sort((a, b) => b.score - a.score)[0]?.file;
 
     // Fallback logic if requested quality is missing
     if (!selectedFile) {
@@ -82,9 +82,9 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
       // Try lower qualities first
       for (let i = currentIndex + 1; i < qualityOrder.length; i++) {
         selectedFile = audioFiles
-          .map((f: any) => ({ file: f, score: getQualityScore(f, qualityOrder[i]) }))
-          .filter((f: any) => f.score > 0)
-          .sort((a: any, b: any) => b.score - a.score)[0]?.file;
+          .map((f) => ({ file: f, score: getQualityScore(f, qualityOrder[i]) }))
+          .filter((f) => f.score > 0)
+          .sort((a, b) => b.score - a.score)[0]?.file;
         if (selectedFile) break;
       }
 
@@ -92,9 +92,9 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
       if (!selectedFile) {
         for (let i = currentIndex - 1; i >= 0; i--) {
           selectedFile = audioFiles
-            .map((f: any) => ({ file: f, score: getQualityScore(f, qualityOrder[i]) }))
-            .filter((f: any) => f.score > 0)
-            .sort((a: any, b: any) => b.score - a.score)[0]?.file;
+            .map((f) => ({ file: f, score: getQualityScore(f, qualityOrder[i]) }))
+            .filter((f) => f.score > 0)
+            .sort((a, b) => b.score - a.score)[0]?.file;
           if (selectedFile) break;
         }
       }

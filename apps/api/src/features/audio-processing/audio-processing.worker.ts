@@ -2,7 +2,8 @@ import { AudioFileRepository } from '@/shared/repositories/audio-file.repository
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Logger, NotFoundException } from '@nestjs/common';
+import { ZodTrack } from '@repo/contracts';
 import { AudioFormat, AudioQuality, FileBucket, ProcessingStatus } from '@repo/db';
 import { Job } from 'bullmq';
 import ffmpeg from 'fluent-ffmpeg';
@@ -10,6 +11,12 @@ import * as fs from 'fs/promises';
 import * as mm from 'music-metadata';
 import * as os from 'os';
 import * as path from 'path';
+
+interface AudioProcessingJobData {
+  audioFileId: string;
+  trackId: string;
+  userId: string;
+}
 
 @Processor('audio-processing')
 export class AudioProcessingWorker extends WorkerHost {
@@ -23,8 +30,8 @@ export class AudioProcessingWorker extends WorkerHost {
     super();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
-    const { audioFileId, trackId } = job.data;
+  async process(job: Job<AudioProcessingJobData>): Promise<void> {
+    const { audioFileId, trackId, userId } = job.data;
     this.logger.log(`Processing audio file ${audioFileId} for track ${trackId}`);
 
     const originalFile = await this.audioFileRepository.findOne({ id: audioFileId });
@@ -59,7 +66,27 @@ export class AudioProcessingWorker extends WorkerHost {
 
       // Update track duration if not already set or different
       if (duration) {
-        await this.trackRepository.update(trackId, { duration: Math.round(duration) });
+        const track = await this.trackRepository.findOne({ id: trackId }, true);
+
+        if (!track) {
+          throw new NotFoundException('Track not found');
+        }
+
+        const trackWithRelations = track as ZodTrack & {
+          access?: { userId: string; role: string }[];
+        };
+
+        // Basic permission check - only owners/editors can upload audio
+        const hasAccess = trackWithRelations.access?.some(
+          (a: { userId: string; role: string }) =>
+            a.userId === userId && (a.role === 'owner' || a.role === 'editor'),
+        );
+
+        // Only update duration if it's not already set or if the new duration is different
+        // and the user has access to modify the track.
+        if (hasAccess && (!track.duration || Math.round(duration) !== track.duration)) {
+          await this.trackRepository.update(trackId, { duration: Math.round(duration) });
+        }
       }
 
       // 3. Generate Waveform (Master 1024 points)

@@ -2,7 +2,7 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { GetLibraryTracksResponse } from '@repo/contracts';
+import { GetLibraryTracksResponse, type ZodTrack } from '@repo/contracts';
 import { GetLibraryTracksQuery } from '../impl/get-library-tracks.query';
 
 @QueryHandler(GetLibraryTracksQuery)
@@ -38,10 +38,10 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
     ]);
 
     return {
-      items: items.map((lt: any) => lt.track),
+      items: (items as unknown as { track: ZodTrack }[]).map((lt) => lt.track),
       total,
       page,
       limit,
-    } as any;
+    };
   }
 }

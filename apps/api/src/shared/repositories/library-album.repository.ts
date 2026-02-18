@@ -22,7 +22,7 @@ export class LibraryAlbumRepository {
       where: {
         ...rest,
         album: {
-          ...(album as any),
+          ...((album as object) || {}),
           deletedAt: null,
         },
       },
@@ -50,7 +50,7 @@ export class LibraryAlbumRepository {
       where: {
         ...rest,
         album: {
-          ...(album as any),
+          ...((album as object) || {}),
           deletedAt: null,
         },
       },
@@ -81,7 +81,7 @@ export class LibraryAlbumRepository {
       where: {
         ...rest,
         album: {
-          ...(album as any),
+          ...((album as object) || {}),
           deletedAt: null,
         },
       },

@@ -32,7 +32,7 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
         duration: body.duration,
         explicit: body.explicit,
         lyrics: body.lyrics,
-        visibility: body.visibility as any,
+        visibility: body.visibility,
         artists: body.artistIds
           ? {
               set: body.artistIds.map((artistId) => ({ id: artistId })),

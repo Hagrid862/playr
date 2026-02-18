@@ -35,13 +35,13 @@ export class TokenService {
 
       const [accessToken, refreshToken] = await Promise.all([
         this.jwtService.signAsync(payload, {
-          secret: this.config.get<string>('JWT_ACCESS_SECRET'),
-          expiresIn: this.config.get<string>('JWT_ACCESS_EXPIRES_IN'),
-        } as any),
+          secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+          expiresIn: this.config.getOrThrow<string>('JWT_ACCESS_EXPIRES_IN') as never, // Using never to bypass legacy check, or better:
+        }),
         this.jwtService.signAsync(payload, {
-          secret: this.config.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN'),
-        } as any),
+          secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+          expiresIn: this.config.getOrThrow<string>('JWT_REFRESH_EXPIRES_IN') as never,
+        }),
       ]);
 
       if (oldRefreshToken) {

@@ -1,14 +1,15 @@
-import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { CheckTrackAccess } from '@/common/decorators/check-track-access.decorator';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
-import { TrackAccessGuard } from '@/shared/guards/track-access.guard';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
+import { TrackAccessGuard } from '@/shared/guards/track-access.guard';
 
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Headers,
   HttpStatus,
   Param,
   ParseFilePipeBuilder,
@@ -20,14 +21,15 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Headers } from '@nestjs/common';
-import type { Response } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { StreamAudioQuality } from '@repo/contracts';
+import type { Response } from 'express';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
 import { UpdateLibraryTrackCommand } from './commands/impl/update-library-track.command';
+import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
 import { CreateLibraryTrackRequestDto } from './dto/request/create-library-track.request.dto';
 import { GetLibraryTracksRequestDto } from './dto/request/get-library-tracks.request.dto';
 import { UpdateLibraryTrackRequestDto } from './dto/request/update-library-track.request.dto';
@@ -39,9 +41,7 @@ import { UpdateLibraryTrackResponseDto } from './dto/response/update-library-tra
 import { UploadTrackAudioResponseDto } from './dto/response/upload-track-audio.response.dto';
 import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
-import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
 import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
-import { StreamAudioQuality } from '@repo/contracts';
 
 @ApiTags('Library Tracks')
 @Controller('library/tracks')
@@ -222,7 +222,7 @@ export class LibraryTracksController {
 
       res.status(isPartial ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK);
 
-      const headers: Record<string, any> = {
+      const headers: Record<string, string | number> = {
         'Accept-Ranges': 'bytes',
         'Content-Length': end - start + 1,
         'Content-Type': mimeType,
@@ -237,8 +237,8 @@ export class LibraryTracksController {
       res.set(headers);
 
       stream.pipe(res);
-    } catch (error: any) {
-      if (error.message === 'Requested range not satisfiable') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === 'Requested range not satisfiable') {
         res.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE).header({
           'Content-Range': `bytes */*`,
         });
