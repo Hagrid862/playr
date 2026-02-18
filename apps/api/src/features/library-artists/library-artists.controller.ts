@@ -5,7 +5,9 @@ import {
   Controller,
   Delete,
   Get,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
   Query,
@@ -24,22 +26,22 @@ import { UpdateLibraryArtistCommand } from './commands/impl/update-library-artis
 import { UploadLibraryArtistAvatarCommand } from './commands/impl/upload-library-artist-avatar.command';
 import { UploadLibraryArtistBannerCommand } from './commands/impl/upload-library-artist-banner.command';
 import { CreateLibraryArtistRequestDto } from './dto/request/create-library-artist.request.dto';
+import { GetLibraryArtistAlbumsRequestDto } from './dto/request/get-library-artist-albums.request.dto';
 import { GetLibraryArtistsRequestDto } from './dto/request/get-library-artists.request.dto';
 import { UpdateLibraryArtistRequestDto } from './dto/request/update-library-artist.request.dto';
 import { UploadLibraryArtistAvatarRequestDto } from './dto/request/upload-library-artist-avatar.request.dto';
 import { UploadLibraryArtistBannerRequestDto } from './dto/request/upload-library-artist-banner.request.dto';
 import { CreateLibraryArtistResponseDto } from './dto/response/create-library-artist.response.dto';
 import { DeleteLibraryArtistResponseDto } from './dto/response/delete-library-artist.response.dto';
+import { GetLibraryArtistAlbumsResponseDto } from './dto/response/get-library-artist-albums.response.dto';
 import { GetLibraryArtistResponseDto } from './dto/response/get-library-artist.response.dto';
 import { GetLibraryArtistsResponseDto } from './dto/response/get-library-artists.response.dto';
 import { UpdateLibraryArtistResponseDto } from './dto/response/update-library-artist.response.dto';
 import { UploadLibraryArtistAvatarResponseDto } from './dto/response/upload-library-artist-avatar.response.dto';
 import { UploadLibraryArtistBannerResponseDto } from './dto/response/upload-library-artist-banner.response.dto';
-import { GetLibraryArtistAlbumsRequestDto } from './dto/request/get-library-artist-albums.request.dto';
-import { GetLibraryArtistAlbumsResponseDto } from './dto/response/get-library-artist-albums.response.dto';
+import { GetLibraryArtistAlbumsQuery } from './queries/impl/get-library-artist-albums.query';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
-import { GetLibraryArtistAlbumsQuery } from './queries/impl/get-library-artist-albums.query';
 
 @ApiTags('Library Artists')
 @Controller('library/artists')
@@ -47,7 +49,7 @@ export class LibraryArtistsController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -260,7 +262,12 @@ export class LibraryArtistsController {
   })
   async uploadArtistAvatar(
     @Param('id') id: string,
-    @UploadedFile() file: { buffer: Buffer; mimetype: string },
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 })], // 50MB
+      }),
+    )
+    file: Express.Multer.File,
     @CurrentUser('id') userId: string,
   ): Promise<contracts.ZodImage> {
     const command = new UploadLibraryArtistAvatarCommand(id, file.buffer, file.mimetype, userId);
@@ -302,7 +309,12 @@ export class LibraryArtistsController {
   })
   async uploadArtistBanner(
     @Param('id') id: string,
-    @UploadedFile() file: { buffer: Buffer; mimetype: string },
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 })], // 50MB
+      }),
+    )
+    file: Express.Multer.File,
     @CurrentUser('id') userId: string,
   ): Promise<contracts.ZodImage> {
     const command = new UploadLibraryArtistBannerCommand(id, file.buffer, file.mimetype, userId);

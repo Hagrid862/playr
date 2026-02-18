@@ -27,17 +27,17 @@ import { DeleteLibraryAlbumCommand } from './commands/impl/delete-library-album.
 import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.command';
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
 import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
-import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
 import { GetLibraryAlbumsRequestDto } from './dto/request/get-library-albums.request.dto';
+import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
 import { CreateLibraryAlbumResponseDto } from './dto/response/create-library-album.response.dto';
+import { GetLibraryAlbumTracksResponseDto } from './dto/response/get-library-album-tracks.response.dto';
 import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.response.dto';
 import { GetLibraryAlbumsResponseDto } from './dto/response/get-library-albums.response.dto';
 import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
 import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
-import { GetLibraryAlbumTracksResponseDto } from './dto/response/get-library-album-tracks.response.dto';
+import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
 import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
 import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
-import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
 
 @ApiTags('Library Albums')
 @Controller('library/albums')
@@ -45,7 +45,7 @@ export class AlbumsController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
-  ) {}
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -224,7 +224,7 @@ export class AlbumsController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+          new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 }), // 50MB
         ],
       }),
     )
