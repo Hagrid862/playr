@@ -1,4 +1,4 @@
-import { TextField } from '@/components/form';
+import { FileField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -13,20 +13,30 @@ import { useForm } from '@tanstack/react-form';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
+type TrackFormValues = CreateLibraryTrackRequest & { audioFile: File | null };
+
 interface CreateTrackFormProps {
   album: ZodAlbumInfer;
   isLoading: boolean;
-  onSubmit: (values: CreateLibraryTrackRequest) => Promise<void>;
+  onSubmit: (values: CreateLibraryTrackRequest, audioFile: File) => Promise<void>;
   serverErrors?: Partial<Record<keyof CreateLibraryTrackRequest, string>>;
 }
 
-const validateWithZod = (value: CreateLibraryTrackRequest) => {
-  const result = CreateLibraryTrackRequestSchema.safeParse(value);
+const validateWithZod = (value: TrackFormValues) => {
+  const metadata = {
+    title: value.title,
+    trackNumber: value.trackNumber,
+    diskNumber: value.diskNumber,
+    explicit: value.explicit,
+    albumId: value.albumId,
+    artistIds: value.artistIds,
+  };
+  const result = CreateLibraryTrackRequestSchema.safeParse(metadata);
   if (result.success) return undefined;
 
-  const errors: Record<string, string> = {};
+  const errors: Partial<Record<keyof TrackFormValues, string>> = {};
   result.error.issues.forEach((issue) => {
-    const path = issue.path.join('.') || 'form';
+    const path = issue.path.join('.') as keyof TrackFormValues;
     if (!errors[path]) {
       errors[path] = issue.message;
     }
@@ -51,13 +61,22 @@ export function CreateTrackForm({
       explicit: false,
       albumId: album.id,
       artistIds: album.artists?.map((a) => a.id) ?? [],
-    } as CreateLibraryTrackRequest,
+      audioFile: null,
+    } as TrackFormValues,
     validators: {
       onBlur: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
       try {
-        await onSubmit(value);
+        const { audioFile, ...metadata } = value;
+        if (!audioFile) {
+          form.setFieldMeta('audioFile', (meta) => ({
+            ...meta,
+            errors: ['Audio file is required'],
+          }));
+          return;
+        }
+        await onSubmit(metadata as CreateLibraryTrackRequest, audioFile);
         if (stayOnPage) {
           form.reset();
           form.setFieldValue('trackNumber', value.trackNumber + 1);
@@ -96,8 +115,8 @@ export function CreateTrackForm({
               value={field.state.value}
               error={
                 field.state.meta.isTouched
-                  ? (field.state.meta.errors[0] as unknown as string) ||
-                    (form.state.errors[0] as Record<string, string>)?.[field.name]
+                  ? (field.state.meta.errors[0] as string | undefined) ||
+                    (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
                   : serverErrors?.title
               }
               onChange={field.handleChange}
@@ -117,8 +136,8 @@ export function CreateTrackForm({
                   value={String(field.state.value)}
                   error={
                     field.state.meta.isTouched
-                      ? (field.state.meta.errors[0] as unknown as string) ||
-                        (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      ? (field.state.meta.errors[0] as string | undefined) ||
+                        (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
                       : serverErrors?.diskNumber
                   }
                   onChange={(e) => field.handleChange(Number(e))}
@@ -138,8 +157,8 @@ export function CreateTrackForm({
                   value={String(field.state.value)}
                   error={
                     field.state.meta.isTouched
-                      ? (field.state.meta.errors[0] as unknown as string) ||
-                        (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      ? (field.state.meta.errors[0] as string | undefined) ||
+                        (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
                       : serverErrors?.trackNumber
                   }
                   onChange={(e) => field.handleChange(Number(e))}
@@ -160,6 +179,18 @@ export function CreateTrackForm({
               />
               <Label htmlFor="explicit">Explicit Content</Label>
             </div>
+          )}
+        </form.Field>
+
+        <form.Field name="audioFile">
+          {(field) => (
+            <FileField
+              label="Audio File"
+              accept="audio/*"
+              error={field.state.meta.errors[0] as string | undefined}
+              onChange={(file) => field.handleChange(file)}
+              onBlur={field.handleBlur}
+            />
           )}
         </form.Field>
       </div>

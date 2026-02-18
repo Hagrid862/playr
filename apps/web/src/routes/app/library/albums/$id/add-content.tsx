@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useCreateLibraryTrack } from '@/hooks/api/library-tracks/useCreateLibraryTrack';
+import { useUploadTrackAudio } from '@/hooks/api/library-tracks/useUploadTrackAudio';
 import { CircleNotchIcon, InfoIcon } from '@phosphor-icons/react';
 import { CreateLibraryTrackRequest } from '@repo/contracts';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,14 +21,26 @@ function AddContentPage() {
   const { data: albumResponse, isLoading: isAlbumLoading, error: albumError } = useLibraryAlbum(id);
 
   const { mutateAsync: createTrack, isPending: isCreating } = useCreateLibraryTrack();
+  const { mutateAsync: uploadAudio, isPending: isUploading } = useUploadTrackAudio();
 
-  const handleSubmit = async (values: CreateLibraryTrackRequest) => {
+  const handleSubmit = async (values: CreateLibraryTrackRequest, audioFile: File) => {
     try {
-      await createTrack(values);
-      toast.success('Track created successfully');
+      const trackResponse = await createTrack(values);
+      if (!trackResponse.success || !trackResponse.data) {
+        throw new Error('Failed to create track metadata');
+      }
+
+      const track = trackResponse.data;
+      toast.info('Uploading audio file...', { duration: 0, id: 'uploading-audio' });
+
+      await uploadAudio({ trackId: track.id, file: audioFile });
+
+      toast.dismiss('uploading-audio');
+      toast.success('Track created and audio uploaded successfully');
       queryClient.invalidateQueries({ queryKey: ['library-albums', id] });
     } catch (error) {
-      toast.error('Failed to create track');
+      toast.dismiss('uploading-audio');
+      toast.error('Failed to create track or upload audio');
       console.error(error);
     }
   };
@@ -65,7 +78,11 @@ function AddContentPage() {
       </Alert>
 
       <div className="px-1">
-        <CreateTrackForm album={album} isLoading={isCreating} onSubmit={handleSubmit} />
+        <CreateTrackForm
+          album={album}
+          isLoading={isCreating || isUploading}
+          onSubmit={handleSubmit}
+        />
       </div>
     </div>
   );
