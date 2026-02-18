@@ -152,7 +152,7 @@ export class AudioProcessingWorker extends WorkerHost {
       }
 
       command
-        .on('error', (err) => reject(err))
+        .on('error', (err: Error) => reject(err))
         .on('end', () => resolve())
         .save(output);
     });
