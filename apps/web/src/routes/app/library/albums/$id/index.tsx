@@ -33,6 +33,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { SongCard } from '@/components/library/SongCard';
+import { PlayerState, usePlayerStore } from '@/stores/player.store';
 
 export const Route = createFileRoute('/app/library/albums/$id/')({
   component: RouteComponent,
@@ -47,6 +48,8 @@ function RouteComponent() {
   const { data: albumResponse, isLoading } = useLibraryAlbum(id);
   const { mutateAsync: deleteAlbum, isPending: isDeleting } = useDeleteLibraryAlbum();
   const { mutateAsync: deleteTrack, isPending: isDeletingTrack } = useDeleteLibraryTrack();
+
+  const playTrack = usePlayerStore((state: PlayerState) => state.playTrack);
 
   const album = albumResponse?.data;
 
@@ -166,6 +169,17 @@ function RouteComponent() {
           <Button
             size="lg"
             className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
+            onClick={() => {
+              if (album?.tracks && album.tracks.length > 0) {
+                // Sort all tracks from all discs for the queue
+                const allTracks = [...album.tracks].sort((a, b) => {
+                  if (a.diskNumber !== b.diskNumber)
+                    return (a.diskNumber || 1) - (b.diskNumber || 1);
+                  return (a.trackNumber || 0) - (b.trackNumber || 0);
+                });
+                playTrack(allTracks[0], allTracks);
+              }
+            }}
           >
             <PlayIcon weight="fill" size={20} /> Play
           </Button>
@@ -272,6 +286,7 @@ function RouteComponent() {
                             artists={track.artists}
                             duration={track.duration}
                             explicit={track.explicit}
+                            onClick={() => playTrack(track, discTracks)}
                             onEdit={(songId) =>
                               navigate({
                                 to: '/app/library/albums/$id/songs/$songId/edit',
