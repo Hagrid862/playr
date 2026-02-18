@@ -128,7 +128,7 @@ export class ImageService {
   /**
    * Validate image format and size
    */
-  async validateImage(image: Buffer, maxSizeMB: number = 10): Promise<boolean> {
+  async validateImage(image: Buffer, maxSizeMB: number = 50): Promise<boolean> {
     try {
       const metadata = await this.getMetadata(image);
       const maxSizeBytes = maxSizeMB * 1024 * 1024;
@@ -171,13 +171,13 @@ export class ImageService {
     incomingImages: { id?: string; url: string; mimeType: string }[],
   ):
     | {
-        deleteMany?: { id?: { in?: string[] } };
-        create?: { url: string; mimeType: string }[];
-        update?: {
-          where: { id: string };
-          data: { url: string; mimeType: string };
-        }[];
-      }
+      deleteMany?: { id?: { in?: string[] } };
+      create?: { url: string; mimeType: string }[];
+      update?: {
+        where: { id: string };
+        data: { url: string; mimeType: string };
+      }[];
+    }
     | undefined {
     if (!incomingImages) return undefined;
 
@@ -193,27 +193,27 @@ export class ImageService {
       deleteMany:
         imagesToDelete.length > 0
           ? {
-              id: {
-                in: imagesToDelete,
-              },
-            }
+            id: {
+              in: imagesToDelete,
+            },
+          }
           : undefined,
       create:
         imagesToCreate.length > 0
           ? imagesToCreate.map((image) => ({
-              url: image.url,
-              mimeType: image.mimeType,
-            }))
+            url: image.url,
+            mimeType: image.mimeType,
+          }))
           : undefined,
       update:
         imagesToUpdate.length > 0
           ? imagesToUpdate.map((image) => ({
-              where: { id: image.id! },
-              data: {
-                url: image.url,
-                mimeType: image.mimeType,
-              },
-            }))
+            where: { id: image.id! },
+            data: {
+              url: image.url,
+              mimeType: image.mimeType,
+            },
+          }))
           : undefined,
     };
   }
