@@ -1,6 +1,7 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -157,6 +158,71 @@ export class StorageService {
     } catch (error) {
       this.logger.error(`Failed to delete file from bucket ${bucketName} with key ${key}`, error);
       throw new Error(`Failed to delete file: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Get metadata for a file (like size)
+   */
+  async getFileStats(
+    bucketType: FileBucket,
+    key: string,
+  ): Promise<{ size: number; lastModified?: Date }> {
+    const bucketName = this.getBucketName(bucketType);
+
+    const headCommand = new HeadObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    try {
+      const response = await this.s3Client.send(headCommand);
+      return {
+        size: response.ContentLength ?? 0,
+        lastModified: response.LastModified,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get stats for key ${key} in bucket ${bucketName}`, error);
+      throw new Error(`Failed to get file stats: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Get a stream for a specific byte range of a file
+   */
+  async getFileStream(
+    bucketType: FileBucket,
+    key: string,
+    options: { start?: number; end?: number } = {},
+  ): Promise<{ stream: any; size: number; totalSize: number }> {
+    const bucketName = this.getBucketName(bucketType);
+
+    let rangeHeader: string | undefined;
+    if (options.start !== undefined || options.end !== undefined) {
+      rangeHeader = `bytes=${options.start ?? ''}-${options.end ?? ''}`;
+    }
+
+    const getCommand = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Range: rangeHeader,
+    });
+
+    try {
+      const response = await this.s3Client.send(getCommand);
+      return {
+        stream: response.Body,
+        size: response.ContentLength ?? 0,
+        totalSize: response.ContentRange
+          ? parseInt(response.ContentRange.split('/')[1])
+          : (response.ContentLength ?? 0),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get stream for key ${key} in bucket ${bucketName} with range ${rangeHeader}`,
+        error,
+      );
+      throw new Error(`Failed to get file stream: ${(error as Error).message}`);
     }
   }
 
