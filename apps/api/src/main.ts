@@ -37,6 +37,13 @@ async function bootstrap() {
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       preflightContinue: false,
       optionsSuccessStatus: 204,
+      exposedHeaders: [
+        'Content-Range',
+        'Accept-Ranges',
+        'Content-Length',
+        'X-Content-Quality',
+        'X-Content-Format',
+      ],
     });
   } else {
     const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || [];
