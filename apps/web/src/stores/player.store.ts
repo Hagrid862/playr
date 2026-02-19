@@ -27,6 +27,7 @@ export interface PlayerState {
   addToQueue: (track: ZodTrack) => void;
   playNext: (track: ZodTrack) => void;
   removeFromQueue: (uniqueId: string) => void;
+  reorderQueue: (newQueue: QueueItem[]) => void;
 
   isQueueOpen: boolean;
   toggleQueue: () => void;
@@ -102,6 +103,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set((state) => ({
       queue: state.queue.filter((t) => t.uniqueId !== uniqueId),
     })),
+
+  reorderQueue: (newQueue) => set({ queue: newQueue }),
 
   playNext: (track) => {
     const { currentTrack, queue } = get();
