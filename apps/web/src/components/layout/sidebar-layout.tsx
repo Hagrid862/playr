@@ -5,13 +5,28 @@ import { useIsMounted } from '@/hooks/use-is-mounted';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
+import { useState, useEffect } from 'react';
 import { AppPlayer } from '../app/Player';
 import { Queue } from '../app/Queue';
+import { Lyrics } from '../app/Lyrics';
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
-  const { isQueueOpen, setQueueOpen } = usePlayerStore();
+  const { isQueueOpen, setQueueOpen, sidebarView } = usePlayerStore();
   const isDesktop = useMediaQuery('(min-width: 1500px)');
   const mounted = useIsMounted();
+  const [isSettledInternal, setIsSettledInternal] = useState(false);
+
+  useEffect(() => {
+    if (isQueueOpen) {
+      const timer = setTimeout(() => setIsSettledInternal(true), 500);
+      return () => {
+        clearTimeout(timer);
+        setIsSettledInternal(false);
+      };
+    }
+  }, [isQueueOpen]);
+
+  const isSettled = isQueueOpen && isSettledInternal;
 
   return (
     <SidebarProvider>
@@ -20,8 +35,8 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {/* Main Content Area */}
         <div
           className={cn(
-            'flex-1 flex flex-col relative min-w-0 transition-all duration-300 mt-2',
-            !isQueueOpen && isDesktop ? 'mr-2' : '',
+            'flex-1 flex flex-col relative min-w-0 transition-all duration-500 ease-apple mt-2',
+            isDesktop ? 'mr-2' : '',
           )}
         >
           <div className="mx-auto flex h-full w-full max-w-480 flex-col relative">
@@ -41,12 +56,36 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {mounted && isDesktop && (
           <div
             className={cn(
-              'border-l border-white/10 bg-stone-900 transition-all duration-300 ease-in-out flex flex-col',
-              isQueueOpen ? 'w-100 border-l' : 'w-0 border-none overflow-hidden',
+              'bg-stone-900 transition-all duration-500 ease-apple flex flex-col shadow-2xl overflow-hidden my-2 rounded-xl origin-right',
+              isQueueOpen
+                ? 'w-[360px] mr-2 border border-white/10 opacity-100 blur-0'
+                : 'w-0 mr-0 border-none opacity-50 blur-xs',
             )}
+            style={{ height: 'calc(100vh - 1rem)' }}
           >
-            <div className="w-100 h-full">
-              <Queue />
+            <div className="w-[360px] h-full relative">
+              <div
+                className={cn(
+                  'absolute inset-0',
+                  isSettled ? 'transition-all duration-300 ease-out' : 'transition-none',
+                  sidebarView === 'queue'
+                    ? 'opacity-100 scale-100 blur-0 pointer-events-auto'
+                    : 'opacity-0 scale-98 blur-xs pointer-events-none',
+                )}
+              >
+                <Queue />
+              </div>
+              <div
+                className={cn(
+                  'absolute inset-0',
+                  isSettled ? 'transition-all duration-300 ease-out' : 'transition-none',
+                  sidebarView === 'lyrics'
+                    ? 'opacity-100 scale-100 blur-0 pointer-events-auto'
+                    : 'opacity-0 scale-98 blur-xs pointer-events-none',
+                )}
+              >
+                <Lyrics />
+              </div>
             </div>
           </div>
         )}
@@ -56,9 +95,32 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           <Sheet open={isQueueOpen} onOpenChange={setQueueOpen}>
             <SheetContent
               side="right"
-              className="w-full sm:w-100 p-0 bg-stone-900 border-l border-white/10 text-white"
+              className="w-full sm:w-[360px] p-0 bg-stone-900 border-l border-white/10 text-white"
             >
-              <Queue />
+              <div className="w-full h-full relative">
+                <div
+                  className={cn(
+                    'absolute inset-0',
+                    isSettled ? 'transition-all duration-300 ease-out' : 'transition-none',
+                    sidebarView === 'queue'
+                      ? 'opacity-100 scale-100 blur-0 pointer-events-auto'
+                      : 'opacity-0 scale-98 blur-sm pointer-events-none',
+                  )}
+                >
+                  <Queue />
+                </div>
+                <div
+                  className={cn(
+                    'absolute inset-0',
+                    isSettled ? 'transition-all duration-300 ease-out' : 'transition-none',
+                    sidebarView === 'lyrics'
+                      ? 'opacity-100 scale-100 blur-0 pointer-events-auto'
+                      : 'opacity-0 scale-98 blur-sm pointer-events-none',
+                  )}
+                >
+                  <Lyrics />
+                </div>
+              </div>
             </SheetContent>
           </Sheet>
         )}
