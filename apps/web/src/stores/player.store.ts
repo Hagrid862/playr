@@ -1,5 +1,6 @@
 import { StreamAudioQuality, ZodTrack } from '@repo/contracts';
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type QueueItem = ZodTrack & { uniqueId: string };
 
@@ -11,6 +12,7 @@ export interface PlayerState {
   duration: number;
   quality: StreamAudioQuality;
   queue: QueueItem[];
+  history: QueueItem[];
 
   // Actions
   playTrack: (track: ZodTrack, queue?: ZodTrack[]) => void;
@@ -28,10 +30,13 @@ export interface PlayerState {
   playNext: (track: ZodTrack) => void;
   removeFromQueue: (uniqueId: string) => void;
   reorderQueue: (newQueue: QueueItem[]) => void;
+  addToHistory: (track: QueueItem) => void;
 
   isQueueOpen: boolean;
+  sidebarView: 'queue' | 'lyrics';
   toggleQueue: () => void;
   setQueueOpen: (isOpen: boolean) => void;
+  setSidebarView: (view: 'queue' | 'lyrics') => void;
 }
 
 const generateUniqueId = () => Math.random().toString(36).substring(2, 9);
@@ -41,117 +46,148 @@ const toQueueItem = (track: ZodTrack): QueueItem => ({
   uniqueId: generateUniqueId(),
 });
 
-export const usePlayerStore = create<PlayerState>((set, get) => ({
-  currentTrack: null,
-  isPlaying: false,
-  volume: 1,
-  currentTime: 0,
-  duration: 0,
-  quality: StreamAudioQuality.standard,
-  queue: [],
-
-  playTrack: (track, queue) => {
-    const currentQueueItem = toQueueItem(track);
-    const newQueue = queue ? queue.map(toQueueItem) : get().queue;
-
-    let finalQueue = newQueue;
-    let finalCurrentTrack = currentQueueItem;
-
-    if (queue) {
-      // Reconstruct queue with unique IDs
-      finalQueue = queue.map(toQueueItem);
-      // Ensure currentTrack matches an item in the queue by ID
-      const found = finalQueue.find((t) => t.id === track.id);
-      if (found) {
-        finalCurrentTrack = found;
-      } else {
-        // Track not in provided queue? Prepend it.
-        finalQueue = [finalCurrentTrack, ...finalQueue];
-      }
-    } else {
-      // If no queue provided and existing queue is empty, set as only item.
-      if (!get().queue.length) {
-        finalQueue = [finalCurrentTrack];
-      }
-    }
-
-    set({
-      currentTrack: finalCurrentTrack,
-      isPlaying: true,
-      queue: finalQueue,
+export const usePlayerStore = create<PlayerState>()(
+  persist(
+    (set, get) => ({
+      currentTrack: null,
+      isPlaying: false,
+      volume: 1,
       currentTime: 0,
-    });
-  },
+      duration: 0,
+      quality: StreamAudioQuality.standard,
+      queue: [],
+      history: [],
 
-  pause: () => set({ isPlaying: false }),
-  resume: () => set({ isPlaying: get().currentTrack !== null }),
-  togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying && !!state.currentTrack })),
+      addToHistory: (track) => {
+        set((state) => {
+          const newHistory = [track, ...state.history].slice(0, 1024);
+          return { history: newHistory };
+        });
+      },
 
-  isQueueOpen: false,
-  toggleQueue: () => set((state) => ({ isQueueOpen: !state.isQueueOpen })),
-  setQueueOpen: (isOpen) => set({ isQueueOpen: isOpen }),
+      playTrack: (track, queue) => {
+        const { currentTrack, addToHistory } = get();
+        if (currentTrack) {
+          addToHistory(currentTrack);
+        }
 
-  setVolume: (volume) => set({ volume }),
-  setCurrentTime: (currentTime) => set({ currentTime }),
-  setDuration: (duration) => set({ duration }),
-  setQuality: (quality) => set({ quality }),
-  setQueue: (queue) => set({ queue: queue.map(toQueueItem) }),
+        const currentQueueItem = toQueueItem(track);
+        const newQueue = queue ? queue.map(toQueueItem) : get().queue;
 
-  addToQueue: (track) => set((state) => ({ queue: [...state.queue, toQueueItem(track)] })),
+        let finalQueue = newQueue;
+        let finalCurrentTrack = currentQueueItem;
 
-  removeFromQueue: (uniqueId) =>
-    set((state) => ({
-      queue: state.queue.filter((t) => t.uniqueId !== uniqueId),
-    })),
+        if (queue) {
+          // Reconstruct queue with unique IDs
+          finalQueue = queue.map(toQueueItem);
+          // Ensure currentTrack matches an item in the queue by ID
+          const found = finalQueue.find((t) => t.id === track.id);
+          if (found) {
+            finalCurrentTrack = found;
+          } else {
+            // Track not in provided queue? Prepend it.
+            finalQueue = [finalCurrentTrack, ...finalQueue];
+          }
+        } else {
+          // If no queue provided and existing queue is empty, set as only item.
+          if (!get().queue.length) {
+            finalQueue = [finalCurrentTrack];
+          }
+        }
 
-  reorderQueue: (newQueue) => set({ queue: newQueue }),
+        set({
+          currentTrack: finalCurrentTrack,
+          isPlaying: true,
+          queue: finalQueue,
+          currentTime: 0,
+        });
+      },
 
-  playNext: (track) => {
-    const { currentTrack, queue } = get();
-    const newItem = toQueueItem(track);
+      pause: () => set({ isPlaying: false }),
+      resume: () => set({ isPlaying: get().currentTrack !== null }),
+      togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying && !!state.currentTrack })),
 
-    if (!currentTrack) {
-      set({ currentTrack: newItem, queue: [newItem], isPlaying: true });
-      return;
-    }
+      isQueueOpen: false,
+      sidebarView: 'queue',
+      toggleQueue: () => set((state) => ({ isQueueOpen: !state.isQueueOpen })),
+      setQueueOpen: (isOpen) => set({ isQueueOpen: isOpen }),
+      setSidebarView: (view) => set({ sidebarView: view }),
 
-    const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+      setVolume: (volume) => set({ volume }),
+      setCurrentTime: (currentTime) => set({ currentTime }),
+      setDuration: (duration) => set({ duration }),
+      setQuality: (quality) => set({ quality }),
+      setQueue: (queue) => set({ queue: queue.map(toQueueItem) }),
 
-    if (currentIndex === -1) {
-      // Current track playing but not in queue (weird state), append to end
-      set((state) => ({ queue: [...state.queue, newItem] }));
-    } else {
-      const newQueue = [...queue];
-      newQueue.splice(currentIndex + 1, 0, newItem);
-      set({ queue: newQueue });
-    }
-  },
+      addToQueue: (track) => set((state) => ({ queue: [...state.queue, toQueueItem(track)] })),
 
-  nextTrack: () => {
-    const { queue, currentTrack } = get();
-    if (!currentTrack || queue.length === 0) return;
+      removeFromQueue: (uniqueId) =>
+        set((state) => ({
+          queue: state.queue.filter((t) => t.uniqueId !== uniqueId),
+        })),
 
-    const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
-    if (currentIndex > -1 && currentIndex < queue.length - 1) {
-      const next = queue[currentIndex + 1];
-      set({ currentTrack: next, currentTime: 0, isPlaying: true });
-    }
-  },
+      reorderQueue: (newQueue) => set({ queue: newQueue }),
 
-  previousTrack: () => {
-    const { queue, currentTrack, currentTime } = get();
-    if (!currentTrack || queue.length === 0) return;
+      playNext: (track) => {
+        const { currentTrack, queue } = get();
+        const newItem = toQueueItem(track);
 
-    // If more than 3 seconds in, restart the track instead
-    if (currentTime > 3) {
-      set({ currentTime: 0 });
-      return;
-    }
+        if (!currentTrack) {
+          set({ currentTrack: newItem, queue: [newItem], isPlaying: true });
+          return;
+        }
 
-    const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
-    if (currentIndex > 0) {
-      const prev = queue[currentIndex - 1];
-      set({ currentTrack: prev, currentTime: 0, isPlaying: true });
-    }
-  },
-}));
+        const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+
+        if (currentIndex === -1) {
+          // Current track playing but not in queue (weird state), append to end
+          set((state) => ({ queue: [...state.queue, newItem] }));
+        } else {
+          const newQueue = [...queue];
+          newQueue.splice(currentIndex + 1, 0, newItem);
+          set({ queue: newQueue });
+        }
+      },
+
+      nextTrack: () => {
+        const { queue, currentTrack, addToHistory } = get();
+        if (!currentTrack || queue.length === 0) return;
+
+        const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+        if (currentIndex > -1 && currentIndex < queue.length - 1) {
+          addToHistory(currentTrack);
+          const next = queue[currentIndex + 1];
+          set({ currentTrack: next, currentTime: 0, isPlaying: true });
+        }
+      },
+
+      previousTrack: () => {
+        const { queue, currentTrack, currentTime, addToHistory } = get();
+        if (!currentTrack || queue.length === 0) return;
+
+        // If more than 3 seconds in, restart the track instead
+        if (currentTime > 3) {
+          set({ currentTime: 0 });
+          return;
+        }
+
+        const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+        if (currentIndex > 0) {
+          addToHistory(currentTrack);
+          const prev = queue[currentIndex - 1];
+          set({ currentTrack: prev, currentTime: 0, isPlaying: true });
+        }
+      },
+    }),
+    {
+      name: 'player-storage',
+      partialize: (state) => ({
+        volume: state.volume,
+        quality: state.quality,
+        queue: state.queue,
+        history: state.history,
+        currentTrack: state.currentTrack,
+      }),
+    },
+  ),
+);
