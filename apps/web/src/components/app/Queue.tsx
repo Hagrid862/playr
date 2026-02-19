@@ -1,16 +1,117 @@
 import { Button } from '@/components/ui/button';
-import { usePlayerStore } from '@/stores/player.store';
-import { MusicNotesIcon, PlayIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
+import { usePlayerStore, type QueueItem } from '@/stores/player.store';
+import {
+  DotsSixVerticalIcon,
+  MusicNotesIcon,
+  PlayIcon,
+  TrashIcon,
+  XIcon,
+} from '@phosphor-icons/react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+interface SortableTrackItemProps {
+  track: QueueItem;
+  onPlay: (track: QueueItem) => void;
+  onRemove: (uniqueId: string, event: React.MouseEvent) => void;
+}
+
+function SortableTrackItem({ track, onPlay, onRemove }: SortableTrackItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: track.uniqueId,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-center gap-2 p-2 rounded-md hover:bg-white/5 transition-colors cursor-pointer"
+      onClick={() => onPlay(track)}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="text-white/20 hover:text-white/50 cursor-grab active:cursor-grabbing p-1 -ml-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DotsSixVerticalIcon size={20} />
+      </div>
+
+      <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
+        {track.album?.cover?.url ? (
+          <img
+            src={track.album.cover.url}
+            alt={track.title}
+            className="h-full w-full object-cover group-hover:opacity-40 transition-opacity"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center group-hover:opacity-40 transition-opacity">
+            <MusicNotesIcon className="text-white/20" size={16} />
+          </div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <PlayIcon weight="fill" className="text-white" size={16} />
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-white/90 truncate group-hover:text-white">
+          {track.title}
+        </div>
+        <div className="text-xs text-white/50 truncate">
+          {track.artists?.map((a: { name: string }) => a.name).join(', ')}
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-white/20 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
+        onClick={(e) => onRemove(track.uniqueId, e)}
+      >
+        <TrashIcon />
+      </Button>
+    </div>
+  );
+}
 
 export function Queue() {
-  const { queue, currentTrack, playTrack, removeFromQueue, toggleQueue } = usePlayerStore();
+  const { queue, currentTrack, playTrack, removeFromQueue, toggleQueue, reorderQueue } =
+    usePlayerStore();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const handleRemoveTrack = (uniqueId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     removeFromQueue(uniqueId);
   };
 
-  const handlePlayTrack = (track: import('@repo/contracts').ZodTrack) => {
+  const handlePlayTrack = (track: QueueItem) => {
     playTrack(track);
   };
 
@@ -19,6 +120,20 @@ export function Queue() {
     : -1;
 
   const nextUp = queue.slice(currentIndex + 1);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = queue.findIndex((t) => t.uniqueId === active.id);
+      const newIndex = queue.findIndex((t) => t.uniqueId === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newQueue = arrayMove(queue, oldIndex, newIndex);
+        reorderQueue(newQueue);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-stone-900 border-l border-white/5 w-full">
@@ -81,48 +196,27 @@ export function Queue() {
           {nextUp.length === 0 ? (
             <div className="text-sm text-white/30 italic text-center py-8">Queue is empty</div>
           ) : (
-            <div className="space-y-0.5">
-              {nextUp.map((track) => (
-                <div
-                  key={track.uniqueId}
-                  className="group flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors cursor-pointer"
-                  onClick={() => handlePlayTrack(track)}
-                >
-                  <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
-                    {track.album?.cover?.url ? (
-                      <img
-                        src={track.album.cover.url}
-                        alt={track.title}
-                        className="h-full w-full object-cover group-hover:opacity-40 transition-opacity"
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center group-hover:opacity-40 transition-opacity">
-                        <MusicNotesIcon className="text-white/20" size={16} />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <PlayIcon weight="fill" className="text-white" size={16} />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white/90 truncate group-hover:text-white">
-                      {track.title}
-                    </div>
-                    <div className="text-xs text-white/50 truncate">
-                      {track.artists?.map((a: { name: string }) => a.name).join(', ')}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-white/20 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
-                    onClick={(e) => handleRemoveTrack(track.uniqueId, e)}
-                  >
-                    <TrashIcon />
-                  </Button>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={nextUp.map((t) => t.uniqueId)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-0.5">
+                  {nextUp.map((track) => (
+                    <SortableTrackItem
+                      key={track.uniqueId}
+                      track={track}
+                      onPlay={handlePlayTrack}
+                      onRemove={handleRemoveTrack}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>
