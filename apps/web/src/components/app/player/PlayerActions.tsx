@@ -3,30 +3,111 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
+import { StreamAudioQuality } from '@repo/contracts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
+} from '@/components/ui/dropdown-menu';
 import {
   DotsThreeIcon,
   QueueIcon,
   QuotesIcon,
   SpeakerHighIcon,
   StarIcon,
+  SparkleIcon,
 } from '@phosphor-icons/react';
 
 export function PlayerActions() {
-  const { volume, setVolume, isQueueOpen, setQueueOpen, sidebarView, setSidebarView } =
-    usePlayerStore();
+  const {
+    volume,
+    setVolume,
+    isQueueOpen,
+    setQueueOpen,
+    sidebarView,
+    setSidebarView,
+    quality,
+    setQuality,
+    availableQualities,
+  } = usePlayerStore();
+
+  const hasLossless = availableQualities.includes('lossless');
 
   return (
     <div
       className="flex h-14 items-center gap-0.5 px-2 py-2.5 bg-stone-900 border border-white/8 shadow-lg min-w-auto"
       style={{ borderRadius: '0.5rem 2rem 2rem 0.5rem' }}
     >
-      <Button
-        size="icon"
-        variant="ghost"
-        className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
-      >
-        <DotsThreeIcon size={20} weight="bold" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
+          >
+            <DotsThreeIcon size={20} weight="bold" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          side="top"
+          className="w-48 bg-stone-900 border-white/10 text-white"
+        >
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="gap-2 focus:bg-white/10 data-[state=open]:bg-white/10">
+              <SpeakerHighIcon size={16} />
+              <span>Audio Quality</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent className="w-48 bg-stone-900 border-white/10 text-white">
+                <DropdownMenuCheckboxItem
+                  checked={quality === 'auto'}
+                  onCheckedChange={() => setQuality('auto')}
+                >
+                  Auto
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={quality === StreamAudioQuality.lossless}
+                  onCheckedChange={() => setQuality(StreamAudioQuality.lossless)}
+                  disabled={!hasLossless}
+                  className="text-amber-400 focus:text-amber-500 focus:bg-amber-500/10 data-disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-2">
+                    Lossless
+                    <SparkleIcon size={14} weight="fill" />
+                  </div>
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={quality === StreamAudioQuality.high}
+                  onCheckedChange={() => setQuality(StreamAudioQuality.high)}
+                >
+                  High
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={quality === StreamAudioQuality.standard}
+                  onCheckedChange={() => setQuality(StreamAudioQuality.standard)}
+                >
+                  Standard
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={quality === StreamAudioQuality.low}
+                  onCheckedChange={() => setQuality(StreamAudioQuality.low)}
+                >
+                  Low
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Button
         size="icon"
         variant="ghost"

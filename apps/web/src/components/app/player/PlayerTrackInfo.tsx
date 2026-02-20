@@ -1,7 +1,8 @@
 import { Slider } from '@/components/ui/slider';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
-import { MusicNotesIcon } from '@phosphor-icons/react';
+import { MusicNotesIcon, SparkleIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 interface PlayerTrackInfoProps {
@@ -11,9 +12,13 @@ interface PlayerTrackInfoProps {
 }
 
 export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTrackInfoProps) {
-  const { currentTrack, currentTime, duration, setCurrentTime } = usePlayerStore();
+  const { currentTrack, currentTime, duration, setCurrentTime, quality, availableQualities } =
+    usePlayerStore();
   const [isHoveringSlider, setIsHoveringSlider] = useState(false);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+
+  const isLossless =
+    quality === 'lossless' || (quality === 'auto' && availableQualities.includes('lossless'));
 
   const trackTitle = currentTrack?.title || 'No track selected';
   const trackArtist = currentTrack?.artists?.map((a) => a.name).join(', ') || 'Unknown Artist';
@@ -41,8 +46,25 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
       <div className="flex-1 flex flex-col justify-center min-w-0 pr-3 pl-0 py-1.5 relative">
         {/* Top Row: Title & Artist / Time Reveal */}
         <div className="flex flex-col min-w-0 flex-1 justify-center">
-          <div className="text-white font-semibold truncate text-[14px] leading-tight">
-            {trackTitle}
+          <div className="text-white font-semibold flex items-center gap-2 truncate text-[14px] leading-tight">
+            <span className="truncate">{trackTitle}</span>
+            {isLossless && (
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div className="shrink-0 flex items-center justify-center text-emerald-500 cursor-default">
+                      <SparkleIcon weight="fill" size={14} />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-stone-800 text-stone-200 border-stone-700 text-xs font-medium"
+                  >
+                    Playing in Lossless Quality
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           <div
             className={cn(
