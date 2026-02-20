@@ -11,8 +11,16 @@ import {
 } from '@phosphor-icons/react';
 
 export function PlayerControls() {
-  const { isPlaying, togglePlay, nextTrack, previousTrack, repeatMode, toggleRepeatMode } =
-    usePlayerStore();
+  const {
+    isPlaying,
+    togglePlay,
+    nextTrack,
+    previousTrack,
+    repeatMode,
+    toggleRepeatMode,
+    isShuffled,
+    toggleShuffle,
+  } = usePlayerStore();
 
   const isRepeatEnabled = repeatMode !== 'off';
 
@@ -23,7 +31,10 @@ export function PlayerControls() {
     >
       <Button
         size="icon"
-        className="text-white/40 bg-transparent hover:text-white hover:bg-white/2 active:bg-white/5 rounded-full h-8 w-8 active:scale-95 transition-all"
+        className={`bg-transparent hover:bg-white/2 active:bg-white/5 rounded-full h-8 w-8 active:scale-95 transition-all ${
+          isShuffled ? 'text-emerald-500' : 'text-white/40 hover:text-white'
+        }`}
+        onClick={toggleShuffle}
       >
         <ShuffleIcon size={16} />
       </Button>

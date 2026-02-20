@@ -12,8 +12,10 @@ export interface PlayerState {
   duration: number;
   quality: StreamAudioQuality;
   queue: QueueItem[];
+  originalQueue: QueueItem[];
   history: QueueItem[];
   repeatMode: 'off' | 'all' | 'one';
+  isShuffled: boolean;
 
   // Actions
   playTrack: (track: ZodTrack, queue?: ZodTrack[]) => void;
@@ -28,6 +30,7 @@ export interface PlayerState {
   nextTrack: () => void;
   previousTrack: () => void;
   toggleRepeatMode: () => void;
+  toggleShuffle: () => void;
   addToQueue: (track: ZodTrack) => void;
   playNext: (track: ZodTrack) => void;
   removeFromQueue: (uniqueId: string) => void;
@@ -48,6 +51,15 @@ const toQueueItem = (track: ZodTrack): QueueItem => ({
   uniqueId: generateUniqueId(),
 });
 
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
 export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => ({
@@ -58,8 +70,10 @@ export const usePlayerStore = create<PlayerState>()(
       duration: 0,
       quality: StreamAudioQuality.standard,
       queue: [],
+      originalQueue: [],
       history: [],
       repeatMode: 'off',
+      isShuffled: false,
 
       addToHistory: (track) => {
         set((state) => {
@@ -102,6 +116,8 @@ export const usePlayerStore = create<PlayerState>()(
           currentTrack: finalCurrentTrack,
           isPlaying: true,
           queue: finalQueue,
+          originalQueue: [],
+          isShuffled: false,
           currentTime: 0,
         });
       },
@@ -120,7 +136,12 @@ export const usePlayerStore = create<PlayerState>()(
       setCurrentTime: (currentTime) => set({ currentTime }),
       setDuration: (duration) => set({ duration }),
       setQuality: (quality) => set({ quality }),
-      setQueue: (queue) => set({ queue: queue.map(toQueueItem) }),
+      setQueue: (queue) =>
+        set({
+          queue: queue.map(toQueueItem),
+          originalQueue: [],
+          isShuffled: false,
+        }),
       toggleRepeatMode: () =>
         set((state) => {
           const modes: Array<'off' | 'all' | 'one'> = ['off', 'all', 'one'];
@@ -128,33 +149,99 @@ export const usePlayerStore = create<PlayerState>()(
           return { repeatMode: modes[(currentIndex + 1) % modes.length] };
         }),
 
-      addToQueue: (track) => set((state) => ({ queue: [...state.queue, toQueueItem(track)] })),
+      toggleShuffle: () =>
+        set((state) => {
+          if (state.isShuffled) {
+            // Turn off shuffle: restore original queue
+            return {
+              isShuffled: false,
+              queue: state.originalQueue,
+              originalQueue: [],
+            };
+          } else {
+            // Turn on shuffle
+            const newQueue = shuffleArray(state.queue);
+            // If there's a current track, ensure it's first
+            if (state.currentTrack) {
+              const currentId = state.currentTrack.uniqueId;
+              const trackIndex = newQueue.findIndex((t) => t.uniqueId === currentId);
+              if (trackIndex > -1) {
+                const [track] = newQueue.splice(trackIndex, 1);
+                newQueue.unshift(track);
+              }
+            }
+            return {
+              isShuffled: true,
+              originalQueue: state.queue,
+              queue: newQueue,
+            };
+          }
+        }),
+
+      addToQueue: (track) =>
+        set((state) => {
+          const newItem = toQueueItem(track);
+          return {
+            queue: [...state.queue, newItem],
+            originalQueue: state.isShuffled
+              ? [...state.originalQueue, newItem]
+              : state.originalQueue,
+          };
+        }),
 
       removeFromQueue: (uniqueId) =>
         set((state) => ({
           queue: state.queue.filter((t) => t.uniqueId !== uniqueId),
+          originalQueue: state.isShuffled
+            ? state.originalQueue.filter((t) => t.uniqueId !== uniqueId)
+            : state.originalQueue,
         })),
 
-      reorderQueue: (newQueue) => set({ queue: newQueue }),
+      reorderQueue: (newQueue) =>
+        set((state) => ({
+          queue: newQueue,
+          originalQueue: state.isShuffled ? state.originalQueue : [], // Reordering manually clears shuffle original queue conceptually, or we accept the new order
+        })),
 
       playNext: (track) => {
-        const { currentTrack, queue } = get();
+        const { currentTrack, queue, isShuffled, originalQueue } = get();
         const newItem = toQueueItem(track);
 
         if (!currentTrack) {
-          set({ currentTrack: newItem, queue: [newItem], isPlaying: true });
+          set({
+            currentTrack: newItem,
+            queue: [newItem],
+            originalQueue: isShuffled ? [newItem] : [],
+            isPlaying: true,
+          });
           return;
         }
 
         const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
 
         if (currentIndex === -1) {
-          // Current track playing but not in queue (weird state), append to end
-          set((state) => ({ queue: [...state.queue, newItem] }));
+          set((state) => ({
+            queue: [...state.queue, newItem],
+            originalQueue: state.isShuffled
+              ? [...state.originalQueue, newItem]
+              : state.originalQueue,
+          }));
         } else {
           const newQueue = [...queue];
           newQueue.splice(currentIndex + 1, 0, newItem);
-          set({ queue: newQueue });
+
+          let newOriginalQueue = originalQueue;
+          if (isShuffled) {
+            const origIndex = originalQueue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+            if (origIndex > -1) {
+              newOriginalQueue = [...originalQueue];
+              newOriginalQueue.splice(origIndex + 1, 0, newItem);
+            } else {
+              newOriginalQueue = [...originalQueue, newItem];
+            }
+          }
+
+          set({ queue: newQueue, originalQueue: newOriginalQueue });
         }
       },
 
@@ -207,6 +294,8 @@ export const usePlayerStore = create<PlayerState>()(
         history: state.history,
         currentTrack: state.currentTrack,
         repeatMode: state.repeatMode,
+        isShuffled: state.isShuffled,
+        originalQueue: state.originalQueue,
       }),
     },
   ),
