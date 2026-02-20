@@ -16,6 +16,7 @@ export function usePlayerAudio() {
     setCurrentTime,
     setDuration,
     nextTrack,
+    repeatMode,
   } = usePlayerStore();
 
   const { accessToken } = useAuthStore();
@@ -76,6 +77,17 @@ export function usePlayerAudio() {
     }
   };
 
+  const handleTrackEnd = () => {
+    if (repeatMode === 'one') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    } else {
+      nextTrack();
+    }
+  };
+
   const getAudioUrl = () => {
     if (!currentTrack) return '';
     return `${apiBaseUrl}/library/tracks/${currentTrack.id}/stream?quality=${quality}&token=${accessToken}`;
@@ -96,6 +108,7 @@ export function usePlayerAudio() {
     audioRef,
     handleTimeUpdate,
     handleLoadedMetadata,
+    handleTrackEnd,
     getAudioUrl,
     formatTime,
     formatTimeLeft,

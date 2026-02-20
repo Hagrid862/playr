@@ -13,6 +13,7 @@ export interface PlayerState {
   quality: StreamAudioQuality;
   queue: QueueItem[];
   history: QueueItem[];
+  repeatMode: 'off' | 'all' | 'one';
 
   // Actions
   playTrack: (track: ZodTrack, queue?: ZodTrack[]) => void;
@@ -26,6 +27,7 @@ export interface PlayerState {
   setQueue: (queue: ZodTrack[]) => void;
   nextTrack: () => void;
   previousTrack: () => void;
+  toggleRepeatMode: () => void;
   addToQueue: (track: ZodTrack) => void;
   playNext: (track: ZodTrack) => void;
   removeFromQueue: (uniqueId: string) => void;
@@ -57,6 +59,7 @@ export const usePlayerStore = create<PlayerState>()(
       quality: StreamAudioQuality.standard,
       queue: [],
       history: [],
+      repeatMode: 'off',
 
       addToHistory: (track) => {
         set((state) => {
@@ -118,6 +121,12 @@ export const usePlayerStore = create<PlayerState>()(
       setDuration: (duration) => set({ duration }),
       setQuality: (quality) => set({ quality }),
       setQueue: (queue) => set({ queue: queue.map(toQueueItem) }),
+      toggleRepeatMode: () =>
+        set((state) => {
+          const modes: Array<'off' | 'all' | 'one'> = ['off', 'all', 'one'];
+          const currentIndex = modes.indexOf(state.repeatMode);
+          return { repeatMode: modes[(currentIndex + 1) % modes.length] };
+        }),
 
       addToQueue: (track) => set((state) => ({ queue: [...state.queue, toQueueItem(track)] })),
 
@@ -150,7 +159,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       nextTrack: () => {
-        const { queue, currentTrack, addToHistory } = get();
+        const { queue, currentTrack, addToHistory, repeatMode } = get();
         if (!currentTrack || queue.length === 0) return;
 
         const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
@@ -158,11 +167,16 @@ export const usePlayerStore = create<PlayerState>()(
           addToHistory(currentTrack);
           const next = queue[currentIndex + 1];
           set({ currentTrack: next, currentTime: 0, isPlaying: true });
+        } else if (repeatMode === 'all') {
+          // Loop back to the start
+          addToHistory(currentTrack);
+          const next = queue[0];
+          set({ currentTrack: next, currentTime: 0, isPlaying: true });
         }
       },
 
       previousTrack: () => {
-        const { queue, currentTrack, currentTime, addToHistory } = get();
+        const { queue, currentTrack, currentTime, addToHistory, repeatMode } = get();
         if (!currentTrack || queue.length === 0) return;
 
         // If more than 3 seconds in, restart the track instead
@@ -176,6 +190,11 @@ export const usePlayerStore = create<PlayerState>()(
           addToHistory(currentTrack);
           const prev = queue[currentIndex - 1];
           set({ currentTrack: prev, currentTime: 0, isPlaying: true });
+        } else if (repeatMode === 'all') {
+          // Loop back to the end
+          addToHistory(currentTrack);
+          const prev = queue[queue.length - 1];
+          set({ currentTrack: prev, currentTime: 0, isPlaying: true });
         }
       },
     }),
@@ -187,6 +206,7 @@ export const usePlayerStore = create<PlayerState>()(
         queue: state.queue,
         history: state.history,
         currentTrack: state.currentTrack,
+        repeatMode: state.repeatMode,
       }),
     },
   ),

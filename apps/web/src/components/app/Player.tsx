@@ -11,10 +11,10 @@ export function AppPlayer() {
     audioRef,
     handleTimeUpdate,
     handleLoadedMetadata,
+    handleTrackEnd,
     getAudioUrl,
     formatTime,
     formatTimeLeft,
-    nextTrack,
   } = usePlayerAudio();
 
   const handleSeek = (time: number) => {
@@ -31,7 +31,7 @@ export function AppPlayer() {
         crossOrigin="anonymous"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={nextTrack}
+        onEnded={handleTrackEnd}
       />
 
       {isMobile ? (

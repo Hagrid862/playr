@@ -4,13 +4,17 @@ import {
   PauseIcon,
   PlayIcon,
   RepeatIcon,
+  RepeatOnceIcon,
   ShuffleIcon,
   SkipBackIcon,
   SkipForwardIcon,
 } from '@phosphor-icons/react';
 
 export function PlayerControls() {
-  const { isPlaying, togglePlay, nextTrack, previousTrack } = usePlayerStore();
+  const { isPlaying, togglePlay, nextTrack, previousTrack, repeatMode, toggleRepeatMode } =
+    usePlayerStore();
+
+  const isRepeatEnabled = repeatMode !== 'off';
 
   return (
     <div
@@ -50,9 +54,12 @@ export function PlayerControls() {
       </Button>
       <Button
         size="icon"
-        className="text-white/40 bg-transparent hover:text-white hover:bg-white/2 active:bg-white/5 rounded-full h-8 w-8 active:scale-95 transition-all"
+        className={`bg-transparent hover:bg-white/2 active:bg-white/5 rounded-full h-8 w-8 active:scale-95 transition-all ${
+          isRepeatEnabled ? 'text-emerald-500' : 'text-white/40 hover:text-white'
+        }`}
+        onClick={toggleRepeatMode}
       >
-        <RepeatIcon size={16} />
+        {repeatMode === 'one' ? <RepeatOnceIcon size={16} /> : <RepeatIcon size={16} />}
       </Button>
     </div>
   );
