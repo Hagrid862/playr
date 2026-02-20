@@ -22,7 +22,7 @@ export class UploadLibraryAlbumCoverHandler implements ICommandHandler<UploadLib
     private readonly storageService: StorageService,
     private readonly imageService: ImageService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   async execute(command: UploadLibraryAlbumCoverCommand): Promise<ZodImage> {
     const { albumId, file, userId } = command;

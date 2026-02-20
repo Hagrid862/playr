@@ -49,7 +49,7 @@ export class LibraryArtistsController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
-  ) { }
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
