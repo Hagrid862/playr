@@ -21,10 +21,8 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { StreamAudioQuality } from '@repo/contracts';
+import { StreamAudioQuality, GetTrackStreamQualitiesResponse } from '@repo/contracts';
 import type { Response } from 'express';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
@@ -41,7 +39,10 @@ import { UpdateLibraryTrackResponseDto } from './dto/response/update-library-tra
 import { UploadTrackAudioResponseDto } from './dto/response/upload-track-audio.response.dto';
 import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
+import { GetTrackStreamQualitiesQuery } from './queries/impl/get-track-stream-qualities.query';
 import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 @ApiTags('Library Tracks')
 @Controller('library/tracks')
@@ -158,6 +159,22 @@ export class LibraryTracksController {
   })
   async deleteTrack(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.commandBus.execute(new DeleteLibraryTrackCommand(id, userId));
+  }
+
+  @Get(':id/qualities')
+  @ApiOperation({
+    summary: 'Get track stream qualities',
+    description: 'Retrieves the available audio streaming qualities for a track',
+  })
+  @UseGuards(JwtAuthGuard, TrackAccessGuard)
+  @CheckTrackAccess('id')
+  async getTrackQualities(@Param('id') id: string): Promise<GetTrackStreamQualitiesResponse> {
+    const qualities = await this.queryBus.execute<
+      GetTrackStreamQualitiesQuery,
+      GetTrackStreamQualitiesResponse['data']
+    >(new GetTrackStreamQualitiesQuery(id));
+
+    return { data: qualities };
   }
 
   @Post(':id/audio')
