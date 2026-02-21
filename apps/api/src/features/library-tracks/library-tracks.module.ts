@@ -9,7 +9,7 @@ import { LibraryTracksController } from './library-tracks.controller';
 import { GetLibraryTrackHandler } from './queries/handlers/get-library-track.handler';
 import { GetLibraryTracksHandler } from './queries/handlers/get-library-tracks.handler';
 import { GetTrackStreamHandler } from './queries/handlers/get-track-stream.handler';
-import { GetTrackStreamQualitiesHandler } from './queries/handlers/get-library-track-qualities.handler';
+import { GetTrackStreamQualitiesHandler } from './queries/handlers/get-track-stream-qualities.handler';
 
 export const CommandHandlers = [
   CreateLibraryTrackHandler,

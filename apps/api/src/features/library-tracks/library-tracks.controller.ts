@@ -21,6 +21,8 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { StreamAudioQuality, GetTrackStreamQualitiesResponse } from '@repo/contracts';
 import type { Response } from 'express';
@@ -41,9 +43,6 @@ import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
 import { GetTrackStreamQualitiesQuery } from './queries/impl/get-track-stream-qualities.query';
 import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
-
 @ApiTags('Library Tracks')
 @Controller('library/tracks')
 export class LibraryTracksController {
@@ -161,6 +160,16 @@ export class LibraryTracksController {
     return this.commandBus.execute(new DeleteLibraryTrackCommand(id, userId));
   }
 
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Track not found',
+    type: ApiErrorResponseDto,
+  })
   @Get(':id/qualities')
   @ApiOperation({
     summary: 'Get track stream qualities',
@@ -168,13 +177,13 @@ export class LibraryTracksController {
   })
   @UseGuards(JwtAuthGuard, TrackAccessGuard)
   @CheckTrackAccess('id')
-  async getTrackQualities(@Param('id') id: string): Promise<GetTrackStreamQualitiesResponse> {
+  async getTrackQualities(@Param('id') id: string) {
     const qualities = await this.queryBus.execute<
       GetTrackStreamQualitiesQuery,
       GetTrackStreamQualitiesResponse['data']
     >(new GetTrackStreamQualitiesQuery(id));
 
-    return { data: qualities };
+    return qualities;
   }
 
   @Post(':id/audio')

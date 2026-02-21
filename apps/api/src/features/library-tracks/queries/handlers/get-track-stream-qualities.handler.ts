@@ -29,7 +29,7 @@ export class GetTrackStreamQualitiesHandler implements IQueryHandler<GetTrackStr
       const q = file.quality?.toLowerCase();
       const format = file.format?.toLowerCase();
 
-      if (q === 'lossless' || q === 'original' || format === 'flac') {
+      if (format === 'flac' || format === 'wav') {
         availableQualities.add(StreamAudioQuality.lossless);
       }
       if (q === 'high') availableQualities.add(StreamAudioQuality.high);
@@ -37,7 +37,6 @@ export class GetTrackStreamQualitiesHandler implements IQueryHandler<GetTrackStr
       if (q === 'low') availableQualities.add(StreamAudioQuality.low);
     });
 
-    const qualitiesArray = Array.from(availableQualities);
-    return qualitiesArray;
+    return Array.from(availableQualities);
   }
 }
