@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player.store';
+import { StreamAudioQuality } from '@repo/contracts';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -57,8 +58,8 @@ export function usePlayerAudio() {
         }
 
         const json = await res.json();
-        const parsedQualities = Array.isArray(json?.data?.data) ? json.data.data : [];
-        const finalQualities = ['auto', ...parsedQualities];
+        const parsedQualities = Array.isArray(json?.data) ? json.data : [];
+        const finalQualities: (StreamAudioQuality | 'auto')[] = ['auto', ...parsedQualities];
 
         setAvailableQualities(finalQualities);
       } catch (err) {

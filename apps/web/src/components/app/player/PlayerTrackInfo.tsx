@@ -3,6 +3,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
 import { MusicNotesIcon, SparkleIcon } from '@phosphor-icons/react';
+import { StreamAudioQuality } from '@repo/contracts';
 import { useState } from 'react';
 
 interface PlayerTrackInfoProps {
@@ -12,13 +13,11 @@ interface PlayerTrackInfoProps {
 }
 
 export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTrackInfoProps) {
-  const { currentTrack, currentTime, duration, setCurrentTime, quality, availableQualities } =
-    usePlayerStore();
+  const { currentTrack, currentTime, duration, setCurrentTime, quality } = usePlayerStore();
   const [isHoveringSlider, setIsHoveringSlider] = useState(false);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 
-  const isLossless =
-    quality === 'lossless' || (quality === 'auto' && availableQualities.includes('lossless'));
+  const isLossless = quality === StreamAudioQuality.lossless;
 
   const trackTitle = currentTrack?.title || 'No track selected';
   const trackArtist = currentTrack?.artists?.map((a) => a.name).join(', ') || 'Unknown Artist';

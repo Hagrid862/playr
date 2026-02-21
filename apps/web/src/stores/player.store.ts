@@ -11,7 +11,7 @@ export interface PlayerState {
   currentTime: number;
   duration: number;
   quality: StreamAudioQuality | 'auto';
-  availableQualities: string[];
+  availableQualities: (StreamAudioQuality | 'auto')[];
   queue: QueueItem[];
   originalQueue: QueueItem[];
   history: QueueItem[];
@@ -27,7 +27,7 @@ export interface PlayerState {
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   setQuality: (quality: StreamAudioQuality | 'auto') => void;
-  setAvailableQualities: (qualities: string[]) => void;
+  setAvailableQualities: (qualities: (StreamAudioQuality | 'auto')[]) => void;
   setQueue: (queue: ZodTrack[]) => void;
   nextTrack: () => void;
   previousTrack: () => void;
@@ -71,7 +71,7 @@ export const usePlayerStore = create<PlayerState>()(
       currentTime: 0,
       duration: 0,
       quality: 'auto',
-      availableQualities: ['auto'],
+      availableQualities: ['auto'] as (StreamAudioQuality | 'auto')[],
       queue: [],
       originalQueue: [],
       history: [],

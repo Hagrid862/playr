@@ -37,7 +37,7 @@ export function PlayerActions() {
     availableQualities,
   } = usePlayerStore();
 
-  const hasLossless = availableQualities.includes('lossless');
+  const hasLossless = availableQualities.includes(StreamAudioQuality.lossless);
 
   return (
     <div
@@ -87,19 +87,31 @@ export function PlayerActions() {
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem
                   checked={quality === StreamAudioQuality.high}
-                  onCheckedChange={() => setQuality(StreamAudioQuality.high)}
+                  onCheckedChange={() =>
+                    availableQualities.includes(StreamAudioQuality.high) &&
+                    setQuality(StreamAudioQuality.high)
+                  }
+                  disabled={!availableQualities.includes(StreamAudioQuality.high)}
                 >
                   High
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={quality === StreamAudioQuality.standard}
-                  onCheckedChange={() => setQuality(StreamAudioQuality.standard)}
+                  onCheckedChange={() =>
+                    availableQualities.includes(StreamAudioQuality.standard) &&
+                    setQuality(StreamAudioQuality.standard)
+                  }
+                  disabled={!availableQualities.includes(StreamAudioQuality.standard)}
                 >
                   Standard
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={quality === StreamAudioQuality.low}
-                  onCheckedChange={() => setQuality(StreamAudioQuality.low)}
+                  onCheckedChange={() =>
+                    availableQualities.includes(StreamAudioQuality.low) &&
+                    setQuality(StreamAudioQuality.low)
+                  }
+                  disabled={!availableQualities.includes(StreamAudioQuality.low)}
                 >
                   Low
                 </DropdownMenuCheckboxItem>
