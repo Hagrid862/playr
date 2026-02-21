@@ -173,10 +173,7 @@ export class ImageService {
     | {
         deleteMany?: { id?: { in?: string[] } };
         create?: { url: string; mimeType: string }[];
-        update?: {
-          where: { id: string };
-          data: { url: string; mimeType: string };
-        }[];
+        update?: { where: { id: string }; data: { url: string; mimeType: string } }[];
       }
     | undefined {
     if (!incomingImages) return undefined;
@@ -190,29 +187,16 @@ export class ImageService {
     const imagesToUpdate = incomingImages.filter((img) => img.id);
 
     return {
-      deleteMany:
-        imagesToDelete.length > 0
-          ? {
-              id: {
-                in: imagesToDelete,
-              },
-            }
-          : undefined,
+      deleteMany: imagesToDelete.length > 0 ? { id: { in: imagesToDelete } } : undefined,
       create:
         imagesToCreate.length > 0
-          ? imagesToCreate.map((image) => ({
-              url: image.url,
-              mimeType: image.mimeType,
-            }))
+          ? imagesToCreate.map((image) => ({ url: image.url, mimeType: image.mimeType }))
           : undefined,
       update:
         imagesToUpdate.length > 0
           ? imagesToUpdate.map((image) => ({
               where: { id: image.id! },
-              data: {
-                url: image.url,
-                mimeType: image.mimeType,
-              },
+              data: { url: image.url, mimeType: image.mimeType },
             }))
           : undefined,
     };
