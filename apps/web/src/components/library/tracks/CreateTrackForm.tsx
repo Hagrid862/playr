@@ -75,6 +75,7 @@ export function CreateTrackForm({
   const [stayOnPage, setStayOnPage] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
+  const [isMultipleFilesModalOpen, setIsMultipleFilesModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
@@ -147,6 +148,11 @@ export function CreateTrackForm({
       setIsDragging(false);
 
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        if (e.dataTransfer.files.length > 1) {
+          setIsMultipleFilesModalOpen(true);
+          return;
+        }
+
         const file = e.dataTransfer.files[0];
         if (file.type.startsWith('audio/')) {
           form.setFieldValue('audioFile', file);
@@ -185,6 +191,22 @@ export function CreateTrackForm({
           </div>
         </div>
       )}
+
+      <Dialog open={isMultipleFilesModalOpen} onOpenChange={setIsMultipleFilesModalOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Too Many Files</DialogTitle>
+            <DialogDescription>
+              You can only upload one audio track at a time. Please drop exactly one audio file.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button onClick={() => setIsMultipleFilesModalOpen(false)}>OK</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isFormatModalOpen} onOpenChange={setIsFormatModalOpen}>
         <DialogContent showCloseButton={false}>
