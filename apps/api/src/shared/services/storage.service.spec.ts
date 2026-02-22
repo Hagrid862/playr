@@ -28,6 +28,11 @@ vi.mock('@aws-sdk/client-s3', () => {
         Object.assign(this, input);
       }
     },
+    HeadObjectCommand: class {
+      constructor(public input: any) {
+        Object.assign(this, input);
+      }
+    },
   };
 });
 
@@ -168,6 +173,131 @@ describe('StorageService', () => {
       mocks.s3Send.mockRejectedValue(new Error('Delete failed'));
       await expect(service.deleteFile(FileBucket.public, 'fail-delete.jpg')).rejects.toThrow(
         'Failed to delete file: Delete failed',
+      );
+    });
+  });
+
+  describe('getFile', () => {
+    it('should get file as buffer', async () => {
+      mocks.s3Send.mockResolvedValue({
+        Body: (async function* () {
+          yield Buffer.from('chunk1');
+          yield Buffer.from('chunk2');
+        })(),
+      });
+
+      const buffer = await service.getFile(FileBucket.private, 'test.txt');
+      expect(buffer.toString()).toBe('chunk1chunk2');
+      expect(mocks.s3Send).toHaveBeenCalled();
+    });
+
+    it('should throw error if getFile fails', async () => {
+      mocks.s3Send.mockRejectedValue(new Error('Get failed'));
+      await expect(service.getFile(FileBucket.private, 'fail.txt')).rejects.toThrow(
+        'Failed to get file: Get failed',
+      );
+    });
+  });
+
+  describe('getFileStats', () => {
+    it('should return file stats', async () => {
+      const date = new Date();
+      mocks.s3Send.mockResolvedValue({
+        ContentLength: 1024,
+        LastModified: date,
+      });
+
+      const stats = await service.getFileStats(FileBucket.public, 'test.jpg');
+      expect(stats.size).toBe(1024);
+      expect(stats.lastModified).toBe(date);
+    });
+
+    it('should handle undefined ContentLength in stats', async () => {
+      mocks.s3Send.mockResolvedValue({});
+      const stats = await service.getFileStats(FileBucket.public, 'test.jpg');
+      expect(stats.size).toBe(0);
+    });
+
+    it('should throw error if getFileStats fails', async () => {
+      mocks.s3Send.mockRejectedValue(new Error('Head failed'));
+      await expect(service.getFileStats(FileBucket.public, 'fail.jpg')).rejects.toThrow(
+        'Failed to get file stats: Head failed',
+      );
+    });
+  });
+
+  describe('getFileStream', () => {
+    it('should return stream and size', async () => {
+      const mockStream = { pipe: vi.fn() };
+      mocks.s3Send.mockResolvedValue({
+        Body: mockStream,
+        ContentLength: 500,
+        ContentRange: 'bytes 0-499/1000',
+      });
+
+      const result = await service.getFileStream(FileBucket.private, 'test.mp3', {
+        start: 0,
+        end: 499,
+      });
+
+      expect(result.stream).toBe(mockStream);
+      expect(result.size).toBe(500);
+      expect(result.totalSize).toBe(1000);
+      expect(mocks.s3Send.mock.calls[0][0].Range).toBe('bytes=0-499');
+    });
+
+    it('should return stream and size without range options', async () => {
+      const mockStream = { pipe: vi.fn() };
+      mocks.s3Send.mockResolvedValue({
+        Body: mockStream,
+        ContentLength: 1000,
+      });
+
+      const result = await service.getFileStream(FileBucket.private, 'test-norange.mp3');
+
+      expect(result.stream).toBe(mockStream);
+      expect(result.size).toBe(1000);
+      expect(result.totalSize).toBe(1000);
+      expect(mocks.s3Send.mock.calls[0][0].Range).toBeUndefined();
+    });
+
+    it('should return stream with start only', async () => {
+      const mockStream = { pipe: vi.fn() };
+      mocks.s3Send.mockResolvedValue({
+        Body: mockStream,
+      });
+
+      await service.getFileStream(FileBucket.private, 'test.mp3', { start: 0 });
+
+      expect(mocks.s3Send.mock.calls[0][0].Range).toBe('bytes=0-');
+    });
+
+    it('should return stream with end only', async () => {
+      const mockStream = { pipe: vi.fn() };
+      mocks.s3Send.mockResolvedValue({
+        Body: mockStream,
+      });
+
+      await service.getFileStream(FileBucket.private, 'test.mp3', { end: 499 });
+
+      expect(mocks.s3Send.mock.calls[0][0].Range).toBe('bytes=-499');
+    });
+
+    it('should fallback to 0 size if ContentLength not defined', async () => {
+      const mockStream = { pipe: vi.fn() };
+      mocks.s3Send.mockResolvedValue({
+        Body: mockStream,
+      });
+
+      const result = await service.getFileStream(FileBucket.private, 'test.mp3');
+      expect(result.size).toBe(0);
+      expect(result.totalSize).toBe(0);
+    });
+
+    it('should throw error if getFileStream fails', async () => {
+      mocks.s3Send.mockRejectedValue(new Error('Stream failed'));
+      await expect(service.getFileStream(FileBucket.private, 'fail.mp3')).rejects.toThrow(
+        'Failed to get file stream: Stream failed',
       );
     });
   });
