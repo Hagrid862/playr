@@ -2,7 +2,13 @@ import { DatePickerField, TextAreaField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { FormData } from '@/hooks/forms/useCreateAlbumForm';
-import { CircleNotchIcon, MusicNotesIcon, PlusIcon } from '@phosphor-icons/react';
+import {
+  CameraIcon,
+  CircleNotchIcon,
+  MusicNotesIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import { SyntheticEvent, useEffect, useRef, useState } from 'react';
 import {
@@ -185,37 +191,61 @@ export function CreateAlbumForm({
           onChange={handleFileChange}
         />
         <div className="pt-6">
-          <div className="flex flex-col md:flex-row gap-10">
-            <div className="flex flex-col items-center gap-3">
-              <div
-                className="group relative w-32 h-32 rounded-lg bg-stone-800 border-2 border-stone-700 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {previewUrl ? (
+          <div className="flex flex-col md:flex-row gap-8 md:gap-10">
+            <div className="flex flex-col items-center gap-3 shrink-0">
+              <div className="relative">
+                {/* Glow behind the cover */}
+                {previewUrl && (
                   <img
                     src={previewUrl}
-                    alt="Cover Preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <MusicNotesIcon
-                    size={40}
-                    className="text-muted-foreground group-hover:text-primary transition-colors"
-                    weight="duotone"
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 size-40 rounded-2xl object-cover blur-xl opacity-40 scale-105 translate-y-2 saturate-150 pointer-events-none"
                   />
                 )}
-                <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[10px] text-white font-medium uppercase tracking-wider text-center px-2">
-                  {previewUrl ? 'Change Cover' : 'Upload Cover'}
+                <div
+                  className="group relative size-40 rounded-2xl bg-stone-900 border-2 border-stone-700/60 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all cursor-pointer shadow-xl"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt={formData.name || 'Cover Preview'}
+                      className="size-full object-cover group-hover:opacity-60 transition-opacity"
+                    />
+                  ) : (
+                    <MusicNotesIcon
+                      size={44}
+                      className="text-muted-foreground group-hover:text-primary transition-colors"
+                      weight="duotone"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <CameraIcon size={22} className="text-white" />
+                      <span className="text-[9px] font-bold text-white uppercase tracking-widest">
+                        {previewUrl ? 'Change Cover' : 'Upload Cover'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {!previewUrl ? (
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest leading-none">
+
+              {previewUrl ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="text-xs text-muted-foreground hover:text-red-400 gap-1"
+                >
+                  <TrashIcon size={12} />
+                  Remove
+                </Button>
+              ) : (
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
                   Artwork
                 </span>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={handleRemoveImage}>
-                  Remove image
-                </Button>
               )}
             </div>
 
