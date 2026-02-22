@@ -26,6 +26,7 @@ import { CreateLibraryAlbumCommand } from './commands/impl/create-library-album.
 import { DeleteLibraryAlbumCommand } from './commands/impl/delete-library-album.command';
 import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.command';
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
+import { DeleteLibraryAlbumCoverCommand } from './commands/impl/delete-library-album-cover.command';
 import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
 import { GetLibraryAlbumsRequestDto } from './dto/request/get-library-albums.request.dto';
 import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
@@ -35,6 +36,8 @@ import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.res
 import { GetLibraryAlbumsResponseDto } from './dto/response/get-library-albums.response.dto';
 import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
 import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
+import { DeleteLibraryAlbumResponseDto } from './dto/response/delete-library-album.response.dto';
+import { DeleteLibraryAlbumCoverResponseDto } from './dto/response/delete-library-album-cover.response.dto';
 import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
 import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
 import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
@@ -241,7 +244,7 @@ export class AlbumsController {
   @ApiResponse({
     status: 200,
     description: 'Album deleted successfully',
-    type: GetLibraryAlbumResponseDto,
+    type: DeleteLibraryAlbumResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -260,6 +263,34 @@ export class AlbumsController {
   })
   async deleteAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
     const command = new DeleteLibraryAlbumCommand(id, userId);
+    return this.commandBus.execute(command);
+  }
+
+  @Delete(':id/cover')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete album cover from library album' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cover deleted successfully',
+    type: DeleteLibraryAlbumCoverResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album not found',
+    type: ApiErrorResponseDto,
+  })
+  async deleteCover(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
+    const command = new DeleteLibraryAlbumCoverCommand(id, userId);
     return this.commandBus.execute(command);
   }
 }
