@@ -1,5 +1,7 @@
 import { PlayerState, QueueItem, usePlayerStore } from '@/stores/player.store';
+import type { DragEndEvent } from '@dnd-kit/core';
 import { fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Queue } from './Queue';
 
@@ -23,20 +25,20 @@ vi.mock('./queue/QueueNowPlaying', () => ({
 }));
 
 vi.mock('./queue/QueueNextUp', () => ({
-  QueueNextUp: ({ onPlayTrack, onRemoveTrack, onDragEnd }: { onPlayTrack: (t: unknown) => void; onRemoveTrack: (id: string, e: unknown) => void; onDragEnd: (e: unknown) => void }) => (
+  QueueNextUp: ({ onPlayTrack, onRemoveTrack, onDragEnd }: { onPlayTrack: (t: QueueItem) => void; onRemoveTrack: (id: string, e: React.MouseEvent) => void; onDragEnd: (e: DragEndEvent) => void }) => (
     <div data-testid="queue-next-up">
-      <button onClick={() => onPlayTrack({ uniqueId: '2' })}>Play Next</button>
-      <button onClick={(e) => onRemoveTrack('2', e)}>Remove Next</button>
-      <button onClick={() => onDragEnd({ active: { id: '2' }, over: { id: '3' } })}>
+      <button onClick={() => onPlayTrack({ uniqueId: '2' } as QueueItem)}>Play Next</button>
+      <button onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}>Remove Next</button>
+      <button onClick={() => onDragEnd({ active: { id: '2' }, over: { id: '3' } } as unknown as DragEndEvent)}>
         Drag End
       </button>
-      <button onClick={() => onDragEnd({ active: { id: '2' }, over: { id: '2' } })}>
+      <button onClick={() => onDragEnd({ active: { id: '2' }, over: { id: '2' } } as unknown as DragEndEvent)}>
         Drag Same
       </button>
-      <button onClick={() => onDragEnd({ active: { id: '4' }, over: { id: '5' } })}>
+      <button onClick={() => onDragEnd({ active: { id: '4' }, over: { id: '5' } } as unknown as DragEndEvent)}>
         Drag Invalid
       </button>
-      <button onClick={() => onDragEnd({ active: { id: '2' }, over: null })}>Drag No Over</button>
+      <button onClick={() => onDragEnd({ active: { id: '2' }, over: null } as unknown as DragEndEvent)}>Drag No Over</button>
     </div>
   ),
 }));
