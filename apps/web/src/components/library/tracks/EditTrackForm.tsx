@@ -88,8 +88,8 @@ export function EditTrackForm({
               value={field.state.value ?? ''}
               error={
                 field.state.meta.isTouched
-                  ? (field.state.meta.errors[0] as unknown as string) ||
-                    (form.state.errors[0] as Record<string, string>)?.[field.name]
+                  ? (field.state.meta.errors[0] as string | undefined) ||
+                    (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
                   : serverErrors?.title
               }
               onChange={field.handleChange}
@@ -109,8 +109,8 @@ export function EditTrackForm({
                   value={String(field.state.value ?? '')}
                   error={
                     field.state.meta.isTouched
-                      ? (field.state.meta.errors[0] as unknown as string) ||
-                        (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      ? (field.state.meta.errors[0] as string | undefined) ||
+                        (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
                       : serverErrors?.diskNumber
                   }
                   onChange={(e) => field.handleChange(Number(e))}
@@ -130,8 +130,8 @@ export function EditTrackForm({
                   value={String(field.state.value ?? '')}
                   error={
                     field.state.meta.isTouched
-                      ? (field.state.meta.errors[0] as unknown as string) ||
-                        (form.state.errors[0] as Record<string, string>)?.[field.name]
+                      ? (field.state.meta.errors[0] as string | undefined) ||
+                        (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
                       : serverErrors?.trackNumber
                   }
                   onChange={(e) => field.handleChange(Number(e))}

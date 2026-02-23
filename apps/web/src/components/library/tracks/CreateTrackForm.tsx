@@ -12,6 +12,7 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { z } from 'zod';
 
 type TrackFormValues = CreateLibraryTrackRequest & { audioFile: File | null };
 
@@ -32,20 +33,27 @@ const validateWithZod = (value: TrackFormValues) => {
     artistIds: value.artistIds,
   };
   const result = CreateLibraryTrackRequestSchema.safeParse(metadata);
-  if (result.success) return undefined;
 
   const errors: Partial<Record<keyof TrackFormValues | 'form', string>> = {};
-  result.error.issues.forEach((issue) => {
-    if (issue.path.length === 0) {
-      errors.form = issue.message;
-      return;
-    }
-    const path = issue.path.join('.') as keyof TrackFormValues;
-    if (!errors[path]) {
-      errors[path] = issue.message;
-    }
-  });
-  return errors;
+
+  if (!result.success) {
+    result.error.issues.forEach((issue) => {
+      if (issue.path.length === 0) {
+        errors.form = issue.message;
+        return;
+      }
+      const path = issue.path.join('.') as keyof TrackFormValues;
+      if (!errors[path]) {
+        errors[path] = issue.message;
+      }
+    });
+  }
+
+  if (!value.audioFile) {
+    errors.audioFile = 'Audio file is required';
+  }
+
+  return Object.keys(errors).length > 0 ? errors : undefined;
 };
 
 export function CreateTrackForm({
@@ -69,29 +77,20 @@ export function CreateTrackForm({
     } as TrackFormValues,
     validators: {
       onBlur: ({ value }) => validateWithZod(value),
+      onChange: ({ value }) => validateWithZod(value),
+      onSubmit: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
-      console.log('Form onSubmit called with value:', value);
       try {
-        const { audioFile, ...metadata } = value;
-        console.log('Audio file:', audioFile);
-        if (!audioFile) {
-          console.log('No audio file, setting error');
-          form.setFieldMeta('audioFile', (meta) => ({
-            ...meta,
-            errors: ['Audio file is required'],
-          }));
-          return;
-        }
-        console.log('Calling onSubmit with metadata:', metadata);
-        await onSubmit(metadata as CreateLibraryTrackRequest, audioFile);
-        console.log('onSubmit completed, stayOnPage:', stayOnPage);
+        const metadata = CreateLibraryTrackRequestSchema.parse(value);
+        const audioFile = z.instanceof(File).parse(value.audioFile);
+
+        await onSubmit(metadata, audioFile);
         if (stayOnPage) {
           form.reset();
           form.setFieldValue('trackNumber', value.trackNumber + 1);
           form.setFieldValue('diskNumber', value.diskNumber);
         } else {
-          console.log('Navigating away');
           navigate({ to: '..' });
         }
       } catch (error) {
@@ -197,7 +196,10 @@ export function CreateTrackForm({
             <FileField
               label="Audio File"
               accept="audio/*"
-              error={field.state.meta.errors[0] as string | undefined}
+              error={
+                (field.state.meta.errors[0] as string | undefined) ||
+                (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
+              }
               onChange={(file) => field.handleChange(file)}
               onBlur={field.handleBlur}
             />
@@ -222,13 +224,9 @@ export function CreateTrackForm({
               Add another track
             </Label>
           </div>
-          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type="submit"
-                disabled={!canSubmit || isLoading || isSubmitting}
-                className="min-w-32 group"
-              >
+          <form.Subscribe selector={(state) => [state.isSubmitting] as const}>
+            {([isSubmitting]) => (
+              <Button type="submit" disabled={isLoading || isSubmitting} className="min-w-32 group">
                 {isLoading || isSubmitting ? (
                   <>
                     <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />

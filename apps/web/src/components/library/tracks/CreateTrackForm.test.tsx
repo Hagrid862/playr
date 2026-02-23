@@ -1,7 +1,7 @@
 import {
-  CreateLibraryTrackRequest,
-  CreateLibraryTrackRequestSchema,
-  ZodAlbumInfer,
+    CreateLibraryTrackRequest,
+    CreateLibraryTrackRequestSchema,
+    ZodAlbumInfer,
 } from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -112,6 +112,18 @@ describe('CreateTrackForm', () => {
         expect.any(File),
       );
     });
+  });
+
+  it('shows error when audio file is missing on submit', async () => {
+    const user = userEvent.setup();
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    // Fill in required fields but omit the file
+    await user.type(screen.getByLabelText(/track title/i), 'New Song');
+    await user.click(screen.getByRole('button', { name: /add track/i }));
+
+    expect(await screen.findByText(/audio file is required/i)).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('disables submit button when loading', () => {
