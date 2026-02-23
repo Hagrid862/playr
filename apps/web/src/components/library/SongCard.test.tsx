@@ -121,4 +121,29 @@ describe('SongCard', () => {
     render(<SongCard {...defaultProps} duration={605} />);
     expect(screen.getByText('10:05')).toBeInTheDocument();
   });
+
+  it('renders correctly when isActive is true', () => {
+    render(<SongCard {...defaultProps} isActive />);
+    
+    const titleElement = screen.getByText('Test Song');
+    expect(titleElement).toHaveClass('text-green-500');
+
+    // Make sure track number has hidden class and play icon has block class
+    const trackNum = screen.getByText('1');
+    expect(trackNum).toHaveClass('hidden');
+
+    const container = screen.getByText('Test Song').closest('.group');
+    expect(container).toHaveClass('bg-white/10');
+  });
+
+  it('renders music bars when isActive and isPlaying are true', () => {
+    const { container } = render(<SongCard {...defaultProps} isActive isPlaying />);
+    
+    // Music bars should be present instead of track number / play icon
+    expect(screen.queryByText('1')).not.toBeInTheDocument();
+    
+    const bar1 = container.querySelector('.animate-music-bar-1');
+    expect(bar1).toBeInTheDocument();
+  });
 });
+
