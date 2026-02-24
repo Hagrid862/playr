@@ -1,6 +1,6 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { StorageService } from '@/shared/services/storage.service';
-import { NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { StreamAudioQuality } from '@repo/contracts';
 import { AudioFile, AudioFormat, AudioQuality, FileBucket, ProcessingStatus } from '@repo/db';
@@ -114,9 +114,10 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
       end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
 
       if (start >= totalSize || end >= totalSize) {
-        // We'll throw a specific error that the controller can catch or handle
-        // For now, let's keep it simple and throw an error that results in 416
-        throw new Error('Requested range not satisfiable');
+        throw new HttpException(
+          'Requested range not satisfiable',
+          HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+        );
       }
     }
 
