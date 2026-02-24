@@ -55,20 +55,24 @@ describe('Lyrics', () => {
   });
 
   it('renders no track playing when currentTrack is null', () => {
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      currentTrack: null,
-      toggleQueue: mockToggleQueue,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        currentTrack: null,
+        toggleQueue: mockToggleQueue,
+      }),
+    );
 
     render(<Lyrics />);
     expect(screen.getByText('No track playing')).toBeInTheDocument();
   });
 
   it('renders track title and not available message when track is playing', () => {
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      currentTrack: { title: 'Test Song' } as QueueItem,
-      toggleQueue: mockToggleQueue,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        currentTrack: { title: 'Test Song' } as QueueItem,
+        toggleQueue: mockToggleQueue,
+      }),
+    );
 
     render(<Lyrics />);
     expect(screen.getByText('Test Song')).toBeInTheDocument();
@@ -76,10 +80,12 @@ describe('Lyrics', () => {
   });
 
   it('calls toggleQueue when close button is clicked', () => {
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      currentTrack: null,
-      toggleQueue: mockToggleQueue,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        currentTrack: null,
+        toggleQueue: mockToggleQueue,
+      }),
+    );
 
     render(<Lyrics />);
     const closeBtn = screen.getByRole('button');

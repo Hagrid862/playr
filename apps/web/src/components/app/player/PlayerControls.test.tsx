@@ -38,7 +38,7 @@ describe('PlayerControls', () => {
 
   it('shows play icon when not playing and pause icon when playing', () => {
     const { rerender } = render(<PlayerControls />);
-    
+
     // Not playing
     const buttons = screen.getAllByRole('button');
     fireEvent.click(buttons[2]); // togglePlay button
@@ -78,7 +78,10 @@ describe('PlayerControls', () => {
   });
 
   it('handles repeatMode "one"', () => {
-    vi.mocked(usePlayerStore).mockReturnValue({ ...defaultStore, repeatMode: 'one' } as PlayerState);
+    vi.mocked(usePlayerStore).mockReturnValue({
+      ...defaultStore,
+      repeatMode: 'one',
+    } as PlayerState);
     render(<PlayerControls />);
     const buttons = screen.getAllByRole('button');
     fireEvent.click(buttons[4]);

@@ -9,7 +9,7 @@ vi.mock('@/stores/player.store', () => ({
 
 describe('PlayerMobile', () => {
   const togglePlay = vi.fn();
-  
+
   const defaultStore: Partial<PlayerState> = {
     currentTrack: null,
     isPlaying: false,
@@ -34,14 +34,14 @@ describe('PlayerMobile', () => {
         uniqueId: '1',
         title: 'Test Song',
         artists: [{ name: 'Artist A' }],
-        album: { cover: { url: 'http://example.com/cover.jpg' } }
+        album: { cover: { url: 'http://example.com/cover.jpg' } },
       } as unknown as PlayerState['currentTrack'],
     } as PlayerState);
 
     render(<PlayerMobile />);
     expect(screen.getByText('Test Song')).toBeInTheDocument();
     expect(screen.getByText('Artist A')).toBeInTheDocument();
-    
+
     const img = screen.getByRole('presentation');
     expect(img).toHaveAttribute('src', 'http://example.com/cover.jpg');
   });

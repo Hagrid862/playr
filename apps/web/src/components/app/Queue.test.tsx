@@ -10,7 +10,13 @@ vi.mock('@/stores/player.store', () => ({
 }));
 
 vi.mock('./queue/QueueHeader', () => ({
-  QueueHeader: ({ onShowHistory, onToggleQueue }: { onShowHistory: () => void; onToggleQueue: () => void }) => (
+  QueueHeader: ({
+    onShowHistory,
+    onToggleQueue,
+  }: {
+    onShowHistory: () => void;
+    onToggleQueue: () => void;
+  }) => (
     <div data-testid="queue-header">
       <button onClick={onShowHistory}>Show History</button>
       <button onClick={onToggleQueue}>Toggle Queue</button>
@@ -25,20 +31,46 @@ vi.mock('./queue/QueueNowPlaying', () => ({
 }));
 
 vi.mock('./queue/QueueNextUp', () => ({
-  QueueNextUp: ({ onPlayTrack, onRemoveTrack, onDragEnd }: { onPlayTrack: (t: QueueItem) => void; onRemoveTrack: (id: string, e: React.MouseEvent) => void; onDragEnd: (e: DragEndEvent) => void }) => (
+  QueueNextUp: ({
+    onPlayTrack,
+    onRemoveTrack,
+    onDragEnd,
+  }: {
+    onPlayTrack: (t: QueueItem) => void;
+    onRemoveTrack: (id: string, e: React.MouseEvent) => void;
+    onDragEnd: (e: DragEndEvent) => void;
+  }) => (
     <div data-testid="queue-next-up">
       <button onClick={() => onPlayTrack({ uniqueId: '2' } as QueueItem)}>Play Next</button>
-      <button onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}>Remove Next</button>
-      <button onClick={() => onDragEnd({ active: { id: '2' }, over: { id: '3' } } as unknown as DragEndEvent)}>
+      <button onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}>
+        Remove Next
+      </button>
+      <button
+        onClick={() =>
+          onDragEnd({ active: { id: '2' }, over: { id: '3' } } as unknown as DragEndEvent)
+        }
+      >
         Drag End
       </button>
-      <button onClick={() => onDragEnd({ active: { id: '2' }, over: { id: '2' } } as unknown as DragEndEvent)}>
+      <button
+        onClick={() =>
+          onDragEnd({ active: { id: '2' }, over: { id: '2' } } as unknown as DragEndEvent)
+        }
+      >
         Drag Same
       </button>
-      <button onClick={() => onDragEnd({ active: { id: '4' }, over: { id: '5' } } as unknown as DragEndEvent)}>
+      <button
+        onClick={() =>
+          onDragEnd({ active: { id: '4' }, over: { id: '5' } } as unknown as DragEndEvent)
+        }
+      >
         Drag Invalid
       </button>
-      <button onClick={() => onDragEnd({ active: { id: '2' }, over: null } as unknown as DragEndEvent)}>Drag No Over</button>
+      <button
+        onClick={() => onDragEnd({ active: { id: '2' }, over: null } as unknown as DragEndEvent)}
+      >
+        Drag No Over
+      </button>
     </div>
   ),
 }));
@@ -99,20 +131,22 @@ describe('Queue', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      queue: [
-        { uniqueId: '1', title: 'Track 1' } as QueueItem,
-        { uniqueId: '2', title: 'Track 2' } as QueueItem,
-        { uniqueId: '3', title: 'Track 3' } as QueueItem,
-      ],
-      currentTrack: { uniqueId: '1', title: 'Track 1' } as QueueItem,
-      playTrack: mockPlayTrack,
-      removeFromQueue: mockRemoveFromQueue,
-      toggleQueue: mockToggleQueue,
-      reorderQueue: mockReorderQueue,
-      isQueueOpen: true,
-      isShuffled: false,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        queue: [
+          { uniqueId: '1', title: 'Track 1' } as QueueItem,
+          { uniqueId: '2', title: 'Track 2' } as QueueItem,
+          { uniqueId: '3', title: 'Track 3' } as QueueItem,
+        ],
+        currentTrack: { uniqueId: '1', title: 'Track 1' } as QueueItem,
+        playTrack: mockPlayTrack,
+        removeFromQueue: mockRemoveFromQueue,
+        toggleQueue: mockToggleQueue,
+        reorderQueue: mockReorderQueue,
+        isQueueOpen: true,
+        isShuffled: false,
+      }),
+    );
   });
 
   it('renders correctly', () => {
@@ -139,16 +173,18 @@ describe('Queue', () => {
     fireEvent.click(screen.getByText('Show History'));
     expect(screen.getByTestId('queue-history')).toHaveAttribute('data-visible', 'true');
 
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      queue: [],
-      currentTrack: null,
-      playTrack: mockPlayTrack,
-      removeFromQueue: mockRemoveFromQueue,
-      toggleQueue: mockToggleQueue,
-      reorderQueue: mockReorderQueue,
-      isQueueOpen: false, // queue closed
-      isShuffled: false,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        queue: [],
+        currentTrack: null,
+        playTrack: mockPlayTrack,
+        removeFromQueue: mockRemoveFromQueue,
+        toggleQueue: mockToggleQueue,
+        reorderQueue: mockReorderQueue,
+        isQueueOpen: false, // queue closed
+        isShuffled: false,
+      }),
+    );
 
     rerender(<Queue />);
     expect(screen.getByTestId('queue-history')).toHaveAttribute('data-visible', 'false');
@@ -202,19 +238,21 @@ describe('Queue', () => {
   });
 
   it('calculates nextUp correctly when currentTrack is null', () => {
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      queue: [
-        { uniqueId: '1', title: 'Track 1' } as QueueItem,
-        { uniqueId: '2', title: 'Track 2' } as QueueItem,
-      ],
-      currentTrack: null,
-      playTrack: mockPlayTrack,
-      removeFromQueue: mockRemoveFromQueue,
-      toggleQueue: mockToggleQueue,
-      reorderQueue: mockReorderQueue,
-      isQueueOpen: true,
-      isShuffled: false,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        queue: [
+          { uniqueId: '1', title: 'Track 1' } as QueueItem,
+          { uniqueId: '2', title: 'Track 2' } as QueueItem,
+        ],
+        currentTrack: null,
+        playTrack: mockPlayTrack,
+        removeFromQueue: mockRemoveFromQueue,
+        toggleQueue: mockToggleQueue,
+        reorderQueue: mockReorderQueue,
+        isQueueOpen: true,
+        isShuffled: false,
+      }),
+    );
 
     render(<Queue />);
     expect(screen.getByTestId('queue-header')).toBeInTheDocument();

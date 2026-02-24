@@ -124,7 +124,7 @@ describe('SongCard', () => {
 
   it('renders correctly when isActive is true', () => {
     render(<SongCard {...defaultProps} isActive />);
-    
+
     const titleElement = screen.getByText('Test Song');
     expect(titleElement).toHaveClass('text-green-500');
 
@@ -138,12 +138,11 @@ describe('SongCard', () => {
 
   it('renders music bars when isActive and isPlaying are true', () => {
     const { container } = render(<SongCard {...defaultProps} isActive isPlaying />);
-    
+
     // Music bars should be present instead of track number / play icon
     expect(screen.queryByText('1')).not.toBeInTheDocument();
-    
+
     const bar1 = container.querySelector('.animate-music-bar-1');
     expect(bar1).toBeInTheDocument();
   });
 });
-

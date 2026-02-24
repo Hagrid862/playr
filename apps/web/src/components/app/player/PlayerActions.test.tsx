@@ -14,7 +14,10 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenuContent: ({ children }: PropsWithChildren) => <div>{children}</div>,
   DropdownMenuSeparator: () => <hr />,
   DropdownMenuTrigger: ({ children }: PropsWithChildren) => <>{children}</>,
-  DropdownMenuCheckboxItem: ({ children, onCheckedChange }: PropsWithChildren<{ onCheckedChange?: (v: boolean) => void }>) => (
+  DropdownMenuCheckboxItem: ({
+    children,
+    onCheckedChange,
+  }: PropsWithChildren<{ onCheckedChange?: (v: boolean) => void }>) => (
     <button role="menuitemcheckbox" onClick={() => onCheckedChange?.(true)}>
       {children}
     </button>
@@ -27,7 +30,9 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 
 vi.mock('@/components/ui/slider', () => ({
   Slider: ({ onChange }: { onChange: (val: number) => void }) => (
-    <button data-testid="mock-slider" onClick={() => onChange(75)}>Slider</button>
+    <button data-testid="mock-slider" onClick={() => onChange(75)}>
+      Slider
+    </button>
   ),
 }));
 
@@ -46,7 +51,13 @@ describe('PlayerActions', () => {
     setSidebarView,
     quality: 'auto',
     setQuality,
-    availableQualities: ['auto', StreamAudioQuality.high, StreamAudioQuality.standard, StreamAudioQuality.low, StreamAudioQuality.lossless],
+    availableQualities: [
+      'auto',
+      StreamAudioQuality.high,
+      StreamAudioQuality.standard,
+      StreamAudioQuality.low,
+      StreamAudioQuality.lossless,
+    ],
   };
 
   beforeEach(() => {
@@ -70,7 +81,11 @@ describe('PlayerActions', () => {
   });
 
   it('handles lyrics toggle when queue is open to lyrics', () => {
-    vi.mocked(usePlayerStore).mockReturnValue({ ...defaultStore, isQueueOpen: true, sidebarView: 'lyrics' } as PlayerState);
+    vi.mocked(usePlayerStore).mockReturnValue({
+      ...defaultStore,
+      isQueueOpen: true,
+      sidebarView: 'lyrics',
+    } as PlayerState);
     render(<PlayerActions />);
     const buttons = screen.getAllByRole('button');
     const lyricsBtn = buttons[2];
@@ -88,7 +103,11 @@ describe('PlayerActions', () => {
   });
 
   it('handles queue toggle when queue is open to queue', () => {
-    vi.mocked(usePlayerStore).mockReturnValue({ ...defaultStore, isQueueOpen: true, sidebarView: 'queue' } as PlayerState);
+    vi.mocked(usePlayerStore).mockReturnValue({
+      ...defaultStore,
+      isQueueOpen: true,
+      sidebarView: 'queue',
+    } as PlayerState);
     render(<PlayerActions />);
     const buttons = screen.getAllByRole('button');
     const queueBtn = buttons[3];
@@ -164,4 +183,3 @@ describe('PlayerActions', () => {
     });
   });
 });
-

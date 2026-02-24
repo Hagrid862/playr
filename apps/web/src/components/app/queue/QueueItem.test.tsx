@@ -44,31 +44,34 @@ describe('QueueItem', () => {
   it('renders track details correctly', () => {
     const onPlay = vi.fn();
     const onRemove = vi.fn();
-    
+
     render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
-    
+
     expect(screen.getByText('Test Title')).toBeInTheDocument();
     expect(screen.getByText('Test Artist')).toBeInTheDocument();
-    expect(screen.getByAltText('Test Title')).toHaveAttribute('src', 'http://example.com/cover.jpg');
+    expect(screen.getByAltText('Test Title')).toHaveAttribute(
+      'src',
+      'http://example.com/cover.jpg',
+    );
   });
 
   it('handles play click', () => {
     const onPlay = vi.fn();
     const onRemove = vi.fn();
-    
+
     render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
     const container = screen.getByText('Test Title').closest('.group');
     fireEvent.click(container!);
-    
+
     expect(onPlay).toHaveBeenCalledWith(mockTrack);
   });
 
   it('handles remove click', () => {
     const onPlay = vi.fn();
     const onRemove = vi.fn();
-    
+
     render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
-    
+
     const buttons = screen.getAllByRole('button');
     fireEvent.click(buttons[buttons.length - 1]);
     expect(onRemove).toHaveBeenCalledWith('test-1', expect.anything());
@@ -89,14 +92,13 @@ describe('QueueItem', () => {
     const onRemove = vi.fn();
 
     render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
-    
+
     // The DotsSixVerticalIcon is inside a div.
     const container = screen.getByText('Test Title').closest('.group');
     const dragHandle = container!.querySelector('.cursor-grab');
-    
+
     fireEvent.click(dragHandle!);
-    
-    
+
     // Stop propagation should prevent the onPlay handler from being invoked
     expect(onPlay).not.toHaveBeenCalled();
   });

@@ -14,7 +14,7 @@ describe('QueueNowPlaying', () => {
       uniqueId: '1',
       title: 'Test Song',
       artists: [{ name: 'Artist A' }],
-      album: { cover: { url: 'http://example.com/cover.jpg' } }
+      album: { cover: { url: 'http://example.com/cover.jpg' } },
     } as PlayrQueueItem;
 
     render(<QueueNowPlaying currentTrack={track} />);
@@ -29,7 +29,7 @@ describe('QueueNowPlaying', () => {
       uniqueId: '2',
       title: 'Test Song 2',
       artists: [{ name: 'Artist B' }],
-      album: { cover: null }
+      album: { cover: null },
     } as unknown as PlayrQueueItem;
 
     render(<QueueNowPlaying currentTrack={track} />);

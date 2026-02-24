@@ -68,7 +68,11 @@ describe('usePlayerAudio', () => {
     renderHook(() => usePlayerAudio());
 
     await waitFor(() => {
-      expect(setAvailableQualities).toHaveBeenCalledWith(['auto', StreamAudioQuality.high, StreamAudioQuality.low]);
+      expect(setAvailableQualities).toHaveBeenCalledWith([
+        'auto',
+        StreamAudioQuality.high,
+        StreamAudioQuality.low,
+      ]);
     });
   });
 
@@ -127,7 +131,7 @@ describe('usePlayerAudio', () => {
       ...defaultStore,
       currentTrack: { id: 'track-1' } as unknown,
     } as PlayerState);
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -254,7 +258,7 @@ describe('usePlayerAudio', () => {
     const abortErr = new Error('AbortError');
     abortErr.name = 'AbortError';
     const playMock = vi.fn().mockRejectedValue(abortErr);
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const audioEl = {
       src: 'test',
@@ -289,7 +293,7 @@ describe('usePlayerAudio', () => {
 
     const otherErr = new Error('Other Error');
     const playMock = vi.fn().mockRejectedValue(otherErr);
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const audioEl = {
       src: 'test',
@@ -323,21 +327,25 @@ describe('usePlayerAudio', () => {
   });
 
   it('subscribes to store and sets timeToRestoreRef on quality change', () => {
-    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => { };
+    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => {};
     vi.mocked(usePlayerStore.subscribe).mockImplementation((cb) => {
       subscribeCb = cb as typeof subscribeCb;
       return vi.fn();
     });
 
     const { result, rerender } = renderHook(() => usePlayerAudio());
-    const audioEl = { currentTime: 35, duration: 120, play: vi.fn().mockResolvedValue(undefined) } as unknown as HTMLAudioElement;
+    const audioEl = {
+      currentTime: 35,
+      duration: 120,
+      play: vi.fn().mockResolvedValue(undefined),
+    } as unknown as HTMLAudioElement;
     (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
-    // Simulate quality change 
+    // Simulate quality change
     if (subscribeCb) {
       subscribeCb!(
         { quality: 'high', currentTrack: { id: '1' } } as PlayerState,
-        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState
+        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
       );
     }
 
@@ -354,7 +362,7 @@ describe('usePlayerAudio', () => {
   });
 
   it('handles handleLoadedMetadata play error', async () => {
-    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => { };
+    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => {};
     vi.mocked(usePlayerStore.subscribe).mockImplementation((cb) => {
       subscribeCb = cb as typeof subscribeCb;
       return vi.fn();
@@ -362,15 +370,19 @@ describe('usePlayerAudio', () => {
 
     const { result, rerender } = renderHook(() => usePlayerAudio());
     const playMock = vi.fn().mockRejectedValue(new Error('Test playback err'));
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const audioEl = { currentTime: 35, duration: 120, play: playMock } as unknown as HTMLAudioElement;
+    const audioEl = {
+      currentTime: 35,
+      duration: 120,
+      play: playMock,
+    } as unknown as HTMLAudioElement;
     (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
     if (subscribeCb) {
       subscribeCb!(
         { quality: 'high', currentTrack: { id: '1' } } as PlayerState,
-        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState
+        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
       );
     }
 
@@ -388,7 +400,7 @@ describe('usePlayerAudio', () => {
   });
 
   it('handles handleLoadedMetadata play abort error gracefully', async () => {
-    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => { };
+    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => {};
     vi.mocked(usePlayerStore.subscribe).mockImplementation((cb) => {
       subscribeCb = cb as typeof subscribeCb;
       return vi.fn();
@@ -398,15 +410,19 @@ describe('usePlayerAudio', () => {
     const err = new Error('AbortError');
     err.name = 'AbortError';
     const playMock = vi.fn().mockRejectedValue(err);
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const audioEl = { currentTime: 35, duration: 120, play: playMock } as unknown as HTMLAudioElement;
+    const audioEl = {
+      currentTime: 35,
+      duration: 120,
+      play: playMock,
+    } as unknown as HTMLAudioElement;
     (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
     if (subscribeCb) {
       subscribeCb!(
         { quality: 'high', currentTrack: { id: '1' } } as PlayerState,
-        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState
+        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
       );
     }
 
@@ -424,7 +440,9 @@ describe('usePlayerAudio', () => {
   });
 
   it('gets correct audio URL with no token and auto quality', () => {
-    vi.mocked(useAuthStore).mockReturnValue({ accessToken: null } as ReturnType<typeof useAuthStore>);
+    vi.mocked(useAuthStore).mockReturnValue({ accessToken: null } as ReturnType<
+      typeof useAuthStore
+    >);
     vi.mocked(usePlayerStore).mockReturnValue({
       ...defaultStore,
       currentTrack: { id: 'track-1' } as unknown,
@@ -432,7 +450,9 @@ describe('usePlayerAudio', () => {
     } as PlayerState);
 
     const { result } = renderHook(() => usePlayerAudio());
-    expect(result.current.getAudioUrl()).toBe('http://localhost:8000/library/tracks/track-1/stream?');
+    expect(result.current.getAudioUrl()).toBe(
+      'http://localhost:8000/library/tracks/track-1/stream?',
+    );
   });
 
   it('returns empty audio URL when currentTrack is null', () => {
@@ -445,7 +465,7 @@ describe('usePlayerAudio', () => {
   });
 
   it('ignores store update if quality is the same', () => {
-    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => { };
+    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => {};
     vi.mocked(usePlayerStore.subscribe).mockImplementation((cb) => {
       subscribeCb = cb as typeof subscribeCb;
       return vi.fn();
@@ -458,7 +478,7 @@ describe('usePlayerAudio', () => {
     if (subscribeCb) {
       subscribeCb!(
         { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
-        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState
+        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
       );
     }
 
@@ -468,7 +488,7 @@ describe('usePlayerAudio', () => {
   });
 
   it('ignores store update if currentTrack changes', () => {
-    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => { };
+    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => {};
     vi.mocked(usePlayerStore.subscribe).mockImplementation((cb) => {
       subscribeCb = cb as typeof subscribeCb;
       return vi.fn();
@@ -481,7 +501,7 @@ describe('usePlayerAudio', () => {
     if (subscribeCb) {
       subscribeCb!(
         { quality: 'high', currentTrack: { id: '2' } } as PlayerState,
-        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState
+        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
       );
     }
 
@@ -490,7 +510,7 @@ describe('usePlayerAudio', () => {
   });
 
   it('does not set timeToRestoreRef if audioRef.current is null on store update', () => {
-    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => { };
+    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => {};
     vi.mocked(usePlayerStore.subscribe).mockImplementation((cb) => {
       subscribeCb = cb as typeof subscribeCb;
       return vi.fn();
@@ -502,7 +522,7 @@ describe('usePlayerAudio', () => {
     if (subscribeCb) {
       subscribeCb!(
         { quality: 'high', currentTrack: { id: '1' } } as PlayerState,
-        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState
+        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
       );
     }
 
@@ -528,7 +548,7 @@ describe('usePlayerAudio', () => {
   });
 
   it('handleLoadedMetadata restores time but does not play if isPlaying is false', () => {
-    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => { };
+    let subscribeCb: (state: PlayerState, prevState: PlayerState) => void = () => {};
     vi.mocked(usePlayerStore.subscribe).mockImplementation((cb) => {
       subscribeCb = cb as typeof subscribeCb;
       return vi.fn();
@@ -541,14 +561,18 @@ describe('usePlayerAudio', () => {
 
     const { result } = renderHook(() => usePlayerAudio());
     const playMock = vi.fn();
-    const audioEl = { currentTime: 35, duration: 120, play: playMock } as unknown as HTMLAudioElement;
+    const audioEl = {
+      currentTime: 35,
+      duration: 120,
+      play: playMock,
+    } as unknown as HTMLAudioElement;
     (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
-    // Simulate quality change 
+    // Simulate quality change
     if (subscribeCb) {
       subscribeCb!(
         { quality: 'high', currentTrack: { id: '1' } } as PlayerState,
-        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState
+        { quality: 'auto', currentTrack: { id: '1' } } as PlayerState,
       );
     }
 

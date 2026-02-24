@@ -54,11 +54,13 @@ describe('History', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      history: [],
-      playTrack: mockPlayTrack,
-      toggleQueue: mockToggleQueue,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        history: [],
+        playTrack: mockPlayTrack,
+        toggleQueue: mockToggleQueue,
+      }),
+    );
   });
 
   it('renders empty state when history is empty', () => {
@@ -67,19 +69,21 @@ describe('History', () => {
   });
 
   it('renders history tracks', () => {
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      history: [
-        { uniqueId: '1', title: 'Track 1', artists: [{ name: 'Artist 1' }] } as QueueItem,
-        {
-          uniqueId: '2',
-          title: 'Track 2',
-          artists: [{ name: 'Artist 2' }],
-          album: { cover: { url: 'cover.jpg' } },
-        } as QueueItem,
-      ],
-      playTrack: mockPlayTrack,
-      toggleQueue: mockToggleQueue,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        history: [
+          { uniqueId: '1', title: 'Track 1', artists: [{ name: 'Artist 1' }] } as QueueItem,
+          {
+            uniqueId: '2',
+            title: 'Track 2',
+            artists: [{ name: 'Artist 2' }],
+            album: { cover: { url: 'cover.jpg' } },
+          } as QueueItem,
+        ],
+        playTrack: mockPlayTrack,
+        toggleQueue: mockToggleQueue,
+      }),
+    );
 
     render(<History isVisible={true} onBack={mockOnBack} />);
     expect(screen.getByText('Track 1')).toBeInTheDocument();
@@ -90,11 +94,13 @@ describe('History', () => {
 
   it('calls playTrack when a track is clicked', () => {
     const track = { uniqueId: '1', title: 'Track 1', artists: [{ name: 'Artist 1' }] } as QueueItem;
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      history: [track],
-      playTrack: mockPlayTrack,
-      toggleQueue: mockToggleQueue,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        history: [track],
+        playTrack: mockPlayTrack,
+        toggleQueue: mockToggleQueue,
+      }),
+    );
 
     render(<History isVisible={true} onBack={mockOnBack} />);
     fireEvent.click(screen.getByText('Track 1'));
@@ -121,11 +127,13 @@ describe('History', () => {
       artists: [{ name: 'Artist' }],
     })) as QueueItem[];
 
-    vi.mocked(usePlayerStore).mockReturnValue(mockPlayerStore({
-      history,
-      playTrack: mockPlayTrack,
-      toggleQueue: mockToggleQueue,
-    }));
+    vi.mocked(usePlayerStore).mockReturnValue(
+      mockPlayerStore({
+        history,
+        playTrack: mockPlayTrack,
+        toggleQueue: mockToggleQueue,
+      }),
+    );
 
     render(<History isVisible={true} onBack={mockOnBack} />);
 

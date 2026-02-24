@@ -44,7 +44,9 @@ describe('PlayerTrackInfo', () => {
   });
 
   it('renders default empty state', () => {
-    render(<PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />);
+    render(
+      <PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />,
+    );
     expect(screen.getByText('No track selected')).toBeInTheDocument();
     expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
     expect(screen.getByText('time:10')).toBeInTheDocument();
@@ -57,21 +59,23 @@ describe('PlayerTrackInfo', () => {
         uniqueId: '1',
         title: 'Test Song',
         artists: [{ name: 'Artist A' }],
-        album: { cover: { url: 'http://example.com/cover.jpg' } }
+        album: { cover: { url: 'http://example.com/cover.jpg' } },
       } as unknown as PlayerState['currentTrack'],
     } as PlayerState);
 
-    render(<PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />);
+    render(
+      <PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />,
+    );
     expect(screen.getByText('Test Song')).toBeInTheDocument();
-    
+
     const slider = screen.getByTestId('mock-slider');
     expect(screen.getByText('Artist A')).toBeInTheDocument();
-    
+
     fireEvent.pointerDown(slider);
     fireEvent.pointerUp(slider);
     fireEvent.mouseEnter(slider);
     fireEvent.mouseLeave(slider);
-    
+
     fireEvent.click(slider);
     expect(onSeek).toHaveBeenCalledWith(50);
     expect(setCurrentTime).toHaveBeenCalledWith(50);
@@ -85,11 +89,13 @@ describe('PlayerTrackInfo', () => {
         uniqueId: '1',
         title: 'Lossless Song',
         artists: [],
-        album: {}
+        album: {},
       } as unknown as PlayerState['currentTrack'],
     } as PlayerState);
 
-    render(<PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />);
+    render(
+      <PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />,
+    );
     expect(screen.getByText('Lossless Song')).toBeInTheDocument();
   });
 
@@ -101,11 +107,13 @@ describe('PlayerTrackInfo', () => {
         uniqueId: '2',
         title: 'Zero Duration Song',
         artists: [],
-        album: {}
+        album: {},
       } as unknown as PlayerState['currentTrack'],
     } as PlayerState);
 
-    render(<PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />);
+    render(
+      <PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />,
+    );
     expect(screen.getByText('Zero Duration Song')).toBeInTheDocument();
   });
 });

@@ -44,7 +44,7 @@ describe('FileField', () => {
   it('renders error state correctly', () => {
     render(<FileField {...defaultProps} error="File too large" />);
     expect(screen.getByText('File too large')).toBeInTheDocument();
-    
+
     const input = screen.getByLabelText('Upload File');
     expect(input.className).toContain('border-destructive');
   });
