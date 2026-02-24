@@ -4,7 +4,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { QueueNextUp } from './QueueNextUp';
 
 vi.mock('./QueueItem', () => ({
-  QueueItem: ({ track, onPlay, onRemove }: any) => (
+  QueueItem: ({
+    track,
+    onPlay,
+    onRemove,
+  }: {
+    track: PlayrQueueItem;
+    onPlay: (track: PlayrQueueItem) => void;
+    onRemove: (id: string, e: React.MouseEvent<HTMLButtonElement>) => void;
+  }) => (
     <div data-testid={`queue-item-${track.uniqueId}`}>
       {track.title}
       <button onClick={() => onPlay(track)}>Play</button>
@@ -27,7 +35,7 @@ describe('QueueNextUp', () => {
         onDragEnd={vi.fn()}
         onPlayTrack={vi.fn()}
         onRemoveTrack={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByText('Next Up')).toBeInTheDocument();
     expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
@@ -42,11 +50,11 @@ describe('QueueNextUp', () => {
         onDragEnd={vi.fn()}
         onPlayTrack={vi.fn()}
         onRemoveTrack={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByText('Queue is empty')).toBeInTheDocument();
   });
-  
+
   it('renders correctly when shuffled', () => {
     render(
       <QueueNextUp
@@ -55,7 +63,7 @@ describe('QueueNextUp', () => {
         onDragEnd={vi.fn()}
         onPlayTrack={vi.fn()}
         onRemoveTrack={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
     expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'v
 import { useMediaQuery } from './use-media-query';
 
 describe('useMediaQuery', () => {
-  let matchMediaMock: MockInstance;
   let addEventListenerMock: MockInstance;
   let removeEventListenerMock: MockInstance;
 
@@ -11,7 +10,7 @@ describe('useMediaQuery', () => {
     addEventListenerMock = vi.fn();
     removeEventListenerMock = vi.fn();
 
-    matchMediaMock = vi.spyOn(window, 'matchMedia').mockImplementation(
+    vi.spyOn(window, 'matchMedia').mockImplementation(
       (query) =>
         ({
           matches: query === '(min-width: 768px)',
