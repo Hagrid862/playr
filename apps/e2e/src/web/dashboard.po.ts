@@ -9,7 +9,7 @@ export class DashboardPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.sidebar = page.locator('nav[data-sidebar="sidebar"]');
+    this.sidebar = page.locator('[data-sidebar="sidebar"]');
     this.logoutButton = page.getByRole("button", { name: "Log out" });
     this.createLibraryButton = page.getByRole("button", {
       name: "Create Library",

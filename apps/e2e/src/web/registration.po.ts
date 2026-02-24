@@ -124,6 +124,17 @@ export class RegistrationPage {
   }
 
   async expectSuccess() {
-    await expect(this.page).toHaveURL(/\/auth\/login/, { timeout: 15000 });
+    try {
+      await expect(this.page).toHaveURL(/\/auth\/login/, { timeout: 15000 });
+    } catch (e) {
+      // If we failed, check if there's an error message on the page
+      const errorMsg = await this.errorMessage.textContent();
+      if (errorMsg) {
+        console.error(`Registration failed with error: ${errorMsg}`);
+      } else {
+        console.error("Registration failed but no error message found.");
+      }
+      throw e;
+    }
   }
 }
