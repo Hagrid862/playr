@@ -88,7 +88,11 @@ test.describe("Queue Management", () => {
     );
     await page.setInputFiles('input[type="file"]', audioPath);
     await page.getByRole("button", { name: "Add Track" }).click();
-    await expect(page.getByText(track1)).toBeVisible();
+
+    // Wait for navigation to complete - the form navigates to the parent (album detail) page
+    await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText(track1)).toBeVisible({ timeout: 30000 });
 
     // Add Track 2
     await page.goto(`/app/library/albums/${albumId}/add-content`);
@@ -96,7 +100,11 @@ test.describe("Queue Management", () => {
     await page.getByLabel("Track Title").fill(track2);
     await page.setInputFiles('input[type="file"]', audioPath);
     await page.getByRole("button", { name: "Add Track" }).click();
-    await expect(page.getByText(track2)).toBeVisible();
+
+    // Wait for navigation to complete - the form navigates to the parent (album detail) page
+    await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText(track2)).toBeVisible({ timeout: 30000 });
   });
 
   test.afterAll(async () => {

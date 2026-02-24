@@ -88,7 +88,10 @@ test.describe("Navigation Flow", () => {
     await expect(page).toHaveURL(/\/app\/library\/overview/);
 
     // Check if we are in mobile view - if sidebar trigger is visible, sidebar might be hidden
-    const sidebarTrigger = page.locator('button[data-sidebar="trigger"]');
+    // Note: There are two sidebar triggers (mobile and desktop), so we use .first() to avoid strict mode violation
+    const sidebarTrigger = page
+      .locator('button[data-sidebar="trigger"]')
+      .first();
     const isMobile = await sidebarTrigger.isVisible();
 
     if (!isMobile) {

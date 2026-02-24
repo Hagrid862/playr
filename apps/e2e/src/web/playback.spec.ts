@@ -113,8 +113,14 @@ test.describe("Playback Functionality", () => {
       // Corrected Label: "Add Track" instead of "Create Track"
       await page.getByRole("button", { name: "Add Track" }).click();
 
-      // Verify track in album
-      await expect(page.getByText(trackName)).toBeVisible({ timeout: 20000 });
+      // Wait for navigation to complete - the form navigates to the parent (album detail) page
+      await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, {
+        timeout: 30000,
+      });
+      await page.waitForLoadState("networkidle");
+
+      // Verify track in album with extended timeout to allow for query refetch
+      await expect(page.getByText(trackName)).toBeVisible({ timeout: 30000 });
     });
   });
   test("should play the track and toggle play/pause", async () => {
