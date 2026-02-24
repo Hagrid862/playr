@@ -10,7 +10,7 @@ export function QueueNowPlaying({ currentTrack }: QueueNowPlayingProps) {
   if (!currentTrack) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" aria-label="Now Playing">
       <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider">Now Playing</h3>
       <AnimatePresence mode="popLayout">
         <motion.div

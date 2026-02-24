@@ -69,6 +69,10 @@ export function Slider({
   return (
     <div
       ref={containerRef}
+      role="slider"
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
       className={cn(
         'relative flex items-center w-full h-4 group cursor-pointer touch-none select-none',
         className,
