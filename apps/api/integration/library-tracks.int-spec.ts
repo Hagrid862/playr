@@ -251,4 +251,24 @@ describe('LibraryTracksController (Integration)', () => {
       expect(response.body.data).toEqual(JSON.parse(JSON.stringify(mockTrack)));
     });
   });
+
+  describe('GET /library/tracks/:id/qualities', () => {
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer())
+        .get(`/library/tracks/${mockTrack.id}/qualities`)
+        .expect(401);
+    });
+  });
+
+  describe('POST /library/tracks/:id/audio', () => {
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer()).post(`/library/tracks/${mockTrack.id}/audio`).expect(401);
+    });
+  });
+
+  describe('GET /library/tracks/:id/stream', () => {
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer()).get(`/library/tracks/${mockTrack.id}/stream`).expect(401);
+    });
+  });
 });
