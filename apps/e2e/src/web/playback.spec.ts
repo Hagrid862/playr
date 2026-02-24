@@ -142,6 +142,10 @@ test.describe("Playback Functionality", () => {
     // Toggle Pause
     await test.step("Toggle Play/Pause", async () => {
       await playerPage.togglePlay();
+
+      // Wait for pause to take effect
+      await page.waitForTimeout(500);
+
       const initialPos =
         await playerPage.progressSlider.getAttribute("aria-valuenow");
       await page.waitForTimeout(2000);
