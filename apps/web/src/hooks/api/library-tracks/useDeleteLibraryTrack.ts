@@ -14,6 +14,12 @@ export const useDeleteLibraryTrack = () => {
       queryClient.removeQueries({
         queryKey: ['library', 'tracks', data.data.id],
       });
+      const albumIdVal = (data.data as { albumId?: string }).albumId;
+      if (albumIdVal) {
+        queryClient.invalidateQueries({
+          queryKey: ['library', 'albums', albumIdVal],
+        });
+      }
     },
   });
 };
