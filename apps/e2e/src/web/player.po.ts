@@ -69,22 +69,24 @@ export class PlayerPage {
     await this.volumeButton.click();
     await this.volumeSlider.waitFor({ state: "visible" });
     const box = await this.volumeSlider.boundingBox();
-    if (box) {
-      await this.page.mouse.click(
-        box.x + (box.width * value) / 100,
-        box.y + box.height / 2,
-      );
+    if (!box) {
+      throw new Error("volume slider not visible");
     }
+    await this.page.mouse.click(
+      box.x + (box.width * value) / 100,
+      box.y + box.height / 2,
+    );
   }
 
   async seek(percentage: number) {
     const box = await this.progressSlider.boundingBox();
-    if (box) {
-      await this.page.mouse.click(
-        box.x + (box.width * percentage) / 100,
-        box.y + box.height / 2,
-      );
+    if (!box) {
+      throw new Error("progress slider not visible");
     }
+    await this.page.mouse.click(
+      box.x + (box.width * percentage) / 100,
+      box.y + box.height / 2,
+    );
   }
 
   async changeQuality(
