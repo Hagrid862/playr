@@ -338,11 +338,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should throw if suffix range has invalid or empty suffix', async () => {
-        const query = new GetTrackStreamQuery(
-          mockTrackId,
-          StreamAudioQuality.standard,
-          'bytes=-',
-        );
+        const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, 'bytes=-');
         await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
       });
 
