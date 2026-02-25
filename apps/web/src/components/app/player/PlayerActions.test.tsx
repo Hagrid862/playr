@@ -17,8 +17,14 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenuCheckboxItem: ({
     children,
     onCheckedChange,
-  }: PropsWithChildren<{ onCheckedChange?: (v: boolean) => void }>) => (
-    <button role="menuitemcheckbox" onClick={() => onCheckedChange?.(true)}>
+    checked = false,
+  }: PropsWithChildren<{ onCheckedChange?: (v: boolean) => void; checked?: boolean }>) => (
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      onClick={() => onCheckedChange?.(!checked)}
+    >
       {children}
     </button>
   ),
@@ -30,7 +36,7 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 
 vi.mock('@/components/ui/slider', () => ({
   Slider: ({ onChange }: { onChange: (val: number) => void }) => (
-    <button data-testid="mock-slider" onClick={() => onChange(75)}>
+    <button type="button" data-testid="mock-slider" onClick={() => onChange(75)}>
       Slider
     </button>
   ),
