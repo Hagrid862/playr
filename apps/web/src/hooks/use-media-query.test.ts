@@ -1,4 +1,6 @@
 import { renderHook } from '@testing-library/react';
+import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 import { useMediaQuery } from './use-media-query';
 
@@ -44,15 +46,15 @@ describe('useMediaQuery', () => {
 
     expect(addEventListenerMock).toHaveBeenCalledWith('change', expect.any(Function));
 
+    const listener = addEventListenerMock.mock.calls[0]?.[1] as EventListener | undefined;
+
     unmount();
 
-    expect(removeEventListenerMock).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(listener).toBeDefined();
+    expect(removeEventListenerMock).toHaveBeenCalledWith('change', listener);
   });
 
-  it('should return false during server-side rendering', async () => {
-    const { renderToString } = await import('react-dom/server');
-    const React = await import('react');
-
+  it('should return false during server-side rendering', () => {
     function TestComponent() {
       const matches = useMediaQuery('(min-width: 768px)');
       return matches ? 'matches' : 'no match';

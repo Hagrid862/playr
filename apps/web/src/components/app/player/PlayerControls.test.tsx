@@ -40,8 +40,8 @@ describe('PlayerControls', () => {
     const { rerender } = render(<PlayerControls />);
 
     // Not playing
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[2]); // togglePlay button
+    const playPauseButton = screen.getByRole('button', { name: /play|pause/i });
+    fireEvent.click(playPauseButton);
     expect(togglePlay).toHaveBeenCalled();
 
     // Now playing
@@ -51,29 +51,29 @@ describe('PlayerControls', () => {
 
   it('triggers previousTrack', () => {
     render(<PlayerControls />);
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    const previousButton = screen.getByRole('button', { name: /previous track/i });
+    fireEvent.click(previousButton);
     expect(previousTrack).toHaveBeenCalled();
   });
 
   it('triggers nextTrack', () => {
     render(<PlayerControls />);
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[3]);
+    const nextButton = screen.getByRole('button', { name: /next track/i });
+    fireEvent.click(nextButton);
     expect(nextTrack).toHaveBeenCalled();
   });
 
   it('triggers toggleShuffle', () => {
     render(<PlayerControls />);
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[0]);
+    const shuffleButton = screen.getByRole('button', { name: /toggle shuffle/i });
+    fireEvent.click(shuffleButton);
     expect(toggleShuffle).toHaveBeenCalled();
   });
 
   it('triggers toggleRepeatMode', () => {
     render(<PlayerControls />);
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[4]);
+    const repeatButton = screen.getByRole('button', { name: /repeat/i });
+    fireEvent.click(repeatButton);
     expect(toggleRepeatMode).toHaveBeenCalled();
   });
 
@@ -83,15 +83,15 @@ describe('PlayerControls', () => {
       repeatMode: 'one',
     } as PlayerState);
     render(<PlayerControls />);
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[4]);
+    const repeatButton = screen.getByRole('button', { name: /repeat/i });
+    fireEvent.click(repeatButton);
     expect(toggleRepeatMode).toHaveBeenCalled();
   });
 
   it('handles isShuffled true', () => {
     vi.mocked(usePlayerStore).mockReturnValue({ ...defaultStore, isShuffled: true } as PlayerState);
     render(<PlayerControls />);
-    const buttons = screen.getAllByRole('button');
-    expect(buttons[0]).toHaveClass('text-emerald-500');
+    const shuffleButton = screen.getByRole('button', { name: /toggle shuffle/i });
+    expect(shuffleButton).toHaveClass('text-emerald-500');
   });
 });

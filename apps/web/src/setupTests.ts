@@ -62,6 +62,7 @@ if (typeof window.PointerEvent === 'undefined') {
  * Essential for components and hooks that rely on media queries (e.g., useMediaQuery).
  */
 Object.defineProperty(window, 'matchMedia', {
+  configurable: true,
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,

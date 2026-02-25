@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FileField } from './FileField';
 
 describe('FileField', () => {
@@ -8,6 +8,10 @@ describe('FileField', () => {
     onChange: vi.fn(),
     onBlur: vi.fn(),
   };
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
 
   it('renders correctly', () => {
     render(<FileField {...defaultProps} placeholder="Select file" accept="image/*" />);

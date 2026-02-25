@@ -78,9 +78,7 @@ describe('PlayerActions', () => {
 
   it('handles lyrics toggle when queue is closed', () => {
     render(<PlayerActions />);
-    const buttons = screen.getAllByRole('button');
-    // Dropdown, Star, Lyrics, Queue, Volume
-    const lyricsBtn = buttons[2];
+    const lyricsBtn = screen.getByRole('button', { name: /lyrics/i });
     fireEvent.click(lyricsBtn);
     expect(setSidebarView).toHaveBeenCalledWith('lyrics');
     expect(setQueueOpen).toHaveBeenCalledWith(true);
@@ -93,16 +91,14 @@ describe('PlayerActions', () => {
       sidebarView: 'lyrics',
     } as PlayerState);
     render(<PlayerActions />);
-    const buttons = screen.getAllByRole('button');
-    const lyricsBtn = buttons[2];
+    const lyricsBtn = screen.getByRole('button', { name: /lyrics/i });
     fireEvent.click(lyricsBtn);
     expect(setQueueOpen).toHaveBeenCalledWith(false);
   });
 
   it('handles queue toggle when queue is closed', () => {
     render(<PlayerActions />);
-    const buttons = screen.getAllByRole('button');
-    const queueBtn = buttons[3];
+    const queueBtn = screen.getByRole('button', { name: /queue/i });
     fireEvent.click(queueBtn);
     expect(setSidebarView).toHaveBeenCalledWith('queue');
     expect(setQueueOpen).toHaveBeenCalledWith(true);
@@ -115,8 +111,7 @@ describe('PlayerActions', () => {
       sidebarView: 'queue',
     } as PlayerState);
     render(<PlayerActions />);
-    const buttons = screen.getAllByRole('button');
-    const queueBtn = buttons[3];
+    const queueBtn = screen.getByRole('button', { name: /queue/i });
     fireEvent.click(queueBtn);
     expect(setQueueOpen).toHaveBeenCalledWith(false);
   });
@@ -124,7 +119,7 @@ describe('PlayerActions', () => {
   it('handles volume change via slider', () => {
     render(<PlayerActions />);
     // Open volume popover
-    const volumeBtn = screen.getAllByRole('button')[4];
+    const volumeBtn = screen.getByRole('button', { name: /volume/i });
     fireEvent.click(volumeBtn);
 
     const slider = screen.getByTestId('mock-slider');
