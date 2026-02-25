@@ -15,6 +15,17 @@ vi.mock('fs/promises');
 vi.mock('music-metadata');
 vi.mock('fluent-ffmpeg');
 
+type AudioProcessingWorkerInternals = AudioProcessingWorker & {
+  getMimeType(format: AudioFormat): string;
+  transcode(
+    input: string,
+    output: string,
+    format: AudioFormat,
+    bitrate: number | null,
+  ): Promise<void>;
+  generateWaveform(input: string, points: number): Promise<number[]>;
+};
+
 describe('AudioProcessingWorker', () => {
   let worker: AudioProcessingWorker;
   let audioFileRepository: DeepMocked<AudioFileRepository>;
@@ -270,7 +281,10 @@ describe('AudioProcessingWorker', () => {
       } as any);
 
       const transcodeSpy = vi
-        .spyOn(worker as any, 'transcode')
+        .spyOn(
+          worker as unknown as Pick<AudioProcessingWorkerInternals, 'transcode'>,
+          'transcode',
+        )
         .mockRejectedValue(new Error('transcode err'));
       const loggerSpy = vi.spyOn((worker as any).logger, 'error');
 
@@ -286,10 +300,16 @@ describe('AudioProcessingWorker', () => {
   });
 
   describe('private methods', () => {
+    let workerInternals: AudioProcessingWorkerInternals;
+
+    beforeEach(() => {
+      workerInternals = worker as unknown as AudioProcessingWorkerInternals;
+    });
+
     it('getMimeType should return correct mime types', () => {
-      expect(worker['getMimeType'](AudioFormat.aac)).toBe('audio/aac');
-      expect(worker['getMimeType'](AudioFormat.wav)).toBe('audio/wav');
-      expect(worker['getMimeType']('unknown' as AudioFormat)).toBe('application/octet-stream');
+      expect(workerInternals.getMimeType(AudioFormat.aac)).toBe('audio/aac');
+      expect(workerInternals.getMimeType(AudioFormat.wav)).toBe('audio/wav');
+      expect(workerInternals.getMimeType('unknown' as AudioFormat)).toBe('application/octet-stream');
     });
 
     it('transcode should reject on error', async () => {
@@ -307,7 +327,9 @@ describe('AudioProcessingWorker', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(mockFfmpegChain as any);
 
-      await expect(worker['transcode']('input', 'output', AudioFormat.mp3, 128)).rejects.toThrow(
+      await expect(
+        workerInternals.transcode('input', 'output', AudioFormat.mp3, 128),
+      ).rejects.toThrow(
         'transcode error',
       );
     });
@@ -328,9 +350,9 @@ describe('AudioProcessingWorker', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(mockFfmpegChain as any);
 
-      await worker['transcode']('input', 'output', AudioFormat.mp3, null);
-      await worker['transcode']('input', 'output', AudioFormat.opus, null);
-      await worker['transcode']('input', 'output', AudioFormat.flac, null);
+      await workerInternals.transcode('input', 'output', AudioFormat.mp3, null);
+      await workerInternals.transcode('input', 'output', AudioFormat.opus, null);
+      await workerInternals.transcode('input', 'output', AudioFormat.flac, null);
       expect(audioBitrateSpy).not.toHaveBeenCalled();
     });
 
@@ -350,7 +372,7 @@ describe('AudioProcessingWorker', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(mockFfmpegChain as any);
 
-      await worker['transcode']('input', 'output', AudioFormat.wav, null);
+      await workerInternals.transcode('input', 'output', AudioFormat.wav, null);
       expect(mockFfmpegChain.save).toHaveBeenCalledWith('output');
     });
 
@@ -372,7 +394,9 @@ describe('AudioProcessingWorker', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(mockFfmpegChain as any);
 
-      await expect(worker['generateWaveform']('input', 10)).rejects.toThrow('waveform error');
+      await expect(workerInternals.generateWaveform('input', 10)).rejects.toThrow(
+        'waveform error',
+      );
     });
 
     it('generateWaveform should resolve with 0s if samplesPerPoint is 0', async () => {
@@ -394,7 +418,7 @@ describe('AudioProcessingWorker', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(mockFfmpegChain as any);
 
-      const result = await worker['generateWaveform']('input', 100);
+      const result = await workerInternals.generateWaveform('input', 100);
       expect(result).toHaveLength(100);
       expect(result.every((v) => v === 0)).toBe(true);
     });
@@ -423,7 +447,7 @@ describe('AudioProcessingWorker', () => {
       vi.mocked(ffmpeg).mockReturnValue(mockFfmpegChain as any);
 
       // Wanting 1 point out of 2 samples -> checks bounds break internally
-      const result = await worker['generateWaveform']('input', 1);
+      const result = await workerInternals.generateWaveform('input', 1);
       expect(result).toHaveLength(1);
       expect(result[0]).toBeCloseTo(1.0, 1);
     });
@@ -456,7 +480,7 @@ describe('AudioProcessingWorker', () => {
       };
       const concatSpy = vi.spyOn(Buffer, 'concat').mockReturnValue(fakeBuffer as any);
 
-      await expect(worker['generateWaveform']('input', 2)).rejects.toThrow('read error');
+      await expect(workerInternals.generateWaveform('input', 2)).rejects.toThrow('read error');
       concatSpy.mockRestore();
     });
 
@@ -491,7 +515,7 @@ describe('AudioProcessingWorker', () => {
       };
       const concatSpy = vi.spyOn(Buffer, 'concat').mockReturnValue(fakeBuffer as any);
 
-      const result = await worker['generateWaveform']('input', 2);
+      const result = await workerInternals.generateWaveform('input', 2);
       expect(result).toHaveLength(2);
       expect(result[0]).toBe(0);
       expect(result[1]).toBe(0);
