@@ -11,7 +11,8 @@ vi.mock('@/stores/player.store', () => ({
 vi.mock('@/components/ui/slider', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Slider: ({ value, onChange, onMouseEnter, onMouseLeave, onPointerDown, onPointerUp }: any) => (
-    <div
+    <button
+      type="button"
       data-testid="mock-slider"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -20,7 +21,7 @@ vi.mock('@/components/ui/slider', () => ({
       onClick={() => onChange(50)}
     >
       slider value: {value}
-    </div>
+    </button>
   ),
 }));
 
