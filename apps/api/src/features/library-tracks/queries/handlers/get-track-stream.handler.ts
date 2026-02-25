@@ -40,20 +40,23 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
         case StreamAudioQuality.high:
           if (quality === AudioQuality.high) {
-            if (format === AudioFormat.mp3) return 100;
-            if (format === AudioFormat.opus) return 90;
+            if (format === AudioFormat.opus) return 100;
+            if (format === AudioFormat.mp3) return 90;
           }
           return 0;
 
         case StreamAudioQuality.standard:
           if (quality === AudioQuality.standard) {
-            if (format === AudioFormat.mp3) return 100;
-            if (format === AudioFormat.opus) return 90;
+            if (format === AudioFormat.opus) return 100;
+            if (format === AudioFormat.mp3) return 90;
           }
           return 0;
 
         case StreamAudioQuality.low:
-          if (quality === AudioQuality.low && format === AudioFormat.mp3) return 100;
+          if (quality === AudioQuality.low) {
+            if (format === AudioFormat.opus) return 100;
+            if (format === AudioFormat.mp3) return 90;
+          }
           return 0;
 
         default:
