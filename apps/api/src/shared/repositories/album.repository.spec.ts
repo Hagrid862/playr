@@ -70,6 +70,7 @@ describe('AlbumRepository', () => {
           cover: true,
           artists: true,
           tracks: {
+            where: { deletedAt: null },
             orderBy: {
               trackNumber: 'asc',
             },
