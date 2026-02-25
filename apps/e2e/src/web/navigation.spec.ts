@@ -75,8 +75,10 @@ test.describe("Navigation Flow", () => {
     await page.addInitScript(() => {
       const originalSetItem = localStorage.setItem;
       localStorage.setItem = function (key, value) {
+        const length =
+          value != null && typeof value === "string" ? value.length : "unknown";
         console.log(
-          `TELEMETRY: localStorage.setItem('${key}', '${value.substring(0, 50)}...')`,
+          `TELEMETRY: localStorage.setItem('${key}', valueLength=${length})`,
         );
         originalSetItem.apply(this, [key, value]);
       };
