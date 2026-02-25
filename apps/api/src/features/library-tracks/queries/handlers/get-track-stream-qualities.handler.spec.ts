@@ -57,7 +57,7 @@ describe('GetTrackStreamQualitiesHandler', () => {
       expect(result.length).toBe(4); // Set ensures no duplicates for lossless
     });
 
-    it('should ignore uppercase qualities or handle formats gracefully', async () => {
+    it('should normalize uppercase formats and qualities to StreamAudioQuality values', async () => {
       prismaService.client.audioFile.findMany.mockResolvedValue([
         { format: 'FLAC', quality: 'ORIGINAL' },
         { format: 'MP3', quality: 'HIGH' },

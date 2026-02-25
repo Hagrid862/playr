@@ -133,185 +133,103 @@ describe('UploadTrackAudioHandler', () => {
     });
 
     describe('format detection', () => {
-      it('detects opus', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
+      const scenarios: {
+        description: string;
+        mimetype: string;
+        originalname: string;
+        expectedFormat: AudioFormat;
+      }[] = [
+        {
+          description: 'detects opus',
+          mimetype: 'audio/opus',
+          originalname: 't.opus',
+          expectedFormat: AudioFormat.opus,
+        },
+        {
+          description: 'detects flac',
+          mimetype: 'audio/flac',
+          originalname: 't.flac',
+          expectedFormat: AudioFormat.flac,
+        },
+        {
+          description: 'detects wav by mime',
+          mimetype: 'audio/x-wav',
+          originalname: 't.wav',
+          expectedFormat: AudioFormat.wav,
+        },
+        {
+          description: 'detects aac by mime',
+          mimetype: 'audio/aac',
+          originalname: 't.aac',
+          expectedFormat: AudioFormat.aac,
+        },
+        {
+          description: 'falls back to extension for unknown mime (ogg)',
+          mimetype: 'audio/unknown',
+          originalname: 't.ogg',
+          expectedFormat: AudioFormat.opus,
+        },
+        {
+          description: 'falls back to extension for unknown mime (wav)',
+          mimetype: 'audio/unknown',
+          originalname: 't.wav',
+          expectedFormat: AudioFormat.wav,
+        },
+        {
+          description: 'falls back to extension for unknown mime (m4a)',
+          mimetype: 'audio/unknown',
+          originalname: 't.m4a',
+          expectedFormat: AudioFormat.aac,
+        },
+        {
+          description: 'falls back to extension for unknown mime (aac)',
+          mimetype: 'audio/unknown',
+          originalname: 't.aac',
+          expectedFormat: AudioFormat.aac,
+        },
+        {
+          description: 'falls back to extension for unknown mime (opus)',
+          mimetype: 'audio/unknown',
+          originalname: 't.opus',
+          expectedFormat: AudioFormat.opus,
+        },
+        {
+          description: 'falls back to extension for unknown mime (mp3)',
+          mimetype: 'audio/unknown',
+          originalname: 't.mp3',
+          expectedFormat: AudioFormat.mp3,
+        },
+        {
+          description: 'falls back to extension for unknown mime (flac)',
+          mimetype: 'audio/unknown',
+          originalname: 't.flac',
+          expectedFormat: AudioFormat.flac,
+        },
+        {
+          description: 'falls back to mp3 if all else fails',
+          mimetype: 'audio/unknown',
+          originalname: 't.random',
+          expectedFormat: AudioFormat.mp3,
+        },
+      ];
 
-        const file = { ...mockFile, mimetype: 'audio/opus', originalname: 't.opus' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.opus }),
-        );
-      });
+      it.each(scenarios)(
+        '$description',
+        async ({ mimetype, originalname, expectedFormat }) => {
+          trackRepository.findOne.mockResolvedValue({
+            id: mockTrackId,
+            access: [{ userId: mockUserId, role: 'owner' }],
+          } as any);
+          storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
+          audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
 
-      it('detects flac', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/flac', originalname: 't.flac' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.flac }),
-        );
-      });
-
-      it('detects wav by mime', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/x-wav', originalname: 't.wav' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.wav }),
-        );
-      });
-
-      it('detects aac by mime', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/aac', originalname: 't.aac' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.aac }),
-        );
-      });
-
-      it('falls back to extension for unknown mime (ogg)', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.ogg' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.opus }),
-        );
-      });
-
-      it('falls back to extension for unknown mime (wav)', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.wav' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.wav }),
-        );
-      });
-
-      it('falls back to extension for unknown mime (m4a)', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.m4a' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.aac }),
-        );
-      });
-
-      it('falls back to extension for unknown mime (aac)', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.aac' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.aac }),
-        );
-      });
-
-      it('falls back to extension for unknown mime (opus)', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.opus' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.opus }),
-        );
-      });
-
-      it('falls back to extension for unknown mime (mp3)', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.mp3' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.mp3 }),
-        );
-      });
-
-      it('falls back to extension for unknown mime (flac)', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.flac' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.flac }),
-        );
-      });
-
-      it('falls back to mp3 if all else fails', async () => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
-        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
-
-        const file = { ...mockFile, mimetype: 'audio/unknown', originalname: 't.random' };
-        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-        expect(audioFileRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ format: AudioFormat.mp3 }),
-        );
-      });
+          const file = { ...mockFile, mimetype, originalname };
+          await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
+          expect(audioFileRepository.create).toHaveBeenCalledWith(
+            expect.objectContaining({ format: expectedFormat }),
+          );
+        },
+      );
     });
   });
 });

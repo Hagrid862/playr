@@ -48,9 +48,30 @@ describe('GetTrackStreamHandler', () => {
 
     describe('Quality Selection', () => {
       const mockFiles = [
-        { id: '1', format: AudioFormat.flac, quality: AudioQuality.original, size: 100 },
-        { id: '2', format: AudioFormat.mp3, quality: AudioQuality.high, size: 80 },
-        { id: '3', format: AudioFormat.mp3, quality: AudioQuality.low, size: 20 },
+        {
+          id: '1',
+          format: AudioFormat.flac,
+          quality: AudioQuality.original,
+          size: 100,
+          bucket: FileBucket.private,
+          key: 'lossless-flac',
+        },
+        {
+          id: '2',
+          format: AudioFormat.mp3,
+          quality: AudioQuality.high,
+          size: 80,
+          bucket: FileBucket.private,
+          key: 'high-mp3',
+        },
+        {
+          id: '3',
+          format: AudioFormat.mp3,
+          quality: AudioQuality.low,
+          size: 20,
+          bucket: FileBucket.private,
+          key: 'low-mp3',
+        },
       ] as any[];
 
       beforeEach(() => {
@@ -66,8 +87,8 @@ describe('GetTrackStreamHandler', () => {
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.lossless, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(
-          undefined,
-          undefined,
+          FileBucket.private,
+          'lossless-flac',
           expect.objectContaining({ start: 0, end: 99 }),
         );
       });

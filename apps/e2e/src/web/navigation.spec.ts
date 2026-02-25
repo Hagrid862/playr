@@ -138,8 +138,5 @@ test.describe("Navigation Flow", () => {
 
     await expect(page).toHaveURL(/\/app\/library\/overview/);
     await expect(dashboardPage.sidebar).toBeVisible({ timeout: 15000 });
-
-    await expect(page).toHaveURL(/\/app\/library\/overview/);
-    await expect(dashboardPage.sidebar).toBeVisible({ timeout: 15000 });
   });
 });
