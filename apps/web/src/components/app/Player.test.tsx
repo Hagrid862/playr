@@ -24,7 +24,9 @@ vi.mock('./player/PlayerMobile', () => ({
 vi.mock('./player/PlayerTrackInfo', () => ({
   PlayerTrackInfo: ({ onSeek }: { onSeek: (time: number) => void }) => (
     <div data-testid="player-track-info">
-      <button onClick={() => onSeek(42)}>Seek</button>
+      <button type="button" onClick={() => onSeek(42)}>
+        Seek
+      </button>
     </div>
   ),
 }));
