@@ -196,9 +196,11 @@ export function CreateTrackForm({
             <FileField
               label="Audio File"
               accept="audio/*"
-              error={
-                (field.state.meta.errors[0] as string | undefined) ||
-                (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
+              error={  
+                field.state.meta.isTouched  
+                  ? (field.state.meta.errors[0] as string | undefined) ||  
+                    (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]  
+                  : undefined  
               }
               onChange={(file) => field.handleChange(file)}
               onBlur={field.handleBlur}

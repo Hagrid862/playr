@@ -20,8 +20,15 @@ export function PlayerMobile() {
           )}
         </div>
         <div className="flex flex-col min-w-0">
-          <div className="text-white font-semibold truncate text-sm">{trackTitle}</div>
-          <div className="text-white/50 text-xs truncate font-medium">{trackArtist}</div>
+          <div className="text-white font-semibold truncate text-sm" data-testid="track-title">
+            {trackTitle}
+          </div>
+          <div
+            className="text-white/50 text-xs truncate font-medium"
+            data-testid="track-artist"
+          >
+            {trackArtist}
+          </div>
         </div>
       </div>
       <Button
