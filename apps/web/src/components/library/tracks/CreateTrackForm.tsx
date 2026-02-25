@@ -325,7 +325,10 @@ export function CreateTrackForm({
                 inputRef={fileInputRef}
                 value={field.state.value}
                 showClearButton
-                error={field.state.meta.errors[0] as string | undefined}
+                error={
+                  (field.state.meta.errors[0] as string | undefined) ||
+                  (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
+                }
                 onChange={(file) => field.handleChange(file)}
                 onBlur={field.handleBlur}
               />
@@ -352,7 +355,11 @@ export function CreateTrackForm({
             </div>
             <form.Subscribe selector={(state) => [state.isSubmitting] as const}>
               {([isSubmitting]) => (
-                <Button type="submit" disabled={isLoading || isSubmitting} className="min-w-32 group">
+                <Button
+                  type="submit"
+                  disabled={isLoading || isSubmitting}
+                  className="min-w-32 group"
+                >
                   {isLoading || isSubmitting ? (
                     <>
                       <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
