@@ -232,6 +232,9 @@ describe('CreateTrackForm', () => {
       expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', error);
     });
 
+    expect(screen.getByText('Submission failed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add track/i })).toBeInTheDocument();
+
     consoleSpy.mockRestore();
   });
 
