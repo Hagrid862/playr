@@ -81,7 +81,7 @@ describe('AudioProcessingWorker', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should be defined', () => {
@@ -281,6 +281,7 @@ describe('AudioProcessingWorker', () => {
         expect.any(Error),
       );
       transcodeSpy.mockRestore();
+      loggerSpy.mockRestore();
     });
   });
 
