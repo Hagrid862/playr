@@ -42,6 +42,7 @@ function AddContentPage() {
       toast.dismiss('uploading-audio');
       toast.error('Failed to create track or upload audio');
       console.error(error);
+      throw error;
     }
   };
 

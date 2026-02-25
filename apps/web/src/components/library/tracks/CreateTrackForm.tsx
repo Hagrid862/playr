@@ -64,6 +64,7 @@ export function CreateTrackForm({
 }: CreateTrackFormProps) {
   const navigate = useNavigate();
   const [stayOnPage, setStayOnPage] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -81,6 +82,7 @@ export function CreateTrackForm({
       onSubmit: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
+      setSubmissionError(null);
       try {
         const metadata = CreateLibraryTrackRequestSchema.parse(value);
         const audioFile = z.instanceof(File).parse(value.audioFile);
@@ -94,8 +96,11 @@ export function CreateTrackForm({
           navigate({ to: '..' });
         }
       } catch (error) {
-        // Error handling is managed by the onSubmit prop/caller
+        const message =
+          error instanceof Error ? error.message : 'Submission failed. Please try again.';
+        setSubmissionError(message);
         console.error('Submission failed:', error);
+        throw error;
       }
     },
   });
@@ -105,13 +110,16 @@ export function CreateTrackForm({
       onSubmit={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        form.handleSubmit();
+        void form.handleSubmit().catch(() => {
+          /* Error surfaced via submissionError state and re-thrown from onSubmit */
+        });
       }}
       className="flex flex-col gap-8"
     >
       <form.Subscribe selector={(state) => state.errors}>
         {(errors) => {
-          const error = (errors?.[0] as Record<string, string> | undefined)?.form;
+          const error =
+            submissionError ?? (errors?.[0] as Record<string, string> | undefined)?.form;
           return error ? <div className="text-destructive text-sm font-medium">{error}</div> : null;
         }}
       </form.Subscribe>
