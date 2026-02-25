@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { AudioProcessingModule } from '../audio-processing/audio-processing.module';
 import { BulkCreateLibraryTracksHandler } from './commands/handlers/bulk-create-library-tracks.handler';
+import { BulkUploadTrackAudioHandler } from './commands/handlers/bulk-upload-track-audio.handler';
 import { CreateLibraryTrackHandler } from './commands/handlers/create-library-track.handler';
 import { DeleteLibraryTrackHandler } from './commands/handlers/delete-library-track.handler';
 import { UpdateLibraryTrackHandler } from './commands/handlers/update-library-track.handler';
@@ -14,6 +15,7 @@ import { GetTrackStreamQualitiesHandler } from './queries/handlers/get-track-str
 
 export const CommandHandlers = [
   BulkCreateLibraryTracksHandler,
+  BulkUploadTrackAudioHandler,
   CreateLibraryTrackHandler,
   UpdateLibraryTrackHandler,
   DeleteLibraryTrackHandler,
