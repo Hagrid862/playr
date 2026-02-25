@@ -22,22 +22,25 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodAlbum, ZodImage } from '@repo/contracts';
+import { BulkCreateLibraryTracksCommand } from '../library-tracks/commands/impl/bulk-create-library-tracks.command';
 import { CreateLibraryAlbumCommand } from './commands/impl/create-library-album.command';
+import { DeleteLibraryAlbumCoverCommand } from './commands/impl/delete-library-album-cover.command';
 import { DeleteLibraryAlbumCommand } from './commands/impl/delete-library-album.command';
 import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.command';
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
-import { DeleteLibraryAlbumCoverCommand } from './commands/impl/delete-library-album-cover.command';
+import { BulkCreateLibraryTracksRequestDto } from './dto/request/bulk-create-library-tracks.request.dto';
 import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
 import { GetLibraryAlbumsRequestDto } from './dto/request/get-library-albums.request.dto';
 import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
+import { BulkCreateLibraryTracksResponseDto } from './dto/response/bulk-create-library-tracks.response.dto';
 import { CreateLibraryAlbumResponseDto } from './dto/response/create-library-album.response.dto';
+import { DeleteLibraryAlbumCoverResponseDto } from './dto/response/delete-library-album-cover.response.dto';
+import { DeleteLibraryAlbumResponseDto } from './dto/response/delete-library-album.response.dto';
 import { GetLibraryAlbumTracksResponseDto } from './dto/response/get-library-album-tracks.response.dto';
 import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.response.dto';
 import { GetLibraryAlbumsResponseDto } from './dto/response/get-library-albums.response.dto';
 import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
 import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
-import { DeleteLibraryAlbumResponseDto } from './dto/response/delete-library-album.response.dto';
-import { DeleteLibraryAlbumCoverResponseDto } from './dto/response/delete-library-album-cover.response.dto';
 import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
 import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
 import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
@@ -148,6 +151,40 @@ export class AlbumsController {
   })
   async getAlbumTracks(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.queryBus.execute(new GetLibraryAlbumTracksQuery(userId, id));
+  }
+
+  @Post(':id/tracks/bulk')
+  @UseGuards(JwtAuthGuard, AlbumAccessGuard)
+  @CheckAlbumAccess('id')
+  @ApiOperation({ summary: 'Bulk create tracks in album' })
+  @ApiResponse({
+    status: 201,
+    description: 'Tracks created successfully',
+    type: BulkCreateLibraryTracksResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album not found',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 412,
+    description: 'User library not found',
+    type: ApiErrorResponseDto,
+  })
+  async bulkCreateTracks(
+    @Param('id') albumId: string,
+    @Body() body: BulkCreateLibraryTracksRequestDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.commandBus.execute(
+      new BulkCreateLibraryTracksCommand(albumId, body, userId),
+    );
   }
 
   @Patch(':id')
