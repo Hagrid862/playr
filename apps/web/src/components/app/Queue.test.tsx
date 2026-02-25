@@ -45,16 +45,10 @@ vi.mock('./queue/QueueNextUp', () => ({
     onDragEnd: (e: DragEndEvent) => void;
   }) => (
     <div data-testid="queue-next-up">
-      <button
-        type="button"
-        onClick={() => onPlayTrack({ uniqueId: '2' } as QueueItem)}
-      >
+      <button type="button" onClick={() => onPlayTrack({ uniqueId: '2' } as QueueItem)}>
         Play Next
       </button>
-      <button
-        type="button"
-        onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}
-      >
+      <button type="button" onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}>
         Remove Next
       </button>
       <button

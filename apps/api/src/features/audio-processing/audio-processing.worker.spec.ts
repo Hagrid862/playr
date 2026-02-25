@@ -345,7 +345,11 @@ describe('AudioProcessingWorker', () => {
         noVideo: vi.fn().mockReturnThis(),
         audioChannels: vi.fn().mockReturnThis(),
         audioFrequency: vi.fn().mockReturnThis(),
-        on: vi.fn().mockImplementation(function (this: unknown, event: string, cb: (err?: Error) => void) {
+        on: vi.fn().mockImplementation(function (
+          this: unknown,
+          event: string,
+          cb: (err?: Error) => void,
+        ) {
           if (event === 'error') {
             errorCallback = cb as (err: Error) => void;
           }

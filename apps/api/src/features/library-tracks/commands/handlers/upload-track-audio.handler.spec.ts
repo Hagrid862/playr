@@ -213,23 +213,20 @@ describe('UploadTrackAudioHandler', () => {
         },
       ];
 
-      it.each(scenarios)(
-        '$description',
-        async ({ mimetype, originalname, expectedFormat }) => {
-          trackRepository.findOne.mockResolvedValue({
-            id: mockTrackId,
-            access: [{ userId: mockUserId, role: 'owner' }],
-          } as any);
-          storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-          audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
+      it.each(scenarios)('$description', async ({ mimetype, originalname, expectedFormat }) => {
+        trackRepository.findOne.mockResolvedValue({
+          id: mockTrackId,
+          access: [{ userId: mockUserId, role: 'owner' }],
+        } as any);
+        storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
+        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
 
-          const file = { ...mockFile, mimetype, originalname };
-          await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
-          expect(audioFileRepository.create).toHaveBeenCalledWith(
-            expect.objectContaining({ format: expectedFormat }),
-          );
-        },
-      );
+        const file = { ...mockFile, mimetype, originalname };
+        await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
+        expect(audioFileRepository.create).toHaveBeenCalledWith(
+          expect.objectContaining({ format: expectedFormat }),
+        );
+      });
     });
   });
 });

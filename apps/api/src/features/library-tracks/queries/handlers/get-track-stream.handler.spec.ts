@@ -95,7 +95,14 @@ describe('GetTrackStreamHandler', () => {
 
       it('should return exact match for high quality mp3 when only mp3 is available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '2', format: AudioFormat.mp3, quality: AudioQuality.high, size: 80, bucket: FileBucket.public, key: 'high-mp3' },
+          {
+            id: '2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.high,
+            size: 80,
+            bucket: FileBucket.public,
+            key: 'high-mp3',
+          },
         ] as any[]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.high, '');
         await handler.execute(query);
@@ -108,8 +115,22 @@ describe('GetTrackStreamHandler', () => {
 
       it('should prefer high quality opus over high quality mp3 when both are available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.opus, quality: AudioQuality.high, size: 80, bucket: FileBucket.public, key: 'high-opus' },
-          { id: '2', format: AudioFormat.mp3, quality: AudioQuality.high, size: 80, bucket: FileBucket.public, key: 'high-mp3' },
+          {
+            id: '1',
+            format: AudioFormat.opus,
+            quality: AudioQuality.high,
+            size: 80,
+            bucket: FileBucket.public,
+            key: 'high-opus',
+          },
+          {
+            id: '2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.high,
+            size: 80,
+            bucket: FileBucket.public,
+            key: 'high-mp3',
+          },
         ] as any[]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.high, '');
         await handler.execute(query);
@@ -164,7 +185,14 @@ describe('GetTrackStreamHandler', () => {
 
       it('should return exact match for low quality mp3 when only mp3 is available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '2', format: AudioFormat.mp3, quality: AudioQuality.low, size: 20, bucket: FileBucket.public, key: 'low-mp3' },
+          {
+            id: '2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.low,
+            size: 20,
+            bucket: FileBucket.public,
+            key: 'low-mp3',
+          },
         ] as any[]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.low, '');
         await handler.execute(query);
@@ -177,8 +205,22 @@ describe('GetTrackStreamHandler', () => {
 
       it('should prefer low quality opus over low quality mp3 when both are available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.opus, quality: AudioQuality.low, size: 20, bucket: FileBucket.public, key: 'low-opus' },
-          { id: '2', format: AudioFormat.mp3, quality: AudioQuality.low, size: 20, bucket: FileBucket.public, key: 'low-mp3' },
+          {
+            id: '1',
+            format: AudioFormat.opus,
+            quality: AudioQuality.low,
+            size: 20,
+            bucket: FileBucket.public,
+            key: 'low-opus',
+          },
+          {
+            id: '2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.low,
+            size: 20,
+            bucket: FileBucket.public,
+            key: 'low-mp3',
+          },
         ] as any[]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.low, '');
         await handler.execute(query);
