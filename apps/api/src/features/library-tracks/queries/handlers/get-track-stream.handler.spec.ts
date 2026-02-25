@@ -324,6 +324,46 @@ describe('GetTrackStreamHandler', () => {
         await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
       });
 
+      it('should parse suffix range bytes=-500 as last 500 bytes', async () => {
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=-500',
+        );
+        await handler.execute(query);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+          start: 500,
+          end: 999,
+        });
+      });
+
+      it('should throw if suffix range has invalid or empty suffix', async () => {
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=-',
+        );
+        await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
+      });
+
+      it('should throw if range has non-numeric values', async () => {
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=abc-def',
+        );
+        await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
+      });
+
+      it('should throw if start is greater than end', async () => {
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=500-300',
+        );
+        await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
+      });
+
       it('should fallback mp3 mimetype properly', async () => {
         audioFileRepository.findMany.mockResolvedValue([
           { id: '1', format: AudioFormat.mp3, quality: AudioQuality.standard, size: 1000 },
