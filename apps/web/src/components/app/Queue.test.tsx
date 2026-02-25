@@ -18,8 +18,12 @@ vi.mock('./queue/QueueHeader', () => ({
     onToggleQueue: () => void;
   }) => (
     <div data-testid="queue-header">
-      <button onClick={onShowHistory}>Show History</button>
-      <button onClick={onToggleQueue}>Toggle Queue</button>
+      <button type="button" onClick={onShowHistory}>
+        Show History
+      </button>
+      <button type="button" onClick={onToggleQueue}>
+        Toggle Queue
+      </button>
     </div>
   ),
 }));
@@ -41,11 +45,20 @@ vi.mock('./queue/QueueNextUp', () => ({
     onDragEnd: (e: DragEndEvent) => void;
   }) => (
     <div data-testid="queue-next-up">
-      <button onClick={() => onPlayTrack({ uniqueId: '2' } as QueueItem)}>Play Next</button>
-      <button onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}>
+      <button
+        type="button"
+        onClick={() => onPlayTrack({ uniqueId: '2' } as QueueItem)}
+      >
+        Play Next
+      </button>
+      <button
+        type="button"
+        onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}
+      >
         Remove Next
       </button>
       <button
+        type="button"
         onClick={() =>
           onDragEnd({ active: { id: '2' }, over: { id: '3' } } as unknown as DragEndEvent)
         }
@@ -53,6 +66,7 @@ vi.mock('./queue/QueueNextUp', () => ({
         Drag End
       </button>
       <button
+        type="button"
         onClick={() =>
           onDragEnd({ active: { id: '2' }, over: { id: '2' } } as unknown as DragEndEvent)
         }
@@ -60,6 +74,7 @@ vi.mock('./queue/QueueNextUp', () => ({
         Drag Same
       </button>
       <button
+        type="button"
         onClick={() =>
           onDragEnd({ active: { id: '4' }, over: { id: '5' } } as unknown as DragEndEvent)
         }
@@ -67,6 +82,7 @@ vi.mock('./queue/QueueNextUp', () => ({
         Drag Invalid
       </button>
       <button
+        type="button"
         onClick={() => onDragEnd({ active: { id: '2' }, over: null } as unknown as DragEndEvent)}
       >
         Drag No Over
@@ -78,7 +94,9 @@ vi.mock('./queue/QueueNextUp', () => ({
 vi.mock('./History', () => ({
   History: ({ isVisible, onBack }: { isVisible: boolean; onBack: () => void }) => (
     <div data-testid="queue-history" data-visible={isVisible}>
-      <button onClick={onBack}>Back to Main</button>
+      <button type="button" onClick={onBack}>
+        Back to Main
+      </button>
     </div>
   ),
 }));
