@@ -76,7 +76,9 @@ test.describe("Queue Management", () => {
     // Get album ID from URL or list
     await page.locator("a").filter({ hasText: albumName }).first().click();
     await page.waitForLoadState("networkidle");
-    const albumId = page.url().split("/").pop();
+    const albumUrl = new URL(page.url());
+    const albumPathname = albumUrl.pathname.replace(/\/+$/, "");
+    const albumId = albumPathname.split("/").pop();
 
     // Add Track 1
     await page.goto(`/app/library/albums/${albumId}/add-content`);
