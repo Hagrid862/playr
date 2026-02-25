@@ -15,7 +15,7 @@ interface JwtPayload {
 }
 
 export const extractTokenFromQuery = (req: Request): string | null => {
-  return (req?.query?.token as string) || null;
+  return typeof req?.query?.token === 'string' ? req.query.token : null;
 };
 
 @Injectable()
@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
-        extractTokenFromQuery as any,
+        extractTokenFromQuery,
       ]),
       ignoreExpiration: false,
       secretOrKey: config.get<string>('JWT_ACCESS_SECRET')!,

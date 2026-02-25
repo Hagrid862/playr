@@ -113,14 +113,37 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
     if (query.range) {
       const parts = query.range.replace(/bytes=/, '').split('-');
-      start = parseInt(parts[0], 10);
-      end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+      const suffix = parts[0] === '';
+      const startRaw = suffix ? '' : parts[0];
+      const endRaw = parts[1] ?? '';
 
-      if (start >= totalSize || end >= totalSize) {
-        throw new HttpException(
-          'Requested range not satisfiable',
-          HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
-        );
+      if (suffix) {
+        const lastN = parseInt(endRaw, 10);
+        if (!Number.isFinite(lastN) || lastN < 0) {
+          throw new HttpException(
+            'Requested range not satisfiable',
+            HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+          );
+        }
+        start = Math.max(0, totalSize - lastN);
+        end = totalSize - 1;
+      } else {
+        start = parseInt(startRaw, 10);
+        end = endRaw ? parseInt(endRaw, 10) : totalSize - 1;
+        if (
+          !Number.isFinite(start) ||
+          !Number.isFinite(end) ||
+          start < 0 ||
+          end < 0 ||
+          start > end ||
+          start >= totalSize ||
+          end >= totalSize
+        ) {
+          throw new HttpException(
+            'Requested range not satisfiable',
+            HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+          );
+        }
       }
     }
 
