@@ -74,14 +74,11 @@ test.describe("Playback Functionality", () => {
     });
 
     await test.step("Create Album", async () => {
-      console.log("Navigating to create album page...");
       await page.goto("/app/library/albums/create");
       await page.waitForLoadState("networkidle");
-      console.log("Picking artist...");
       await page.getByRole("button", { name: "Pick existing artist" }).click();
       await page.getByText(artistName).click();
       await page.waitForLoadState("networkidle");
-      console.log("Filling album name...");
       await expect(page).toHaveURL(/\/add-content\/album/);
 
       await page.getByLabel("Album Title").waitFor({ state: "visible" });
