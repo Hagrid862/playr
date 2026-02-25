@@ -27,12 +27,9 @@ export class PlayerPage {
     this.shuffleButton = page.getByRole("button", { name: "Toggle Shuffle" });
     this.repeatButton = page.getByRole("button", { name: /Repeat/i });
 
-    // More accurate for PlayerTrackInfo
-    this.trackTitle = page.locator("div.text-white.font-semibold span").first();
-
-    this.trackArtist = page
-      .locator("div.text-white\\/50.text-\\[12px\\]")
-      .first();
+    // Stable selectors for PlayerTrackInfo
+    this.trackTitle = page.getByTestId("track-title");
+    this.trackArtist = page.getByTestId("track-artist");
     this.progressSlider = page.locator('div[role="slider"]').first();
 
     this.moreActionsButton = page.getByRole("button", {
@@ -101,11 +98,16 @@ export class PlayerPage {
     if (expectedTitle) {
       await expect(this.trackTitle).toHaveText(expectedTitle);
     }
-    // Check if progress slider value changes over time
-    const initialValue =
-      await this.progressSlider.getAttribute("aria-valuenow");
-    await this.page.waitForTimeout(1000);
-    const newValue = await this.progressSlider.getAttribute("aria-valuenow");
-    expect(Number(newValue)).toBeGreaterThan(Number(initialValue));
+    // Check if progress slider value increases over time using polling
+    const initialValue = Number(
+      (await this.progressSlider.getAttribute("aria-valuenow")) ?? "0",
+    );
+
+    await expect
+      .poll(async () => {
+        const value = await this.progressSlider.getAttribute("aria-valuenow");
+        return Number(value ?? "0");
+      })
+      .toBeGreaterThan(initialValue);
   }
 }
