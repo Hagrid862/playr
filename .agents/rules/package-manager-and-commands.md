@@ -10,8 +10,8 @@ trigger: always_on
 2. **Monorepo Architecture:** The project is a monorepo powered by Turborepo (`turbo`).
 3. **Running Commands:** Run all commands from the root directory. To run a command for a single package/app, use the `--filter` flag (e.g., `pnpm run <command> --filter <package-name>`).
 4. **DO NOT Run `pnpm dev`:** NEVER use `pnpm dev` or `pnpm dev:host`. We assume the application is already running in Docker Compose.
-5. **Rebuilding & Restarting:** If you modify dependencies (`package.json`), configuration files, or other packages that require a rebuild, DO NOT run dev commands. Instead, restart the Docker Compose containers to apply changes, reinstall dependencies, and rebuild the packages by running:
-   `docker compose restart`
+5. **Rebuilding & Restarting:** If you modify dependencies (`package.json`), Dockerfiles, or other files that require a rebuild, DO NOT run dev commands. Instead, rebuild the Docker images and restart containers to apply changes and reinstall dependencies by running:
+   `docker compose up --build` (or `docker compose up -d --build` for detached mode)
 
 ## Available Commands
 
