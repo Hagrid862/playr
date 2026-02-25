@@ -128,11 +128,25 @@ export class RegistrationPage {
       await expect(this.page).toHaveURL(/\/auth\/login/, { timeout: 15000 });
     } catch (e) {
       // If we failed, check if there's an error message on the page
-      const errorMsg = await this.errorMessage.textContent();
-      if (errorMsg) {
-        console.error(`Registration failed with error: ${errorMsg}`);
-      } else {
-        console.error("Registration failed but no error message found.");
+      try {
+        const errorCount = await this.errorMessage.count();
+        if (errorCount > 0) {
+          const errorMsg = await this.errorMessage.textContent();
+          if (errorMsg) {
+            console.error(`Registration failed with error: ${errorMsg}`);
+          } else {
+            console.error(
+              "Registration failed but error message element is empty.",
+            );
+          }
+        } else {
+          console.error("Registration failed but no error message found.");
+        }
+      } catch (lookupError) {
+        console.error(
+          "Registration failed and checking error message also failed.",
+          lookupError,
+        );
       }
       throw e;
     }
