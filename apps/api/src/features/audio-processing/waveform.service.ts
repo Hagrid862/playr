@@ -29,7 +29,6 @@ export class WaveformService {
       let max = 0;
       for (let j = 0; j < samplesPerPoint; j++) {
         const index = (i * samplesPerPoint + j) * bytesPerSample;
-        if (index + bytesPerSample > buffer.length) break;
         const sample = buffer.readInt16LE(index);
         const absSample = Math.abs(sample) / 32768;
         if (absSample > max) max = absSample;
