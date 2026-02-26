@@ -275,6 +275,46 @@ describe('GetTrackStreamHandler', () => {
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
       });
+
+      it('should return 0 for low quality when format is not opus or mp3 and use final fallback', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          {
+            id: '1',
+            format: AudioFormat.aac,
+            quality: AudioQuality.low,
+            size: 50,
+            bucket: FileBucket.private,
+            key: 'low-aac',
+          },
+        ] as any[]);
+        const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.low, '');
+        await handler.execute(query);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(
+          FileBucket.private,
+          'low-aac',
+          expect.objectContaining({ start: 0, end: 49 }),
+        );
+      });
+
+      it('should select wav for lossless when wav is available', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          {
+            id: '1',
+            format: AudioFormat.wav,
+            quality: AudioQuality.original,
+            size: 200,
+            bucket: FileBucket.private,
+            key: 'lossless-wav',
+          },
+        ] as any[]);
+        const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.lossless, '');
+        await handler.execute(query);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(
+          FileBucket.private,
+          'lossless-wav',
+          expect.any(Object),
+        );
+      });
     });
 
     describe('Range Handling', () => {
@@ -311,6 +351,19 @@ describe('GetTrackStreamHandler', () => {
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
           start: 500,
+          end: 999,
+        });
+      });
+
+      it('should parse range with only start (no hyphen, parts[1] undefined)', async () => {
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=0',
+        );
+        await handler.execute(query);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+          start: 0,
           end: 999,
         });
       });
@@ -360,6 +413,15 @@ describe('GetTrackStreamHandler', () => {
         await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
       });
 
+      it('should throw if end is >= totalSize', async () => {
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=0-1000',
+        );
+        await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
+      });
+
       it('should fallback mp3 mimetype properly', async () => {
         audioFileRepository.findMany.mockResolvedValue([
           { id: '1', format: AudioFormat.mp3, quality: AudioQuality.standard, size: 1000 },
@@ -367,6 +429,38 @@ describe('GetTrackStreamHandler', () => {
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         const res = await handler.execute(query);
         expect(res.metadata.mimeType).toBe('audio/mpeg');
+      });
+
+      it('should fallback to audio/unknown when mimeType is missing and format is not mp3', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          {
+            id: '1',
+            format: AudioFormat.opus,
+            quality: AudioQuality.standard,
+            size: 1000,
+            mimeType: null,
+          },
+        ] as any[]);
+        const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
+        const res = await handler.execute(query);
+        expect(res.metadata.mimeType).toBe('audio/unknown');
+      });
+
+      it('should set isPartial when range is provided', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          { id: '1', format: AudioFormat.mp3, quality: AudioQuality.standard, size: 1000 },
+        ] as any[]);
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=100-200',
+        );
+        const res = await handler.execute(query);
+        expect(res.metadata.isPartial).toBe(true);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+          start: 100,
+          end: 200,
+        });
       });
     });
   });
