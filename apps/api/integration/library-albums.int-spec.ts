@@ -8,7 +8,21 @@ import { StorageService } from '../src/shared/services/storage.service';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import './setup-env';
 import { createIntegrationApp } from './test-utils';
-import { AlbumGetPayload, Image, Library, LibraryAlbum, PrismaClient, Track, User } from '@repo/db';
+import {
+  AlbumGetPayload,
+  AudioFormat,
+  AudioQuality,
+  FileBucket,
+  Image,
+  Library,
+  LibraryAlbum,
+  PrismaClient,
+  ProcessingStatus,
+  Track,
+  TrackGetPayload,
+  User,
+  Visibility,
+} from '@repo/db';
 
 // Helper type for Album with relations matching repository include
 type AlbumWithRelations = AlbumGetPayload<{
@@ -546,11 +560,34 @@ describe('LibraryAlbumsController (Integration)', () => {
       deletedAt: null,
     };
 
-    const mockTrackWithAccess = {
+    const mockTrackWithAccess: TrackGetPayload<{
+      include: { artists: true; album: true; access: true };
+    }> = {
       id: 'track-1',
       title: 'Track 1',
+      trackNumber: 1,
+      diskNumber: 1,
+      duration: 0,
+      listenedCount: 0,
+      explicit: false,
+      lyrics: null,
+      visibility: 'private' as Visibility,
       albumId: mockAlbum.id,
-      access: [{ userId: 'user-123', role: 'owner' }],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      artists: [],
+      album: mockAlbum,
+      access: [
+        {
+          id: 'access-1',
+          userId: 'user-123',
+          role: 'owner',
+          trackId: 'track-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
     };
 
     it('should upload multiple audio files successfully (201)', async () => {
@@ -571,11 +608,11 @@ describe('LibraryAlbumsController (Integration)', () => {
       const mockAudioFile1 = {
         id: 'audio-1',
         trackId: 'track-1',
-        status: 'pending',
-        format: 'mp3',
-        quality: 'original',
+        status: ProcessingStatus.pending,
+        format: AudioFormat.mp3,
+        quality: AudioQuality.original,
         size: 100,
-        bucket: 'private',
+        bucket: FileBucket.private,
         key: 'key1',
         mimeType: 'audio/mpeg',
         url: 'https://cdn.example.com/audio.mp3',
