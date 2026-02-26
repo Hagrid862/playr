@@ -89,9 +89,7 @@ describe('AlbumsController', () => {
 
     await controller.bulkCreateTracks(mockAlbumId, body as any, mockUserId);
 
-    expect(commandBus.execute).toHaveBeenCalledWith(
-      expect.any(BulkCreateLibraryTracksCommand),
-    );
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkCreateLibraryTracksCommand));
   });
 
   it('bulkUploadTrackAudio should execute BulkUploadTrackAudioCommand with parsed trackIds', async () => {
@@ -104,9 +102,7 @@ describe('AlbumsController', () => {
 
     await controller.bulkUploadTrackAudio(mockAlbumId, JSON.stringify(trackIds), files, mockUserId);
 
-    expect(commandBus.execute).toHaveBeenCalledWith(
-      expect.any(BulkUploadTrackAudioCommand),
-    );
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkUploadTrackAudioCommand));
   });
 
   it('bulkUploadTrackAudio should throw BadRequestException when trackIds is not valid JSON', async () => {
@@ -123,7 +119,12 @@ describe('AlbumsController', () => {
     const files = [] as Express.Multer.File[];
 
     await expect(
-      controller.bulkUploadTrackAudio(mockAlbumId, JSON.stringify({ foo: 'bar' }), files, mockUserId),
+      controller.bulkUploadTrackAudio(
+        mockAlbumId,
+        JSON.stringify({ foo: 'bar' }),
+        files,
+        mockUserId,
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(commandBus.execute).not.toHaveBeenCalled();
@@ -139,9 +140,7 @@ describe('AlbumsController', () => {
       mockUserId,
     );
 
-    expect(commandBus.execute).toHaveBeenCalledWith(
-      expect.any(BulkUploadTrackAudioCommand),
-    );
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkUploadTrackAudioCommand));
   });
 
   it('bulkUploadTrackAudio should use empty files array when files is undefined', async () => {
@@ -152,16 +151,12 @@ describe('AlbumsController', () => {
       mockUserId,
     );
 
-    expect(commandBus.execute).toHaveBeenCalledWith(
-      expect.any(BulkUploadTrackAudioCommand),
-    );
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkUploadTrackAudioCommand));
   });
 
   it('deleteCover should execute DeleteLibraryAlbumCoverCommand', async () => {
     await controller.deleteCover(mockAlbumId, mockUserId);
 
-    expect(commandBus.execute).toHaveBeenCalledWith(
-      expect.any(DeleteLibraryAlbumCoverCommand),
-    );
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(DeleteLibraryAlbumCoverCommand));
   });
 });

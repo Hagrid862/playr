@@ -65,8 +65,7 @@ const createTrackFixture = (overrides: Partial<Track> = {}): Track => ({
 const createMockJob = (
   data: AudioProcessingJobData,
   id: string = 'job-1',
-): Job<AudioProcessingJobData> =>
-  createMock<Job<AudioProcessingJobData>>({ data, id });
+): Job<AudioProcessingJobData> => createMock<Job<AudioProcessingJobData>>({ data, id });
 
 describe('AudioProcessingWorker', () => {
   let worker: AudioProcessingWorker;
@@ -94,9 +93,7 @@ describe('AudioProcessingWorker', () => {
       return mime[format] ?? 'application/octet-stream';
     });
     transcodeService.transcode.mockResolvedValue();
-    waveformService.generateWaveform.mockResolvedValue(
-      Array.from({ length: 1024 }, () => 0),
-    );
+    waveformService.generateWaveform.mockResolvedValue(Array.from({ length: 1024 }, () => 0));
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -145,9 +142,7 @@ describe('AudioProcessingWorker', () => {
       audioFileRepository.findOne.mockResolvedValue(null);
 
       await expect(worker.process(mockJob)).rejects.toThrow(NotFoundException);
-      await expect(worker.process(mockJob)).rejects.toThrow(
-        'Audio file af-123 not found',
-      );
+      await expect(worker.process(mockJob)).rejects.toThrow('Audio file af-123 not found');
       expect(audioFileRepository.update).not.toHaveBeenCalled();
     });
 
@@ -158,9 +153,7 @@ describe('AudioProcessingWorker', () => {
         userId: 'user-123',
       });
 
-      await expect(worker.process(invalidJob)).rejects.toThrow(
-        'audioFileId is required',
-      );
+      await expect(worker.process(invalidJob)).rejects.toThrow('audioFileId is required');
       expect(audioFileRepository.findOne).not.toHaveBeenCalled();
     });
 
@@ -171,9 +164,7 @@ describe('AudioProcessingWorker', () => {
         userId: 'user-123',
       });
 
-      await expect(worker.process(invalidJob)).rejects.toThrow(
-        'trackId is required',
-      );
+      await expect(worker.process(invalidJob)).rejects.toThrow('trackId is required');
     });
 
     it('should throw when userId is missing', async () => {
@@ -183,9 +174,7 @@ describe('AudioProcessingWorker', () => {
         userId: '',
       });
 
-      await expect(worker.process(invalidJob)).rejects.toThrow(
-        'userId is required',
-      );
+      await expect(worker.process(invalidJob)).rejects.toThrow('userId is required');
     });
 
     it('should process audio file successfully for non-lossless', async () => {
@@ -209,14 +198,8 @@ describe('AudioProcessingWorker', () => {
       expect(fs.mkdtemp).toHaveBeenCalled();
       expect(storageService.getFile).toHaveBeenCalled();
       expect(mm.parseFile).toHaveBeenCalled();
-      expect(waveformService.generateWaveform).toHaveBeenCalledWith(
-        expect.any(String),
-        1024,
-      );
-      expect(audioFileRepository.update).toHaveBeenCalledWith(
-        'af-123',
-        expect.any(Object),
-      );
+      expect(waveformService.generateWaveform).toHaveBeenCalledWith(expect.any(String), 1024);
+      expect(audioFileRepository.update).toHaveBeenCalledWith('af-123', expect.any(Object));
       expect(trackRepository.update).toHaveBeenCalledWith('tr-123', {
         duration: 120,
       });
@@ -266,8 +249,7 @@ describe('AudioProcessingWorker', () => {
 
       const createCalls = audioFileRepository.create.mock.calls;
       const originalFlacCall = createCalls.find(
-        (call) =>
-          call[0].quality === 'original' && call[0].format === AudioFormat.flac,
+        (call) => call[0].quality === 'original' && call[0].format === AudioFormat.flac,
       );
       expect(originalFlacCall).toBeDefined();
       expect(originalFlacCall![0].bitrate).toBeUndefined();
@@ -284,9 +266,7 @@ describe('AudioProcessingWorker', () => {
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
       trackRepository.findOne.mockResolvedValue(null);
 
-      await expect(worker.process(mockJob)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(worker.process(mockJob)).rejects.toThrow(NotFoundException);
       expect(audioFileRepository.update).toHaveBeenCalledWith('af-123', {
         status: ProcessingStatus.failed,
       });
@@ -431,9 +411,7 @@ describe('AudioProcessingWorker', () => {
 
       await worker.process(jobWithId);
 
-      expect(fs.mkdtemp).toHaveBeenCalledWith(
-        expect.stringContaining('playr-my-job-id-'),
-      );
+      expect(fs.mkdtemp).toHaveBeenCalledWith(expect.stringContaining('playr-my-job-id-'));
     });
 
     it('should fallback to unknown job id when job id is missing', async () => {
@@ -459,9 +437,7 @@ describe('AudioProcessingWorker', () => {
 
       await worker.process(jobWithoutId);
 
-      expect(fs.mkdtemp).toHaveBeenCalledWith(
-        expect.stringContaining('playr-unknown-'),
-      );
+      expect(fs.mkdtemp).toHaveBeenCalledWith(expect.stringContaining('playr-unknown-'));
     });
 
     it('should skip track update if rounded duration matches existing duration', async () => {

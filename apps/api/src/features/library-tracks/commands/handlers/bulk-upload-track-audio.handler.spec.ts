@@ -3,11 +3,7 @@ import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { getQueueToken } from '@nestjs/bullmq';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AudioFileSchema } from '@repo/contracts';
 import { AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
@@ -142,34 +138,20 @@ describe('BulkUploadTrackAudioHandler', () => {
       const command = new BulkUploadTrackAudioCommand(albumId, trackIds, files, userId);
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-      await expect(handler.execute(command)).rejects.toThrow(
-        'Maximum 50 files per bulk upload',
-      );
+      await expect(handler.execute(command)).rejects.toThrow('Maximum 50 files per bulk upload');
     });
 
     it('should throw BadRequestException when file has no buffer', async () => {
       const invalidFile = createMockFile({ buffer: undefined as any });
-      const command = new BulkUploadTrackAudioCommand(
-        albumId,
-        [trackId1],
-        [invalidFile],
-        userId,
-      );
+      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [invalidFile], userId);
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-      await expect(handler.execute(command)).rejects.toThrow(
-        'File at index 0 is empty or invalid',
-      );
+      await expect(handler.execute(command)).rejects.toThrow('File at index 0 is empty or invalid');
     });
 
     it('should throw BadRequestException when file exceeds 100MB', async () => {
       const largeFile = createMockFile({ size: 101 * 1024 * 1024 });
-      const command = new BulkUploadTrackAudioCommand(
-        albumId,
-        [trackId1],
-        [largeFile],
-        userId,
-      );
+      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [largeFile], userId);
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -212,17 +194,10 @@ describe('BulkUploadTrackAudioHandler', () => {
     });
 
     it('should throw BadRequestException when file is null', async () => {
-      const command = new BulkUploadTrackAudioCommand(
-        albumId,
-        [trackId1],
-        [null as any],
-        userId,
-      );
+      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [null as any], userId);
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-      await expect(handler.execute(command)).rejects.toThrow(
-        'File at index 0 is empty or invalid',
-      );
+      await expect(handler.execute(command)).rejects.toThrow('File at index 0 is empty or invalid');
     });
 
     it('should throw NotFoundException when track does not exist', async () => {
@@ -313,12 +288,7 @@ describe('BulkUploadTrackAudioHandler', () => {
 
     it('should allow editor role', async () => {
       const file = createMockFile();
-      const command = new BulkUploadTrackAudioCommand(
-        albumId,
-        [trackId1],
-        [file],
-        userId,
-      );
+      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
       trackRepository.findOne.mockResolvedValue({
         id: trackId1,
         albumId,
@@ -342,12 +312,7 @@ describe('BulkUploadTrackAudioHandler', () => {
 
     it('should succeed when file size is exactly 100MB', async () => {
       const file = createMockFile({ size: 100 * 1024 * 1024 });
-      const command = new BulkUploadTrackAudioCommand(
-        albumId,
-        [trackId1],
-        [file],
-        userId,
-      );
+      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
       trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId) as any);
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
       audioFileRepository.create.mockResolvedValue(mockAudioFile('af-1', trackId1) as any);
@@ -480,21 +445,96 @@ describe('BulkUploadTrackAudioHandler', () => {
       originalname: string;
       expectedFormat: AudioFormat;
     }[] = [
-      { description: 'detects mp3', mimetype: 'audio/mpeg', originalname: 't.mp3', expectedFormat: AudioFormat.mp3 },
-      { description: 'detects opus via ogg mime', mimetype: 'audio/ogg', originalname: 't.ogg', expectedFormat: AudioFormat.opus },
-      { description: 'detects flac', mimetype: 'audio/flac', originalname: 't.flac', expectedFormat: AudioFormat.flac },
-      { description: 'detects wav', mimetype: 'audio/x-wav', originalname: 't.wav', expectedFormat: AudioFormat.wav },
-      { description: 'detects aac', mimetype: 'audio/aac', originalname: 't.aac', expectedFormat: AudioFormat.aac },
-      { description: 'detects aac via mp4 mime', mimetype: 'audio/mp4', originalname: 't.m4a', expectedFormat: AudioFormat.aac },
-      { description: 'falls back to extension for flac (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.flac', expectedFormat: AudioFormat.flac },
-      { description: 'falls back to extension for ogg (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.ogg', expectedFormat: AudioFormat.opus },
-      { description: 'falls back to extension for opus (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.opus', expectedFormat: AudioFormat.opus },
-      { description: 'falls back to extension for mp3 (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.mp3', expectedFormat: AudioFormat.mp3 },
-      { description: 'falls back to extension for wav (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.wav', expectedFormat: AudioFormat.wav },
-      { description: 'falls back to extension for aac (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.aac', expectedFormat: AudioFormat.aac },
-      { description: 'falls back to extension for m4a (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.m4a', expectedFormat: AudioFormat.aac },
-      { description: 'falls back to mp3 for unknown extension (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 't.xyz', expectedFormat: AudioFormat.mp3 },
-      { description: 'falls back to mp3 when filename has no extension (audio/x-flac)', mimetype: 'audio/x-flac', originalname: 'song', expectedFormat: AudioFormat.mp3 },
+      {
+        description: 'detects mp3',
+        mimetype: 'audio/mpeg',
+        originalname: 't.mp3',
+        expectedFormat: AudioFormat.mp3,
+      },
+      {
+        description: 'detects opus via ogg mime',
+        mimetype: 'audio/ogg',
+        originalname: 't.ogg',
+        expectedFormat: AudioFormat.opus,
+      },
+      {
+        description: 'detects flac',
+        mimetype: 'audio/flac',
+        originalname: 't.flac',
+        expectedFormat: AudioFormat.flac,
+      },
+      {
+        description: 'detects wav',
+        mimetype: 'audio/x-wav',
+        originalname: 't.wav',
+        expectedFormat: AudioFormat.wav,
+      },
+      {
+        description: 'detects aac',
+        mimetype: 'audio/aac',
+        originalname: 't.aac',
+        expectedFormat: AudioFormat.aac,
+      },
+      {
+        description: 'detects aac via mp4 mime',
+        mimetype: 'audio/mp4',
+        originalname: 't.m4a',
+        expectedFormat: AudioFormat.aac,
+      },
+      {
+        description: 'falls back to extension for flac (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.flac',
+        expectedFormat: AudioFormat.flac,
+      },
+      {
+        description: 'falls back to extension for ogg (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.ogg',
+        expectedFormat: AudioFormat.opus,
+      },
+      {
+        description: 'falls back to extension for opus (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.opus',
+        expectedFormat: AudioFormat.opus,
+      },
+      {
+        description: 'falls back to extension for mp3 (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.mp3',
+        expectedFormat: AudioFormat.mp3,
+      },
+      {
+        description: 'falls back to extension for wav (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.wav',
+        expectedFormat: AudioFormat.wav,
+      },
+      {
+        description: 'falls back to extension for aac (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.aac',
+        expectedFormat: AudioFormat.aac,
+      },
+      {
+        description: 'falls back to extension for m4a (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.m4a',
+        expectedFormat: AudioFormat.aac,
+      },
+      {
+        description: 'falls back to mp3 for unknown extension (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 't.xyz',
+        expectedFormat: AudioFormat.mp3,
+      },
+      {
+        description: 'falls back to mp3 when filename has no extension (audio/x-flac)',
+        mimetype: 'audio/x-flac',
+        originalname: 'song',
+        expectedFormat: AudioFormat.mp3,
+      },
     ];
 
     it.each(scenarios)('$description', async ({ mimetype, originalname, expectedFormat }) => {

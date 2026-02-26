@@ -15,11 +15,7 @@ import { WaveformService } from './waveform.service';
       },
     }),
   ],
-  providers: [
-    AudioTranscodeService,
-    WaveformService,
-    AudioProcessingWorker,
-  ],
+  providers: [AudioTranscodeService, WaveformService, AudioProcessingWorker],
   exports: [BullModule],
 })
 export class AudioProcessingModule {}

@@ -28,9 +28,7 @@ describe('AudioTranscodeService', () => {
       expect(service.getMimeType(AudioFormat.flac)).toBe('audio/flac');
       expect(service.getMimeType(AudioFormat.wav)).toBe('audio/wav');
       expect(service.getMimeType(AudioFormat.aac)).toBe('audio/aac');
-      expect(service.getMimeType('other' as AudioFormat)).toBe(
-        'application/octet-stream',
-      );
+      expect(service.getMimeType('other' as AudioFormat)).toBe('application/octet-stream');
     });
   });
 
@@ -41,11 +39,7 @@ describe('AudioTranscodeService', () => {
         toFormat: vi.fn().mockReturnThis(),
         audioCodec: vi.fn().mockReturnThis(),
         audioBitrate: vi.fn().mockReturnThis(),
-        on: vi.fn().mockImplementation(function (
-          this: unknown,
-          event: string,
-          cb: () => void,
-        ) {
+        on: vi.fn().mockImplementation(function (this: unknown, event: string, cb: () => void) {
           callbacks[event] = callbacks[event] ?? [];
           callbacks[event].push(cb);
           return this as ffmpeg.FfmpegCommand;
@@ -69,11 +63,7 @@ describe('AudioTranscodeService', () => {
         toFormat: vi.fn().mockReturnThis(),
         audioCodec: vi.fn().mockReturnThis(),
         audioBitrate: vi.fn().mockReturnThis(),
-        on: vi.fn().mockImplementation(function (
-          this: unknown,
-          event: string,
-          cb: () => void,
-        ) {
+        on: vi.fn().mockImplementation(function (this: unknown, event: string, cb: () => void) {
           callbacks[event] = callbacks[event] ?? [];
           callbacks[event].push(cb);
           return this as ffmpeg.FfmpegCommand;
@@ -97,11 +87,7 @@ describe('AudioTranscodeService', () => {
         toFormat: vi.fn().mockReturnThis(),
         audioCodec: vi.fn().mockReturnThis(),
         audioBitrate: vi.fn().mockReturnThis(),
-        on: vi.fn().mockImplementation(function (
-          this: unknown,
-          event: string,
-          cb: () => void,
-        ) {
+        on: vi.fn().mockImplementation(function (this: unknown, event: string, cb: () => void) {
           callbacks[event] = callbacks[event] ?? [];
           callbacks[event].push(cb);
           return this as ffmpeg.FfmpegCommand;
@@ -125,11 +111,7 @@ describe('AudioTranscodeService', () => {
         toFormat: vi.fn().mockReturnThis(),
         audioCodec: vi.fn().mockReturnThis(),
         audioBitrate: vi.fn().mockReturnThis(),
-        on: vi.fn().mockImplementation(function (
-          this: unknown,
-          event: string,
-          cb: () => void,
-        ) {
+        on: vi.fn().mockImplementation(function (this: unknown, event: string, cb: () => void) {
           callbacks[event] = callbacks[event] ?? [];
           callbacks[event].push(cb);
           return this as ffmpeg.FfmpegCommand;
@@ -153,11 +135,7 @@ describe('AudioTranscodeService', () => {
         toFormat: vi.fn().mockReturnThis(),
         audioCodec: vi.fn().mockReturnThis(),
         audioBitrate: vi.fn().mockReturnThis(),
-        on: vi.fn().mockImplementation(function (
-          this: unknown,
-          event: string,
-          cb: () => void,
-        ) {
+        on: vi.fn().mockImplementation(function (this: unknown, event: string, cb: () => void) {
           callbacks[event] = callbacks[event] ?? [];
           callbacks[event].push(cb);
           return this as ffmpeg.FfmpegCommand;
@@ -168,12 +146,7 @@ describe('AudioTranscodeService', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(chain as ffmpeg.FfmpegCommand);
 
-      await service.transcode(
-        '/tmp/in',
-        '/tmp/out',
-        AudioFormat.wav,
-        null,
-      );
+      await service.transcode('/tmp/in', '/tmp/out', AudioFormat.wav, null);
 
       expect(chain.toFormat).not.toHaveBeenCalled();
       expect(chain.audioCodec).not.toHaveBeenCalled();
@@ -186,11 +159,7 @@ describe('AudioTranscodeService', () => {
         toFormat: vi.fn().mockReturnThis(),
         audioCodec: vi.fn().mockReturnThis(),
         audioBitrate: vi.fn().mockReturnThis(),
-        on: vi.fn().mockImplementation(function (
-          this: unknown,
-          event: string,
-          cb: () => void,
-        ) {
+        on: vi.fn().mockImplementation(function (this: unknown, event: string, cb: () => void) {
           callbacks[event] = callbacks[event] ?? [];
           callbacks[event].push(cb);
           return this as ffmpeg.FfmpegCommand;
@@ -229,9 +198,9 @@ describe('AudioTranscodeService', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(chain as ffmpeg.FfmpegCommand);
 
-      await expect(
-        service.transcode('/tmp/in', '/tmp/out', AudioFormat.mp3, 128),
-      ).rejects.toThrow(transcodeError);
+      await expect(service.transcode('/tmp/in', '/tmp/out', AudioFormat.mp3, 128)).rejects.toThrow(
+        transcodeError,
+      );
     });
   });
 });

@@ -6,9 +6,7 @@ export function canUserUpdateTrackDuration(
   userId: string,
 ): boolean {
   return (
-    track.access?.some(
-      (a) =>
-        a.userId === userId && (a.role === 'owner' || a.role === 'editor'),
-    ) ?? false
+    track.access?.some((a) => a.userId === userId && (a.role === 'owner' || a.role === 'editor')) ??
+    false
   );
 }

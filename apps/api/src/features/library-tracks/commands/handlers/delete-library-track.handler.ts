@@ -56,14 +56,9 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
     });
 
     for (const audioFile of audioFiles) {
-      this.storageService
-        .deleteFile(audioFile.bucket as FileBucket, audioFile.key)
-        .catch((err) => {
-          this.logger.error(
-            `Failed to cleanup audio file from S3: ${audioFile.key}`,
-            err,
-          );
-        });
+      this.storageService.deleteFile(audioFile.bucket as FileBucket, audioFile.key).catch((err) => {
+        this.logger.error(`Failed to cleanup audio file from S3: ${audioFile.key}`, err);
+      });
     }
 
     return track;

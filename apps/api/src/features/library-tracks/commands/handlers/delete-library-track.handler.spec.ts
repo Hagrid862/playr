@@ -111,10 +111,7 @@ describe('DeleteLibraryTrackHandler', () => {
       library: { userId },
     });
     expect(audioFileRepository.delete).toHaveBeenCalledWith('audio-1');
-    expect(storageService.deleteFile).toHaveBeenCalledWith(
-      FileBucket.private,
-      'audio/key',
-    );
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, 'audio/key');
   });
 
   it('should throw NotFoundException if track not found or access denied', async () => {
@@ -122,9 +119,7 @@ describe('DeleteLibraryTrackHandler', () => {
 
     const err = await handler.execute(command).catch((e) => e);
     expect(err).toBeInstanceOf(NotFoundException);
-    expect(err.message).toBe(
-      'Track not found or you do not have permission to delete it',
-    );
+    expect(err.message).toBe('Track not found or you do not have permission to delete it');
     expect(trackRepository.findOne).toHaveBeenCalledWith({
       id: trackId,
       access: { some: { userId, role: 'owner' } },
@@ -176,24 +171,15 @@ describe('DeleteLibraryTrackHandler', () => {
       key: 'audio/key2',
     };
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    audioFileRepository.findMany.mockResolvedValue([
-      mockAudioFile1 as any,
-      mockAudioFile2 as any,
-    ]);
+    audioFileRepository.findMany.mockResolvedValue([mockAudioFile1 as any, mockAudioFile2 as any]);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockTrack);
     expect(audioFileRepository.delete).toHaveBeenCalledWith('audio-1');
     expect(audioFileRepository.delete).toHaveBeenCalledWith('audio-2');
-    expect(storageService.deleteFile).toHaveBeenCalledWith(
-      FileBucket.private,
-      'audio/key1',
-    );
-    expect(storageService.deleteFile).toHaveBeenCalledWith(
-      FileBucket.private,
-      'audio/key2',
-    );
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, 'audio/key1');
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, 'audio/key2');
   });
 
   it('should log error when storage delete fails but still return track', async () => {

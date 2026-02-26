@@ -8,15 +8,7 @@ import { StorageService } from '../src/shared/services/storage.service';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import './setup-env';
 import { createIntegrationApp } from './test-utils';
-import {
-  AlbumGetPayload,
-  Image,
-  Library,
-  LibraryAlbum,
-  PrismaClient,
-  Track,
-  User,
-} from '@repo/db';
+import { AlbumGetPayload, Image, Library, LibraryAlbum, PrismaClient, Track, User } from '@repo/db';
 
 // Helper type for Album with relations matching repository include
 type AlbumWithRelations = AlbumGetPayload<{
@@ -501,7 +493,10 @@ describe('LibraryAlbumsController (Integration)', () => {
         });
 
       if (response.status !== 201) {
-        console.log('POST /library/albums/:id/tracks/bulk error:', JSON.stringify(response.body, null, 2));
+        console.log(
+          'POST /library/albums/:id/tracks/bulk error:',
+          JSON.stringify(response.body, null, 2),
+        );
       }
 
       expect(response.status).toBe(201);
@@ -568,7 +563,10 @@ describe('LibraryAlbumsController (Integration)', () => {
         .mockResolvedValueOnce(mockTrackWithAccess)
         .mockResolvedValueOnce(mockTrackWithAccess);
 
-      storageServiceMock.uploadFile.mockResolvedValue({ url: 'https://cdn.example.com/audio.mp3', key: 'key' });
+      storageServiceMock.uploadFile.mockResolvedValue({
+        url: 'https://cdn.example.com/audio.mp3',
+        key: 'key',
+      });
 
       const mockAudioFile1 = {
         id: 'audio-1',
@@ -600,11 +598,20 @@ describe('LibraryAlbumsController (Integration)', () => {
         .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
         .set('Authorization', authHeader)
         .field('trackIds', JSON.stringify(['track-1', 'track-1']))
-        .attach('files', Buffer.from('fake-audio-1'), { filename: 'test1.mp3', contentType: 'audio/mpeg' })
-        .attach('files', Buffer.from('fake-audio-2'), { filename: 'test2.mp3', contentType: 'audio/mpeg' });
+        .attach('files', Buffer.from('fake-audio-1'), {
+          filename: 'test1.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .attach('files', Buffer.from('fake-audio-2'), {
+          filename: 'test2.mp3',
+          contentType: 'audio/mpeg',
+        });
 
       if (response.status !== 201) {
-        console.log('POST /library/albums/:id/tracks/bulk/audio error:', JSON.stringify(response.body, null, 2));
+        console.log(
+          'POST /library/albums/:id/tracks/bulk/audio error:',
+          JSON.stringify(response.body, null, 2),
+        );
       }
 
       expect(response.status).toBe(201);
@@ -621,8 +628,14 @@ describe('LibraryAlbumsController (Integration)', () => {
         .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
         .set('Authorization', authHeader)
         .field('trackIds', JSON.stringify(['track-1']))
-        .attach('files', Buffer.from('fake-audio-1'), { filename: 'test1.mp3', contentType: 'audio/mpeg' })
-        .attach('files', Buffer.from('fake-audio-2'), { filename: 'test2.mp3', contentType: 'audio/mpeg' })
+        .attach('files', Buffer.from('fake-audio-1'), {
+          filename: 'test1.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .attach('files', Buffer.from('fake-audio-2'), {
+          filename: 'test2.mp3',
+          contentType: 'audio/mpeg',
+        })
         .expect(400);
     });
 
@@ -630,8 +643,14 @@ describe('LibraryAlbumsController (Integration)', () => {
       await request(app.getHttpServer())
         .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
         .field('trackIds', JSON.stringify(['track-1', 'track-2']))
-        .attach('files', Buffer.from('fake-audio-1'), { filename: 'test1.mp3', contentType: 'audio/mpeg' })
-        .attach('files', Buffer.from('fake-audio-2'), { filename: 'test2.mp3', contentType: 'audio/mpeg' })
+        .attach('files', Buffer.from('fake-audio-1'), {
+          filename: 'test1.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .attach('files', Buffer.from('fake-audio-2'), {
+          filename: 'test2.mp3',
+          contentType: 'audio/mpeg',
+        })
         .expect(401);
     });
 

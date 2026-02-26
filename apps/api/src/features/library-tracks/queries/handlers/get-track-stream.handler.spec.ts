@@ -356,11 +356,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should parse range with only start (no hyphen, parts[1] undefined)', async () => {
-        const query = new GetTrackStreamQuery(
-          mockTrackId,
-          StreamAudioQuality.standard,
-          'bytes=0',
-        );
+        const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, 'bytes=0');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
           start: 0,

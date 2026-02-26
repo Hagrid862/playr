@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import ffmpeg from 'fluent-ffmpeg';
-import {
-  WAVEFORM_BIT_DEPTH,
-  WAVEFORM_SAMPLE_RATE,
-} from './audio-processing.constants';
+import { WAVEFORM_BIT_DEPTH, WAVEFORM_SAMPLE_RATE } from './audio-processing.constants';
 
 @Injectable()
 export class WaveformService {
@@ -12,11 +9,7 @@ export class WaveformService {
   /**
    * Extract peak values from raw PCM buffer (s16le). Pure function for testability.
    */
-  static processWaveformBuffer(
-    buffer: Buffer,
-    points: number,
-    bytesPerSample: number,
-  ): number[] {
+  static processWaveformBuffer(buffer: Buffer, points: number, bytesPerSample: number): number[] {
     const totalSamples = buffer.length / bytesPerSample;
     const samplesPerPoint = Math.floor(totalSamples / points);
 
@@ -62,13 +55,7 @@ export class WaveformService {
 
       stream.on('end', () => {
         try {
-          resolve(
-            WaveformService.processWaveformBuffer(
-              buffer,
-              points,
-              bytesPerSample,
-            ),
-          );
+          resolve(WaveformService.processWaveformBuffer(buffer, points, bytesPerSample));
         } catch (err) {
           reject(err);
         }

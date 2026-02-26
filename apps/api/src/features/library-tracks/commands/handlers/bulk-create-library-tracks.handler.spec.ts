@@ -131,9 +131,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    trackRepository.create
-      .mockResolvedValueOnce(mockTrack1)
-      .mockResolvedValueOnce(mockTrack2);
+    trackRepository.create.mockResolvedValueOnce(mockTrack1).mockResolvedValueOnce(mockTrack2);
 
     const result = await handler.execute(command);
 
@@ -249,9 +247,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    trackRepository.create
-      .mockResolvedValueOnce(mockTrack1)
-      .mockResolvedValueOnce(mockTrack2);
+    trackRepository.create.mockResolvedValueOnce(mockTrack1).mockResolvedValueOnce(mockTrack2);
 
     await handler.execute(command);
 
@@ -280,11 +276,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     expect(trackRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         artists: {
-          connect: [
-            { id: 'artist-1' },
-            { id: 'artist-2' },
-            { id: 'artist-3' },
-          ],
+          connect: [{ id: 'artist-1' }, { id: 'artist-2' }, { id: 'artist-3' }],
         },
       }),
     );

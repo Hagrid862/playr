@@ -10,9 +10,7 @@ import { Visibility } from '@repo/db';
 import { BulkCreateLibraryTracksCommand } from '../impl/bulk-create-library-tracks.command';
 
 @CommandHandler(BulkCreateLibraryTracksCommand)
-export class BulkCreateLibraryTracksHandler
-  implements ICommandHandler<BulkCreateLibraryTracksCommand>
-{
+export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreateLibraryTracksCommand> {
   constructor(
     private readonly unitOfWork: UnitOfWorkService,
     private readonly libraryRepository: LibraryRepository,

@@ -113,13 +113,14 @@ describe('WaveformService', () => {
     });
 
     it('should reject when stream end callback throws', async () => {
-      const readSpy = vi
-        .spyOn(Buffer.prototype, 'readInt16LE')
-        .mockImplementation(function (this: Buffer, ...args: unknown[]) {
-          const offset = args[0] as number;
-          if (offset === 0) throw new Error('buffer read error');
-          return 0;
-        });
+      const readSpy = vi.spyOn(Buffer.prototype, 'readInt16LE').mockImplementation(function (
+        this: Buffer,
+        ...args: unknown[]
+      ) {
+        const offset = args[0] as number;
+        if (offset === 0) throw new Error('buffer read error');
+        return 0;
+      });
 
       const chain: Partial<ffmpeg.FfmpegCommand> = {
         noVideo: vi.fn().mockReturnThis(),
@@ -163,13 +164,8 @@ describe('WaveformService', () => {
       };
       vi.mocked(ffmpeg).mockReturnValue(chain as ffmpeg.FfmpegCommand);
 
-      await expect(service.generateWaveform('/tmp/input.wav', 8)).rejects.toThrow(
-        waveformError,
-      );
-      expect(loggerSpy).toHaveBeenCalledWith(
-        'FFmpeg waveform generation error:',
-        waveformError,
-      );
+      await expect(service.generateWaveform('/tmp/input.wav', 8)).rejects.toThrow(waveformError);
+      expect(loggerSpy).toHaveBeenCalledWith('FFmpeg waveform generation error:', waveformError);
       loggerSpy.mockRestore();
     });
   });

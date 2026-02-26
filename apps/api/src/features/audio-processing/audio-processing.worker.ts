@@ -59,24 +59,21 @@ export class AudioProcessingWorker extends WorkerHost {
 
     validateJobData(job.data);
 
-    this.logger.log(
-      `[${jobId}] Processing audio file ${audioFileId} for track ${trackId}`,
-    );
+    this.logger.log(`[${jobId}] Processing audio file ${audioFileId} for track ${trackId}`);
 
     const originalFile = await this.audioFileRepository.findOne({
       id: audioFileId,
     });
     if (!originalFile) {
-      this.logger.error(
-        `[${jobId}] Audio file ${audioFileId} not found`,
-        { audioFileId, trackId, userId },
-      );
+      this.logger.error(`[${jobId}] Audio file ${audioFileId} not found`, {
+        audioFileId,
+        trackId,
+        userId,
+      });
       throw new NotFoundException(`Audio file ${audioFileId} not found`);
     }
 
-    const tempDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${TEMP_DIR_PREFIX}${jobId}-`),
-    );
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `${TEMP_DIR_PREFIX}${jobId}-`));
     const inputPath = path.join(tempDir, `input_${originalFile.id}`);
 
     try {
@@ -87,8 +84,7 @@ export class AudioProcessingWorker extends WorkerHost {
       await fs.writeFile(inputPath, originalBuffer);
 
       const metadata = await mm.parseFile(inputPath);
-      const { duration, bitrate, sampleRate, numberOfChannels } =
-        metadata.format;
+      const { duration, bitrate, sampleRate, numberOfChannels } = metadata.format;
 
       await this.audioFileRepository.update(audioFileId, {
         duration,
@@ -99,10 +95,7 @@ export class AudioProcessingWorker extends WorkerHost {
       });
 
       if (duration) {
-        const track = await this.trackRepository.findOne(
-          { id: trackId },
-          true,
-        );
+        const track = await this.trackRepository.findOne({ id: trackId }, true);
         if (!track) {
           throw new NotFoundException('Track not found');
         }
@@ -110,20 +103,14 @@ export class AudioProcessingWorker extends WorkerHost {
           track as { access?: { userId: string; role: string }[] },
           userId,
         );
-        if (
-          hasAccess &&
-          (!track.duration || Math.round(duration) !== track.duration)
-        ) {
+        if (hasAccess && (!track.duration || Math.round(duration) !== track.duration)) {
           await this.trackRepository.update(trackId, {
             duration: Math.round(duration),
           });
         }
       }
 
-      const waveform = await this.waveformService.generateWaveform(
-        inputPath,
-        WAVEFORM_POINTS,
-      );
+      const waveform = await this.waveformService.generateWaveform(inputPath, WAVEFORM_POINTS);
       await this.audioFileRepository.update(audioFileId, {
         waveformJson: JSON.stringify(waveform),
       });
@@ -137,23 +124,12 @@ export class AudioProcessingWorker extends WorkerHost {
       }
 
       for (const q of qualities) {
-        if (
-          originalFile.format === q.format &&
-          originalFile.quality === q.quality
-        ) {
+        if (originalFile.format === q.format && originalFile.quality === q.quality) {
           continue;
         }
         try {
-          const outputPath = path.join(
-            tempDir,
-            `output_${q.quality}_${q.format}.${q.format}`,
-          );
-          await this.transcodeService.transcode(
-            inputPath,
-            outputPath,
-            q.format,
-            q.bitrate,
-          );
+          const outputPath = path.join(tempDir, `output_${q.quality}_${q.format}.${q.format}`);
+          await this.transcodeService.transcode(inputPath, outputPath, q.format, q.bitrate);
           const outputBuffer = await fs.readFile(outputPath);
           const key = `tracks/${trackId}/processed/${q.quality}/${Date.now()}.${q.format}`;
           const { url } = await this.storageService.uploadFile(
@@ -181,10 +157,13 @@ export class AudioProcessingWorker extends WorkerHost {
             channels: numberOfChannels,
           });
         } catch (error) {
-          this.logger.error(
-            `[${jobId}] Failed to transcode to ${q.quality} ${q.format}`,
-            { error, audioFileId, trackId, quality: q.quality, format: q.format },
-          );
+          this.logger.error(`[${jobId}] Failed to transcode to ${q.quality} ${q.format}`, {
+            error,
+            audioFileId,
+            trackId,
+            quality: q.quality,
+            format: q.format,
+          });
         }
       }
 
@@ -193,10 +172,12 @@ export class AudioProcessingWorker extends WorkerHost {
         `[${jobId}] Completed processing audio file ${audioFileId} in ${durationMs}ms`,
       );
     } catch (error) {
-      this.logger.error(
-        `[${jobId}] Error processing audio file ${audioFileId}`,
-        { error, audioFileId, trackId, userId },
-      );
+      this.logger.error(`[${jobId}] Error processing audio file ${audioFileId}`, {
+        error,
+        audioFileId,
+        trackId,
+        userId,
+      });
       await this.audioFileRepository.update(audioFileId, {
         status: ProcessingStatus.failed,
       });
@@ -205,10 +186,7 @@ export class AudioProcessingWorker extends WorkerHost {
       try {
         await fs.rm(tempDir, { recursive: true, force: true });
       } catch (cleanupError) {
-        this.logger.warn(
-          `[${jobId}] Failed to cleanup temp dir ${tempDir}`,
-          cleanupError,
-        );
+        this.logger.warn(`[${jobId}] Failed to cleanup temp dir ${tempDir}`, cleanupError);
       }
     }
   }

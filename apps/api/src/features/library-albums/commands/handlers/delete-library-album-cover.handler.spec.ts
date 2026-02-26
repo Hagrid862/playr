@@ -139,10 +139,7 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
       });
       expect(imageRepository.delete).toHaveBeenCalledWith(mockCoverId);
       expect(imageRepository.findOne).toHaveBeenCalledWith({ id: mockCoverId });
-      expect(storageService.deleteFile).toHaveBeenCalledWith(
-        FileBucket.private,
-        mockImage.key,
-      );
+      expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, mockImage.key);
     });
 
     it('should not call storageService.deleteFile when image record not found', async () => {

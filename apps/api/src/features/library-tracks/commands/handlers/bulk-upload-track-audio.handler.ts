@@ -2,11 +2,7 @@ import { AudioFileRepository } from '@/shared/repositories/audio-file.repository
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
 import { InjectQueue } from '@nestjs/bullmq';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AudioFileSchema, ZodAudioFileInfer } from '@repo/contracts';
 import { AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
@@ -18,9 +14,7 @@ const AUDIO_MIME_TYPES =
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 @CommandHandler(BulkUploadTrackAudioCommand)
-export class BulkUploadTrackAudioHandler
-  implements ICommandHandler<BulkUploadTrackAudioCommand>
-{
+export class BulkUploadTrackAudioHandler implements ICommandHandler<BulkUploadTrackAudioCommand> {
   constructor(
     private readonly trackRepository: TrackRepository,
     private readonly audioFileRepository: AudioFileRepository,
@@ -68,9 +62,7 @@ export class BulkUploadTrackAudioHandler
       };
 
       if (trackWithRelations.albumId !== albumId) {
-        throw new BadRequestException(
-          `Track ${trackId} does not belong to album ${albumId}`,
-        );
+        throw new BadRequestException(`Track ${trackId} does not belong to album ${albumId}`);
       }
 
       const hasAccess = trackWithRelations.access?.some(
@@ -87,12 +79,9 @@ export class BulkUploadTrackAudioHandler
       const fileExtension = file.originalname.split('.').pop();
       const key = `tracks/${trackId}/originals/${Date.now()}_${i}.${fileExtension}`;
 
-      const { url } = await this.storageService.uploadFile(
-        file.buffer,
-        FileBucket.private,
-        key,
-        { contentType: file.mimetype },
-      );
+      const { url } = await this.storageService.uploadFile(file.buffer, FileBucket.private, key, {
+        contentType: file.mimetype,
+      });
 
       const audioFile = await this.audioFileRepository.create({
         track: { connect: { id: trackId } },
@@ -128,14 +117,10 @@ export class BulkUploadTrackAudioHandler
       throw new BadRequestException(`File at index ${index} is empty or invalid`);
     }
     if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(
-        `File at index ${index} exceeds maximum size of 100MB`,
-      );
+      throw new BadRequestException(`File at index ${index} exceeds maximum size of 100MB`);
     }
     if (!AUDIO_MIME_TYPES.test(file.mimetype)) {
-      throw new BadRequestException(
-        `File at index ${index} has invalid type: ${file.mimetype}`,
-      );
+      throw new BadRequestException(`File at index ${index} has invalid type: ${file.mimetype}`);
     }
   }
 

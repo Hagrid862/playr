@@ -186,9 +186,7 @@ export class AlbumsController {
     @Body() body: BulkCreateLibraryTracksRequestDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.commandBus.execute(
-      new BulkCreateLibraryTracksCommand(albumId, body, userId),
-    );
+    return this.commandBus.execute(new BulkCreateLibraryTracksCommand(albumId, body, userId));
   }
 
   @Post(':id/tracks/bulk/audio')
@@ -240,9 +238,7 @@ export class AlbumsController {
       }
       trackIds = parsed;
     } catch {
-      throw new BadRequestException(
-        'trackIds must be a valid JSON array of track IDs',
-      );
+      throw new BadRequestException('trackIds must be a valid JSON array of track IDs');
     }
 
     return this.commandBus.execute(
