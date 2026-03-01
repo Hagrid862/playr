@@ -14,8 +14,7 @@ export const Route = createFileRoute('/app/library/albums/$id/add-content/bulk')
 
 function BulkAddContentPage() {
   const { id } = Route.useParams();
-  const { data: albumResponse, isLoading: isAlbumLoading, error: albumError } =
-    useLibraryAlbum(id);
+  const { data: albumResponse, isLoading: isAlbumLoading, error: albumError } = useLibraryAlbum(id);
 
   const handleSubmit = (tracks: BulkTrackItem[]) => {
     console.log('Bulk upload submitted:', tracks);
@@ -49,9 +48,8 @@ function BulkAddContentPage() {
         <AlertTitle className="text-primary">Bulk Add Tracks to Album</AlertTitle>
         <AlertDescription className="text-muted-foreground">
           <div className="mb-2">
-            Adding tracks to album{' '}
-            <span className="font-medium text-foreground">{album.name}</span>. Drop
-            or select multiple audio files, then edit details for each track.
+            Adding tracks to album <span className="font-medium text-foreground">{album.name}</span>
+            . Drop or select multiple audio files, then edit details for each track.
           </div>
 
           <Button variant="outline" asChild>

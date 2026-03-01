@@ -1,14 +1,10 @@
 import { TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { cleanFilenameToTitle } from '@/lib/clean-audio-filename.ts';
 import { TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { ZodAlbumInfer } from '@repo/contracts';
 import { Link } from '@tanstack/react-router';
@@ -23,11 +19,6 @@ export interface BulkTrackItem {
   explicit: boolean;
 }
 
-function filenameToTitle(filename: string): string {
-  const lastDot = filename.lastIndexOf('.');
-  return lastDot > 0 ? filename.slice(0, lastDot) : filename;
-}
-
 interface BulkTrackUploadFormProps {
   album: ZodAlbumInfer;
   onSubmit: (tracks: BulkTrackItem[]) => void;
@@ -40,30 +31,43 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const addFiles = useCallback((files: FileList | null) => {
-    if (!files?.length) return;
+  const addFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files?.length) return;
 
-    const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'));
-    if (audioFiles.length === 0) return;
+      const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'));
+      if (audioFiles.length === 0) return;
 
-    const startIndex = tracks.length;
-    const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
-      id: `${Date.now()}-${i}-${file.name}`,
-      file,
-      title: filenameToTitle(file.name),
-      trackNumber: startIndex + i + 1,
-      diskNumber: 1,
-      explicit: false,
-    }));
+      const context = {
+        artists: album.artists?.map((a) => a.name) ?? [],
+        album: album.name ?? '',
+      };
 
-    setTracks((prev) => [...prev, ...newTracks]);
-  }, [tracks.length]);
+      const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
+        id: `${Date.now()}-${i}-${file.name}`,
+        file,
+        title: cleanFilenameToTitle(file.name, context),
+        trackNumber: 0,
+        diskNumber: 1,
+        explicit: false,
+      }));
 
-  const updateTrack = useCallback((id: string, updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => {
-    setTracks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    );
-  }, []);
+      setTracks((prev) => {
+        const combined = [...prev, ...newTracks].sort((a, b) =>
+          a.file.name.localeCompare(b.file.name, undefined, { numeric: true }),
+        );
+        return combined.map((t, i) => ({ ...t, trackNumber: i + 1 }));
+      });
+    },
+    [album.artists, album.name],
+  );
+
+  const updateTrack = useCallback(
+    (id: string, updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => {
+      setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+    },
+    [],
+  );
 
   const removeTrack = useCallback((id: string) => {
     setTracks((prev) => {
@@ -88,7 +92,7 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
       setIsDragging(false);
       addFiles(e.dataTransfer?.files ?? null);
     },
-    [addFiles]
+    [addFiles],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -110,7 +114,7 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
       addFiles(e.target.files);
       e.target.value = '';
     },
-    [addFiles]
+    [addFiles],
   );
 
   const handleSubmit = useCallback(
@@ -119,8 +123,11 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
       if (tracks.length === 0) return;
       console.log('Bulk upload submit:', {
         albumId: album.id,
-        tracks: tracks.map(({ id, file, ...meta }) => ({
-          ...meta,
+        tracks: tracks.map(({ file, title, trackNumber, diskNumber, explicit }) => ({
+          title,
+          trackNumber,
+          diskNumber,
+          explicit,
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
@@ -128,11 +135,11 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
       });
       onSubmit(tracks);
     },
-    [album.id, tracks, onSubmit]
+    [album.id, tracks, onSubmit],
   );
 
   const hasInvalidTracks = tracks.some(
-    (t) => !t.title.trim() || t.trackNumber < 1 || t.diskNumber < 1
+    (t) => !t.title.trim() || t.trackNumber < 1 || t.diskNumber < 1,
   );
 
   return (
@@ -170,9 +177,7 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
           ) : (
             <div className="flex flex-col items-center gap-2 px-4 text-center">
               <UploadSimpleIcon size={24} className="text-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">
-                Drop more files or click to add
-              </p>
+              <p className="text-sm font-medium text-foreground">Drop more files or click to add</p>
             </div>
           )}
         </div>
@@ -205,11 +210,7 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
               <Button asChild variant="secondary" type="button" className="min-w-32">
                 <Link to="..">Cancel</Link>
               </Button>
-              <Button
-                type="submit"
-                disabled={hasInvalidTracks}
-                className="min-w-32"
-              >
+              <Button type="submit" disabled={hasInvalidTracks} className="min-w-32">
                 <UploadSimpleIcon className="mr-2 h-4 w-4" />
                 Upload {tracks.length} track{tracks.length !== 1 ? 's' : ''}
               </Button>
@@ -289,4 +290,3 @@ function BulkTrackCard({ track, onUpdate, onRemove }: BulkTrackCardProps) {
     </Card>
   );
 }
-
