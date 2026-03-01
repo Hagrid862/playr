@@ -29,6 +29,7 @@ export class AlbumRepository {
             },
             include: {
               artists: true,
+              audioFiles: true,
             },
           },
         }
