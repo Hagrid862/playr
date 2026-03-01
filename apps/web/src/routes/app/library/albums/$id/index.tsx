@@ -169,6 +169,11 @@ function RouteComponent() {
           <Button
             size="lg"
             className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
+            disabled={
+              !album.tracks?.some((t) =>
+                t.audioFiles?.some((f) => f.status === 'complete'),
+              )
+            }
             onClick={() => {
               const allTracks = [...(album.tracks ?? [])]
                 .sort((a, b) => {
@@ -176,8 +181,16 @@ function RouteComponent() {
                     return (a.diskNumber || 1) - (b.diskNumber || 1);
                   return (a.trackNumber || 0) - (b.trackNumber || 0);
                 })
+                .filter(
+                  (t) =>
+                    !t.audioFiles?.some(
+                      (f) =>
+                        f.status === 'pending' || f.status === 'processing',
+                    ),
+                )
                 .map((t) => ({ ...t, album }));
-              playTrack(allTracks[0], allTracks);
+              const firstPlayable = allTracks[0];
+              if (firstPlayable) playTrack(firstPlayable, allTracks);
             }}
           >
             <PlayIcon weight="fill" size={20} /> Play
@@ -276,32 +289,54 @@ function RouteComponent() {
                         </div>
                       )}
                       <div className="flex flex-col">
-                        {discTracks.map((track, i) => (
-                          <SongCard
-                            key={track.id}
-                            id={track.id}
-                            trackNumber={track.trackNumber || i + 1}
-                            title={track.title}
-                            artists={track.artists}
-                            duration={track.duration}
-                            explicit={track.explicit}
-                            onClick={() =>
-                              playTrack(
-                                { ...track, album },
-                                discTracks.map((t) => ({ ...t, album })),
-                              )
-                            }
-                            onEdit={(songId) =>
-                              navigate({
-                                to: '/app/library/albums/$id/songs/$songId/edit',
-                                params: { id, songId },
-                              })
-                            }
-                            onDelete={(trackInfo) => setTrackToDelete(trackInfo)}
-                            onAddToQueue={() => addToQueue({ ...track, album })}
-                            onPlayNext={() => playNext({ ...track, album })}
-                          />
-                        ))}
+                        {discTracks.map((track, i) => {
+                          const isProcessing =
+                            track.audioFiles?.some(
+                              (f) =>
+                                f.status === 'pending' ||
+                                f.status === 'processing',
+                            ) ?? false;
+                          const isFailed =
+                            (track.audioFiles?.length ?? 0) > 0 &&
+                            track.audioFiles?.every(
+                              (f) => f.status === 'failed',
+                            ) === true;
+
+                          return (
+                            <SongCard
+                              key={track.id}
+                              id={track.id}
+                              trackNumber={track.trackNumber || i + 1}
+                              title={track.title}
+                              artists={track.artists}
+                              duration={track.duration}
+                              explicit={track.explicit}
+                              isProcessing={isProcessing}
+                              isFailed={isFailed}
+                              onClick={() =>
+                                playTrack(
+                                  { ...track, album },
+                                  discTracks.map((t) => ({ ...t, album })),
+                                )
+                              }
+                              onEdit={(songId) =>
+                                navigate({
+                                  to: '/app/library/albums/$id/songs/$songId/edit',
+                                  params: { id, songId },
+                                })
+                              }
+                              onDelete={(trackInfo) =>
+                                setTrackToDelete(trackInfo)
+                              }
+                              onAddToQueue={() =>
+                                addToQueue({ ...track, album })
+                              }
+                              onPlayNext={() =>
+                                playNext({ ...track, album })
+                              }
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   );
