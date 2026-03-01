@@ -7,10 +7,10 @@ import { useUploadTrackAudio } from '@/hooks/api/library-tracks/useUploadTrackAu
 import { CircleNotchIcon, InfoIcon } from '@phosphor-icons/react';
 import { CreateLibraryTrackRequest } from '@repo/contracts';
 import { useQueryClient } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
-export const Route = createFileRoute('/app/library/albums/$id/add-content')({
+export const Route = createFileRoute('/app/library/albums/$id/add-content/')({
   component: AddContentPage,
 });
 
@@ -73,8 +73,16 @@ function AddContentPage() {
         <InfoIcon size={20} className="text-primary" />
         <AlertTitle className="text-primary">Add Track to Album</AlertTitle>
         <AlertDescription className="text-muted-foreground">
-          Adding track to album <span className="font-medium text-foreground">{album.name}</span>.
-          Fill in the details below to add a new song to this album.
+          <div className="mb-2">
+            Adding track to album <span className="font-medium text-foreground">{album.name}</span>.
+            Fill in the details below to add a new song to this album.
+          </div>
+
+          <Button variant="outline" asChild>
+            <Link to="/app/library/albums/$id/add-content/bulk" params={{ id: album.id }}>
+              Switch to bulk upload
+            </Link>
+          </Button>
         </AlertDescription>
       </Alert>
 

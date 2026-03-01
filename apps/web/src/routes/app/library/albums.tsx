@@ -1,7 +1,9 @@
 import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLibraryStore } from '@/stores/library.store';
-import { PlusIcon } from '@phosphor-icons/react';
+import { PlusIcon, PlusSquareIcon } from '@phosphor-icons/react';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/albums')({
@@ -49,12 +51,26 @@ function AlbumLayout() {
               </Link>
             </Button>
           ) : album?.visibility === 'private' && isDetail && albumId ? (
-            <Button variant="outline" asChild>
-              <Link to="/app/library/albums/$id/add-content" params={{ id: albumId }}>
-                <PlusIcon />
-                Add Content
-              </Link>
-            </Button>
+            <ButtonGroup>
+              <Button variant="outline" asChild>
+                <Link to="/app/library/albums/$id/add-content" params={{ id: albumId }}>
+                  <PlusIcon />
+                  Add Content
+                </Link>
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" asChild>
+                    <Link to="/app/library/albums/$id/add-content/bulk" params={{ id: albumId }}>
+                      <PlusSquareIcon />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Add multiple tracks at once</p>
+                </TooltipContent>
+              </Tooltip>
+            </ButtonGroup>
           ) : null
         }
         showBackButton={!isIndex}
