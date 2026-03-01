@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cleanFilenameToTitle } from '@/lib/clean-audio-filename.ts';
-import { TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
+import { CircleNotchIcon, TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { ZodAlbumInfer } from '@repo/contracts';
 import { Link } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
@@ -21,12 +21,13 @@ export interface BulkTrackItem {
 
 interface BulkTrackUploadFormProps {
   album: ZodAlbumInfer;
-  onSubmit: (tracks: BulkTrackItem[]) => void;
+  onSubmit: (tracks: BulkTrackItem[]) => void | Promise<void>;
+  isLoading?: boolean;
 }
 
 const AUDIO_ACCEPT = 'audio/*';
 
-export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProps) {
+export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: BulkTrackUploadFormProps) {
   const [tracks, setTracks] = useState<BulkTrackItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -121,21 +122,9 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
     (e: React.FormEvent) => {
       e.preventDefault();
       if (tracks.length === 0) return;
-      console.log('Bulk upload submit:', {
-        albumId: album.id,
-        tracks: tracks.map(({ file, title, trackNumber, diskNumber, explicit }) => ({
-          title,
-          trackNumber,
-          diskNumber,
-          explicit,
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-        })),
-      });
       onSubmit(tracks);
     },
-    [album.id, tracks, onSubmit],
+    [tracks, onSubmit],
   );
 
   const hasInvalidTracks = tracks.some(
@@ -210,9 +199,18 @@ export function BulkTrackUploadForm({ album, onSubmit }: BulkTrackUploadFormProp
               <Button asChild variant="secondary" type="button" className="min-w-32">
                 <Link to="..">Cancel</Link>
               </Button>
-              <Button type="submit" disabled={hasInvalidTracks} className="min-w-32">
-                <UploadSimpleIcon className="mr-2 h-4 w-4" />
-                Upload {tracks.length} track{tracks.length !== 1 ? 's' : ''}
+              <Button type="submit" disabled={hasInvalidTracks || isLoading} className="min-w-32">
+                {isLoading ? (
+                  <>
+                    <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <UploadSimpleIcon className="mr-2 h-4 w-4" />
+                    Upload {tracks.length} track{tracks.length !== 1 ? 's' : ''}
+                  </>
+                )}
               </Button>
             </div>
           </>

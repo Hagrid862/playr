@@ -5,8 +5,10 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
+import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { CircleNotchIcon, InfoIcon } from '@phosphor-icons/react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/app/library/albums/$id/add-content/bulk')({
   component: BulkAddContentPage,
@@ -14,10 +16,21 @@ export const Route = createFileRoute('/app/library/albums/$id/add-content/bulk')
 
 function BulkAddContentPage() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const { data: albumResponse, isLoading: isAlbumLoading, error: albumError } = useLibraryAlbum(id);
+  const { mutateAsync: bulkCreateTracks, isPending: isUploading } = useBulkCreateLibraryTracks();
 
-  const handleSubmit = (tracks: BulkTrackItem[]) => {
-    console.log('Bulk upload submitted:', tracks);
+  const handleSubmit = async (tracks: BulkTrackItem[]) => {
+    if (!albumResponse?.success || !albumResponse?.data) return;
+    try {
+      await bulkCreateTracks({ album: albumResponse.data, tracks });
+      toast.success(`Successfully uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`);
+      navigate({ to: '/app/library/albums/$id', params: { id } });
+    } catch (error) {
+      toast.error('Failed to upload tracks. Please try again.');
+      console.error(error);
+      throw error;
+    }
   };
 
   if (isAlbumLoading) {
@@ -59,7 +72,11 @@ function BulkAddContentPage() {
       </Alert>
 
       <div className="px-1">
-        <BulkTrackUploadForm album={album} onSubmit={handleSubmit} />
+        <BulkTrackUploadForm
+          album={album}
+          onSubmit={handleSubmit}
+          isLoading={isUploading}
+        />
       </div>
     </div>
   );
