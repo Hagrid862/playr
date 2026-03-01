@@ -4,8 +4,15 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import { PencilIcon, PlayIcon, QueueIcon, TrashIcon } from '@phosphor-icons/react';
+import {
+  PencilIcon,
+  PlayIcon,
+  QueueIcon,
+  TrashIcon,
+  WarningIcon,
+} from '@phosphor-icons/react';
 import type { ZodArtist } from '@repo/contracts';
 
 interface SongCardProps {
@@ -17,6 +24,8 @@ interface SongCardProps {
   explicit?: boolean;
   isActive?: boolean;
   isPlaying?: boolean;
+  isProcessing?: boolean;
+  isFailed?: boolean;
   onClick?: () => void;
   onEdit?: (id: string) => void;
   onDelete?: (track: { id: string; title: string }) => void;
@@ -39,24 +48,40 @@ export function SongCard({
   explicit,
   isActive,
   isPlaying,
+  isProcessing,
+  isFailed,
   onClick,
   onEdit,
   onDelete,
   onAddToQueue,
   onPlayNext,
 }: SongCardProps) {
+  const isDisabled = isProcessing || isFailed;
+
   return (
     <ContextMenu>
       <ContextMenuTrigger>
         <div
           className={cn(
-            'group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[1] hover:scale-101',
+            'group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl transition-all active:scale-[1]',
+            isDisabled
+              ? 'opacity-60 cursor-not-allowed'
+              : 'hover:bg-stone-900/40 cursor-pointer hover:scale-101',
             isActive ? 'bg-white/10' : '',
           )}
-          onClick={onClick}
+          onClick={isDisabled ? undefined : onClick}
         >
           <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors flex justify-center items-center">
-            {isActive && isPlaying ? (
+            {isProcessing ? (
+              <Spinner className="size-4 mx-auto" aria-label="Processing" />
+            ) : isFailed ? (
+              <WarningIcon
+                className="mx-auto text-amber-500"
+                size={16}
+                weight="fill"
+                aria-label="Processing failed"
+              />
+            ) : isActive && isPlaying ? (
               <div className="flex items-end gap-0.5 h-3">
                 <div className="w-1 h-3 bg-green-500 animate-music-bar-1" />
                 <div className="w-1 h-2 bg-green-500 animate-music-bar-2" />
@@ -113,13 +138,21 @@ export function SongCard({
           Edit
         </ContextMenuItem>
         {onPlayNext && (
-          <ContextMenuItem onClick={onPlayNext} className="gap-2">
+          <ContextMenuItem
+            onClick={onPlayNext}
+            className="gap-2"
+            disabled={isDisabled}
+          >
             <PlayIcon size={16} />
             Play Next
           </ContextMenuItem>
         )}
         {onAddToQueue && (
-          <ContextMenuItem onClick={onAddToQueue} className="gap-2">
+          <ContextMenuItem
+            onClick={onAddToQueue}
+            className="gap-2"
+            disabled={isDisabled}
+          >
             <QueueIcon size={16} />
             Add to Queue
           </ContextMenuItem>
