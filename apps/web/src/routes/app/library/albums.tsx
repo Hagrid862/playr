@@ -1,9 +1,14 @@
 import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useLibraryStore } from '@/stores/library.store';
-import { PlusIcon, PlusSquareIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, PlusIcon, PlusSquareIcon } from '@phosphor-icons/react';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/albums')({
@@ -58,18 +63,24 @@ function AlbumLayout() {
                   Add Content
                 </Link>
               </Button>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <Link to="/app/library/albums/$id/add-content/bulk" params={{ id: albumId }}>
-                      <PlusSquareIcon />
-                    </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <CaretDownIcon />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add multiple tracks at once</p>
-                </TooltipContent>
-              </Tooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/app/library/albums/$id/add-content/bulk"
+                      params={{ id: albumId }}
+                    >
+                      <PlusSquareIcon size={18} className="mr-2" />
+                      Bulk Upload
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </ButtonGroup>
           ) : null
         }
