@@ -42,6 +42,4 @@ yarn-error.log*
 
 # IDEs and editors
 .idea/
-.vscode
-!.vscode/tasks.json
-!.vscode/launch.json
+.vscode/
