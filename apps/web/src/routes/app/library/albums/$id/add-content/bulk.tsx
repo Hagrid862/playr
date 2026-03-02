@@ -1,7 +1,5 @@
-import {
-  BulkTrackUploadForm,
-  type BulkTrackItem,
-} from '@/components/library/tracks/BulkTrackUploadForm';
+import { BulkTrackUploadForm } from '@/components/library/tracks/BulkTrackUploadForm';
+import type { BulkTrackItem } from '@/lib/types/library';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
