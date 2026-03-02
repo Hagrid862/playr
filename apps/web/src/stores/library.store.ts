@@ -1,6 +1,7 @@
 import { ZodAlbum, ZodArtist } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { idbStorage } from './idb-storage';
 
 export interface LibraryState {
   libraryId: string | null;
@@ -63,6 +64,7 @@ export const useLibraryStore = create<LibraryState>()(
     }),
     {
       name: 'library-storage',
+      storage: idbStorage,
     },
   ),
 );

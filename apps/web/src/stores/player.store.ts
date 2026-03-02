@@ -1,6 +1,7 @@
 import { StreamAudioQuality, ZodTrack } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { idbStorage } from './idb-storage';
 
 export type QueueItem = ZodTrack & { uniqueId: string };
 
@@ -291,6 +292,7 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: 'player-storage',
+      storage: idbStorage,
       partialize: (state) => ({
         volume: state.volume,
         quality: state.quality,

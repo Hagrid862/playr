@@ -1,6 +1,7 @@
 import { ZodUser } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { idbStorage } from './idb-storage';
 import { useLibraryStore } from './library.store';
 
 export interface AuthState {
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      storage: idbStorage,
     },
   ),
 );
