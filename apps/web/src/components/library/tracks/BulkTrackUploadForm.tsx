@@ -11,7 +11,7 @@ import { extractCoverFromAudioFile } from '@/lib/audio-metadata';
 import { CircleNotchIcon, ImageIcon, TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { ZodAlbumInfer } from '@repo/contracts';
 import { Link } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface BulkTrackItem {
   id: string;
@@ -45,10 +45,10 @@ export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: Bulk
   const [isScanningCovers, setIsScanningCovers] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const trackIds = useMemo(() => tracks.map((t) => t.id).join(','), [tracks]);
+
   useEffect(() => {
     if (tracks.length === 0) {
-      setTracksWithCovers([]);
-      setSelectedCoverTrackId(null);
       return;
     }
 
@@ -86,7 +86,7 @@ export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: Bulk
     return () => {
       cancelled = true;
     };
-  }, [tracks.map((t) => t.id).join(',')]);
+  }, [trackIds, tracks]);
 
   useEffect(() => {
     return () => {
@@ -133,6 +133,11 @@ export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: Bulk
   );
 
   const removeTrack = useCallback((id: string) => {
+    const willBeEmpty = tracks.filter((t) => t.id !== id).length === 0;
+    if (willBeEmpty) {
+      setTracksWithCovers([]);
+      setSelectedCoverTrackId(null);
+    }
     setTracks((prev) => {
       const filtered = prev.filter((t) => t.id !== id);
       return filtered.map((t, i) => ({
@@ -140,9 +145,11 @@ export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: Bulk
         trackNumber: i + 1,
       }));
     });
-  }, []);
+  }, [tracks]);
 
   const clearAll = useCallback(() => {
+    setTracksWithCovers([]);
+    setSelectedCoverTrackId(null);
     setTracks([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
