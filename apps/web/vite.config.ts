@@ -19,7 +19,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      jsmediatags: 'jsmediatags/dist/jsmediatags.min.js',
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@repo/contracts': fileURLToPath(
         new URL('../../packages/contracts/src/index.ts', import.meta.url),
