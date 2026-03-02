@@ -6,7 +6,7 @@ import {
   type BulkCreateLibraryTracksResponse,
   type BulkUploadTrackAudioResponse,
 } from '@repo/contracts';
-import type { BulkTrackItem } from '@/components/library/tracks/BulkTrackUploadForm';
+import type { BulkTrackItem } from '@/lib/types/library';
 import type { ZodAlbumInfer } from '@repo/contracts';
 
 export interface BulkCreateLibraryTracksParams {
