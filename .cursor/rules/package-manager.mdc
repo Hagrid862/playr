@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+This project exclusively uses pnpm. DO NOT use standard npm or yarn.

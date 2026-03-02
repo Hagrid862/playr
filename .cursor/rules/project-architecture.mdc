@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+The project is a monorepo powered by Turborepo (turbo).
