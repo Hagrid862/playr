@@ -104,7 +104,7 @@ export function EditTrackForm({
               <div className="w-24">
                 <TextField
                   label="Disk No."
-                  // @ts-expect-error TextField types are too strict
+                  placeholder="1"
                   type="number"
                   value={String(field.state.value ?? '')}
                   error={
@@ -125,18 +125,16 @@ export function EditTrackForm({
               <div className="flex-1">
                 <TextField
                   label="Track No."
-                  // @ts-expect-error TextField types are too strict
+                  placeholder="1"
                   type="number"
                   value={String(field.state.value ?? '')}
-                  error={
-                    field.state.meta.isTouched
-                      ? (field.state.meta.errors[0] as string | undefined) ||
-                        (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
-                      : serverErrors?.trackNumber
-                  }
+                  error={field.state.meta.isTouched
+                    ? (field.state.meta.errors[0] as string | undefined) ||
+                    (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
+                    : serverErrors?.trackNumber}
                   onChange={(e) => field.handleChange(Number(e))}
                   onBlur={field.handleBlur}
-                />
+                  />
               </div>
             )}
           </form.Field>
