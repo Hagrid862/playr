@@ -5,7 +5,7 @@ import { useId } from 'react';
 interface TextFieldProps {
   label: string;
   placeholder: string;
-  type?: 'text' | 'email' | 'password';
+  type?: 'text' | 'email' | 'password' | 'number';
   value: string;
   error?: string;
   onChange: (value: string) => void;
