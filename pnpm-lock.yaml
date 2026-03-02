@@ -520,6 +520,9 @@ importers:
       framer-motion:
         specifier: ^12.34.2
         version: 12.34.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      jsmediatags:
+        specifier: ^3.9.7
+        version: 3.9.7
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -5208,6 +5211,10 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
+  jsmediatags@3.9.7:
+    resolution: {integrity: sha512-xCAO8C3li3t5hYkXqn8iv8zQQUB4T1QqRN2aSONHMls21ICdEvXi4xtb6W70/fAFYSDwMHd32hIqvo4YuXoNcQ==}
+    engines: {node: '>=4.0.0'}
+
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
 
@@ -7123,6 +7130,10 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+
+  xhr2@0.1.4:
+    resolution: {integrity: sha512-3QGhDryRzTbIDj+waTRvMBe8SyPhW79kz3YnNb+HQt/6LPYQT3zT3Jt0Y8pBofZqQX26x8Ecfv0FXR72uH5VpA==}
+    engines: {node: '>= 0.6'}
 
   xml-name-validator@5.0.0:
     resolution: {integrity: sha512-EvGK8EJ3DhaHfbRlETOWAS5pO9MZITeauHKJyb8wyajUfQUenkIg2MvLDTZ4T/TgIcm3HU0TFBgWWboAZ30UHg==}
@@ -12410,6 +12421,10 @@ snapshots:
 
   jsesc@3.1.0: {}
 
+  jsmediatags@3.9.7:
+    dependencies:
+      xhr2: 0.1.4
+
   json-buffer@3.0.1: {}
 
   json-parse-even-better-errors@2.3.1: {}
@@ -14512,6 +14527,8 @@ snapshots:
   wrappy@1.0.2: {}
 
   ws@8.19.0: {}
+
+  xhr2@0.1.4: {}
 
   xml-name-validator@5.0.0: {}
 
