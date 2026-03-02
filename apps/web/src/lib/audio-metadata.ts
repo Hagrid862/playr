@@ -1,31 +1,25 @@
-import jsmediatags from 'jsmediatags';
+import { parseBlob, selectCover } from 'music-metadata';
 
 /**
  * Extracts embedded cover art from an audio file (MP3, M4A, FLAC, etc.).
- * Uses jsmediatags - a pure browser library with no Node.js dependencies.
+ * Uses music-metadata - a fully typed library with broad format support.
  * Returns a File suitable for uploading, or null if no cover art is embedded.
  */
-export function extractCoverFromAudioFile(file: File): Promise<File | null> {
-  return new Promise((resolve) => {
-    jsmediatags.read(file, {
-      onSuccess: (tag) => {
-        const picture = tag.tags.picture;
-        if (!picture?.data || !picture?.format) {
-          resolve(null);
-          return;
-        }
+export async function extractCoverFromAudioFile(
+  file: File
+): Promise<File | null> {
+  try {
+    const metadata = await parseBlob(file);
+    const picture = selectCover(metadata.common.picture);
 
-        const data = picture.data;
-        const format = picture.format;
-        const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
-        const blob = new Blob([new Uint8Array(bytes)], { type: format });
-        const extension = format.split('/')[1] || 'jpg';
-        resolve(new File([blob], `cover.${extension}`, { type: format }));
-      },
-      onError: (error) => {
-        console.error('Failed to extract metadata:', error);
-        resolve(null);
-      },
-    });
-  });
+    if (!picture?.data || !picture.format) {
+      return null;
+    }
+
+    const blob = new Blob([new Uint8Array(picture.data)], { type: picture.format });
+    const extension = picture.format.split('/')[1] || 'jpg';
+    return new File([blob], `cover.${extension}`, { type: picture.format });
+  } catch {
+    return null;
+  }
 }
