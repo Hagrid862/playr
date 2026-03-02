@@ -76,6 +76,7 @@ describe('AlbumRepository', () => {
             },
             include: {
               artists: true,
+              audioFiles: true,
             },
           },
         },
