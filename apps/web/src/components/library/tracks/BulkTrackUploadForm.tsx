@@ -1,14 +1,17 @@
 import { TextField } from '@/components/form';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cleanFilenameToTitle } from '@/lib/clean-audio-filename.ts';
-import { CircleNotchIcon, TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
+import { extractCoverFromAudioFile } from '@/lib/audio-metadata';
+import { CircleNotchIcon, ImageIcon, TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { ZodAlbumInfer } from '@repo/contracts';
 import { Link } from '@tanstack/react-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface BulkTrackItem {
   id: string;
@@ -19,9 +22,16 @@ export interface BulkTrackItem {
   explicit: boolean;
 }
 
+export interface TrackWithCover {
+  trackId: string;
+  trackName: string;
+  coverFile: File;
+  previewUrl: string;
+}
+
 interface BulkTrackUploadFormProps {
   album: ZodAlbumInfer;
-  onSubmit: (tracks: BulkTrackItem[]) => void | Promise<void>;
+  onSubmit: (tracks: BulkTrackItem[], selectedCover: File | null) => void | Promise<void>;
   isLoading?: boolean;
 }
 
@@ -30,7 +40,59 @@ const AUDIO_ACCEPT = 'audio/*';
 export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: BulkTrackUploadFormProps) {
   const [tracks, setTracks] = useState<BulkTrackItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [tracksWithCovers, setTracksWithCovers] = useState<TrackWithCover[]>([]);
+  const [selectedCoverTrackId, setSelectedCoverTrackId] = useState<string | null>(null);
+  const [isScanningCovers, setIsScanningCovers] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (tracks.length === 0) {
+      setTracksWithCovers([]);
+      setSelectedCoverTrackId(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const scan = async () => {
+      setIsScanningCovers(true);
+      const results: TrackWithCover[] = [];
+
+      for (const track of tracks) {
+        if (cancelled) break;
+        const coverFile = await extractCoverFromAudioFile(track.file);
+        if (coverFile && !cancelled) {
+          const previewUrl = URL.createObjectURL(coverFile);
+          results.push({
+            trackId: track.id,
+            trackName: track.file.name,
+            coverFile,
+            previewUrl,
+          });
+        }
+      }
+
+      if (!cancelled) {
+        setTracksWithCovers(results);
+        setSelectedCoverTrackId((prev) =>
+          results.some((r) => r.trackId === prev) ? prev : results[0]?.trackId ?? null,
+        );
+      }
+
+      setIsScanningCovers(false);
+    };
+
+    scan();
+    return () => {
+      cancelled = true;
+    };
+  }, [tracks.map((t) => t.id).join(',')]);
+
+  useEffect(() => {
+    return () => {
+      tracksWithCovers.forEach((t) => URL.revokeObjectURL(t.previewUrl));
+    };
+  }, [tracksWithCovers]);
 
   const addFiles = useCallback(
     (files: FileList | null) => {
@@ -122,9 +184,13 @@ export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: Bulk
     (e: React.FormEvent) => {
       e.preventDefault();
       if (tracks.length === 0) return;
-      onSubmit(tracks);
+      const selectedCover =
+        selectedCoverTrackId != null
+          ? tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ?? null
+          : null;
+      onSubmit(tracks, selectedCover);
     },
-    [tracks, onSubmit],
+    [tracks, selectedCoverTrackId, tracksWithCovers, onSubmit],
   );
 
   const hasInvalidTracks = tracks.some(
@@ -174,6 +240,20 @@ export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: Bulk
         {tracks.length > 0 && (
           <>
             <Separator />
+            {isScanningCovers && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CircleNotchIcon className="h-4 w-4 animate-spin" />
+                Scanning tracks for cover art...
+              </div>
+            )}
+            {!isScanningCovers && tracksWithCovers.length > 0 && (
+              <CoverSelectionBanner
+                albumHasCover={!!album.cover?.url}
+                tracksWithCovers={tracksWithCovers}
+                selectedCoverTrackId={selectedCoverTrackId}
+                onSelectCover={setSelectedCoverTrackId}
+              />
+            )}
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium">
@@ -217,6 +297,70 @@ export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: Bulk
         )}
       </form>
     </div>
+  );
+}
+
+interface CoverSelectionBannerProps {
+  albumHasCover: boolean;
+  tracksWithCovers: TrackWithCover[];
+  selectedCoverTrackId: string | null;
+  onSelectCover: (trackId: string | null) => void;
+}
+
+function CoverSelectionBanner({
+  albumHasCover,
+  tracksWithCovers,
+  selectedCoverTrackId,
+  onSelectCover,
+}: CoverSelectionBannerProps) {
+  const message = albumHasCover
+    ? `Cover art found in ${tracksWithCovers.length} track${tracksWithCovers.length !== 1 ? 's' : ''}. Would you like to replace the current album cover?`
+    : `Cover art found in ${tracksWithCovers.length} track${tracksWithCovers.length !== 1 ? 's' : ''}. Would you like to use it as the album cover?`;
+
+  return (
+    <Alert className="border-primary/20 bg-primary/5">
+      <ImageIcon size={20} className="text-primary" />
+      <AlertTitle className="text-primary">Cover art detected</AlertTitle>
+      <AlertDescription className="mt-2 space-y-3">
+        <p className="text-muted-foreground">{message}</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onSelectCover(null)}
+            className={cn(
+              'flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-left text-sm transition-colors',
+              selectedCoverTrackId === null
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+            )}
+          >
+            <span className="font-medium">Don&apos;t use</span>
+          </button>
+          {tracksWithCovers.map(({ trackId, trackName, previewUrl }) => (
+            <button
+              key={trackId}
+              type="button"
+              onClick={() => onSelectCover(trackId)}
+              className={cn(
+                'flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-left text-sm transition-colors',
+                selectedCoverTrackId === trackId
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+              )}
+            >
+              <img
+                src={previewUrl}
+                alt=""
+                className="size-10 shrink-0 rounded object-cover"
+              />
+              <span className="max-w-32 truncate font-medium" title={trackName}>
+                {trackName}
+              </span>
+            </button>
+          ))}
+        </div>
+      </AlertDescription>
+    </Alert>
   );
 }
 

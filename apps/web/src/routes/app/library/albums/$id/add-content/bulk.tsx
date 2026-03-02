@@ -5,6 +5,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
+import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { CircleNotchIcon, InfoIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -19,11 +20,19 @@ function BulkAddContentPage() {
   const navigate = useNavigate();
   const { data: albumResponse, isLoading: isAlbumLoading, error: albumError } = useLibraryAlbum(id);
   const { mutateAsync: bulkCreateTracks, isPending: isUploading } = useBulkCreateLibraryTracks();
+  const { mutateAsync: uploadCover, isPending: isUploadingCover } = useUploadLibraryAlbumCover();
 
-  const handleSubmit = async (tracks: BulkTrackItem[]) => {
+  const handleSubmit = async (tracks: BulkTrackItem[], selectedCover: File | null) => {
     if (!albumResponse?.success || !albumResponse?.data) return;
+    const album = albumResponse.data;
+
     try {
-      await bulkCreateTracks({ album: albumResponse.data, tracks });
+      if (selectedCover) {
+        await uploadCover({ id, file: selectedCover });
+        toast.success('Album cover updated');
+      }
+
+      await bulkCreateTracks({ album, tracks });
       toast.success(`Successfully uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`);
       navigate({ to: '/app/library/albums/$id', params: { id } });
     } catch (error) {
@@ -75,7 +84,7 @@ function BulkAddContentPage() {
         <BulkTrackUploadForm
           album={album}
           onSubmit={handleSubmit}
-          isLoading={isUploading}
+          isLoading={isUploading || isUploadingCover}
         />
       </div>
     </div>
