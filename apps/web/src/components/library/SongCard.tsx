@@ -6,13 +6,7 @@ import {
 } from '@/components/ui/context-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import {
-  PencilIcon,
-  PlayIcon,
-  QueueIcon,
-  TrashIcon,
-  WarningIcon,
-} from '@phosphor-icons/react';
+import { PencilIcon, PlayIcon, QueueIcon, TrashIcon, WarningIcon } from '@phosphor-icons/react';
 import type { ZodArtist } from '@repo/contracts';
 
 interface SongCardProps {
@@ -138,21 +132,13 @@ export function SongCard({
           Edit
         </ContextMenuItem>
         {onPlayNext && (
-          <ContextMenuItem
-            onClick={onPlayNext}
-            className="gap-2"
-            disabled={isDisabled}
-          >
+          <ContextMenuItem onClick={onPlayNext} className="gap-2" disabled={isDisabled}>
             <PlayIcon size={16} />
             Play Next
           </ContextMenuItem>
         )}
         {onAddToQueue && (
-          <ContextMenuItem
-            onClick={onAddToQueue}
-            className="gap-2"
-            disabled={isDisabled}
-          >
+          <ContextMenuItem onClick={onAddToQueue} className="gap-2" disabled={isDisabled}>
             <QueueIcon size={16} />
             Add to Queue
           </ContextMenuItem>

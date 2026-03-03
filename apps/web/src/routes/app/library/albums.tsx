@@ -71,10 +71,7 @@ function AlbumLayout() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link
-                      to="/app/library/albums/$id/add-content/bulk"
-                      params={{ id: albumId }}
-                    >
+                    <Link to="/app/library/albums/$id/add-content/bulk" params={{ id: albumId }}>
                       <PlusSquareIcon size={18} className="mr-2" />
                       Bulk Upload
                     </Link>

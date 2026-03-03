@@ -12,8 +12,7 @@ export const useLibraryAlbum = (id: string) => {
     queryKey: ['library', 'albums', id],
     queryFn: () => getLibraryAlbum(id),
     enabled: !!id,
-    refetchInterval: (query) =>
-      hasProcessingTracks(query.state.data) ? 3000 : false,
+    refetchInterval: (query) => (hasProcessingTracks(query.state.data) ? 3000 : false),
   });
 
   useEffect(() => {

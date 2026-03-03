@@ -170,9 +170,7 @@ function RouteComponent() {
             size="lg"
             className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
             disabled={
-              !album.tracks?.some((t) =>
-                t.audioFiles?.some((f) => f.status === 'complete'),
-              )
+              !album.tracks?.some((t) => t.audioFiles?.some((f) => f.status === 'complete'))
             }
             onClick={() => {
               const allTracks = [...(album.tracks ?? [])]
@@ -183,10 +181,7 @@ function RouteComponent() {
                 })
                 .filter(
                   (t) =>
-                    !t.audioFiles?.some(
-                      (f) =>
-                        f.status === 'pending' || f.status === 'processing',
-                    ),
+                    !t.audioFiles?.some((f) => f.status === 'pending' || f.status === 'processing'),
                 )
                 .map((t) => ({ ...t, album }));
               const firstPlayable = allTracks[0];
@@ -292,15 +287,11 @@ function RouteComponent() {
                         {discTracks.map((track, i) => {
                           const isProcessing =
                             track.audioFiles?.some(
-                              (f) =>
-                                f.status === 'pending' ||
-                                f.status === 'processing',
+                              (f) => f.status === 'pending' || f.status === 'processing',
                             ) ?? false;
                           const isFailed =
                             (track.audioFiles?.length ?? 0) > 0 &&
-                            track.audioFiles?.every(
-                              (f) => f.status === 'failed',
-                            ) === true;
+                            track.audioFiles?.every((f) => f.status === 'failed') === true;
 
                           return (
                             <SongCard
@@ -325,15 +316,9 @@ function RouteComponent() {
                                   params: { id, songId },
                                 })
                               }
-                              onDelete={(trackInfo) =>
-                                setTrackToDelete(trackInfo)
-                              }
-                              onAddToQueue={() =>
-                                addToQueue({ ...track, album })
-                              }
-                              onPlayNext={() =>
-                                playNext({ ...track, album })
-                              }
+                              onDelete={(trackInfo) => setTrackToDelete(trackInfo)}
+                              onAddToQueue={() => addToQueue({ ...track, album })}
+                              onPlayNext={() => playNext({ ...track, album })}
                             />
                           );
                         })}

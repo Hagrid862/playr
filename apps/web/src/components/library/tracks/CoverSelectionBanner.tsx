@@ -44,11 +44,7 @@ export function CoverSelectionBanner({
                   : 'border-muted-foreground/25 hover:border-muted-foreground/50',
               )}
             >
-              <img
-                src={previewUrl}
-                alt=""
-                className="size-10 shrink-0 rounded object-cover"
-              />
+              <img src={previewUrl} alt="" className="size-10 shrink-0 rounded object-cover" />
               <span className="max-w-32 truncate font-medium" title={trackName}>
                 {trackName}
               </span>

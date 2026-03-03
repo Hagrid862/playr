@@ -44,7 +44,7 @@ export function useBulkTrackUpload({
       if (!cancelled) {
         setTracksWithCovers(results);
         setSelectedCoverTrackId((prev) =>
-          results.some((r) => r.trackId === prev) ? prev : results[0]?.trackId ?? null,
+          results.some((r) => r.trackId === prev) ? prev : (results[0]?.trackId ?? null),
         );
       }
 
@@ -101,20 +101,23 @@ export function useBulkTrackUpload({
     [],
   );
 
-  const removeTrack = useCallback((id: string) => {
-    const willBeEmpty = tracks.filter((t) => t.id !== id).length === 0;
-    if (willBeEmpty) {
-      setTracksWithCovers([]);
-      setSelectedCoverTrackId(null);
-    }
-    setTracks((prev) => {
-      const filtered = prev.filter((t) => t.id !== id);
-      return filtered.map((t, i) => ({
-        ...t,
-        trackNumber: i + 1,
-      }));
-    });
-  }, [tracks]);
+  const removeTrack = useCallback(
+    (id: string) => {
+      const willBeEmpty = tracks.filter((t) => t.id !== id).length === 0;
+      if (willBeEmpty) {
+        setTracksWithCovers([]);
+        setSelectedCoverTrackId(null);
+      }
+      setTracks((prev) => {
+        const filtered = prev.filter((t) => t.id !== id);
+        return filtered.map((t, i) => ({
+          ...t,
+          trackNumber: i + 1,
+        }));
+      });
+    },
+    [tracks],
+  );
 
   const clearAll = useCallback(() => {
     setTracksWithCovers([]);
@@ -131,7 +134,7 @@ export function useBulkTrackUpload({
       if (tracks.length === 0) return;
       const selectedCover =
         selectedCoverTrackId != null
-          ? tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ?? null
+          ? (tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ?? null)
           : null;
       onSubmit(tracks, selectedCover);
     },

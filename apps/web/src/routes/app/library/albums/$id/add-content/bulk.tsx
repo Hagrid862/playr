@@ -31,7 +31,9 @@ function BulkAddContentPage() {
       }
 
       await bulkCreateTracks({ album, tracks });
-      toast.success(`Successfully uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`);
+      toast.success(
+        `Successfully uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`,
+      );
       navigate({ to: '/app/library/albums/$id', params: { id } });
     } catch (error) {
       toast.error('Failed to upload tracks. Please try again.');

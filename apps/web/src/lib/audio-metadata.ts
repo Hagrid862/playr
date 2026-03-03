@@ -5,9 +5,7 @@ import { parseBlob, selectCover } from 'music-metadata';
  * Uses music-metadata - a fully typed library with broad format support.
  * Returns a File suitable for uploading, or null if no cover art is embedded.
  */
-export async function extractCoverFromAudioFile(
-  file: File
-): Promise<File | null> {
+export async function extractCoverFromAudioFile(file: File): Promise<File | null> {
   try {
     const metadata = await parseBlob(file);
     const picture = selectCover(metadata.common.picture);

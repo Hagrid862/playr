@@ -10,7 +10,11 @@ import { useBulkTrackUpload } from './useBulkTrackUpload';
 
 const AUDIO_ACCEPT = 'audio/*';
 
-export function BulkTrackUploadForm({ album, onSubmit, isLoading = false }: BulkTrackUploadFormProps) {
+export function BulkTrackUploadForm({
+  album,
+  onSubmit,
+  isLoading = false,
+}: BulkTrackUploadFormProps) {
   const [isDragging, setIsDragging] = useState(false);
   const {
     tracks,

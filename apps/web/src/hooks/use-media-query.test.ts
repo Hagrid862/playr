@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
- import React from 'react';
+import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 import { useMediaQuery } from './use-media-query';

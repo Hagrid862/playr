@@ -128,13 +128,15 @@ export function EditTrackForm({
                   placeholder="1"
                   type="number"
                   value={String(field.state.value ?? '')}
-                  error={field.state.meta.isTouched
-                    ? (field.state.meta.errors[0] as string | undefined) ||
-                    (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
-                    : serverErrors?.trackNumber}
+                  error={
+                    field.state.meta.isTouched
+                      ? (field.state.meta.errors[0] as string | undefined) ||
+                        (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
+                      : serverErrors?.trackNumber
+                  }
                   onChange={(e) => field.handleChange(Number(e))}
                   onBlur={field.handleBlur}
-                  />
+                />
               </div>
             )}
           </form.Field>
