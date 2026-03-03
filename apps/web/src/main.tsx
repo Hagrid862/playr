@@ -55,6 +55,12 @@ const rootElement = document.getElementById('app');
 
 function Root() {
   const auth = useAuthStore();
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  if (!hasHydrated) {
+    return null;
+  }
+
   return <RouterProvider router={router} context={{ auth }} />;
 }
 
