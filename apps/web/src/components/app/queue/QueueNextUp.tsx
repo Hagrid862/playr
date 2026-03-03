@@ -3,19 +3,23 @@ import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
-  closestCenter,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverEvent,
+  pointerWithin,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { QueueItem } from './QueueItem';
+import { cn } from '@/lib/utils';
+import { QueueItem, QueueItemOverlay } from './QueueItem';
 
 interface QueueNextUpProps {
   nextUp: PlayrQueueItem[];
@@ -25,6 +29,8 @@ interface QueueNextUpProps {
   onRemoveTrack: (uniqueId: string, event: React.MouseEvent) => void;
 }
 
+type DropLinePosition = 'top' | 'bottom';
+
 export function QueueNextUp({
   nextUp,
   isShuffled,
@@ -32,12 +38,52 @@ export function QueueNextUp({
   onPlayTrack,
   onRemoveTrack,
 }: QueueNextUpProps) {
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+  const [overId, setOverId] = React.useState<string | null>(null);
+  const [dropLinePosition, setDropLinePosition] = React.useState<DropLinePosition | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (over) {
+      setOverId(String(over.id));
+      const activeIndex = nextUp.findIndex((t) => t.uniqueId === active.id);
+      const overIndex = nextUp.findIndex((t) => t.uniqueId === over.id);
+      if (activeIndex > overIndex) {
+        setDropLinePosition('top');
+      } else {
+        setDropLinePosition('bottom');
+      }
+    } else {
+      setOverId(null);
+      setDropLinePosition(null);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    setOverId(null);
+    setDropLinePosition(null);
+    onDragEnd(event);
+  };
+
+  const activeTrack = activeId ? nextUp.find((t) => t.uniqueId === activeId) : null;
+
+  const dropLineClassNames = (visible: boolean) =>
+    cn(
+      'w-full rounded-full transition-all duration-200',
+      visible ? 'h-0.5 bg-white/60 opacity-100' : 'h-0 opacity-0',
+    );
 
   return (
     <div className="space-y-3" aria-label="Next Up" role="region">
@@ -73,7 +119,13 @@ export function QueueNextUp({
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="w-full"
           >
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={pointerWithin}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
               <SortableContext
                 items={nextUp.map((t) => t.uniqueId)}
                 strategy={verticalListSortingStrategy}
@@ -81,16 +133,35 @@ export function QueueNextUp({
                 <div className="space-y-0.5">
                   <AnimatePresence mode="popLayout">
                     {nextUp.map((track) => (
-                      <QueueItem
-                        key={track.uniqueId}
-                        track={track}
-                        onPlay={onPlayTrack}
-                        onRemove={onRemoveTrack}
-                      />
+                      <div key={track.uniqueId}>
+                        <div
+                          className={dropLineClassNames(
+                            overId === track.uniqueId &&
+                              dropLinePosition === 'top' &&
+                              overId !== activeId,
+                          )}
+                        />
+                        <QueueItem
+                          track={track}
+                          onPlay={onPlayTrack}
+                          onRemove={onRemoveTrack}
+                          isDragActive={activeId !== null}
+                        />
+                        <div
+                          className={dropLineClassNames(
+                            overId === track.uniqueId &&
+                              dropLinePosition === 'bottom' &&
+                              overId !== activeId,
+                          )}
+                        />
+                      </div>
                     ))}
                   </AnimatePresence>
                 </div>
               </SortableContext>
+              <DragOverlay dropAnimation={null}>
+                {activeTrack ? <QueueItemOverlay track={activeTrack} /> : null}
+              </DragOverlay>
             </DndContext>
           </motion.div>
         )}
