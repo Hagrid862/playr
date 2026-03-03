@@ -12,16 +12,22 @@ import type { ZodAlbumInfer } from '@repo/contracts';
 export interface BulkCreateLibraryTracksParams {
   album: ZodAlbumInfer;
   tracks: BulkTrackItem[];
+  /** When creating a new album, the API response may not include artists. Pass artistIds explicitly. */
+  artistIds?: string[];
 }
 
 export const bulkCreateLibraryTracks = async ({
   album,
   tracks,
+  artistIds: explicitArtistIds,
 }: BulkCreateLibraryTracksParams): Promise<{
   createResponse: BulkCreateLibraryTracksResponse;
   uploadResponse: BulkUploadTrackAudioResponse;
 }> => {
-  const artistIds = album.artists?.map((a) => a.id) ?? [];
+  const artistIds =
+    explicitArtistIds?.length
+      ? explicitArtistIds
+      : (album.artists?.map((a) => a.id) ?? []);
   if (artistIds.length === 0) {
     throw new Error('Album must have at least one artist');
   }
