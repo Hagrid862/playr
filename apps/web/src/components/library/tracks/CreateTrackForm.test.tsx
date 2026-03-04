@@ -1,10 +1,10 @@
 import {
-  CreateLibraryTrackRequest,
-  CreateLibraryTrackRequestSchema,
-  ZodAlbumInfer,
+    CreateLibraryTrackRequest,
+    CreateLibraryTrackRequestSchema,
+    ZodAlbumInfer,
 } from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
@@ -17,6 +17,70 @@ vi.mock('@tanstack/react-router', () => ({
   ),
   useNavigate: vi.fn(() => vi.fn()),
 }));
+
+// Global state for tests to manipulate mock behavior
+export const mockState = {
+  suppressRef: false,
+};
+
+// Mock FileField - assigns inputRef so drop handler can sync files (covers lines 157-161).
+// Assignment to input.files throws in jsdom; component uses try-catch for compatibility.
+vi.mock('@/components/form', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/form')>();
+  return {
+    ...actual,
+    FileField: ({
+      label,
+      value,
+      onChange,
+      onBlur,
+      error,
+      inputRef,
+      ...props
+    }: {
+      label: string;
+      value: File | null;
+      onChange: (file: File | null) => void;
+      onBlur: () => void;
+      error?: string;
+      inputRef: React.RefObject<HTMLInputElement | null>;
+      [key: string]: unknown;
+    }) => (
+      <div>
+        <label htmlFor="audio-file-mock">{label}</label>
+        <input
+          id="audio-file-mock"
+          type="file"
+          accept="audio/*"
+          data-testid="audio-file-input"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            onChange(file ?? null);
+          }}
+          onBlur={onBlur}
+          ref={(el) => {
+            if (inputRef && 'current' in inputRef) {
+              if (mockState.suppressRef) {
+                (inputRef as unknown as { current: HTMLInputElement | null }).current = null;
+              } else {
+                (inputRef as unknown as { current: HTMLInputElement | null }).current = el as HTMLInputElement;
+              }
+            }
+          }}
+        />
+        {error && <span role="alert">{error}</span>}
+      </div>
+    ),
+  };
+});
+
+async function uploadFileToInput(
+  fileInput: HTMLElement,
+  file: File,
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await user.upload(fileInput as HTMLInputElement, file);
+}
 
 const mockAlbum: ZodAlbumInfer = {
   id: 'album-123',
@@ -94,8 +158,7 @@ describe('CreateTrackForm', () => {
     await user.click(screen.getByLabelText(/explicit content/i));
 
     const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
-    const fileInput = screen.getByLabelText(/audio file/i);
-    await user.upload(fileInput, file);
+    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
 
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
@@ -141,8 +204,7 @@ describe('CreateTrackForm', () => {
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
     const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
-    const fileInput = screen.getByLabelText(/audio file/i);
-    await user.upload(fileInput, file);
+    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
 
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
@@ -166,8 +228,7 @@ describe('CreateTrackForm', () => {
     await user.click(screen.getByLabelText(/add another track/i));
 
     const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
-    const fileInput = screen.getByLabelText(/audio file/i);
-    await user.upload(fileInput, file);
+    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
 
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
@@ -222,8 +283,7 @@ describe('CreateTrackForm', () => {
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
     const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
-    const fileInput = screen.getByLabelText(/audio file/i);
-    await user.upload(fileInput, file);
+    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
 
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
@@ -316,5 +376,199 @@ describe('CreateTrackForm', () => {
     expect(await screen.findByText('First error')).toBeInTheDocument();
 
     safeParseSpy.mockRestore();
+  });
+
+  it('shows drop overlay on dragenter with files', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    fireEvent.dragEnter(window, {
+      dataTransfer: { items: [{ type: 'audio/mpeg' }] },
+    });
+
+    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+  });
+
+  it('does not show drop overlay on dragenter without items', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const event = new Event('dragenter', { bubbles: true });
+    Object.defineProperty(event, 'dataTransfer', { value: { items: [] }, configurable: true });
+    window.dispatchEvent(event);
+
+    expect(screen.queryByText('Drop audio file here')).not.toBeInTheDocument();
+  });
+
+  it('hides drop overlay on dragleave when counter reaches zero', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    fireEvent.dragEnter(window, {
+      dataTransfer: { items: [{ type: 'audio/mpeg' }] },
+    });
+    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, {});
+    expect(screen.queryByText('Drop audio file here')).not.toBeInTheDocument();
+  });
+
+  it('prevents default behavior on dragover', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const event = new Event('dragover', { bubbles: true });
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+    window.dispatchEvent(event);
+
+    expect(preventDefaultSpy).toHaveBeenCalled();
+  });
+
+  it('hides drop overlay when dragCounter reaches zero after multiple drag enters', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const dataTransfer = { items: [{ type: 'audio/mpeg' }] };
+    fireEvent.dragEnter(window, { dataTransfer });
+    fireEvent.dragEnter(window, { dataTransfer });
+    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, {});
+    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, {});
+    expect(screen.queryByText('Drop audio file here')).not.toBeInTheDocument();
+  });
+
+  it('opens multiple files modal when dropping multiple files', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const file1 = new File(['a'], 'track1.mp3', { type: 'audio/mpeg' });
+    const file2 = new File(['b'], 'track2.mp3', { type: 'audio/mpeg' });
+    const fileList = Object.assign([file1, file2], {
+      length: 2,
+      item: (i: number) => [file1, file2][i],
+    }) as FileList;
+
+    fireEvent.drop(window, { dataTransfer: { files: fileList } });
+
+    expect(screen.getByText('Too Many Files')).toBeInTheDocument();
+    expect(
+      screen.getByText(/You can only upload one audio track at a time/),
+    ).toBeInTheDocument();
+  });
+
+  it('closes multiple files modal when OK is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const file1 = new File(['a'], 'track1.mp3', { type: 'audio/mpeg' });
+    const file2 = new File(['b'], 'track2.mp3', { type: 'audio/mpeg' });
+    const fileList = Object.assign([file1, file2], {
+      length: 2,
+      item: (i: number) => [file1, file2][i],
+    }) as FileList;
+
+    fireEvent.drop(window, { dataTransfer: { files: fileList } });
+    expect(screen.getByText('Too Many Files')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    expect(screen.queryByText('Too Many Files')).not.toBeInTheDocument();
+  });
+
+  it('opens invalid format modal when dropping non-audio file', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
+    const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
+
+    fireEvent.drop(window, { dataTransfer: { files: fileList } });
+
+    expect(screen.getByText('Invalid File Format')).toBeInTheDocument();
+    expect(
+      screen.getByText(/The file you dropped is not a supported audio format/),
+    ).toBeInTheDocument();
+  });
+
+  it('closes invalid format modal when OK is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
+    const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
+
+    fireEvent.drop(window, { dataTransfer: { files: fileList } });
+    expect(screen.getByText('Invalid File Format')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    expect(screen.queryByText('Invalid File Format')).not.toBeInTheDocument();
+  });
+
+  it('sets audio file when dropping valid audio file', async () => {
+    const user = userEvent.setup();
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
+    const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
+
+    fireEvent.drop(window, { dataTransfer: { files: fileList } });
+
+    await user.type(screen.getByLabelText(/track title/i), 'Dropped Track');
+    await user.click(screen.getByRole('button', { name: /add track/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Dropped Track' }),
+        expect.any(File),
+      );
+    });
+  });
+
+  it('handles non-Error submission rejection gracefully', async () => {
+    const user = userEvent.setup();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    onSubmit.mockRejectedValue('String reject');
+
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText(/track title/i), 'New Song');
+
+    const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
+    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
+
+    await user.click(screen.getByRole('button', { name: /add track/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', 'String reject');
+    });
+
+    expect(screen.getByText('Submission failed. Please try again.')).toBeInTheDocument();
+
+    consoleSpy.mockRestore();
+  });
+
+  it('does nothing on drop if no files are present', () => {
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const event = new Event('drop', { bubbles: true });
+    Object.defineProperty(event, 'dataTransfer', { value: { files: [] }, configurable: true });
+    window.dispatchEvent(event);
+
+    expect(screen.queryByText('Too Many Files')).not.toBeInTheDocument();
+    expect(screen.queryByText('Invalid File Format')).not.toBeInTheDocument();
+  });
+
+  it('handles drop when fileInputRef current is null', async () => {
+    mockState.suppressRef = true;
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
+    const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
+
+    fireEvent.drop(window, { dataTransfer: { files: fileList } });
+
+    // Ensure it doesn't crash and we can still trigger validations or other things
+    const titleInput = screen.getByLabelText(/track title/i);
+    fireEvent.blur(titleInput);
+    expect(await screen.findByText(/track title is required/i)).toBeInTheDocument();
+    
+    // Clean up
+    mockState.suppressRef = false;
   });
 });
