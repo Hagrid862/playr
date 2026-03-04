@@ -145,4 +145,33 @@ describe('SongCard', () => {
     const bar1 = container.querySelector('.animate-music-bar-1');
     expect(bar1).toBeInTheDocument();
   });
+
+  it('renders Spinner and disables interaction when isProcessing is true', () => {
+    const onClick = vi.fn();
+    render(<SongCard {...defaultProps} isProcessing onClick={onClick} />);
+
+    expect(screen.getByLabelText('Processing')).toBeInTheDocument();
+    expect(screen.getByText('Test Song').closest('.group')).toHaveClass(
+      'opacity-60',
+      'cursor-not-allowed',
+    );
+
+    fireEvent.click(screen.getByText('Test Song'));
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('renders WarningIcon and disables interaction when isFailed is true', () => {
+    const onClick = vi.fn();
+    render(<SongCard {...defaultProps} isFailed onClick={onClick} />);
+
+    expect(screen.getByLabelText('Processing failed')).toBeInTheDocument();
+    expect(screen.getByText('Test Song').closest('.group')).toHaveClass(
+      'opacity-60',
+      'cursor-not-allowed',
+    );
+
+    fireEvent.click(screen.getByText('Test Song'));
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
 });

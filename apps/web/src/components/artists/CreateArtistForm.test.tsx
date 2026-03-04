@@ -212,4 +212,177 @@ describe('CreateArtistForm', () => {
     fireEvent.change(fileInput, { target: { files: [] } });
     // Just ensuring it doesn't crash and covers the branch
   });
+
+  it('shows drag overlay when dragging files over window', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    const dataTransfer = { items: [{}], files: [] };
+
+    fireEvent.dragEnter(window, { dataTransfer });
+    expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
+  });
+
+  it('hides drag overlay when dragging leaves window', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    const dataTransfer = { items: [{}], files: [] };
+
+    fireEvent.dragEnter(window, { dataTransfer });
+    expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, { dataTransfer });
+    expect(screen.queryByText(/Drop avatar image here/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps drag overlay visible during nested drag events', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    const dataTransfer = { items: [{}], files: [] };
+
+    fireEvent.dragEnter(window, { dataTransfer });
+    fireEvent.dragEnter(window, { dataTransfer });
+    expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, { dataTransfer });
+    expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, { dataTransfer });
+    expect(screen.queryByText(/Drop avatar image here/i)).not.toBeInTheDocument();
+  });
+
+  it('updates preview when dropping single valid image file', () => {
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
+    render(<CreateArtistForm {...defaultProps} />);
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const filesDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'files',
+    ) as PropertyDescriptor;
+    Object.defineProperty(fileInput, 'files', {
+      ...filesDescriptor,
+      set: () => {},
+      configurable: true,
+    });
+
+    const file = new File(['x'], 'dropped.png', { type: 'image/png' });
+    const dataTransfer = { files: [file] };
+
+    fireEvent.drop(window, { dataTransfer });
+
+    expect(createObjectUrlSpy).toHaveBeenCalledWith(file);
+    expect(screen.getByAltText('Avatar preview')).toHaveAttribute('src', 'dropped-url');
+  });
+
+  it('hides drag overlay when drop occurs', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
+    render(<CreateArtistForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const filesDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'files',
+    ) as PropertyDescriptor;
+    const filesSetSpy = vi.fn();
+    Object.defineProperty(fileInput, 'files', {
+      ...filesDescriptor,
+      set: filesSetSpy,
+      configurable: true,
+    });
+
+    const file = new File(['x'], 'dropped.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.queryByText(/Drop avatar image here/i)).not.toBeInTheDocument();
+    expect(filesSetSpy).toHaveBeenCalled();
+  });
+
+  it('shows Too Many Files dialog when dropping multiple files', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+
+    const file1 = new File(['x'], 'a.png', { type: 'image/png' });
+    const file2 = new File(['y'], 'b.png', { type: 'image/png' });
+    const dataTransfer = { files: [file1, file2] };
+
+    fireEvent.drop(window, { dataTransfer });
+
+    expect(screen.getByText(/Too Many Files/i)).toBeInTheDocument();
+    expect(screen.getByText(/You can only upload one an avatar picture at a time/i)).toBeInTheDocument();
+  });
+
+  it('shows Invalid File Format dialog when dropping non-image file', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+
+    const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
+    const dataTransfer = { files: [file] };
+
+    fireEvent.drop(window, { dataTransfer });
+
+    expect(screen.getByText(/Invalid File Format/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a supported image format/i)).toBeInTheDocument();
+  });
+
+  it('closes Too Many Files dialog when OK is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CreateArtistForm {...defaultProps} />);
+
+    const file1 = new File(['x'], 'a.png', { type: 'image/png' });
+    const file2 = new File(['y'], 'b.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file1, file2] } });
+
+    expect(screen.getByText(/Too Many Files/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^OK$/i }));
+    expect(screen.queryByText(/Too Many Files/i)).not.toBeInTheDocument();
+  });
+
+  it('closes Invalid File Format dialog when OK is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CreateArtistForm {...defaultProps} />);
+
+    const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.getByText(/Invalid File Format/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^OK$/i }));
+    expect(screen.queryByText(/Invalid File Format/i)).not.toBeInTheDocument();
+  });
+
+  it('does not set dragging when dragenter has no items', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [], files: [] } });
+    expect(screen.queryByText(/Drop avatar image here/i)).not.toBeInTheDocument();
+  });
+
+  it('handles dragover event', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    fireEvent.dragOver(window, { dataTransfer: { items: [] } });
+    expect(screen.getByLabelText(/Artist Name/i)).toBeInTheDocument();
+  });
+
+  it('handles drop with no files', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
+
+    fireEvent.drop(window, { dataTransfer: { files: [] } });
+
+    expect(screen.queryByText(/Drop avatar image here/i)).not.toBeInTheDocument();
+  });
+
+  it('handles drop with undefined dataTransfer', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    fireEvent.drop(window, { dataTransfer: undefined } as unknown as DragEvent);
+
+    expect(screen.queryByText(/Drop avatar image here/i)).not.toBeInTheDocument();
+  });
+
+  it('handles drop when file input ref is null', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
+    render(<CreateArtistForm {...defaultProps} _testHideFileInput />);
+
+    const file = new File(['x'], 'dropped.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.getByAltText('Avatar preview')).toHaveAttribute('src', 'dropped-url');
+  });
 });
