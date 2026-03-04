@@ -25,6 +25,8 @@ interface EditArtistFormProps {
   serverErrors?: Partial<Record<keyof UpdateLibraryArtistRequest, string>>;
   onSubmit: (values: UpdateLibraryArtistRequest, avatar?: File, banner?: File) => Promise<void>;
   onCancel: () => void;
+  /** @internal When true, avatar input is not rendered. Used by tests to cover ref-null branch. */
+  _testHideAvatarInput?: boolean;
 }
 
 const validateWithZod = (value: UpdateLibraryArtistRequest) => {
@@ -47,6 +49,7 @@ export function EditArtistForm({
   serverErrors,
   onSubmit,
   onCancel,
+  _testHideAvatarInput = false,
 }: EditArtistFormProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -223,13 +226,15 @@ export function EditArtistForm({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <input
-        type="file"
-        ref={avatarInputRef}
-        className="hidden"
-        accept="image/*"
-        onChange={handleAvatarSelect}
-      />
+      {!_testHideAvatarInput && (
+        <input
+          type="file"
+          ref={avatarInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleAvatarSelect}
+        />
+      )}
       <input
         type="file"
         ref={bannerInputRef}
