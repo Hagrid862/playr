@@ -42,6 +42,8 @@ export default defineConfig({
         'src/routeTree.gen.ts',
         'src/setupTests.ts',
         'src/**/*.d.ts',
+        'src/**/*.types.ts',
+        'src/**/*.type.ts',
         'src/components/ui/**/*',
         'src/routes/**/*',
         'src/hooks/api/**/*',
