@@ -2,21 +2,21 @@ import { FileField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { CircleNotchIcon, PlusIcon } from '@phosphor-icons/react';
 import {
-  CreateLibraryTrackRequest,
-  CreateLibraryTrackRequestSchema,
-  ZodAlbumInfer,
+    CreateLibraryTrackRequest,
+    CreateLibraryTrackRequestSchema,
+    ZodAlbumInfer,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -154,12 +154,6 @@ export function CreateTrackForm({
         const file = e.dataTransfer.files[0];
         if (file.type.startsWith('audio/')) {
           form.setFieldValue('audioFile', file);
-
-          if (fileInputRef.current) {
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInputRef.current.files = dataTransfer.files;
-          }
         } else {
           setIsFormatModalOpen(true);
         }
