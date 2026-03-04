@@ -44,7 +44,12 @@ export function CreateAlbumForm({
   onBlur,
   onFileSelect,
   getFieldError,
-}: CreateAlbumFormProps & { onFileSelect?: (file: File | null) => void }) {
+  _testHideFileInput = false,
+}: CreateAlbumFormProps & {
+  onFileSelect?: (file: File | null) => void;
+  /** @internal When true, file input is not rendered. Used by tests to cover ref-null branch. */
+  _testHideFileInput?: boolean;
+}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -183,13 +188,15 @@ export function CreateAlbumForm({
       </Dialog>
 
       <form id={id} className="flex flex-col gap-8" onSubmit={onSubmit}>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={handleFileChange}
-        />
+        {!_testHideFileInput && (
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+        )}
         <div className="pt-6">
           <div className="flex flex-col md:flex-row gap-8 md:gap-10">
             <div className="flex flex-col items-center gap-3 shrink-0">

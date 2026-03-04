@@ -36,6 +36,8 @@ interface EditAlbumFormProps {
     shouldDeleteCover?: boolean,
   ) => Promise<void>;
   onCancel: () => void;
+  /** @internal When true, cover input is not rendered. Used by tests to cover ref-null branch. */
+  _testHideCoverInput?: boolean;
 }
 
 const albumTypeOptions = Object.entries(AlbumType).map(([key, value]) => ({
@@ -61,6 +63,7 @@ export function EditAlbumForm({
   serverErrors,
   onSubmit,
   onCancel,
+  _testHideCoverInput = false,
 }: EditAlbumFormProps) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [coverPreview, setCoverPreview] = useState<string | undefined>(undefined);
@@ -188,13 +191,15 @@ export function EditAlbumForm({
       }}
       className="flex flex-col gap-8"
     >
-      <input
-        type="file"
-        ref={coverInputRef}
-        className="hidden"
-        accept="image/*"
-        onChange={handleCoverSelect}
-      />
+      {!_testHideCoverInput && (
+        <input
+          type="file"
+          ref={coverInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleCoverSelect}
+        />
+      )}
 
       {/* Hero section — cover art with glow + title field */}
       <div className="flex flex-col md:flex-row gap-8 md:gap-10">
