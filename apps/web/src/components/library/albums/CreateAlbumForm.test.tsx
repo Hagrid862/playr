@@ -243,6 +243,133 @@ describe('CreateAlbumForm', () => {
     expect(clickSpy).toHaveBeenCalled();
   });
 
+  it('renders type-specific labels when type is ep', () => {
+    render(<CreateAlbumForm {...defaultProps} type="ep" />);
+    expect(screen.getByLabelText(/Ep Title/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Ep/i })).toBeInTheDocument();
+  });
+
+  it('renders type-specific labels when type is single', () => {
+    render(<CreateAlbumForm {...defaultProps} type="single" />);
+    expect(screen.getByLabelText(/Single Title/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Single/i })).toBeInTheDocument();
+  });
+
+  it('does not set dragging when dragenter has no items', () => {
+    render(<CreateAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [], files: [] } });
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+  it('handles drop with no files', () => {
+    render(<CreateAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+    fireEvent.drop(window, { dataTransfer: { files: [] } });
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+  it('handles dragover event', () => {
+    render(<CreateAlbumForm {...defaultProps} />);
+    fireEvent.dragOver(window, { dataTransfer: { items: [] } });
+    expect(screen.getByLabelText(/Album Title/i)).toBeInTheDocument();
+  });
+
+  it('keeps drag overlay visible during nested drag events', () => {
+    render(<CreateAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, { dataTransfer: {} });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, { dataTransfer: {} });
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+  it('shows Invalid File Format dialog when dropping non-image file', () => {
+    render(<CreateAlbumForm {...defaultProps} />);
+    const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.getByText(/Invalid File Format/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a supported image format/i)).toBeInTheDocument();
+  });
+
+  it('shows Too Many Files dialog when dropping multiple files', () => {
+    render(<CreateAlbumForm {...defaultProps} />);
+    const file1 = new File(['x'], 'a.png', { type: 'image/png' });
+    const file2 = new File(['y'], 'b.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file1, file2] } });
+
+    expect(screen.getByText(/Too Many Files/i)).toBeInTheDocument();
+    expect(screen.getByText(/You can only upload one cover image at a time/i)).toBeInTheDocument();
+  });
+
+  it('hides drag overlay when drop occurs', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
+    render(<CreateAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const filesDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'files',
+    ) as PropertyDescriptor;
+    const filesSetSpy = vi.fn();
+    Object.defineProperty(fileInput, 'files', {
+      ...filesDescriptor,
+      set: filesSetSpy,
+      configurable: true,
+    });
+
+    const file = new File(['x'], 'dropped.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+    expect(filesSetSpy).toHaveBeenCalled();
+  });
+
+  it('closes Too Many Files dialog when OK is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CreateAlbumForm {...defaultProps} />);
+    fireEvent.drop(window, {
+      dataTransfer: {
+        files: [
+          new File(['x'], 'a.png', { type: 'image/png' }),
+          new File(['y'], 'b.png', { type: 'image/png' }),
+        ],
+      },
+    });
+    expect(screen.getByText(/Too Many Files/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^OK$/i }));
+    expect(screen.queryByText(/Too Many Files/i)).not.toBeInTheDocument();
+  });
+
+  it('handles drop when file input ref is null', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
+    render(<CreateAlbumForm {...defaultProps} _testHideFileInput />);
+
+    const file = new File(['x'], 'dropped.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.getByAltText('Cover Preview')).toHaveAttribute('src', 'dropped-url');
+    expect(mockOnFileSelect).toHaveBeenCalledWith(file);
+  });
+
+  it('closes Invalid File Format dialog when OK is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CreateAlbumForm {...defaultProps} />);
+    fireEvent.drop(window, {
+      dataTransfer: { files: [new File(['x'], 'doc.pdf', { type: 'application/pdf' })] },
+    });
+    expect(screen.getByText(/Invalid File Format/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^OK$/i }));
+    expect(screen.queryByText(/Invalid File Format/i)).not.toBeInTheDocument();
+  });
+
   it('renders date picker with existing release date value', () => {
     const releaseDate = new Date('2022-06-15T00:00:00.000Z');
     render(

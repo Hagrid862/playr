@@ -1,5 +1,5 @@
 import { AlbumType, FileBucket, ImageUploadStatus, Visibility } from '@repo/db';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditAlbumForm } from './EditAlbumForm';
@@ -216,6 +216,42 @@ describe('EditAlbumForm', () => {
     expect(screen.queryByText(/Remove/i)).not.toBeInTheDocument();
   });
 
+  it('calls onSubmit with isCoverRemoved when cover is removed before submit', async () => {
+    const user = userEvent.setup();
+    const albumWithCover: ZodAlbum = {
+      ...mockAlbum,
+      coverId: 'cover-123',
+      cover: {
+        id: 'img-1',
+        url: 'https://existing.com/cover.jpg',
+        key: 'key-1',
+        alt: 'alt-1',
+        bucket: FileBucket.public,
+        mimeType: 'image/jpeg',
+        uploadStatus: ImageUploadStatus.uploaded,
+        blurhash: null,
+        reportId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      },
+    };
+    render(<EditAlbumForm {...defaultProps} album={albumWithCover} />);
+
+    const removeButton = screen.getByRole('button', { name: /Remove/i });
+    await user.click(removeButton);
+
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ coverId: null }),
+        undefined,
+        true,
+      );
+    });
+  });
+
   it('calls onSubmit with form values and selected cover', async () => {
     const user = userEvent.setup();
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
@@ -366,5 +402,149 @@ describe('EditAlbumForm', () => {
     render(<EditAlbumForm {...defaultProps} album={albumNoDate} />);
 
     expect(screen.getByText(/Mock Date Picker/i)).toBeInTheDocument();
+  });
+
+  it('does not set dragging when dragenter has no items', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [], files: [] } });
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+  it('does not set dragging when dragenter has undefined dataTransfer', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: undefined } as unknown as DragEvent);
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+
+  it('handles drop with undefined dataTransfer', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    fireEvent.drop(window, { dataTransfer: undefined } as unknown as DragEvent);
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+  it('handles drop with no files', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+    fireEvent.drop(window, { dataTransfer: { files: [] } });
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+  it('handles dragover event', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.dragOver(window, { dataTransfer: { items: [] } });
+    expect(screen.getByLabelText(/Album Title/i)).toBeInTheDocument();
+  });
+
+  it('keeps drag overlay visible during nested drag events', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, { dataTransfer: {} });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+
+    fireEvent.dragLeave(window, { dataTransfer: {} });
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+  });
+
+  it('shows Invalid File Format dialog when dropping non-image file', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.getByText(/Invalid File Format/i)).toBeInTheDocument();
+  });
+
+  it('shows Too Many Files dialog when dropping multiple files', () => {
+    render(<EditAlbumForm {...defaultProps} />);
+    const file1 = new File(['x'], 'a.png', { type: 'image/png' });
+    const file2 = new File(['y'], 'b.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file1, file2] } });
+
+    expect(screen.getByText(/Too Many Files/i)).toBeInTheDocument();
+  });
+
+  it('hides drag overlay when drop occurs', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
+    expect(screen.getByText(/Drop cover image here/i)).toBeInTheDocument();
+
+    const coverInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const filesDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'files',
+    ) as PropertyDescriptor;
+    const filesSetSpy = vi.fn();
+    Object.defineProperty(coverInput, 'files', {
+      ...filesDescriptor,
+      set: filesSetSpy,
+      configurable: true,
+    });
+
+    const file = new File(['x'], 'dropped.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    expect(screen.queryByText(/Drop cover image here/i)).not.toBeInTheDocument();
+    expect(filesSetSpy).toHaveBeenCalled();
+  });
+
+  it('handles drop when cover input ref is null', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
+    render(<EditAlbumForm {...defaultProps} _testHideCoverInput />);
+
+    const file = new File(['x'], 'dropped.png', { type: 'image/png' });
+    fireEvent.drop(window, { dataTransfer: { files: [file] } });
+
+    const images = screen.getAllByAltText('Original Name');
+    expect(images.some((img) => img.getAttribute('src') === 'mock-url')).toBe(true);
+  });
+
+  it('closes Too Many Files dialog when Close is clicked', async () => {
+    const user = userEvent.setup();
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.drop(window, {
+      dataTransfer: {
+        files: [
+          new File(['x'], 'a.png', { type: 'image/png' }),
+          new File(['y'], 'b.png', { type: 'image/png' }),
+        ],
+      },
+    });
+    expect(screen.getByText(/Too Many Files/i)).toBeInTheDocument();
+    const dialogs = screen.getAllByRole('dialog');
+    const tooManyDialog = dialogs.find((d) => d.textContent?.includes('Too Many Files'));
+    const closeButtons = within(tooManyDialog!).getAllByRole('button', { name: /Close/i });
+    await user.click(closeButtons[closeButtons.length - 1]);
+    expect(screen.queryByText(/Too Many Files/i)).not.toBeInTheDocument();
+  });
+
+  it('closes Invalid File Format dialog when Close is clicked', async () => {
+    const user = userEvent.setup();
+    render(<EditAlbumForm {...defaultProps} />);
+    fireEvent.drop(window, {
+      dataTransfer: { files: [new File(['x'], 'doc.pdf', { type: 'application/pdf' })] },
+    });
+    expect(screen.getByText(/Invalid File Format/i)).toBeInTheDocument();
+    const dialogs = screen.getAllByRole('dialog');
+    const formatDialog = dialogs.find((d) => d.textContent?.includes('Invalid File Format'));
+    const closeButtons = within(formatDialog!).getAllByRole('button', { name: /Close/i });
+    await user.click(closeButtons[closeButtons.length - 1]);
+    expect(screen.queryByText(/Invalid File Format/i)).not.toBeInTheDocument();
+  });
+
+  it('renders with coverId but no cover object', () => {
+    const albumWithIdOnly: ZodAlbum = {
+      ...mockAlbum,
+      coverId: 'cover-123',
+      cover: null,
+    };
+    render(<EditAlbumForm {...defaultProps} album={albumWithIdOnly} />);
+
+    expect(screen.getByText(/Upload Cover/i)).toBeInTheDocument();
   });
 });
