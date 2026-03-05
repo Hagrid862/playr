@@ -12,6 +12,11 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import {
+    extractCoverFromAudioFile,
+    extractMetadataFromAudioFile,
+} from '@/lib/audio-metadata';
+import { cleanFilenameToTitle } from '@/lib/clean-audio-filename';
 import { CircleNotchIcon, PlusIcon } from '@phosphor-icons/react';
 import {
     CreateLibraryTrackRequest,
@@ -22,13 +27,18 @@ import { useForm } from '@tanstack/react-form';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import { SingleTrackCoverUpdateBanner } from './SingleTrackCoverUpdateBanner';
 
 type TrackFormValues = CreateLibraryTrackRequest & { audioFile: File | null };
 
 interface CreateTrackFormProps {
   album: ZodAlbumInfer;
   isLoading: boolean;
-  onSubmit: (values: CreateLibraryTrackRequest, audioFile: File) => Promise<void>;
+  onSubmit: (
+    values: CreateLibraryTrackRequest,
+    audioFile: File,
+    coverFile?: File | null,
+  ) => Promise<void>;
   serverErrors?: Partial<Record<keyof CreateLibraryTrackRequest, string>>;
 }
 
@@ -78,6 +88,11 @@ export function CreateTrackForm({
   const [isMultipleFilesModalOpen, setIsMultipleFilesModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [trackCoverFile, setTrackCoverFile] = useState<File | null>(null);
+  const [useTrackCoverAsAlbumCover, setUseTrackCoverAsAlbumCover] = useState(false);
+  const [isScanningMetadata, setIsScanningMetadata] = useState(false);
+  const [trackCoverPreviewUrl, setTrackCoverPreviewUrl] = useState<string | null>(null);
+  const [audioFileForScan, setAudioFileForScan] = useState<File | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -99,12 +114,20 @@ export function CreateTrackForm({
       try {
         const metadata = CreateLibraryTrackRequestSchema.parse(value);
         const audioFile = z.instanceof(File).parse(value.audioFile);
+        const coverFile = useTrackCoverAsAlbumCover && trackCoverFile ? trackCoverFile : null;
 
-        await onSubmit(metadata, audioFile);
+        await onSubmit(metadata, audioFile, coverFile);
         if (stayOnPage) {
           form.reset();
           form.setFieldValue('trackNumber', value.trackNumber + 1);
           form.setFieldValue('diskNumber', value.diskNumber);
+          setAudioFileForScan(null);
+          setTrackCoverFile(null);
+          setUseTrackCoverAsAlbumCover(false);
+          setTrackCoverPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
         } else {
           navigate({ to: '..' });
         }
@@ -154,6 +177,7 @@ export function CreateTrackForm({
         const file = e.dataTransfer.files[0];
         if (file.type.startsWith('audio/')) {
           form.setFieldValue('audioFile', file);
+          setAudioFileForScan(file);
         } else {
           setIsFormatModalOpen(true);
         }
@@ -172,6 +196,66 @@ export function CreateTrackForm({
       window.removeEventListener('drop', handleDrop);
     };
   }, [form]);
+
+  useEffect(() => {
+    if (!audioFileForScan) {
+      setTrackCoverFile(null);
+      setUseTrackCoverAsAlbumCover(false);
+      setTrackCoverPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      return;
+    }
+
+    let cancelled = false;
+
+    const scan = async () => {
+      setIsScanningMetadata(true);
+      setTrackCoverFile(null);
+      setTrackCoverPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+
+      const [meta, coverFile] = await Promise.all([
+        extractMetadataFromAudioFile(audioFileForScan),
+        extractCoverFromAudioFile(audioFileForScan),
+      ]);
+
+      if (cancelled) return;
+
+      const metaContext = {
+        artists: meta?.artist ? [meta.artist] : [],
+        album: meta?.album ?? '',
+      };
+
+      form.setFieldValue('title', meta?.title || cleanFilenameToTitle(audioFileForScan.name, metaContext));
+      form.setFieldValue('trackNumber', meta?.trackNo ?? 1);
+      form.setFieldValue('diskNumber', meta?.diskNo ?? 1);
+
+      if (coverFile) {
+        setTrackCoverFile(coverFile);
+        setTrackCoverPreviewUrl(URL.createObjectURL(coverFile));
+        setUseTrackCoverAsAlbumCover(!album.cover?.url);
+      } else {
+        setUseTrackCoverAsAlbumCover(false);
+      }
+
+      setIsScanningMetadata(false);
+    };
+
+    scan();
+    return () => {
+      cancelled = true;
+    };
+  }, [audioFileForScan, album.artists, album.name, album.cover?.url, form]);
+
+  useEffect(() => {
+    return () => {
+      if (trackCoverPreviewUrl) URL.revokeObjectURL(trackCoverPreviewUrl);
+    };
+  }, [trackCoverPreviewUrl]);
 
   return (
     <>
@@ -324,11 +408,30 @@ export function CreateTrackForm({
                   (field.state.meta.errors[0] as string | undefined) ||
                   (form.state.errors[0] as Record<string, string> | undefined)?.[field.name]
                 }
-                onChange={(file) => field.handleChange(file)}
+                onChange={(file) => {
+                  field.handleChange(file);
+                  setAudioFileForScan(file);
+                }}
                 onBlur={field.handleBlur}
               />
             )}
           </form.Field>
+
+          {isScanningMetadata && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CircleNotchIcon className="h-4 w-4 animate-spin" />
+              Scanning metadata...
+            </div>
+          )}
+
+          {trackCoverFile && trackCoverPreviewUrl && !isScanningMetadata && (
+            <SingleTrackCoverUpdateBanner
+              currentAlbumCoverUrl={album.cover?.url ?? null}
+              trackCoverPreviewUrl={trackCoverPreviewUrl}
+              useTrackCover={useTrackCoverAsAlbumCover}
+              onSelect={setUseTrackCoverAsAlbumCover}
+            />
+          )}
         </div>
 
         <Separator />
