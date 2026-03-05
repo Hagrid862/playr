@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import type { ZodAlbumInfer } from '@repo/contracts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ZodAlbumInfer, ZodArtist } from '@repo/contracts';
 import type { BulkTrackItem } from '@/lib/types/library';
 import { BulkTrackUploadForm } from './BulkTrackUploadForm';
 import { useBulkTrackUpload } from './useBulkTrackUpload';
@@ -56,6 +56,20 @@ function createMockTrack(overrides: Record<string, unknown> = {}) {
   };
 }
 
+const mockArtist: ZodArtist = {
+  id: 'a1',
+  name: 'Artist',
+  description: null,
+  isCommunity: false,
+  verified: false,
+  bannerId: null,
+  avatarId: null,
+  visibility: 'public',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  deletedAt: null,
+} as ZodArtist;
+
 const mockAlbum: ZodAlbumInfer = {
   id: 'album-123',
   name: 'Test Album',
@@ -69,7 +83,7 @@ const mockAlbum: ZodAlbumInfer = {
   createdAt: new Date(),
   updatedAt: new Date(),
   deletedAt: null,
-  artists: [{ id: 'a1', name: 'Artist' }],
+  artists: [mockArtist],
   tracks: [],
   genres: [],
   cover: null,
@@ -177,7 +191,7 @@ describe('BulkTrackUploadForm', () => {
     );
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
-    const fileList = Object.assign([file], { length: 1, item: (i: number) => file }) as FileList;
+    const fileList = Object.assign([file], { length: 1, item: (_i: number) => file }) as FileList;
     const dropzone = container.querySelector('form')?.firstElementChild as HTMLElement;
 
     fireEvent.drop(dropzone, { dataTransfer: { files: fileList } });

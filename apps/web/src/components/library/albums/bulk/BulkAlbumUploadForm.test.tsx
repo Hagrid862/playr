@@ -1,8 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlbumType } from '@repo/db';
 import { useBulkAlbumUploadForm } from '@/hooks/forms/useBulkAlbumUploadForm';
+import type { LibraryState } from '@/stores/library.store';
+import type { ZodArtist } from '@repo/contracts';
 import { useLibraryStore } from '@/stores/library.store';
 import { BulkAlbumUploadForm } from './BulkAlbumUploadForm';
 
@@ -32,13 +34,37 @@ vi.mock('@/hooks/api/library-artists/useLibraryArtists', () => ({
 }));
 
 vi.mock('@/stores/library.store', () => {
-  const state = {
+  const mockArtist: ZodArtist = {
+    id: 'artist-1',
+    name: 'Test Artist',
+    description: null,
+    isCommunity: false,
+    verified: false,
+    bannerId: null,
+    avatarId: null,
+    visibility: 'public',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+  } as ZodArtist;
+  const mockState = {
     libraryId: 'lib-1',
-    privateArtists: [{ id: 'artist-1', name: 'Test Artist' }],
+    privateAccountId: null,
+    privateArtists: [mockArtist],
+    privateAlbums: [],
+    setLibraryId: vi.fn(),
+    setPrivateAccountId: vi.fn(),
+    setPrivateArtists: vi.fn(),
+    setPrivateAlbums: vi.fn(),
+    updatePrivateArtist: vi.fn(),
+    updatePrivateAlbum: vi.fn(),
+    removePrivateArtist: vi.fn(),
+    removePrivateAlbum: vi.fn(),
+    clearLibrary: vi.fn(),
   };
   return {
-    useLibraryStore: vi.fn((selector?: (s: typeof state) => unknown) =>
-      selector ? selector(state) : state,
+    useLibraryStore: vi.fn((selector?: (s: LibraryState) => unknown) =>
+      selector ? selector(mockState as LibraryState) : mockState,
     ),
   };
 });
@@ -64,6 +90,38 @@ vi.mock('@/hooks/forms/useBulkAlbumUploadForm', () => ({
 }));
 
 const mockUseBulkAlbumUploadForm = vi.mocked(useBulkAlbumUploadForm);
+
+function createMockLibraryState(overrides: Partial<LibraryState> = {}): LibraryState {
+  const mockArtist: ZodArtist = {
+    id: 'artist-1',
+    name: 'Test Artist',
+    description: null,
+    isCommunity: false,
+    verified: false,
+    bannerId: null,
+    avatarId: null,
+    visibility: 'public',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+  } as ZodArtist;
+  return {
+    libraryId: 'lib-1',
+    privateAccountId: null,
+    privateArtists: [mockArtist],
+    privateAlbums: [],
+    setLibraryId: vi.fn(),
+    setPrivateAccountId: vi.fn(),
+    setPrivateArtists: vi.fn(),
+    setPrivateAlbums: vi.fn(),
+    updatePrivateArtist: vi.fn(),
+    updatePrivateAlbum: vi.fn(),
+    removePrivateArtist: vi.fn(),
+    removePrivateAlbum: vi.fn(),
+    clearLibrary: vi.fn(),
+    ...overrides,
+  } as LibraryState;
+}
 
 function createMockTrack(overrides: Record<string, unknown> = {}) {
   return {
@@ -117,8 +175,8 @@ describe('BulkAlbumUploadForm', () => {
       isPending: false,
     });
     mockUseBulkAlbumUploadForm.mockReturnValue(defaultFormHookReturn);
-    vi.mocked(useLibraryStore).mockImplementation((selector?: (s: { libraryId: string; privateArtists: { id: string; name: string }[] }) => unknown) => {
-      const state = { libraryId: 'lib-1', privateArtists: [{ id: 'artist-1', name: 'Test Artist' }] };
+    vi.mocked(useLibraryStore).mockImplementation((selector?: (s: LibraryState) => unknown) => {
+      const state = createMockLibraryState();
       return selector ? selector(state) : state;
     });
   });
@@ -338,14 +396,10 @@ describe('BulkAlbumUploadForm', () => {
 
   it('does not submit when libraryId is missing', async () => {
     const user = userEvent.setup();
-    const { useLibraryStore } = await import('@/stores/library.store');
-    const stateWithNoLibrary = {
-      libraryId: '',
-      privateArtists: [] as { id: string; name: string }[],
-    };
-    vi.mocked(useLibraryStore).mockImplementation((selector?: (s: typeof stateWithNoLibrary) => unknown) =>
-      selector ? selector(stateWithNoLibrary) : stateWithNoLibrary,
-    );
+    vi.mocked(useLibraryStore).mockImplementation((selector?: (s: LibraryState) => unknown) => {
+      const state = createMockLibraryState({ libraryId: '', privateArtists: [] });
+      return selector ? selector(state) : state;
+    });
 
     render(<BulkAlbumUploadForm />);
 

@@ -10,6 +10,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import { CreateTrackForm } from './CreateTrackForm';
 
+vi.mock('@/lib/audio-metadata', () => ({
+  extractMetadataFromAudioFile: vi.fn().mockResolvedValue(null),
+  extractCoverFromAudioFile: vi.fn().mockResolvedValue(null),
+}));
+
 // Mocking link because it needs router context
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
@@ -31,12 +36,11 @@ vi.mock('@/components/form', async (importOriginal) => {
     ...actual,
     FileField: ({
       label,
-      value,
+      value: _value,
       onChange,
       onBlur,
       error,
       inputRef,
-      ...props
     }: {
       label: string;
       value: File | null;
@@ -152,27 +156,31 @@ describe('CreateTrackForm', () => {
     const user = userEvent.setup();
     render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
-    await user.type(screen.getByLabelText(/track title/i), 'New Song');
+    const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
+    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/track title/i)).toHaveValue('Audio');
+    });
+
     await user.clear(screen.getByLabelText(/track no/i));
     await user.type(screen.getByLabelText(/track no/i), '2');
     await user.click(screen.getByLabelText(/explicit content/i));
-
-    const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
-    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
 
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
-        {
-          title: 'New Song',
+        expect.objectContaining({
+          title: 'Audio',
           trackNumber: 2,
           diskNumber: 1,
           explicit: true,
           albumId: 'album-123',
           artistIds: ['artist-123'],
-        },
+        }),
         expect.any(File),
+        null,
       );
     });
   });
@@ -508,6 +516,11 @@ describe('CreateTrackForm', () => {
 
     fireEvent.drop(window, { dataTransfer: { files: fileList } });
 
+    await waitFor(() => {
+      expect(screen.getByLabelText(/track title/i)).toHaveValue('Track');
+    });
+
+    await user.clear(screen.getByLabelText(/track title/i));
     await user.type(screen.getByLabelText(/track title/i), 'Dropped Track');
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
@@ -515,6 +528,7 @@ describe('CreateTrackForm', () => {
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Dropped Track' }),
         expect.any(File),
+        null,
       );
     });
   });

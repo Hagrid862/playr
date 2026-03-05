@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkAlbumFileDropzone } from './BulkAlbumFileDropzone';
 
 describe('BulkAlbumFileDropzone', () => {
@@ -88,7 +88,7 @@ describe('BulkAlbumFileDropzone', () => {
 
     const dropzone = container.firstChild as HTMLElement;
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
-    const fileList = Object.assign([file], { length: 1, item: (i: number) => file }) as FileList;
+    const fileList = Object.assign([file], { length: 1, item: (_i: number) => file }) as FileList;
 
     fireEvent.drop(dropzone, { dataTransfer: { files: fileList } });
 
