@@ -6,6 +6,7 @@ vi.mock('music-metadata', () => ({
   selectCover: vi.fn(),
 }));
 
+import type { IPicture } from 'music-metadata';
 import { parseBlob, selectCover } from 'music-metadata';
 
 describe('audio-metadata', () => {
@@ -124,7 +125,7 @@ describe('audio-metadata', () => {
       vi.mocked(parseBlob).mockResolvedValue({
         common: { picture: [{}] },
       } as never);
-      vi.mocked(selectCover).mockReturnValue({ format: 'image/jpeg' });
+      vi.mocked(selectCover).mockReturnValue({ format: 'image/jpeg' } as unknown as IPicture);
 
       const result = await extractCoverFromAudioFile(createFile());
 
@@ -136,7 +137,7 @@ describe('audio-metadata', () => {
       vi.mocked(parseBlob).mockResolvedValue({
         common: { picture: [{ data: pictureData }] },
       } as never);
-      vi.mocked(selectCover).mockReturnValue({ data: pictureData });
+      vi.mocked(selectCover).mockReturnValue({ data: pictureData } as unknown as IPicture);
 
       const result = await extractCoverFromAudioFile(createFile());
 

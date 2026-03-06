@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PersistStorage } from 'zustand/middleware';
 
 const mockGet = vi.fn().mockResolvedValue(null);
 const mockSet = vi.fn().mockResolvedValue(undefined);
@@ -12,11 +13,7 @@ vi.mock('idb-keyval', () => ({
 }));
 
 describe('idb-storage', () => {
-  let idbStorage: {
-    getItem: (n: string) => Promise<unknown>;
-    setItem: (n: string, v: unknown) => Promise<void>;
-    removeItem: (n: string) => Promise<void>;
-  };
+  let idbStorage: PersistStorage<unknown, unknown>;
 
   beforeEach(async () => {
     mockGet.mockClear();
@@ -24,7 +21,9 @@ describe('idb-storage', () => {
     mockDel.mockClear();
     vi.resetModules();
     const mod = await import('./idb-storage');
-    idbStorage = mod.idbStorage;
+    const storage = mod.idbStorage;
+    if (!storage) throw new Error('idbStorage not exported');
+    idbStorage = storage;
   });
 
   it('getItem calls idb-keyval get and returns null when not found', async () => {
@@ -47,10 +46,10 @@ describe('idb-storage', () => {
   });
 
   it('setItem calls idb-keyval set with stringified value', async () => {
-    await idbStorage.setItem('auth-storage', { user: null });
+    await idbStorage.setItem('auth-storage', { state: { user: null } });
 
     expect(mockSet).toHaveBeenCalledWith('auth-storage', expect.any(String));
-    expect(JSON.parse(mockSet.mock.calls[0][1])).toEqual({ user: null });
+    expect(JSON.parse(mockSet.mock.calls[0][1])).toEqual({ state: { user: null } });
   });
 
   it('removeItem calls idb-keyval del', async () => {
@@ -61,17 +60,15 @@ describe('idb-storage', () => {
 });
 
 describe('idb-storage (fallback when indexedDB undefined)', () => {
-  let idbStorage: {
-    getItem: (n: string) => Promise<unknown>;
-    setItem: (n: string, v: unknown) => Promise<void>;
-    removeItem: (n: string) => Promise<void>;
-  };
+  let idbStorage: PersistStorage<unknown, unknown>;
 
   beforeEach(async () => {
     vi.stubGlobal('indexedDB', undefined);
     vi.resetModules();
     const mod = await import('./idb-storage');
-    idbStorage = mod.idbStorage;
+    const storage = mod.idbStorage;
+    if (!storage) throw new Error('idbStorage not exported');
+    idbStorage = storage;
   });
 
   it('getItem returns null when indexedDB is undefined', async () => {
@@ -80,7 +77,7 @@ describe('idb-storage (fallback when indexedDB undefined)', () => {
   });
 
   it('setItem is a no-op when indexedDB is undefined', async () => {
-    await expect(idbStorage.setItem('auth-storage', {})).resolves.toBeUndefined();
+    await expect(idbStorage.setItem('auth-storage', { state: {} })).resolves.toBeUndefined();
   });
 
   it('removeItem is a no-op when indexedDB is undefined', async () => {
