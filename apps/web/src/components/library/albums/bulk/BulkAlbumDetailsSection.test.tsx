@@ -11,56 +11,39 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('@/components/form', () => ({
-  TextField: ({
-    label,
-    onChange,
-    onBlur,
-    value,
-  }: {
+  TextField: (props: {
     label: string;
     onChange: (v: string) => void;
     onBlur: () => void;
     value: string;
   }) => (
     <div>
-      <label>{label}</label>
+      <label>{props.label}</label>
       <input
-        data-testid={`field-${label.toLowerCase().replace(/\s/g, '-')}`}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
+        data-testid={`field-${props.label.toLowerCase().replace(/\s/g, '-')}`}
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        onBlur={props.onBlur}
       />
     </div>
   ),
-  TextAreaField: ({
-    label,
-    onChange,
-    onBlur,
-    value,
-  }: {
+  TextAreaField: (props: {
     label: string;
     onChange: (v: string) => void;
     onBlur: () => void;
     value: string;
   }) => (
     <div>
-      <label>{label}</label>
+      <label>{props.label}</label>
       <textarea
         data-testid="field-description"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        onBlur={props.onBlur}
       />
     </div>
   ),
-  SelectField: ({
-    label,
-    placeholder,
-    value,
-    options,
-    onChange,
-    onBlur,
-  }: {
+  SelectField: (props: {
     label: string;
     placeholder: string;
     value: string;
@@ -69,15 +52,15 @@ vi.mock('@/components/form', () => ({
     onBlur: () => void;
   }) => (
     <div>
-      <label>{label}</label>
+      <label>{props.label}</label>
       <select
-        data-testid={`select-${label.toLowerCase()}`}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
+        data-testid={`select-${props.label.toLowerCase()}`}
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        onBlur={props.onBlur}
       >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
+        <option value="">{props.placeholder}</option>
+        {props.options.map((o: { value: string; label: string }) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
@@ -85,30 +68,25 @@ vi.mock('@/components/form', () => ({
       </select>
     </div>
   ),
-  DatePickerField: ({
-    label,
-    onChange,
-    onBlur,
-    value,
-  }: {
+  DatePickerField: (props: {
     label: string;
     onChange: (date: Date | null) => void;
     onBlur: () => void;
     value?: Date;
   }) => (
     <div>
-      <label>{label}</label>
+      <label>{props.label}</label>
       <button
         data-testid="date-picker-set"
-        onClick={() => onChange(new Date('2022-01-01'))}
+        onClick={() => props.onChange(new Date('2022-01-01'))}
       >
         Set Date
       </button>
-      <button data-testid="date-picker-clear" onClick={() => onChange(null)}>
+      <button data-testid="date-picker-clear" onClick={() => props.onChange(null)}>
         Clear Date
       </button>
-      <span data-testid="date-value">{value?.toISOString() ?? 'none'}</span>
-      <input data-testid="date-picker-blur" onBlur={onBlur} />
+      <span data-testid="date-value">{props.value?.toISOString() ?? 'none'}</span>
+      <input data-testid="date-picker-blur" onBlur={props.onBlur} />
     </div>
   ),
 }));
@@ -121,7 +99,7 @@ describe('BulkAlbumDetailsSection', () => {
     description: 'Grunge album',
     type: AlbumType.album,
     artistId: 'artist-1',
-    releaseDate: new Date('1991-09-24') as Date | null,
+    releaseDate: new Date('1991-09-24'),
   };
 
   const defaultArtists = [
@@ -137,7 +115,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -210,7 +188,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -223,7 +201,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -239,7 +217,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, artistId: '' }}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -255,7 +233,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -272,7 +250,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, releaseDate: null }}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -288,7 +266,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -303,7 +281,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -319,7 +297,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, description: '' }}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -332,7 +310,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists}
+        artists={defaultArtists as any}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,

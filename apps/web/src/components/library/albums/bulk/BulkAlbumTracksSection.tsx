@@ -3,7 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import type { BulkTrackItem } from '@/lib/types/library';
 import { CircleNotchIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
-import { BulkTrackCard } from '../../tracks/BulkTrackCard';
+import { BulkTrackCard } from '../../tracks/bulk/BulkTrackCard';
 
 interface BulkAlbumTracksSectionProps {
   tracks: BulkTrackItem[];

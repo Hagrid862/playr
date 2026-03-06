@@ -9,7 +9,7 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
-vi.mock('../../tracks/BulkTrackCard', () => ({
+vi.mock('../../tracks/bulk/BulkTrackCard', () => ({
   BulkTrackCard: ({
     track,
     onUpdate,
@@ -62,7 +62,7 @@ describe('BulkAlbumTracksSection', () => {
     isFormValid: true,
     isSubmitting: false,
     isLoadingArtists: false,
-    progressStep: null,
+    progressStep: null as string | null,
     onUpdateTrack: mockOnUpdateTrack,
     onRemoveTrack: mockOnRemoveTrack,
     onClearAll: mockOnClearAll,

@@ -4,9 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlbumType } from '@repo/db';
 import { useBulkAlbumUploadForm } from '@/hooks/forms/useBulkAlbumUploadForm';
 import type { LibraryState } from '@/stores/library.store';
-import type { ZodArtist } from '@repo/contracts';
 import { useLibraryStore } from '@/stores/library.store';
 import { BulkAlbumUploadForm } from './BulkAlbumUploadForm';
+import { mockArtist } from '../__tests__/fixtures';
+import { toast } from 'sonner';
 
 const mockCreateAlbum = vi.fn();
 const mockUploadCover = vi.fn();
@@ -34,37 +35,18 @@ vi.mock('@/hooks/api/library-artists/useLibraryArtists', () => ({
 }));
 
 vi.mock('@/stores/library.store', () => {
-  const mockArtist: ZodArtist = {
+  const mockArtistData = {
     id: 'artist-1',
     name: 'Test Artist',
-    description: null,
-    isCommunity: false,
-    verified: false,
-    bannerId: null,
-    avatarId: null,
-    visibility: 'public',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  } as ZodArtist;
+  };
   const mockState = {
     libraryId: 'lib-1',
-    privateAccountId: null,
-    privateArtists: [mockArtist],
+    privateArtists: [mockArtistData],
     privateAlbums: [],
-    setLibraryId: vi.fn(),
-    setPrivateAccountId: vi.fn(),
-    setPrivateArtists: vi.fn(),
-    setPrivateAlbums: vi.fn(),
-    updatePrivateArtist: vi.fn(),
-    updatePrivateAlbum: vi.fn(),
-    removePrivateArtist: vi.fn(),
-    removePrivateAlbum: vi.fn(),
-    clearLibrary: vi.fn(),
   };
   return {
-    useLibraryStore: vi.fn((selector?: (s: LibraryState) => unknown) =>
-      selector ? selector(mockState as LibraryState) : mockState,
+    useLibraryStore: vi.fn((selector?: (s: any) => unknown) =>
+      selector ? selector(mockState) : mockState,
     ),
   };
 });
@@ -83,8 +65,6 @@ vi.mock('sonner', () => ({
   },
 }));
 
-import { toast } from 'sonner';
-
 vi.mock('@/hooks/forms/useBulkAlbumUploadForm', () => ({
   useBulkAlbumUploadForm: vi.fn(),
 }));
@@ -92,19 +72,6 @@ vi.mock('@/hooks/forms/useBulkAlbumUploadForm', () => ({
 const mockUseBulkAlbumUploadForm = vi.mocked(useBulkAlbumUploadForm);
 
 function createMockLibraryState(overrides: Partial<LibraryState> = {}): LibraryState {
-  const mockArtist: ZodArtist = {
-    id: 'artist-1',
-    name: 'Test Artist',
-    description: null,
-    isCommunity: false,
-    verified: false,
-    bannerId: null,
-    avatarId: null,
-    visibility: 'public',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  } as ZodArtist;
   return {
     libraryId: 'lib-1',
     privateAccountId: null,
@@ -174,7 +141,7 @@ describe('BulkAlbumUploadForm', () => {
       mutateAsync: mockBulkCreateTracks,
       isPending: false,
     });
-    mockUseBulkAlbumUploadForm.mockReturnValue(defaultFormHookReturn);
+    mockUseBulkAlbumUploadForm.mockReturnValue(defaultFormHookReturn as any);
     vi.mocked(useLibraryStore).mockImplementation((selector?: (s: LibraryState) => unknown) => {
       const state = createMockLibraryState();
       return selector ? selector(state) : state;
@@ -185,12 +152,60 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       tracks: [],
-    });
+    } as any);
 
     render(<BulkAlbumUploadForm />);
 
-    expect(screen.getByText('Drop audio files here or click to select')).toBeInTheDocument();
+    expect(screen.getByText('Drop audio files anywhere or click to start uploading')).toBeInTheDocument();
     expect(screen.queryByText('Album details')).not.toBeInTheDocument();
+  });
+
+  it('triggers file input click when empty state is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseBulkAlbumUploadForm.mockReturnValue({
+      ...defaultFormHookReturn,
+      tracks: [],
+    } as any);
+
+    render(<BulkAlbumUploadForm />);
+    
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(fileInput, 'click');
+
+    const dropzoneArea = screen.getByText('Drop audio files anywhere or click to start uploading').parentElement;
+    await user.click(dropzoneArea!);
+
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it('handles file selection via hidden input', async () => {
+    const user = userEvent.setup();
+    const mockAddFiles = vi.fn();
+    
+    // We need a ref object so we can assert on its value getter/setter if we want, but basically just need the mockAddFiles.
+    mockUseBulkAlbumUploadForm.mockReturnValue({
+      ...defaultFormHookReturn,
+      tracks: [],
+      addFiles: mockAddFiles,
+      fileInputRef: { current: null },
+    } as any);
+
+    render(<BulkAlbumUploadForm />);
+
+    // Since we can't easily query a hidden input that has no label or label nesting,
+    // we'll find it by test ID or by type="file" inside the document.
+    // Given the component structure, it is a file input.
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).toBeInTheDocument();
+
+    const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' });
+    
+    // UserEvent approach to file upload
+    await user.upload(fileInput, file);
+
+    expect(mockAddFiles).toHaveBeenCalled();
+    // Verify file input value is cleared
+    expect(fileInput.value).toBe('');
   });
 
   it('renders tracks section when tracks exist', () => {
@@ -205,7 +220,7 @@ describe('BulkAlbumUploadForm', () => {
       ...defaultFormHookReturn,
       isScanningMetadata: true,
       isScanningCovers: false,
-    });
+    } as any);
 
     render(<BulkAlbumUploadForm />);
 
@@ -217,7 +232,7 @@ describe('BulkAlbumUploadForm', () => {
       ...defaultFormHookReturn,
       isScanningMetadata: false,
       isScanningCovers: true,
-    });
+    } as any);
 
     render(<BulkAlbumUploadForm />);
 
@@ -229,7 +244,7 @@ describe('BulkAlbumUploadForm', () => {
       ...defaultFormHookReturn,
       isScanningMetadata: true,
       isScanningCovers: true,
-    });
+    } as any);
 
     render(<BulkAlbumUploadForm />);
 
@@ -273,7 +288,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       tracks: [createMockTrack(), createMockTrack({ id: 'track-2' })],
-    });
+    } as any);
     mockUseBulkCreateLibraryTracks.mockReturnValue({
       mutateAsync: mockBulkCreateTracks,
       isPending: true,
@@ -318,7 +333,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       selectedCoverFile: coverFile,
-    });
+    } as any);
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockUploadCover.mockResolvedValue({});
     mockBulkCreateTracks.mockResolvedValue({});
@@ -381,7 +396,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       isFormValid: false,
-    });
+    } as any);
 
     render(<BulkAlbumUploadForm />);
 
@@ -420,7 +435,7 @@ describe('BulkAlbumUploadForm', () => {
         },
       ],
       isScanningCovers: false,
-    });
+    } as any);
 
     render(<BulkAlbumUploadForm />);
 
@@ -439,7 +454,7 @@ describe('BulkAlbumUploadForm', () => {
         },
       ],
       isScanningCovers: true,
-    });
+    } as any);
 
     render(<BulkAlbumUploadForm />);
 
@@ -468,7 +483,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       tracks: [createMockTrack(), createMockTrack({ id: 'track-2' })],
-    });
+    } as any);
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockBulkCreateTracks.mockResolvedValue({});
 
