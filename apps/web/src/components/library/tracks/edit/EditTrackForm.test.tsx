@@ -1,7 +1,7 @@
 import {
-  UpdateLibraryTrackRequest,
-  UpdateLibraryTrackRequestSchema,
-  ZodTrack,
+    UpdateLibraryTrackRequest,
+    UpdateLibraryTrackRequestSchema,
+    ZodTrack,
 } from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -10,7 +10,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import { EditTrackForm } from './EditTrackForm';
 
-// Mocking link because it needs router context
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
@@ -98,14 +97,12 @@ describe('EditTrackForm', () => {
     await user.clear(screen.getByLabelText(/track title/i));
     await user.type(screen.getByLabelText(/track title/i), 'Updated Song');
 
-    // Change disk and track numbers
     await user.clear(screen.getByLabelText(/disk no/i));
     await user.type(screen.getByLabelText(/disk no/i), '2');
 
     await user.clear(screen.getByLabelText(/track no/i));
     await user.type(screen.getByLabelText(/track no/i), '5');
 
-    // Toggle explicit
     await user.click(screen.getByLabelText(/explicit content/i));
 
     await user.click(screen.getByRole('button', { name: /save changes/i }));
@@ -187,7 +184,6 @@ describe('EditTrackForm', () => {
   it('handles root validation errors', async () => {
     const user = userEvent.setup();
 
-    // Mock safeParse to return a root error
     const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
     const error = new ZodError([
       {
@@ -202,7 +198,6 @@ describe('EditTrackForm', () => {
       <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
     );
 
-    // Trigger validation
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
     await user.tab();
@@ -214,19 +209,10 @@ describe('EditTrackForm', () => {
   it('handles multiple validation errors for the same field', async () => {
     const user = userEvent.setup();
 
-    // Mock safeParse to return multiple errors for the same field
     const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
     const error = new ZodError([
-      {
-        path: ['title'],
-        message: 'First error',
-        code: 'custom',
-      },
-      {
-        path: ['title'],
-        message: 'Second error',
-        code: 'custom',
-      },
+      { path: ['title'], message: 'First error', code: 'custom' },
+      { path: ['title'], message: 'Second error', code: 'custom' },
     ]) as ZodError<UpdateLibraryTrackRequest>;
     safeParseSpy.mockReturnValueOnce({ success: false, error });
 
@@ -234,7 +220,6 @@ describe('EditTrackForm', () => {
       <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
     );
 
-    // Trigger validation
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
     await user.tab();
@@ -262,7 +247,7 @@ describe('EditTrackForm', () => {
     );
 
     expect(screen.getByLabelText(/track title/i)).toHaveValue('');
-    expect(screen.getByLabelText(/track no/i)).toHaveValue(null); // TextField handles empty as 0 or empty string depending on type
+    expect(screen.getByLabelText(/track no/i)).toHaveValue(null);
     expect(screen.getByLabelText(/disk no/i)).toHaveValue(null);
   });
 });

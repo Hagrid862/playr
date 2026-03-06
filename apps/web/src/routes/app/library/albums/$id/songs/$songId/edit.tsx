@@ -1,4 +1,4 @@
-import { EditTrackForm } from '@/components/library/tracks/EditTrackForm';
+import { EditTrackForm } from '@/components/library/tracks/edit/EditTrackForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useLibraryTrack } from '@/hooks/api/library-tracks/useLibraryTrack';
