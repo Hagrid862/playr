@@ -1,4 +1,4 @@
-import { CreateTrackForm } from '@/components/library/tracks/CreateTrackForm';
+import { CreateTrackForm } from '@/components/library/tracks/create/CreateTrackForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';

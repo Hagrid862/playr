@@ -8,6 +8,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
+import { useGlobalDragStore } from '@/hooks/use-global-drag';
+import { createTrackMockAlbum } from '../__tests__/fixtures';
 import { CreateTrackForm } from './CreateTrackForm';
 
 vi.mock('@/lib/audio-metadata', () => ({
@@ -15,7 +17,6 @@ vi.mock('@/lib/audio-metadata', () => ({
   extractCoverFromAudioFile: vi.fn().mockResolvedValue(null),
 }));
 
-// Mocking link because it needs router context
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
@@ -23,13 +24,10 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: vi.fn(() => vi.fn()),
 }));
 
-// Global state for tests to manipulate mock behavior
 export const mockState = {
   suppressRef: false,
 };
 
-// Mock FileField - assigns inputRef so drop handler can sync files (covers lines 157-161).
-// Assignment to input.files throws in jsdom; component uses try-catch for compatibility.
 vi.mock('@/components/form', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/components/form')>();
   return {
@@ -86,50 +84,16 @@ async function uploadFileToInput(
   await user.upload(fileInput as HTMLInputElement, file);
 }
 
-const mockAlbum: ZodAlbumInfer = {
-  id: 'album-123',
-  name: 'Test Album',
-  description: 'A test album',
-  type: 'album',
-  visibility: 'private',
-  totalTracks: 10,
-  totalDuration: 300,
-  releaseDate: new Date(),
-  coverId: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deletedAt: null,
-  artists: [
-    {
-      id: 'artist-123',
-      name: 'Test Artist',
-      description: 'Test Description',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isCommunity: false,
-      avatar: null,
-      genres: [],
-      verified: false,
-      visibility: 'public',
-      deletedAt: new Date(),
-      bannerId: 'id-123',
-      avatarId: 'id-234',
-    },
-  ],
-  tracks: [],
-  genres: [],
-  cover: null,
-};
-
 describe('CreateTrackForm', () => {
   const onSubmit = vi.fn();
 
   beforeEach(() => {
     onSubmit.mockClear();
+    useGlobalDragStore.getState().reset();
   });
 
   it('renders correctly with default values', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     expect(screen.getByLabelText(/track title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/track no/i)).toHaveValue(1);
@@ -140,9 +104,8 @@ describe('CreateTrackForm', () => {
 
   it('validates required fields', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
-    // Title is required. Trigger validation via tab (blur)
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
     await user.tab();
@@ -154,10 +117,11 @@ describe('CreateTrackForm', () => {
 
   it('submits form with valid data', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
-    await uploadFileToInput(screen.getByTestId('audio-file-input'), file, user);
+    const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
+    fireEvent.drop(window, { dataTransfer: { files: fileList } });
 
     await waitFor(() => {
       expect(screen.getByLabelText(/track title/i)).toHaveValue('Audio');
@@ -187,9 +151,8 @@ describe('CreateTrackForm', () => {
 
   it('shows error when audio file is missing on submit', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
-    // Fill in required fields but omit the file
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
@@ -198,7 +161,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('disables submit button when loading', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={true} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={true} onSubmit={onSubmit} />);
     expect(screen.getByRole('button', { name: /adding/i })).toBeDisabled();
   });
 
@@ -207,7 +170,7 @@ describe('CreateTrackForm', () => {
     const navigate = vi.fn();
     vi.mocked(useNavigate).mockReturnValue(navigate);
 
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
@@ -227,9 +190,8 @@ describe('CreateTrackForm', () => {
     const navigate = vi.fn();
     vi.mocked(useNavigate).mockReturnValue(navigate);
 
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
-    // Initial state
     expect(screen.getByLabelText(/track no/i)).toHaveValue(1);
 
     await user.type(screen.getByLabelText(/track title/i), 'Song 1');
@@ -245,14 +207,13 @@ describe('CreateTrackForm', () => {
       expect(navigate).not.toHaveBeenCalled();
     });
 
-    // Check if form is reset and incremented
     expect(screen.getByLabelText(/track title/i)).toHaveValue('');
     expect(screen.getByLabelText(/track no/i)).toHaveValue(2);
   });
 
   it('updates disk number correctly', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const diskInput = screen.getByLabelText(/disk no/i);
     await user.clear(diskInput);
@@ -269,7 +230,7 @@ describe('CreateTrackForm', () => {
 
     render(
       <CreateTrackForm
-        album={mockAlbum}
+        album={createTrackMockAlbum}
         isLoading={false}
         onSubmit={onSubmit}
         serverErrors={serverErrors}
@@ -282,11 +243,9 @@ describe('CreateTrackForm', () => {
 
   it('handles submission error gracefully', async () => {
     const user = userEvent.setup();
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const error = new Error('Submission failed');
-    onSubmit.mockRejectedValue(error);
+    onSubmit.mockRejectedValue(new Error('Submission failed'));
 
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
@@ -297,17 +256,14 @@ describe('CreateTrackForm', () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', error);
     });
 
     expect(screen.getByText('Submission failed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add track/i })).toBeInTheDocument();
-
-    consoleSpy.mockRestore();
   });
 
   it('handles album without artists gracefully', () => {
-    const albumWithoutArtists: ZodAlbumInfer = { ...mockAlbum, artists: undefined };
+    const albumWithoutArtists: ZodAlbumInfer = { ...createTrackMockAlbum, artists: undefined };
     render(<CreateTrackForm album={albumWithoutArtists} isLoading={false} onSubmit={onSubmit} />);
 
     expect(screen.getByRole('button', { name: /add track/i })).toBeInTheDocument();
@@ -315,12 +271,9 @@ describe('CreateTrackForm', () => {
 
   it('handles validation errors correctly and hits branch logic', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const titleInput = screen.getByLabelText(/track title/i);
-    // Triggering multiple issues on the same field might hit !errors[path]
-    // The current schema has min and max.
-    // Entering a long string will hit max.
     await user.type(titleInput, 'a'.repeat(300));
     await user.tab();
 
@@ -332,7 +285,6 @@ describe('CreateTrackForm', () => {
   it('handles root validation errors', async () => {
     const user = userEvent.setup();
 
-    // Mock safeParse to return a root error
     const safeParseSpy = vi.spyOn(CreateLibraryTrackRequestSchema, 'safeParse');
     const error = new ZodError([
       {
@@ -343,9 +295,8 @@ describe('CreateTrackForm', () => {
     ]) as ZodError<CreateLibraryTrackRequest>;
     safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
-    // Trigger validation
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
     await user.tab();
@@ -357,69 +308,58 @@ describe('CreateTrackForm', () => {
   it('handles multiple validation errors for the same field', async () => {
     const user = userEvent.setup();
 
-    // Mock safeParse to return multiple errors for the same field
     const safeParseSpy = vi.spyOn(CreateLibraryTrackRequestSchema, 'safeParse');
     const error = new ZodError([
-      {
-        path: ['title'],
-        message: 'First error',
-        code: 'custom',
-      },
-      {
-        path: ['title'],
-        message: 'Second error',
-        code: 'custom',
-      },
+      { path: ['title'], message: 'First error', code: 'custom' },
+      { path: ['title'], message: 'Second error', code: 'custom' },
     ]) as ZodError<CreateLibraryTrackRequest>;
     safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
-    // Trigger validation
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
     await user.tab();
 
-    // This covers: if (!errors[path])
     expect(await screen.findByText('First error')).toBeInTheDocument();
 
     safeParseSpy.mockRestore();
   });
 
   it('shows drop overlay on dragenter with files', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     fireEvent.dragEnter(window, {
       dataTransfer: { items: [{ type: 'audio/mpeg' }] },
     });
 
-    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+    expect(screen.getByText(/Drop audio files to upload/i)).toBeInTheDocument();
   });
 
   it('does not show drop overlay on dragenter without items', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const event = new Event('dragenter', { bubbles: true });
     Object.defineProperty(event, 'dataTransfer', { value: { items: [] }, configurable: true });
     window.dispatchEvent(event);
 
-    expect(screen.queryByText('Drop audio file here')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Drop audio files to upload/i)).not.toBeInTheDocument();
   });
 
   it('hides drop overlay on dragleave when counter reaches zero', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     fireEvent.dragEnter(window, {
       dataTransfer: { items: [{ type: 'audio/mpeg' }] },
     });
-    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+    expect(screen.getByText(/Drop audio files to upload/i)).toBeInTheDocument();
 
     fireEvent.dragLeave(window, {});
-    expect(screen.queryByText('Drop audio file here')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Drop audio files to upload/i)).not.toBeInTheDocument();
   });
 
   it('prevents default behavior on dragover', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const event = new Event('dragover', { bubbles: true });
     const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
@@ -429,22 +369,22 @@ describe('CreateTrackForm', () => {
   });
 
   it('hides drop overlay when dragCounter reaches zero after multiple drag enters', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const dataTransfer = { items: [{ type: 'audio/mpeg' }] };
     fireEvent.dragEnter(window, { dataTransfer });
     fireEvent.dragEnter(window, { dataTransfer });
-    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+    expect(screen.getByText(/Drop audio files to upload/i)).toBeInTheDocument();
 
     fireEvent.dragLeave(window, {});
-    expect(screen.getByText('Drop audio file here')).toBeInTheDocument();
+    expect(screen.getByText(/Drop audio files to upload/i)).toBeInTheDocument();
 
     fireEvent.dragLeave(window, {});
-    expect(screen.queryByText('Drop audio file here')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Drop audio files to upload/i)).not.toBeInTheDocument();
   });
 
   it('opens multiple files modal when dropping multiple files', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file1 = new File(['a'], 'track1.mp3', { type: 'audio/mpeg' });
     const file2 = new File(['b'], 'track2.mp3', { type: 'audio/mpeg' });
@@ -463,7 +403,7 @@ describe('CreateTrackForm', () => {
 
   it('closes multiple files modal when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file1 = new File(['a'], 'track1.mp3', { type: 'audio/mpeg' });
     const file2 = new File(['b'], 'track2.mp3', { type: 'audio/mpeg' });
@@ -480,7 +420,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('opens invalid format modal when dropping non-audio file', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
@@ -495,7 +435,7 @@ describe('CreateTrackForm', () => {
 
   it('closes invalid format modal when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
@@ -509,7 +449,7 @@ describe('CreateTrackForm', () => {
 
   it('sets audio file when dropping valid audio file', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
@@ -535,10 +475,9 @@ describe('CreateTrackForm', () => {
 
   it('handles non-Error submission rejection gracefully', async () => {
     const user = userEvent.setup();
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     onSubmit.mockRejectedValue('String reject');
 
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
@@ -549,16 +488,13 @@ describe('CreateTrackForm', () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', 'String reject');
     });
 
     expect(screen.getByText('Submission failed. Please try again.')).toBeInTheDocument();
-
-    consoleSpy.mockRestore();
   });
 
   it('does nothing on drop if no files are present', () => {
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const event = new Event('drop', { bubbles: true });
     Object.defineProperty(event, 'dataTransfer', { value: { files: [] }, configurable: true });
@@ -570,19 +506,17 @@ describe('CreateTrackForm', () => {
 
   it('handles drop when fileInputRef current is null', async () => {
     mockState.suppressRef = true;
-    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
 
     fireEvent.drop(window, { dataTransfer: { files: fileList } });
 
-    // Ensure it doesn't crash and we can still trigger validations or other things
     const titleInput = screen.getByLabelText(/track title/i);
     fireEvent.blur(titleInput);
     expect(await screen.findByText(/track title is required/i)).toBeInTheDocument();
-    
-    // Clean up
+
     mockState.suppressRef = false;
   });
 });

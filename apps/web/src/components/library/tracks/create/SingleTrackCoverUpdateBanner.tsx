@@ -81,7 +81,8 @@ export function SingleTrackCoverUpdateBanner({
                         New artwork detected
                       </AlertTitle>
                       <AlertDescription className="max-w-[400px] text-sm leading-relaxed text-muted-foreground">
-                        This file contains embedded artwork. Would you like to update the album to use it?
+                        This file contains embedded artwork. Would you like to update the album to
+                        use it?
                       </AlertDescription>
                     </div>
                   </div>
@@ -97,14 +98,15 @@ export function SingleTrackCoverUpdateBanner({
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
-                  <div className="flex items-center justify-center gap-6 w-full max-w-md">
+                  <div className="flex w-full max-w-md items-center justify-center gap-6">
                     <div className="flex flex-1 flex-col items-center gap-3">
                       <button
                         type="button"
                         onClick={() => handleSelect(false)}
                         className={cn(
-                          'group relative aspect-square w-full max-w-[160px] flex items-center justify-center overflow-hidden rounded-2xl border bg-muted/30 transition-all duration-300 hover:border-primary/30 hover:scale-101',
-                          !useTrackCover && 'ring-2 ring-primary ring-offset-4 ring-offset-background shadow-xl shadow-primary/10 hover:scale-100 hover:border-muted'
+                          'group relative flex aspect-square w-full max-w-[160px] items-center justify-center overflow-hidden rounded-2xl border bg-muted/30 transition-all duration-300 hover:border-primary/30 hover:scale-101',
+                          !useTrackCover &&
+                            'ring-2 ring-primary ring-offset-4 ring-offset-background shadow-xl shadow-primary/10 hover:scale-100 hover:border-muted',
                         )}
                       >
                         {currentAlbumCoverUrl ? (
@@ -122,7 +124,7 @@ export function SingleTrackCoverUpdateBanner({
                           </div>
                         )}
                         {!useTrackCover && (
-                          <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                          <div className="pointer-events-none absolute inset-0 bg-primary/5" />
                         )}
                       </button>
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
@@ -131,9 +133,9 @@ export function SingleTrackCoverUpdateBanner({
                     </div>
 
                     <div className="flex shrink-0 items-center justify-center">
-                    <div className="h-px w-8" />
-                    <ArrowRightIcon size={24} className="mx-2 text-muted-foreground/30" />
-                    <div className="h-px w-8" />
+                      <div className="h-px w-8" />
+                      <ArrowRightIcon size={24} className="mx-2 text-muted-foreground/30" />
+                      <div className="h-px w-8" />
                     </div>
 
                     <div className="flex flex-1 flex-col items-center gap-3">
@@ -141,8 +143,9 @@ export function SingleTrackCoverUpdateBanner({
                         type="button"
                         onClick={() => handleSelect(true)}
                         className={cn(
-                          'group relative aspect-square w-full max-w-[160px] flex items-center justify-center overflow-hidden rounded-2xl border bg-muted/30 transition-all duration-300 hover:border-primary/30 hover:scale-101',
-                          useTrackCover && 'ring-2 ring-primary ring-offset-4 ring-offset-background shadow-xl shadow-primary/10 hover:scale-100 hover:border-muted'
+                          'group relative flex aspect-square w-full max-w-[160px] items-center justify-center overflow-hidden rounded-2xl border bg-muted/30 transition-all duration-300 hover:border-primary/30 hover:scale-101',
+                          useTrackCover &&
+                            'ring-2 ring-primary ring-offset-4 ring-offset-background shadow-xl shadow-primary/10 hover:scale-100 hover:border-muted',
                         )}
                       >
                         <img
@@ -151,7 +154,7 @@ export function SingleTrackCoverUpdateBanner({
                           className="size-full object-cover transition-transform duration-500"
                         />
                         {useTrackCover && (
-                          <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                          <div className="pointer-events-none absolute inset-0 bg-primary/5" />
                         )}
                       </button>
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
@@ -168,3 +171,4 @@ export function SingleTrackCoverUpdateBanner({
     </motion.div>
   );
 }
+
