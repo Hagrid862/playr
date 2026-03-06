@@ -95,6 +95,7 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
 
         {/* Bottom Row: Progress Slider */}
         <Slider
+          data-testid="progress-slider"
           value={currentTime}
           max={duration || 100}
           showThumb={false}
