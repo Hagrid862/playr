@@ -1,4 +1,4 @@
-import { BulkTrackUploadForm } from '@/components/library/tracks/BulkTrackUploadForm';
+import { BulkTrackUploadForm } from '@/components/library/tracks/bulk/BulkTrackUploadForm';
 import type { BulkTrackItem } from '@/lib/types/library';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';

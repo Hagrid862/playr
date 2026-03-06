@@ -37,14 +37,16 @@ describe('CoverSelectionBanner', () => {
 
     expect(screen.getByText('Cover art detected')).toBeInTheDocument();
     expect(
-      screen.getByText(/Cover art found in 2 tracks. Would you like to use it as the album cover\?/),
+      screen.getByText(
+        /Cover art found in 2 tracks. Would you like to use it as the album cover\?/,
+      ),
     ).toBeInTheDocument();
   });
 
   it('renders when album has cover', () => {
     render(
       <CoverSelectionBanner
-        albumHasCover={true}
+        albumHasCover
         tracksWithCovers={defaultTracksWithCovers}
         selectedCoverTrackId={null}
         onSelectCover={mockOnSelectCover}
@@ -52,14 +54,16 @@ describe('CoverSelectionBanner', () => {
     );
 
     expect(
-      screen.getByText(/Cover art found in 2 tracks. Would you like to replace the current album cover\?/),
+      screen.getByText(
+        /Cover art found in 2 tracks. Would you like to replace the current album cover\?/,
+      ),
     ).toBeInTheDocument();
   });
 
   it('renders singular replace message when album has cover and one track', () => {
     render(
       <CoverSelectionBanner
-        albumHasCover={true}
+        albumHasCover
         tracksWithCovers={[defaultTracksWithCovers[0]]}
         selectedCoverTrackId={null}
         onSelectCover={mockOnSelectCover}
@@ -67,11 +71,13 @@ describe('CoverSelectionBanner', () => {
     );
 
     expect(
-      screen.getByText(/Cover art found in 1 track. Would you like to replace the current album cover\?/),
+      screen.getByText(
+        /Cover art found in 1 track. Would you like to replace the current album cover\?/,
+      ),
     ).toBeInTheDocument();
   });
 
-  it('calls onSelectCover with null when Don\'t use is clicked', async () => {
+  it("calls onSelectCover with null when Don't use is clicked", async () => {
     const user = userEvent.setup();
     render(
       <CoverSelectionBanner
@@ -130,7 +136,10 @@ describe('CoverSelectionBanner', () => {
     );
 
     expect(
-      screen.getByText(/Cover art found in 1 track. Would you like to use it as the album cover\?/),
+      screen.getByText(
+        /Cover art found in 1 track. Would you like to use it as the album cover\?/,
+      ),
     ).toBeInTheDocument();
   });
 });
+

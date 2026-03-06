@@ -1,19 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMockBulkTrack } from '../__tests__/fixtures';
 import { BulkTrackCard } from './BulkTrackCard';
-
-function createMockTrack(overrides: Record<string, unknown> = {}) {
-  return {
-    id: 'track-1',
-    file: new File(['audio'], 'track1.mp3', { type: 'audio/mpeg' }),
-    title: 'Track 1',
-    trackNumber: 1,
-    diskNumber: 1,
-    explicit: false,
-    ...overrides,
-  };
-}
 
 describe('BulkTrackCard', () => {
   const mockOnUpdate = vi.fn();
@@ -25,7 +14,7 @@ describe('BulkTrackCard', () => {
   });
 
   it('renders track info', () => {
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -38,7 +27,7 @@ describe('BulkTrackCard', () => {
   });
 
   it('calls onUpdate when track title changes', () => {
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -50,7 +39,7 @@ describe('BulkTrackCard', () => {
   });
 
   it('calls onUpdate when disk number changes', () => {
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -63,7 +52,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onUpdate with 1 when disk number is invalid', async () => {
     const user = userEvent.setup();
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -76,7 +65,7 @@ describe('BulkTrackCard', () => {
   });
 
   it('calls onUpdate when track number changes', () => {
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -89,7 +78,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onUpdate with 1 when track number is invalid', async () => {
     const user = userEvent.setup();
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -103,7 +92,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onUpdate when explicit checkbox is toggled', async () => {
     const user = userEvent.setup();
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -116,7 +105,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onUpdate with explicit false when unchecking', async () => {
     const user = userEvent.setup();
-    const track = createMockTrack({ explicit: true });
+    const track = createMockBulkTrack({ explicit: true });
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -129,7 +118,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onRemove when remove button is clicked', async () => {
     const user = userEvent.setup();
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -140,7 +129,7 @@ describe('BulkTrackCard', () => {
   });
 
   it('handles blur on text fields without error', () => {
-    const track = createMockTrack();
+    const track = createMockBulkTrack();
     render(
       <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
     );
@@ -150,3 +139,4 @@ describe('BulkTrackCard', () => {
     fireEvent.blur(screen.getByLabelText('Track No.'));
   });
 });
+

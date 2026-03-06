@@ -134,7 +134,8 @@ export function useBulkTrackUpload({
       if (tracks.length === 0) return;
       const selectedCover =
         selectedCoverTrackId != null
-          ? (tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ?? null)
+          ? (tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ??
+              null)
           : null;
       onSubmit(tracks, selectedCover);
     },
@@ -155,3 +156,4 @@ export function useBulkTrackUpload({
     handleSubmit,
   };
 }
+
