@@ -51,6 +51,7 @@ export default defineConfig({
         'src/components/app/Sidebar.tsx',
         'src/components/layout/sidebar-layout.tsx',
         'src/**/__tests__/**/*',
+        'src/lib/types/**/*',
       ],
     },
     setupFiles: ['./src/setupTests.ts'],
