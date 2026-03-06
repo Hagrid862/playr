@@ -1,7 +1,7 @@
+import type { BulkTrackItem } from '@/lib/types/library';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BulkTrackItem } from '@/lib/types/library';
 import { createMockBulkTrack, mockAlbum } from '../__tests__/fixtures';
 import { BulkTrackUploadForm } from './BulkTrackUploadForm';
 import { useBulkTrackUpload } from './useBulkTrackUpload';
@@ -114,7 +114,7 @@ describe('BulkTrackUploadForm', () => {
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], {
       length: 1,
-      item: (_i: number) => file,
+      item: () => file,
     }) as FileList;
 
     fireEvent.drop(window, { dataTransfer: { files: fileList } });

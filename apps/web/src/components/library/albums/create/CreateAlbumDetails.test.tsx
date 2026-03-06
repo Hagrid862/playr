@@ -1,7 +1,7 @@
 import { AlbumType } from '@repo/db';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateAlbumDetails } from './CreateAlbumDetails';
 
 vi.mock('@/components/form', () => ({
@@ -149,9 +149,9 @@ describe('CreateAlbumDetails', () => {
   it('renders existing release date', () => {
     const formDataWithDate = {
       ...defaultFormData,
-      releaseDate: '2023-01-01T00:00:00.000Z',
+      releaseDate: new Date('2023-01-01'),
     };
-    render(<CreateAlbumDetails {...defaultProps} formData={formDataWithDate as any} />);
+    render(<CreateAlbumDetails {...defaultProps} formData={formDataWithDate} />);
     expect(screen.getByLabelText(/Release Date/i)).toBeInTheDocument();
   });
 

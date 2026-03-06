@@ -1,11 +1,15 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import type { ZodAlbum } from '@repo/contracts';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockAlbum } from '../__tests__/fixtures';
 import { EditAlbumForm } from './EditAlbumForm';
+import type { useEditAlbumForm } from './useEditAlbumForm';
+
+type UseEditAlbumFormReturn = ReturnType<typeof useEditAlbumForm>;
 
 vi.mock('./useEditAlbumForm', () => ({
-  useEditAlbumForm: vi.fn(({ album }: { album: any }) => {
+  useEditAlbumForm: vi.fn(({ album }: { album: ZodAlbum }) => {
     const form = {
       handleSubmit: vi.fn(),
     };
@@ -88,7 +92,7 @@ describe('EditAlbumForm', () => {
     const user = userEvent.setup();
     const { useEditAlbumForm: useEditAlbumFormMock } = await import('./useEditAlbumForm');
     const mockForm = { handleSubmit: vi.fn() };
-    (useEditAlbumFormMock as any).mockReturnValue({
+    vi.mocked(useEditAlbumFormMock).mockReturnValue({
       form: mockForm,
       coverInputRef: { current: null },
       currentCoverUrl: null,
@@ -99,7 +103,7 @@ describe('EditAlbumForm', () => {
       isMultipleFilesModalOpen: false,
       setIsMultipleFilesModalOpen: vi.fn(),
       handleCoverSelect: vi.fn(),
-    });
+    } as unknown as UseEditAlbumFormReturn);
 
     render(<EditAlbumForm {...defaultProps} />);
     await user.click(screen.getByRole('button', { name: /Save Changes/i }));
@@ -111,7 +115,7 @@ describe('EditAlbumForm', () => {
     const mockHandleCoverSelect = vi.fn();
     const { useEditAlbumForm: useEditAlbumFormMock } = await import('./useEditAlbumForm');
 
-    (useEditAlbumFormMock as any).mockReturnValue({
+    vi.mocked(useEditAlbumFormMock).mockReturnValue({
       form: { handleSubmit: vi.fn() },
       coverInputRef: { current: null },
       currentCoverUrl: null,
@@ -122,7 +126,7 @@ describe('EditAlbumForm', () => {
       isMultipleFilesModalOpen: false,
       setIsMultipleFilesModalOpen: vi.fn(),
       handleCoverSelect: mockHandleCoverSelect,
-    });
+    } as unknown as UseEditAlbumFormReturn);
 
     render(<EditAlbumForm {...defaultProps} />);
 
@@ -138,7 +142,7 @@ describe('EditAlbumForm', () => {
     const mockHandleCoverSelect = vi.fn();
     const { useEditAlbumForm: useEditAlbumFormMock } = await import('./useEditAlbumForm');
 
-    (useEditAlbumFormMock as any).mockReturnValue({
+    vi.mocked(useEditAlbumFormMock).mockReturnValue({
       form: { handleSubmit: vi.fn() },
       coverInputRef: { current: null },
       currentCoverUrl: null,
@@ -149,7 +153,7 @@ describe('EditAlbumForm', () => {
       isMultipleFilesModalOpen: false,
       setIsMultipleFilesModalOpen: vi.fn(),
       handleCoverSelect: mockHandleCoverSelect,
-    });
+    } as unknown as UseEditAlbumFormReturn);
 
     render(<EditAlbumForm {...defaultProps} />);
 
@@ -163,7 +167,7 @@ describe('EditAlbumForm', () => {
     const user = userEvent.setup();
     const { useEditAlbumForm: useEditAlbumFormMock } = await import('./useEditAlbumForm');
 
-    (useEditAlbumFormMock as any).mockReturnValue({
+    vi.mocked(useEditAlbumFormMock).mockReturnValue({
       form: { handleSubmit: vi.fn() },
       coverInputRef: { current: { click: vi.fn() } },
       currentCoverUrl: null,
@@ -174,7 +178,7 @@ describe('EditAlbumForm', () => {
       isMultipleFilesModalOpen: false,
       setIsMultipleFilesModalOpen: vi.fn(),
       handleCoverSelect: vi.fn(),
-    });
+    } as unknown as UseEditAlbumFormReturn);
 
     render(<EditAlbumForm {...defaultProps} />);
 

@@ -1,7 +1,7 @@
+import { AlbumType } from '@repo/db';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AlbumType } from '@repo/db';
 import { BulkAlbumDetailsSection } from './BulkAlbumDetailsSection';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -99,7 +99,7 @@ describe('BulkAlbumDetailsSection', () => {
     releaseDate: new Date('1991-09-24'),
   };
 
-  const defaultArtists = [
+  const defaultArtists: { id: string; name: string }[] = [
     { id: 'artist-1', name: 'Nirvana' },
     { id: 'artist-2', name: 'Foo Fighters' },
   ];
@@ -112,7 +112,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -185,7 +185,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -198,7 +198,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -214,7 +214,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, artistId: '' }}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -230,7 +230,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -247,7 +247,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, releaseDate: null }}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -263,7 +263,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -278,7 +278,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -294,7 +294,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, description: '' }}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,
@@ -307,7 +307,7 @@ describe('BulkAlbumDetailsSection', () => {
     render(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
-        artists={defaultArtists as any}
+        artists={defaultArtists}
         isLoadingArtists={false}
         onUpdate={mockOnUpdate}
       />,

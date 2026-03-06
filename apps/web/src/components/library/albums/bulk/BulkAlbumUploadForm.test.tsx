@@ -1,13 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AlbumType } from '@repo/db';
 import { useBulkAlbumUploadForm } from '@/hooks/forms/useBulkAlbumUploadForm';
+import type { BulkTrackItem } from '@/lib/types/library';
 import type { LibraryState } from '@/stores/library.store';
 import { useLibraryStore } from '@/stores/library.store';
-import { BulkAlbumUploadForm } from './BulkAlbumUploadForm';
-import { mockArtist } from '../__tests__/fixtures';
+import type { ZodArtist } from '@repo/contracts';
+import { AlbumType } from '@repo/db';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockArtist } from '../__tests__/fixtures';
+import { BulkAlbumUploadForm } from './BulkAlbumUploadForm';
+
+type UseBulkAlbumUploadFormReturn = ReturnType<typeof useBulkAlbumUploadForm>;
 
 const mockCreateAlbum = vi.fn();
 const mockUploadCover = vi.fn();
@@ -39,13 +43,23 @@ vi.mock('@/stores/library.store', () => {
     id: 'artist-1',
     name: 'Test Artist',
   };
-  const mockState = {
+  const mockState: LibraryState = {
     libraryId: 'lib-1',
-    privateArtists: [mockArtistData],
+    privateAccountId: null,
+    privateArtists: [mockArtistData as ZodArtist],
     privateAlbums: [],
+    setLibraryId: vi.fn(),
+    setPrivateAccountId: vi.fn(),
+    setPrivateArtists: vi.fn(),
+    setPrivateAlbums: vi.fn(),
+    updatePrivateArtist: vi.fn(),
+    updatePrivateAlbum: vi.fn(),
+    removePrivateArtist: vi.fn(),
+    removePrivateAlbum: vi.fn(),
+    clearLibrary: vi.fn(),
   };
   return {
-    useLibraryStore: vi.fn((selector?: (s: any) => unknown) =>
+    useLibraryStore: vi.fn((selector?: (s: LibraryState) => unknown) =>
       selector ? selector(mockState) : mockState,
     ),
   };
@@ -90,7 +104,7 @@ function createMockLibraryState(overrides: Partial<LibraryState> = {}): LibraryS
   } as LibraryState;
 }
 
-function createMockTrack(overrides: Record<string, unknown> = {}) {
+function createMockTrack(overrides: Partial<BulkTrackItem> = {}): BulkTrackItem {
   return {
     id: 'track-1',
     file: new File(['audio'], 'track1.mp3', { type: 'audio/mpeg' }),
@@ -103,7 +117,7 @@ function createMockTrack(overrides: Record<string, unknown> = {}) {
 }
 
 describe('BulkAlbumUploadForm', () => {
-  const defaultFormHookReturn = {
+  const defaultFormHookReturn: UseBulkAlbumUploadFormReturn = {
     formData: {
       name: 'Test Album',
       description: '',
@@ -141,7 +155,7 @@ describe('BulkAlbumUploadForm', () => {
       mutateAsync: mockBulkCreateTracks,
       isPending: false,
     });
-    mockUseBulkAlbumUploadForm.mockReturnValue(defaultFormHookReturn as any);
+    mockUseBulkAlbumUploadForm.mockReturnValue(defaultFormHookReturn);
     vi.mocked(useLibraryStore).mockImplementation((selector?: (s: LibraryState) => unknown) => {
       const state = createMockLibraryState();
       return selector ? selector(state) : state;
@@ -152,7 +166,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       tracks: [],
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -167,7 +181,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       tracks: [],
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -192,7 +206,7 @@ describe('BulkAlbumUploadForm', () => {
       tracks: [],
       addFiles: mockAddFiles,
       fileInputRef: { current: null },
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -224,7 +238,7 @@ describe('BulkAlbumUploadForm', () => {
       ...defaultFormHookReturn,
       isScanningMetadata: true,
       isScanningCovers: false,
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -236,7 +250,7 @@ describe('BulkAlbumUploadForm', () => {
       ...defaultFormHookReturn,
       isScanningMetadata: false,
       isScanningCovers: true,
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -248,7 +262,7 @@ describe('BulkAlbumUploadForm', () => {
       ...defaultFormHookReturn,
       isScanningMetadata: true,
       isScanningCovers: true,
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -292,7 +306,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       tracks: [createMockTrack(), createMockTrack({ id: 'track-2' })],
-    } as any);
+    });
     mockUseBulkCreateLibraryTracks.mockReturnValue({
       mutateAsync: mockBulkCreateTracks,
       isPending: true,
@@ -337,7 +351,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       selectedCoverFile: coverFile,
-    } as any);
+    });
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockUploadCover.mockResolvedValue({});
     mockBulkCreateTracks.mockResolvedValue({});
@@ -400,7 +414,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       isFormValid: false,
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -441,7 +455,7 @@ describe('BulkAlbumUploadForm', () => {
         },
       ],
       isScanningCovers: false,
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -460,7 +474,7 @@ describe('BulkAlbumUploadForm', () => {
         },
       ],
       isScanningCovers: true,
-    } as any);
+    });
 
     render(<BulkAlbumUploadForm />);
 
@@ -489,7 +503,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
       tracks: [createMockTrack(), createMockTrack({ id: 'track-2' })],
-    } as any);
+    });
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockBulkCreateTracks.mockResolvedValue({});
 

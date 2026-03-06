@@ -175,7 +175,7 @@ describe('useCreateTrackForm', () => {
     });
 
     it('cleans up URLs and cancels pending scans when unmounted or file changes', async () => {
-      let resolveScan: any;
+      let resolveScan: (value: File | null) => void;
       vi.mocked(extractCoverFromAudioFile).mockImplementation(
         () =>
           new Promise((resolve) => {

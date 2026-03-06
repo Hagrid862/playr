@@ -1,8 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { AlbumType } from '@repo/db';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { EditAlbumMetadata } from './EditAlbumMetadata';
-import { AlbumType } from '@repo/db';
 
 vi.mock('@/components/form', () => ({
   SelectField: ({
@@ -59,8 +60,8 @@ describe('EditAlbumMetadata', () => {
       name,
     }: {
       children: (field: {
-        state: { value: any };
-        handleChange: (v: any) => void;
+        state: { value: string | null };
+        handleChange: (v: string | Date | null) => void;
         handleBlur: () => void;
       }) => React.ReactNode;
       name: string;
@@ -89,8 +90,8 @@ describe('EditAlbumMetadata', () => {
         name,
       }: {
         children: (field: {
-          state: { value: any };
-          handleChange: (v: any) => void;
+          state: { value: string | null };
+          handleChange: (v: string | Date | null) => void;
           handleBlur: () => void;
         }) => React.ReactNode;
         name: string;
@@ -115,7 +116,17 @@ describe('EditAlbumMetadata', () => {
   it('ignores type change for invalid values', async () => {
     const handleChange = vi.fn();
     const localMockForm = {
-      Field: ({ children, name }: any) => {
+      Field: ({
+        children,
+        name,
+      }: {
+        children: (field: {
+          state: { value: string | null };
+          handleChange: (v: string | Date | null) => void;
+          handleBlur: () => void;
+        }) => React.ReactNode;
+        name: string;
+      }) => {
         if (name === 'type') {
           return children({
             state: { value: AlbumType.album },
@@ -140,7 +151,17 @@ describe('EditAlbumMetadata', () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
     const localMockForm = {
-      Field: ({ children, name }: any) => {
+      Field: ({
+        children,
+        name,
+      }: {
+        children: (field: {
+          state: { value: string | null };
+          handleChange: (v: string | Date | null) => void;
+          handleBlur: () => void;
+        }) => React.ReactNode;
+        name: string;
+      }) => {
         if (name === 'releaseDate') {
           return children({
             state: { value: new Date().toISOString() },

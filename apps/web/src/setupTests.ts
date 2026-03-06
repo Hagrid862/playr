@@ -28,13 +28,13 @@ if (typeof globalThis.DataTransfer === 'undefined') {
     private _files: File[] = [];
 
     get items() {
-      const self = this;
+      const files = this._files;
       return {
         get length() {
-          return self._files.length;
+          return files.length;
         },
         add(file: File) {
-          self._files.push(file);
+          files.push(file);
         },
       };
     }

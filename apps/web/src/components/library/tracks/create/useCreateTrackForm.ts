@@ -121,17 +121,23 @@ export function useCreateTrackForm({ album, onSubmit }: UseCreateTrackFormProps)
   );
 
   useEffect(() => {
-    if (!audioFileForScan) {
-      setTrackCoverFile(null);
-      setUseTrackCoverAsAlbumCover(false);
-      setTrackCoverPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-      return;
-    }
-
     let cancelled = false;
+
+    if (!audioFileForScan) {
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setTrackCoverFile(null);
+          setUseTrackCoverAsAlbumCover(false);
+          setTrackCoverPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const scan = async () => {
       setIsScanningMetadata(true);

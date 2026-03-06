@@ -15,9 +15,9 @@ class MockDataTransfer {
   items = {
     add: vi.fn(),
   };
-  files = [];
+  files: File[] = [];
 }
-global.DataTransfer = MockDataTransfer as any;
+global.DataTransfer = MockDataTransfer as unknown as typeof DataTransfer;
 
 vi.mock('./CreateAlbumDetails', () => ({
   CreateAlbumDetails: ({
@@ -27,7 +27,7 @@ vi.mock('./CreateAlbumDetails', () => ({
     onRemoveImage,
     previewUrl,
   }: {
-    onChange: (field: string, value: any) => void;
+    onChange: (field: string, value: string | Date | null) => void;
     onBlur: (field: string) => void;
     onCoverClick: () => void;
     onRemoveImage: () => void;

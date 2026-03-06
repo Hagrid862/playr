@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { EditAlbumHero } from './EditAlbumHero';
 
@@ -108,7 +109,20 @@ describe('EditAlbumHero', () => {
   it('shows error message when description exceeds 2048 characters', () => {
     const mockFormWithValidator = {
       ...defaultProps.form,
-      Field: ({ children, name, validators }: any) => {
+      Field: ({
+        children,
+        name,
+        validators,
+      }: {
+        children: (field: {
+          state: { value: string; meta: { isTouched: boolean; errors: unknown[] } };
+          name: string;
+          handleChange: (v: string) => void;
+          handleBlur: () => void;
+        }) => React.ReactNode;
+        name: string;
+        validators?: { onChange?: (args: { value: string }) => string | undefined };
+      }) => {
         let errorMsg;
         if (name === 'description' && validators?.onChange) {
           errorMsg = validators.onChange({ value: 'a'.repeat(2049) });
@@ -130,7 +144,20 @@ describe('EditAlbumHero', () => {
   it('does not show error message when description is under 2048 characters', () => {
     const mockFormWithValidator = {
       ...defaultProps.form,
-      Field: ({ children, name, validators }: any) => {
+      Field: ({
+        children,
+        name,
+        validators,
+      }: {
+        children: (field: {
+          state: { value: string; meta: { isTouched: boolean; errors: unknown[] } };
+          name: string;
+          handleChange: (v: string) => void;
+          handleBlur: () => void;
+        }) => React.ReactNode;
+        name: string;
+        validators?: { onChange?: (args: { value: string }) => string | undefined };
+      }) => {
         let errorMsg;
         if (name === 'description' && validators?.onChange) {
           errorMsg = validators.onChange({ value: 'valid description' });

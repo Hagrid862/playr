@@ -1,34 +1,34 @@
+import type { UpdateLibraryAlbumRequest } from '@repo/contracts';
+import { AlbumType } from '@repo/db';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockAlbum } from '../__tests__/fixtures';
 import { useEditAlbumForm, validateWithZod } from './useEditAlbumForm';
-import { AlbumType } from '@repo/db';
 
 describe('validateWithZod', () => {
   it('maps multiple validation errors correctly', () => {
     // Missing required fields 'name' and invalid type should cause errors
-    const invalidForm = {
+    const invalidForm: UpdateLibraryAlbumRequest = {
       name: '', // should be min 1
       description: '',
-      type: 'invalid-type' as any, // invalid enum
+      type: 'invalid-type' as AlbumType, // invalid enum
       releaseDate: null,
     };
 
-    const errors = validateWithZod(invalidForm as any);
+    const errors = validateWithZod(invalidForm);
     expect(errors).toBeDefined();
     // Verify it creates an object with paths
-    expect(Object.keys(errors as any).length).toBeGreaterThan(0);
+    expect(Object.keys(errors as Record<string, string>).length).toBeGreaterThan(0);
     expect(errors?.name).toBeDefined();
     expect(errors?.type).toBeDefined();
   });
 
   it('returns undefined for valid payload', () => {
-    const validForm = {
+    const validForm: UpdateLibraryAlbumRequest = {
       name: 'Valid Name',
       type: AlbumType.album,
-      artistId: '123e4567-e89b-12d3-a456-426614174000',
     };
-    const errors = validateWithZod(validForm as any);
+    const errors = validateWithZod(validForm);
     expect(errors).toBeUndefined();
   });
 });
@@ -56,7 +56,11 @@ describe('useEditAlbumForm', () => {
   });
 
   it('initializes with fallback values when description and releaseDate are missing', () => {
-    const incompleteAlbum = { ...mockAlbum, description: undefined, releaseDate: undefined } as any;
+    const incompleteAlbum = {
+      ...mockAlbum,
+      description: null,
+      releaseDate: null,
+    };
     const { result } = renderHook(() =>
       useEditAlbumForm({ album: incompleteAlbum, onSubmit: mockOnSubmit }),
     );

@@ -1,3 +1,4 @@
+import { useGlobalDragStore } from '@/hooks/use-global-drag';
 import {
   CreateLibraryTrackRequest,
   CreateLibraryTrackRequestSchema,
@@ -8,7 +9,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
-import { useGlobalDragStore } from '@/hooks/use-global-drag';
 import { createTrackMockAlbum } from '../__tests__/fixtures';
 import { CreateTrackForm } from './CreateTrackForm';
 
@@ -34,7 +34,7 @@ vi.mock('@/components/form', async (importOriginal) => {
     ...actual,
     FileField: ({
       label,
-      value: _value,
+      value,
       onChange,
       onBlur,
       error,
@@ -55,6 +55,7 @@ vi.mock('@/components/form', async (importOriginal) => {
           type="file"
           accept="audio/*"
           data-testid="audio-file-input"
+          data-has-file={String(!!value)}
           onChange={(e) => {
             const file = e.target.files?.[0];
             onChange(file ?? null);

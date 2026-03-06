@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import useMeasure from 'react-use-measure';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SingleTrackCoverUpdateBanner } from './SingleTrackCoverUpdateBanner';
 
 vi.mock('react-use-measure', () => ({
@@ -36,7 +36,11 @@ describe('SingleTrackCoverUpdateBanner', () => {
   });
 
   it('renders properly when height is 0 and currentAlbumCoverUrl is valid', () => {
-    vi.mocked(useMeasure).mockReturnValueOnce([vi.fn(), { height: 0 }] as any);
+    vi.mocked(useMeasure).mockReturnValueOnce([
+      vi.fn(),
+      { height: 0, width: 0, x: 0, y: 0, top: 0, right: 0, bottom: 0, left: 0 },
+      vi.fn(), // forceRefresh - 3rd element
+    ] as ReturnType<typeof useMeasure>);
     render(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl="http://example.com/cover.jpg"
