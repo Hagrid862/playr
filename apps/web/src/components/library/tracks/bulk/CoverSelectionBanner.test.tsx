@@ -136,10 +136,7 @@ describe('CoverSelectionBanner', () => {
     );
 
     expect(
-      screen.getByText(
-        /Cover art found in 1 track. Would you like to use it as the album cover\?/,
-      ),
+      screen.getByText(/Cover art found in 1 track. Would you like to use it as the album cover\?/),
     ).toBeInTheDocument();
   });
 });
-

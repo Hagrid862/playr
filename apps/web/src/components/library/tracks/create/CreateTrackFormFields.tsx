@@ -31,7 +31,12 @@ export function CreateTrackFormFields({
   return (
     <div className="flex flex-col gap-6">
       <form.Field name="title">
-        {(field: { state: { value: string; meta: { isTouched: boolean; errors: unknown[] } }; name: string; handleChange: (v: string) => void; handleBlur: () => void }) => (
+        {(field: {
+          state: { value: string; meta: { isTouched: boolean; errors: unknown[] } };
+          name: string;
+          handleChange: (v: string) => void;
+          handleBlur: () => void;
+        }) => (
           <TextField
             label="Track Title"
             placeholder="e.g. Smells Like Teen Spirit"
@@ -50,7 +55,12 @@ export function CreateTrackFormFields({
 
       <div className="flex gap-4">
         <form.Field name="diskNumber">
-          {(field: { state: { value: number; meta: { isTouched: boolean; errors: unknown[] } }; name: string; handleChange: (v: number) => void; handleBlur: () => void }) => (
+          {(field: {
+            state: { value: number; meta: { isTouched: boolean; errors: unknown[] } };
+            name: string;
+            handleChange: (v: number) => void;
+            handleBlur: () => void;
+          }) => (
             <div className="w-24">
               <TextField
                 label="Disk No."
@@ -71,7 +81,12 @@ export function CreateTrackFormFields({
         </form.Field>
 
         <form.Field name="trackNumber">
-          {(field: { state: { value: number; meta: { isTouched: boolean; errors: unknown[] } }; name: string; handleChange: (v: number) => void; handleBlur: () => void }) => (
+          {(field: {
+            state: { value: number; meta: { isTouched: boolean; errors: unknown[] } };
+            name: string;
+            handleChange: (v: number) => void;
+            handleBlur: () => void;
+          }) => (
             <div className="flex-1">
               <TextField
                 label="Track No."
@@ -106,7 +121,12 @@ export function CreateTrackFormFields({
       </form.Field>
 
       <form.Field name="audioFile">
-        {(field: { state: { value: File | null; meta: { errors: unknown[] } }; name: string; handleChange: (v: File | null) => void; handleBlur: () => void }) => (
+        {(field: {
+          state: { value: File | null; meta: { errors: unknown[] } };
+          name: string;
+          handleChange: (v: File | null) => void;
+          handleBlur: () => void;
+        }) => (
           <FileField
             label="Audio File"
             accept="audio/*"

@@ -19,7 +19,11 @@ export function EditAlbumMetadata({ form }: EditAlbumMetadataProps) {
       </h3>
       <div className="grid gap-5 md:grid-cols-2">
         <form.Field name="type">
-          {(field: { state: { value: string }; handleChange: (v: string) => void; handleBlur: () => void }) => (
+          {(field: {
+            state: { value: string };
+            handleChange: (v: string) => void;
+            handleBlur: () => void;
+          }) => (
             <SelectField
               label="Album Type"
               placeholder="Select type"
@@ -36,7 +40,11 @@ export function EditAlbumMetadata({ form }: EditAlbumMetadataProps) {
         </form.Field>
 
         <form.Field name="releaseDate">
-          {(field: { state: { value: string | null }; handleChange: (v: unknown) => void; handleBlur: () => void }) => (
+          {(field: {
+            state: { value: string | null };
+            handleChange: (v: unknown) => void;
+            handleBlur: () => void;
+          }) => (
             <DatePickerField
               label="Release Date"
               value={field.state.value ? new Date(field.state.value) : undefined}

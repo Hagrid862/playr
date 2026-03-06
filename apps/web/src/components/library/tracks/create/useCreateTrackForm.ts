@@ -1,7 +1,4 @@
-import {
-    extractCoverFromAudioFile,
-    extractMetadataFromAudioFile,
-} from '@/lib/audio-metadata';
+import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/clean-audio-filename';
 import type { CreateLibraryTrackRequest } from '@repo/contracts';
 import { CreateLibraryTrackRequestSchema, ZodAlbumInfer } from '@repo/contracts';
@@ -105,20 +102,23 @@ export function useCreateTrackForm({ album, onSubmit }: UseCreateTrackFormProps)
     },
   });
 
-  const handleFiles = useCallback((files: FileList) => {
-    if (files.length > 1) {
-      setIsMultipleFilesModalOpen(true);
-      return;
-    }
+  const handleFiles = useCallback(
+    (files: FileList) => {
+      if (files.length > 1) {
+        setIsMultipleFilesModalOpen(true);
+        return;
+      }
 
-    const file = files[0];
-    if (file.type.startsWith('audio/')) {
-      form.setFieldValue('audioFile', file);
-      setAudioFileForScan(file);
-    } else {
-      setIsFormatModalOpen(true);
-    }
-  }, [form]);
+      const file = files[0];
+      if (file.type.startsWith('audio/')) {
+        form.setFieldValue('audioFile', file);
+        setAudioFileForScan(file);
+      } else {
+        setIsFormatModalOpen(true);
+      }
+    },
+    [form],
+  );
 
   useEffect(() => {
     if (!audioFileForScan) {
@@ -153,7 +153,10 @@ export function useCreateTrackForm({ album, onSubmit }: UseCreateTrackFormProps)
         album: meta?.album ?? '',
       };
 
-      form.setFieldValue('title', meta?.title || cleanFilenameToTitle(audioFileForScan.name, metaContext));
+      form.setFieldValue(
+        'title',
+        meta?.title || cleanFilenameToTitle(audioFileForScan.name, metaContext),
+      );
       form.setFieldValue('trackNumber', meta?.trackNo ?? 1);
       form.setFieldValue('diskNumber', meta?.diskNo ?? 1);
 

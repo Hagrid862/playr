@@ -173,5 +173,4 @@ describe('SongCard', () => {
     fireEvent.click(screen.getByText('Test Song'));
     expect(onClick).not.toHaveBeenCalled();
   });
-
 });

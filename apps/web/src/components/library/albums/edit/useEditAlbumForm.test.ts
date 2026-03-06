@@ -13,7 +13,7 @@ describe('validateWithZod', () => {
       type: 'invalid-type' as any, // invalid enum
       releaseDate: null,
     };
-    
+
     const errors = validateWithZod(invalidForm as any);
     expect(errors).toBeDefined();
     // Verify it creates an object with paths

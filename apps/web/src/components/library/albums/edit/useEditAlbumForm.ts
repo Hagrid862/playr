@@ -62,13 +62,16 @@ export function useEditAlbumForm({ album, onSubmit }: UseEditAlbumFormProps) {
     }
   }, []);
 
-  const handleFiles = useCallback((files: FileList) => {
-    if (files.length > 1) {
-      setIsMultipleFilesModalOpen(true);
-      return;
-    }
-    handleCoverSelect(files[0]);
-  }, [handleCoverSelect]);
+  const handleFiles = useCallback(
+    (files: FileList) => {
+      if (files.length > 1) {
+        setIsMultipleFilesModalOpen(true);
+        return;
+      }
+      handleCoverSelect(files[0]);
+    },
+    [handleCoverSelect],
+  );
 
   const handleRemoveCover = useCallback(() => {
     setSelectedCover(undefined);

@@ -38,13 +38,13 @@ function AlbumLayout() {
     ? 'Bulk Create Album'
     : isCreate
       ? 'Create Album'
-    : isEdit
-      ? `Edit ${album?.name ?? 'Album'}`
-      : isAddContent
-        ? 'Add Content'
-        : isDetail
-          ? (album?.name ?? 'Album Detail')
-          : 'Albums';
+      : isEdit
+        ? `Edit ${album?.name ?? 'Album'}`
+        : isAddContent
+          ? 'Add Content'
+          : isDetail
+            ? (album?.name ?? 'Album Detail')
+            : 'Albums';
 
   return (
     <div className="flex flex-col gap-4 p-4">

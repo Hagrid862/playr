@@ -23,8 +23,7 @@ function AddContentPage() {
 
   const { mutateAsync: createTrack, isPending: isCreating } = useCreateLibraryTrack();
   const { mutateAsync: uploadAudio, isPending: isUploading } = useUploadTrackAudio();
-  const { mutateAsync: uploadCover, isPending: isUploadingCover } =
-    useUploadLibraryAlbumCover();
+  const { mutateAsync: uploadCover, isPending: isUploadingCover } = useUploadLibraryAlbumCover();
 
   const handleSubmit = async (
     values: CreateLibraryTrackRequest,

@@ -12,7 +12,11 @@ vi.mock('idb-keyval', () => ({
 }));
 
 describe('idb-storage', () => {
-  let idbStorage: { getItem: (n: string) => Promise<unknown>; setItem: (n: string, v: unknown) => Promise<void>; removeItem: (n: string) => Promise<void> };
+  let idbStorage: {
+    getItem: (n: string) => Promise<unknown>;
+    setItem: (n: string, v: unknown) => Promise<void>;
+    removeItem: (n: string) => Promise<void>;
+  };
 
   beforeEach(async () => {
     mockGet.mockClear();
@@ -57,7 +61,11 @@ describe('idb-storage', () => {
 });
 
 describe('idb-storage (fallback when indexedDB undefined)', () => {
-  let idbStorage: { getItem: (n: string) => Promise<unknown>; setItem: (n: string, v: unknown) => Promise<void>; removeItem: (n: string) => Promise<void> };
+  let idbStorage: {
+    getItem: (n: string) => Promise<unknown>;
+    setItem: (n: string, v: unknown) => Promise<void>;
+    removeItem: (n: string) => Promise<void>;
+  };
 
   beforeEach(async () => {
     vi.stubGlobal('indexedDB', undefined);

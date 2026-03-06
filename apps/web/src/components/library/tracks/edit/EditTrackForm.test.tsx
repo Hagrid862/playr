@@ -1,7 +1,7 @@
 import {
-    UpdateLibraryTrackRequest,
-    UpdateLibraryTrackRequestSchema,
-    ZodTrack,
+  UpdateLibraryTrackRequest,
+  UpdateLibraryTrackRequestSchema,
+  ZodTrack,
 } from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
 import { render, screen, waitFor } from '@testing-library/react';

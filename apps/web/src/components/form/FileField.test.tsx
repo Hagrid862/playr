@@ -56,14 +56,7 @@ describe('FileField', () => {
   it('renders clear button when showClearButton and value are set', () => {
     const onChange = vi.fn();
     const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-    render(
-      <FileField
-        {...defaultProps}
-        onChange={onChange}
-        showClearButton
-        value={file}
-      />,
-    );
+    render(<FileField {...defaultProps} onChange={onChange} showClearButton value={file} />);
 
     expect(screen.getByRole('button', { name: /Clear file/i })).toBeInTheDocument();
 
@@ -98,14 +91,7 @@ describe('FileField', () => {
   it('handleClear falls back to getElementById when inputRef is not provided', () => {
     const onChange = vi.fn();
     const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-    render(
-      <FileField
-        {...defaultProps}
-        onChange={onChange}
-        showClearButton
-        value={file}
-      />,
-    );
+    render(<FileField {...defaultProps} onChange={onChange} showClearButton value={file} />);
 
     const input = screen.getByLabelText('Upload File') as HTMLInputElement;
     const valueSetterSpy = vi.spyOn(input, 'value', 'set');
@@ -119,14 +105,7 @@ describe('FileField', () => {
   it('handleClear handles getElementById returning null', () => {
     const onChange = vi.fn();
     const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-    render(
-      <FileField
-        {...defaultProps}
-        onChange={onChange}
-        showClearButton
-        value={file}
-      />,
-    );
+    render(<FileField {...defaultProps} onChange={onChange} showClearButton value={file} />);
 
     const input = screen.getByLabelText('Upload File');
     input.remove();

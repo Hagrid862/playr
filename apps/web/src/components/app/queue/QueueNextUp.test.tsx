@@ -107,13 +107,11 @@ describe('QueueNextUp', () => {
     );
     expect(capturedDndHandlers.onDragStart).toBeDefined();
     await act(async () => {
-      capturedDndHandlers.onDragStart!(
-        {
-          active: { id: '1' },
-          delta: { x: 0, y: 0 },
-          activatorEvent: new Event('dragstart'),
-        } as unknown as DragStartEvent,
-      );
+      capturedDndHandlers.onDragStart!({
+        active: { id: '1' },
+        delta: { x: 0, y: 0 },
+        activatorEvent: new Event('dragstart'),
+      } as unknown as DragStartEvent);
     });
     expect(screen.getByTestId('queue-item-overlay')).toHaveTextContent('Track 1');
   });
@@ -130,13 +128,11 @@ describe('QueueNextUp', () => {
       />,
     );
     await act(async () => {
-      capturedDndHandlers.onDragStart!(
-        {
-          active: { id: '1' },
-          delta: { x: 0, y: 0 },
-          activatorEvent: new Event('dragstart'),
-        } as unknown as DragStartEvent,
-      );
+      capturedDndHandlers.onDragStart!({
+        active: { id: '1' },
+        delta: { x: 0, y: 0 },
+        activatorEvent: new Event('dragstart'),
+      } as unknown as DragStartEvent);
     });
     const mockEvent = {
       active: { id: '1' },

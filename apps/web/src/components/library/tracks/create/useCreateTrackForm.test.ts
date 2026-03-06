@@ -9,7 +9,6 @@ vi.mock('@/lib/audio-metadata', () => ({
   extractCoverFromAudioFile: vi.fn().mockResolvedValue(null),
 }));
 
-
 const mockNavigate = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
@@ -98,7 +97,10 @@ describe('useCreateTrackForm', () => {
 
       act(() => {
         result.current.form.setFieldValue('title', 'Test Track');
-        result.current.form.setFieldValue('audioFile', new File(['x'], 'track.mp3', { type: 'audio/mpeg' }));
+        result.current.form.setFieldValue(
+          'audioFile',
+          new File(['x'], 'track.mp3', { type: 'audio/mpeg' }),
+        );
       });
 
       await act(async () => {
@@ -120,7 +122,10 @@ describe('useCreateTrackForm', () => {
         result.current.setStayOnPage(true);
         result.current.form.setFieldValue('title', 'Track 1');
         result.current.form.setFieldValue('trackNumber', 1);
-        result.current.form.setFieldValue('audioFile', new File(['x'], 'track.mp3', { type: 'audio/mpeg' }));
+        result.current.form.setFieldValue(
+          'audioFile',
+          new File(['x'], 'track.mp3', { type: 'audio/mpeg' }),
+        );
       });
 
       await act(async () => {
@@ -146,10 +151,10 @@ describe('useCreateTrackForm', () => {
         result.current.form.setFieldValue('title', 'Test Title');
         result.current.form.setFieldValue('audioFile', file);
       });
-      
+
       const coverFile = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
-      
+
       act(() => {
         result.current.handleFiles([file] as unknown as FileList);
       });
@@ -166,19 +171,18 @@ describe('useCreateTrackForm', () => {
         result.current.form.handleSubmit();
       });
 
-      expect(mockOnSubmit).toHaveBeenCalledWith(
-        expect.anything(),
-        file,
-        coverFile
-      );
+      expect(mockOnSubmit).toHaveBeenCalledWith(expect.anything(), file, coverFile);
     });
 
     it('cleans up URLs and cancels pending scans when unmounted or file changes', async () => {
       let resolveScan: any;
-      vi.mocked(extractCoverFromAudioFile).mockImplementation(() => new Promise((resolve) => {
-        resolveScan = resolve;
-      }));
-      
+      vi.mocked(extractCoverFromAudioFile).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveScan = resolve;
+          }),
+      );
+
       const { result, unmount } = renderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
@@ -190,18 +194,20 @@ describe('useCreateTrackForm', () => {
 
       // While scanning, unmount
       unmount();
-      
+
       // Resolve after unmount - should not update state, returning early
       await act(async () => {
         if (resolveScan) resolveScan(null);
       });
-      
+
       expect(result.current.isScanningMetadata).toBe(true); // Left in true state because it bailed before setting false
     });
 
     it('revokes url when resetting on stayOnPage if preview existed', async () => {
       const revokeSpy = vi.spyOn(global.URL, 'revokeObjectURL');
-      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(new File(['cover'], 'cover.jpg', { type: 'image/jpeg' }));
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(
+        new File(['cover'], 'cover.jpg', { type: 'image/jpeg' }),
+      );
       const { result } = renderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
@@ -210,7 +216,7 @@ describe('useCreateTrackForm', () => {
         result.current.setStayOnPage(true);
         result.current.form.setFieldValue('title', 'Track 1');
       });
-      
+
       const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
       act(() => {
         result.current.handleFiles([file] as unknown as FileList);
@@ -230,7 +236,9 @@ describe('useCreateTrackForm', () => {
 
     it('revokes url when scanning a new file while a preview already exists', async () => {
       const revokeSpy = vi.spyOn(global.URL, 'revokeObjectURL');
-      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(new File(['cover'], 'cover.jpg', { type: 'image/jpeg' }));
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(
+        new File(['cover'], 'cover.jpg', { type: 'image/jpeg' }),
+      );
       const { result } = renderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
@@ -263,7 +271,10 @@ describe('useCreateTrackForm', () => {
 
       act(() => {
         result.current.form.setFieldValue('title', 'Test');
-        result.current.form.setFieldValue('audioFile', new File(['x'], 'track.mp3', { type: 'audio/mpeg' }));
+        result.current.form.setFieldValue(
+          'audioFile',
+          new File(['x'], 'track.mp3', { type: 'audio/mpeg' }),
+        );
       });
 
       await act(async () => {

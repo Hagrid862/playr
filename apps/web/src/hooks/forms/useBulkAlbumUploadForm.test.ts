@@ -1,7 +1,4 @@
-import {
-  extractCoverFromAudioFile,
-  extractMetadataFromAudioFile,
-} from '@/lib/audio-metadata';
+import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/clean-audio-filename';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -69,8 +66,22 @@ describe('useBulkAlbumUploadForm', () => {
 
   it('extracts metadata and covers automatically when tracks change', async () => {
     vi.mocked(extractMetadataFromAudioFile)
-      .mockResolvedValueOnce({ title: 'Song 1', artist: 'Artist A', album: 'Best Album', year: 2024, trackNo: 1, diskNo: 1 })
-      .mockResolvedValueOnce({ title: 'Song 2', artist: 'Artist A', album: 'Best Album', year: 2024, trackNo: 2, diskNo: 1 });
+      .mockResolvedValueOnce({
+        title: 'Song 1',
+        artist: 'Artist A',
+        album: 'Best Album',
+        year: 2024,
+        trackNo: 1,
+        diskNo: 1,
+      })
+      .mockResolvedValueOnce({
+        title: 'Song 2',
+        artist: 'Artist A',
+        album: 'Best Album',
+        year: 2024,
+        trackNo: 2,
+        diskNo: 1,
+      });
 
     const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
     vi.mocked(extractCoverFromAudioFile).mockImplementation(async (file: File) => {
@@ -224,7 +235,11 @@ describe('useBulkAlbumUploadForm', () => {
 
   it('handles empty album names during metadata scan array reduction', async () => {
     vi.mocked(extractMetadataFromAudioFile).mockResolvedValueOnce({
-      title: 'Song', album: undefined, year: undefined, trackNo: undefined, diskNo: undefined
+      title: 'Song',
+      album: undefined,
+      year: undefined,
+      trackNo: undefined,
+      diskNo: undefined,
     });
 
     const { result } = renderHook(() => useBulkAlbumUploadForm());
@@ -250,10 +265,9 @@ describe('useBulkAlbumUploadForm', () => {
     const { result } = renderHook(() => useBulkAlbumUploadForm());
 
     act(() => {
-      result.current.addFiles(createFileList([
-        createAudioFile('no_cover.mp3'),
-        createAudioFile('has_cover.mp3')
-      ]));
+      result.current.addFiles(
+        createFileList([createAudioFile('no_cover.mp3'), createAudioFile('has_cover.mp3')]),
+      );
     });
 
     await waitFor(() => {
@@ -265,15 +279,12 @@ describe('useBulkAlbumUploadForm', () => {
 
   it('removes cover image selection when all tracks are removed', async () => {
     const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
-    vi.mocked(extractCoverFromAudioFile)
-      .mockResolvedValueOnce(mockCover);
+    vi.mocked(extractCoverFromAudioFile).mockResolvedValueOnce(mockCover);
 
     const { result } = renderHook(() => useBulkAlbumUploadForm());
 
     act(() => {
-      result.current.addFiles(createFileList([
-        createAudioFile('has_cover.mp3')
-      ]));
+      result.current.addFiles(createFileList([createAudioFile('has_cover.mp3')]));
     });
 
     await waitFor(() => {
@@ -390,10 +401,9 @@ describe('useBulkAlbumUploadForm', () => {
     const { result } = renderHook(() => useBulkAlbumUploadForm());
 
     act(() => {
-      result.current.addFiles(createFileList([
-        createAudioFile('track1.mp3'),
-        createAudioFile('track2.mp3')
-      ]));
+      result.current.addFiles(
+        createFileList([createAudioFile('track1.mp3'), createAudioFile('track2.mp3')]),
+      );
     });
 
     await waitFor(() => {
@@ -408,7 +418,7 @@ describe('useBulkAlbumUploadForm', () => {
       result.current.setSelectedCoverTrackId(track2Id);
     });
 
-    // We remove track1. This triggers a scan of the remaining track (track2). 
+    // We remove track1. This triggers a scan of the remaining track (track2).
     // The previously selected track (track2) should be retained, hitting the true branch.
     act(() => {
       result.current.removeTrack(track1Id);
@@ -429,10 +439,9 @@ describe('useBulkAlbumUploadForm', () => {
     const { result } = renderHook(() => useBulkAlbumUploadForm());
 
     act(() => {
-      result.current.addFiles(createFileList([
-        createAudioFile('track1.mp3'),
-        createAudioFile('track2.mp3'),
-      ]));
+      result.current.addFiles(
+        createFileList([createAudioFile('track1.mp3'), createAudioFile('track2.mp3')]),
+      );
     });
 
     await waitFor(() => {

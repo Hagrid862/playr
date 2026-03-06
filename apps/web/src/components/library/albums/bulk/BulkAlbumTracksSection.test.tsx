@@ -28,11 +28,7 @@ vi.mock('../../tracks/bulk/BulkTrackCard', () => ({
       >
         Update
       </button>
-      <button
-        type="button"
-        data-testid={`remove-${track.id}`}
-        onClick={onRemove}
-      >
+      <button type="button" data-testid={`remove-${track.id}`} onClick={onRemove}>
         Remove
       </button>
     </div>
@@ -138,7 +134,9 @@ describe('BulkAlbumTracksSection', () => {
 
   it('submit button shows track count when not submitting', () => {
     render(<BulkAlbumTracksSection {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /Create album & upload 1 track/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Create album & upload 1 track/i }),
+    ).toBeInTheDocument();
   });
 
   it('submit button shows tracks plural when multiple', () => {
@@ -148,7 +146,9 @@ describe('BulkAlbumTracksSection', () => {
         tracks={[createMockTrack(), createMockTrack({ id: 't2' })]}
       />,
     );
-    expect(screen.getByRole('button', { name: /Create album & upload 2 tracks/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Create album & upload 2 tracks/i }),
+    ).toBeInTheDocument();
   });
 
   it('submit button is disabled when form is invalid', () => {
@@ -178,13 +178,7 @@ describe('BulkAlbumTracksSection', () => {
   });
 
   it('shows Creating... when submitting with null progressStep', () => {
-    render(
-      <BulkAlbumTracksSection
-        {...defaultProps}
-        isSubmitting={true}
-        progressStep={null}
-      />,
-    );
+    render(<BulkAlbumTracksSection {...defaultProps} isSubmitting={true} progressStep={null} />);
     expect(screen.getByText('Creating...')).toBeInTheDocument();
   });
 });

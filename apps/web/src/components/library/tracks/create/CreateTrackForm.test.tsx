@@ -1,7 +1,7 @@
 import {
-    CreateLibraryTrackRequest,
-    CreateLibraryTrackRequestSchema,
-    ZodAlbumInfer,
+  CreateLibraryTrackRequest,
+  CreateLibraryTrackRequestSchema,
+  ZodAlbumInfer,
 } from '@repo/contracts';
 import { useNavigate } from '@tanstack/react-router';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -65,7 +65,8 @@ vi.mock('@/components/form', async (importOriginal) => {
               if (mockState.suppressRef) {
                 (inputRef as unknown as { current: HTMLInputElement | null }).current = null;
               } else {
-                (inputRef as unknown as { current: HTMLInputElement | null }).current = el as HTMLInputElement;
+                (inputRef as unknown as { current: HTMLInputElement | null }).current =
+                  el as HTMLInputElement;
               }
             }
           }}
@@ -396,9 +397,7 @@ describe('CreateTrackForm', () => {
     fireEvent.drop(window, { dataTransfer: { files: fileList } });
 
     expect(screen.getByText('Too Many Files')).toBeInTheDocument();
-    expect(
-      screen.getByText(/You can only upload one audio track at a time/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/You can only upload one audio track at a time/)).toBeInTheDocument();
   });
 
   it('closes multiple files modal when OK is clicked', async () => {

@@ -20,7 +20,13 @@ class MockDataTransfer {
 global.DataTransfer = MockDataTransfer as any;
 
 vi.mock('./CreateAlbumDetails', () => ({
-  CreateAlbumDetails: ({ onChange, onBlur, onCoverClick, onRemoveImage, previewUrl }: {
+  CreateAlbumDetails: ({
+    onChange,
+    onBlur,
+    onCoverClick,
+    onRemoveImage,
+    previewUrl,
+  }: {
     onChange: (field: string, value: any) => void;
     onBlur: (field: string) => void;
     onCoverClick: () => void;
@@ -38,7 +44,10 @@ vi.mock('./CreateAlbumDetails', () => ({
 }));
 
 vi.mock('./CreateAlbumModals', () => ({
-  CreateAlbumModals: ({ isFormatModalOpen, isMultipleFilesModalOpen }: {
+  CreateAlbumModals: ({
+    isFormatModalOpen,
+    isMultipleFilesModalOpen,
+  }: {
     isFormatModalOpen: boolean;
     isMultipleFilesModalOpen: boolean;
   }) => (
@@ -169,12 +178,18 @@ describe('CreateAlbumForm', () => {
   });
 
   it('processes dropped image files and updates file input with DataTransfer', () => {
-    const originalFilesDesc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'files');
-    Object.defineProperty(window.HTMLInputElement.prototype, 'files', { set: vi.fn(), configurable: true });
+    const originalFilesDesc = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      'files',
+    );
+    Object.defineProperty(window.HTMLInputElement.prototype, 'files', {
+      set: vi.fn(),
+      configurable: true,
+    });
 
     render(<CreateAlbumForm {...defaultProps} />);
     const file = new File(['image'], 'test.png', { type: 'image/png' });
-    
+
     fireEvent.drop(window, { dataTransfer: { files: [file] } });
 
     expect(mockOnFileSelect).toHaveBeenCalledWith(file);
@@ -187,11 +202,11 @@ describe('CreateAlbumForm', () => {
   it('handles file operations when fileInputRef.current is null', () => {
     // This covers the false branches of `if (fileInputRef.current)`
     render(<CreateAlbumForm {...defaultProps} _testHideFileInput={true} />);
-    
+
     // Simulate drop
     const file = new File(['image'], 'test.png', { type: 'image/png' });
     fireEvent.drop(window, { dataTransfer: { files: [file] } });
-    
+
     expect(mockOnFileSelect).toHaveBeenCalledWith(file);
   });
 
@@ -201,11 +216,11 @@ describe('CreateAlbumForm', () => {
 
     // we need to set a file so that the remove button appears
     render(<CreateAlbumForm {...defaultProps} _testHideFileInput={true} />);
-    
+
     // Bypass the visual upload and just drop it to set the preview
     const file = new File(['blob'], 'test.png', { type: 'image/png' });
     fireEvent.drop(window, { dataTransfer: { files: [file] } });
-    
+
     const removeButton = await screen.findByRole('button', { name: /Remove/i });
     await user.click(removeButton);
 

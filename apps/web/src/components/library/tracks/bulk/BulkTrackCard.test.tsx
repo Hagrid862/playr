@@ -15,9 +15,7 @@ describe('BulkTrackCard', () => {
 
   it('renders track info', () => {
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     expect(screen.getByText('track1.mp3')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Track 1')).toBeInTheDocument();
@@ -28,9 +26,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onUpdate when track title changes', () => {
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     const titleInput = screen.getByLabelText('Track Title');
     fireEvent.change(titleInput, { target: { value: 'New Title' } });
@@ -40,9 +36,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onUpdate when disk number changes', () => {
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     const diskInput = screen.getByLabelText('Disk No.');
     fireEvent.change(diskInput, { target: { value: '2' } });
@@ -53,9 +47,7 @@ describe('BulkTrackCard', () => {
   it('calls onUpdate with 1 when disk number is invalid', async () => {
     const user = userEvent.setup();
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     const diskInput = screen.getByLabelText('Disk No.');
     await user.clear(diskInput);
@@ -66,9 +58,7 @@ describe('BulkTrackCard', () => {
 
   it('calls onUpdate when track number changes', () => {
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     const trackInput = screen.getByLabelText('Track No.');
     fireEvent.change(trackInput, { target: { value: '3' } });
@@ -79,9 +69,7 @@ describe('BulkTrackCard', () => {
   it('calls onUpdate with 1 when track number is invalid', async () => {
     const user = userEvent.setup();
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     const trackInput = screen.getByLabelText('Track No.');
     await user.clear(trackInput);
@@ -93,9 +81,7 @@ describe('BulkTrackCard', () => {
   it('calls onUpdate when explicit checkbox is toggled', async () => {
     const user = userEvent.setup();
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     const checkbox = screen.getByRole('checkbox', { name: 'Explicit Content' });
     await user.click(checkbox);
@@ -106,9 +92,7 @@ describe('BulkTrackCard', () => {
   it('calls onUpdate with explicit false when unchecking', async () => {
     const user = userEvent.setup();
     const track = createMockBulkTrack({ explicit: true });
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     const checkbox = screen.getByRole('checkbox', { name: 'Explicit Content' });
     await user.click(checkbox);
@@ -119,9 +103,7 @@ describe('BulkTrackCard', () => {
   it('calls onRemove when remove button is clicked', async () => {
     const user = userEvent.setup();
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     await user.click(screen.getByRole('button', { name: 'Remove track' }));
 
@@ -130,13 +112,10 @@ describe('BulkTrackCard', () => {
 
   it('handles blur on text fields without error', () => {
     const track = createMockBulkTrack();
-    render(
-      <BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />,
-    );
+    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
     fireEvent.blur(screen.getByLabelText('Track Title'));
     fireEvent.blur(screen.getByLabelText('Disk No.'));
     fireEvent.blur(screen.getByLabelText('Track No.'));
   });
 });
-

@@ -27,7 +27,9 @@ describe('SingleTrackCoverUpdateBanner', () => {
 
     expect(screen.getByText('New artwork detected')).toBeInTheDocument();
     expect(
-      screen.getByText(/This file contains embedded artwork. Would you like to update the album to use it\?/),
+      screen.getByText(
+        /This file contains embedded artwork. Would you like to update the album to use it\?/,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText('Current')).toBeInTheDocument();
     expect(screen.getByText('New')).toBeInTheDocument();
@@ -43,7 +45,10 @@ describe('SingleTrackCoverUpdateBanner', () => {
         onSelect={mockOnSelect}
       />,
     );
-    expect(screen.getByAltText('Current album cover')).toHaveAttribute('src', 'http://example.com/cover.jpg');
+    expect(screen.getByAltText('Current album cover')).toHaveAttribute(
+      'src',
+      'http://example.com/cover.jpg',
+    );
     expect(screen.getByText('New artwork detected')).toBeInTheDocument();
   });
 

@@ -21,8 +21,7 @@ export function BulkAlbumUploadForm() {
   const artists = useLibraryStore((state) => state.privateArtists);
 
   const { mutateAsync: createAlbum, isPending: isCreatingAlbum } = useCreateLibraryAlbum();
-  const { mutateAsync: uploadCover, isPending: isUploadingCover } =
-    useUploadLibraryAlbumCover();
+  const { mutateAsync: uploadCover, isPending: isUploadingCover } = useUploadLibraryAlbumCover();
   const { mutateAsync: bulkCreateTracks, isPending: isUploadingTracks } =
     useBulkCreateLibraryTracks();
 
@@ -121,13 +120,11 @@ export function BulkAlbumUploadForm() {
       overlayTitle="Drop audio files to upload"
       overlayDescription="Your tracks will be processed automatically"
     >
-      {isProcessing && (
-        <BulkAlbumProcessingOverlay message={processingMessage} />
-      )}
+      {isProcessing && <BulkAlbumProcessingOverlay message={processingMessage} />}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {tracks.length === 0 && (
-          <div 
+          <div
             className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-muted-foreground/25 rounded-xl bg-muted/5 cursor-pointer hover:border-muted-foreground/50 transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
@@ -142,7 +139,9 @@ export function BulkAlbumUploadForm() {
                 e.target.value = '';
               }}
             />
-            <p className="text-sm text-muted-foreground">Drop audio files anywhere or click to start uploading</p>
+            <p className="text-sm text-muted-foreground">
+              Drop audio files anywhere or click to start uploading
+            </p>
           </div>
         )}
 

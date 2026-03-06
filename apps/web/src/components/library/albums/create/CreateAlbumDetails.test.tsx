@@ -15,7 +15,11 @@ vi.mock('@/components/form', () => ({
     <div>
       <label>
         {props.label}
-        <input value={props.value} onChange={(e) => props.onChange(e.target.value)} onBlur={props.onBlur} />
+        <input
+          value={props.value}
+          onChange={(e) => props.onChange(e.target.value)}
+          onBlur={props.onBlur}
+        />
       </label>
       {props.error && <div data-testid="error-message">{props.error}</div>}
     </div>
@@ -30,7 +34,11 @@ vi.mock('@/components/form', () => ({
     <div>
       <label>
         {props.label}
-        <textarea value={props.value} onChange={(e) => props.onChange(e.target.value)} onBlur={props.onBlur} />
+        <textarea
+          value={props.value}
+          onChange={(e) => props.onChange(e.target.value)}
+          onBlur={props.onBlur}
+        />
       </label>
       {props.error && <div data-testid="error-message">{props.error}</div>}
     </div>
@@ -140,15 +148,17 @@ describe('CreateAlbumDetails', () => {
 
   it('renders existing release date', () => {
     const formDataWithDate = {
-        ...defaultFormData,
-        releaseDate: '2023-01-01T00:00:00.000Z'
+      ...defaultFormData,
+      releaseDate: '2023-01-01T00:00:00.000Z',
     };
     render(<CreateAlbumDetails {...defaultProps} formData={formDataWithDate as any} />);
     expect(screen.getByLabelText(/Release Date/i)).toBeInTheDocument();
   });
 
   it('displays validation errors', () => {
-    mockGetFieldError.mockImplementation((field) => field === 'name' ? 'Title is required' : undefined);
+    mockGetFieldError.mockImplementation((field) =>
+      field === 'name' ? 'Title is required' : undefined,
+    );
     render(<CreateAlbumDetails {...defaultProps} />);
     expect(screen.getByText('Title is required')).toBeInTheDocument();
   });

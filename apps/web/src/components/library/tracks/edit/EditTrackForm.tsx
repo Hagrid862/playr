@@ -5,9 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { CheckIcon, CircleNotchIcon } from '@phosphor-icons/react';
 import {
-    UpdateLibraryTrackRequest,
-    UpdateLibraryTrackRequestSchema,
-    ZodTrack,
+  UpdateLibraryTrackRequest,
+  UpdateLibraryTrackRequestSchema,
+  ZodTrack,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { Link, useNavigate } from '@tanstack/react-router';

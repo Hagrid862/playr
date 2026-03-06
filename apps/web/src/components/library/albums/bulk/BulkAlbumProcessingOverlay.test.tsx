@@ -7,7 +7,9 @@ describe('BulkAlbumProcessingOverlay', () => {
     render(<BulkAlbumProcessingOverlay message="Scanning metadata..." />);
 
     expect(screen.getByText('Scanning metadata...')).toBeInTheDocument();
-    expect(screen.getByText('Extracting metadata and cover art from your files...')).toBeInTheDocument();
+    expect(
+      screen.getByText('Extracting metadata and cover art from your files...'),
+    ).toBeInTheDocument();
   });
 
   it('has accessibility attributes', () => {

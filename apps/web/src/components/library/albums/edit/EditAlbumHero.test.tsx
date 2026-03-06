@@ -4,7 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { EditAlbumHero } from './EditAlbumHero';
 
 vi.mock('@/components/form', () => ({
-  TextField: ({ label, value, onChange, onBlur, error }: {
+  TextField: ({
+    label,
+    value,
+    onChange,
+    onBlur,
+    error,
+  }: {
     label: string;
     value: string;
     onChange: (v: string) => void;
@@ -19,7 +25,13 @@ vi.mock('@/components/form', () => ({
       {error && <span>{error}</span>}
     </div>
   ),
-  TextAreaField: ({ label, value, onChange, onBlur, error }: {
+  TextAreaField: ({
+    label,
+    value,
+    onChange,
+    onBlur,
+    error,
+  }: {
     label: string;
     value: string;
     onChange: (v: string) => void;
@@ -38,8 +50,16 @@ vi.mock('@/components/form', () => ({
 
 describe('EditAlbumHero', () => {
   const mockForm = {
-    Field: ({ children, name }: {
-      children: (field: { state: { value: string; meta: { isTouched: boolean; errors: unknown[] } }; name: string; handleChange: (v: string) => void; handleBlur: () => void }) => React.ReactNode;
+    Field: ({
+      children,
+      name,
+    }: {
+      children: (field: {
+        state: { value: string; meta: { isTouched: boolean; errors: unknown[] } };
+        name: string;
+        handleChange: (v: string) => void;
+        handleBlur: () => void;
+      }) => React.ReactNode;
       name: string;
     }) =>
       children({
@@ -91,7 +111,7 @@ describe('EditAlbumHero', () => {
       Field: ({ children, name, validators }: any) => {
         let errorMsg;
         if (name === 'description' && validators?.onChange) {
-            errorMsg = validators.onChange({ value: 'a'.repeat(2049) });
+          errorMsg = validators.onChange({ value: 'a'.repeat(2049) });
         }
         return children({
           state: { value: '', meta: { isTouched: true, errors: [errorMsg] } },
@@ -113,7 +133,7 @@ describe('EditAlbumHero', () => {
       Field: ({ children, name, validators }: any) => {
         let errorMsg;
         if (name === 'description' && validators?.onChange) {
-            errorMsg = validators.onChange({ value: 'valid description' });
+          errorMsg = validators.onChange({ value: 'valid description' });
         }
         return children({
           state: { value: '', meta: { isTouched: true, errors: [errorMsg] } },
@@ -126,7 +146,9 @@ describe('EditAlbumHero', () => {
     };
 
     render(<EditAlbumHero {...defaultProps} form={mockFormWithValidator} />);
-    expect(screen.queryByText('Description must be 2048 characters or less')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Description must be 2048 characters or less'),
+    ).not.toBeInTheDocument();
     // Assuming error is undefined, it won't render any span or text about it.
   });
 });

@@ -7,25 +7,29 @@ import { EditAlbumForm } from './EditAlbumForm';
 vi.mock('./useEditAlbumForm', () => ({
   useEditAlbumForm: vi.fn(({ album }: { album: any }) => {
     const form = {
-        handleSubmit: vi.fn(),
+      handleSubmit: vi.fn(),
     };
     return {
-        form,
-        coverInputRef: { current: null },
-        currentCoverUrl: album.cover?.url,
-        handleFiles: vi.fn(),
-        handleRemoveCover: vi.fn(),
-        isFormatModalOpen: false,
-        setIsFormatModalOpen: vi.fn(),
-        isMultipleFilesModalOpen: false,
-        setIsMultipleFilesModalOpen: vi.fn(),
-        handleCoverSelect: vi.fn(),
+      form,
+      coverInputRef: { current: null },
+      currentCoverUrl: album.cover?.url,
+      handleFiles: vi.fn(),
+      handleRemoveCover: vi.fn(),
+      isFormatModalOpen: false,
+      setIsFormatModalOpen: vi.fn(),
+      isMultipleFilesModalOpen: false,
+      setIsMultipleFilesModalOpen: vi.fn(),
+      handleCoverSelect: vi.fn(),
     };
   }),
 }));
 
 vi.mock('./EditAlbumHero', () => ({
-  EditAlbumHero: ({ onCoverClick, onRemoveCover, currentCoverUrl }: {
+  EditAlbumHero: ({
+    onCoverClick,
+    onRemoveCover,
+    currentCoverUrl,
+  }: {
     onCoverClick: () => void;
     onRemoveCover: () => void;
     currentCoverUrl?: string | null;
@@ -106,7 +110,7 @@ describe('EditAlbumForm', () => {
     const user = userEvent.setup();
     const mockHandleCoverSelect = vi.fn();
     const { useEditAlbumForm: useEditAlbumFormMock } = await import('./useEditAlbumForm');
-    
+
     (useEditAlbumFormMock as any).mockReturnValue({
       form: { handleSubmit: vi.fn() },
       coverInputRef: { current: null },
@@ -121,19 +125,19 @@ describe('EditAlbumForm', () => {
     });
 
     render(<EditAlbumForm {...defaultProps} />);
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['image'], 'test.png', { type: 'image/png' });
-    
+
     await user.upload(fileInput, file);
-    
+
     expect(mockHandleCoverSelect).toHaveBeenCalledWith(file);
   });
 
   it('ignores cover selection when file array is empty', async () => {
     const mockHandleCoverSelect = vi.fn();
     const { useEditAlbumForm: useEditAlbumFormMock } = await import('./useEditAlbumForm');
-    
+
     (useEditAlbumFormMock as any).mockReturnValue({
       form: { handleSubmit: vi.fn() },
       coverInputRef: { current: null },
@@ -148,17 +152,17 @@ describe('EditAlbumForm', () => {
     });
 
     render(<EditAlbumForm {...defaultProps} />);
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [] } });
-    
+
     expect(mockHandleCoverSelect).not.toHaveBeenCalled();
   });
 
   it('calls coverInputRef.current.click() when onCoverClick is triggered', async () => {
     const user = userEvent.setup();
     const { useEditAlbumForm: useEditAlbumFormMock } = await import('./useEditAlbumForm');
-    
+
     (useEditAlbumFormMock as any).mockReturnValue({
       form: { handleSubmit: vi.fn() },
       coverInputRef: { current: { click: vi.fn() } },
@@ -173,13 +177,13 @@ describe('EditAlbumForm', () => {
     });
 
     render(<EditAlbumForm {...defaultProps} />);
-    
+
     // Get the input to verify click was called on it
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(fileInput, 'click');
 
     await user.click(screen.getByText('Upload Cover'));
-    
+
     expect(clickSpy).toHaveBeenCalled();
   });
 });

@@ -75,9 +75,7 @@ describe('BulkTrackUploadForm', () => {
   it('renders empty state when no tracks', () => {
     render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
-    expect(
-      screen.getByText('Drop audio files anywhere to start uploading'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Drop audio files anywhere to start uploading')).toBeInTheDocument();
   });
 
   it('shows singular track label when one track', () => {
@@ -133,9 +131,7 @@ describe('BulkTrackUploadForm', () => {
 
     render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
-    expect(
-      screen.getByText('Scanning tracks for cover art...'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Scanning tracks for cover art...')).toBeInTheDocument();
   });
 
   it('shows CoverSelectionBanner when tracks have covers and not scanning', () => {

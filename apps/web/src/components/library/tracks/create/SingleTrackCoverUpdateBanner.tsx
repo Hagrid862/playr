@@ -171,4 +171,3 @@ export function SingleTrackCoverUpdateBanner({
     </motion.div>
   );
 }
-

@@ -76,10 +76,7 @@ vi.mock('@/components/form', () => ({
   }) => (
     <div>
       <label>{props.label}</label>
-      <button
-        data-testid="date-picker-set"
-        onClick={() => props.onChange(new Date('2022-01-01'))}
-      >
+      <button data-testid="date-picker-set" onClick={() => props.onChange(new Date('2022-01-01'))}>
         Set Date
       </button>
       <button data-testid="date-picker-clear" onClick={() => props.onChange(null)}>

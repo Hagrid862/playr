@@ -5,7 +5,13 @@ import { EditAlbumMetadata } from './EditAlbumMetadata';
 import { AlbumType } from '@repo/db';
 
 vi.mock('@/components/form', () => ({
-  SelectField: ({ label, value, options, onChange, onBlur }: {
+  SelectField: ({
+    label,
+    value,
+    options,
+    onChange,
+    onBlur,
+  }: {
     label: string;
     value: string;
     options: { value: string; label: string }[];
@@ -16,16 +22,20 @@ vi.mock('@/components/form', () => ({
       <label>
         {label}
         <select value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur}>
-            {options.map((opt: { value: string; label: string }) => (
+          {options.map((opt: { value: string; label: string }) => (
             <option key={opt.value} value={opt.value}>
-                {opt.label}
+              {opt.label}
             </option>
-            ))}
+          ))}
         </select>
       </label>
     </div>
   ),
-  DatePickerField: ({ label, onChange, onBlur }: {
+  DatePickerField: ({
+    label,
+    onChange,
+    onBlur,
+  }: {
     label: string;
     onChange: (v: Date | null) => void;
     onBlur: () => void;
@@ -34,7 +44,7 @@ vi.mock('@/components/form', () => ({
       <label>
         {label}
         <button onClick={() => onChange(new Date('2022-01-01'))} onBlur={onBlur}>
-            Mock Date Picker
+          Mock Date Picker
         </button>
         <button onClick={() => onChange(null)}>Clear Date</button>
       </label>
@@ -44,17 +54,24 @@ vi.mock('@/components/form', () => ({
 
 describe('EditAlbumMetadata', () => {
   const mockForm = {
-    Field: ({ children, name }: {
-        children: (field: { state: { value: any }; handleChange: (v: any) => void; handleBlur: () => void }) => React.ReactNode;
-        name: string;
+    Field: ({
+      children,
+      name,
+    }: {
+      children: (field: {
+        state: { value: any };
+        handleChange: (v: any) => void;
+        handleBlur: () => void;
+      }) => React.ReactNode;
+      name: string;
     }) => {
-        const value = name === 'type' ? AlbumType.album : null;
-        return children({
-            state: { value },
-            handleChange: vi.fn(),
-            handleBlur: vi.fn(),
-        });
-    }
+      const value = name === 'type' ? AlbumType.album : null;
+      return children({
+        state: { value },
+        handleChange: vi.fn(),
+        handleBlur: vi.fn(),
+      });
+    },
   };
 
   it('renders correctly', () => {
@@ -67,19 +84,26 @@ describe('EditAlbumMetadata', () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
     const localMockForm = {
-        Field: ({ children, name }: {
-            children: (field: { state: { value: any }; handleChange: (v: any) => void; handleBlur: () => void }) => React.ReactNode;
-            name: string;
-        }) => {
-            if (name === 'type') {
-                return children({
-                    state: { value: AlbumType.album },
-                    handleChange,
-                    handleBlur: vi.fn(),
-                });
-            }
-            return children({ state: { value: null }, handleChange: vi.fn(), handleBlur: vi.fn() });
+      Field: ({
+        children,
+        name,
+      }: {
+        children: (field: {
+          state: { value: any };
+          handleChange: (v: any) => void;
+          handleBlur: () => void;
+        }) => React.ReactNode;
+        name: string;
+      }) => {
+        if (name === 'type') {
+          return children({
+            state: { value: AlbumType.album },
+            handleChange,
+            handleBlur: vi.fn(),
+          });
         }
+        return children({ state: { value: null }, handleChange: vi.fn(), handleBlur: vi.fn() });
+      },
     };
 
     render(<EditAlbumMetadata form={localMockForm} />);
@@ -91,24 +115,24 @@ describe('EditAlbumMetadata', () => {
   it('ignores type change for invalid values', async () => {
     const handleChange = vi.fn();
     const localMockForm = {
-        Field: ({ children, name }: any) => {
-            if (name === 'type') {
-                return children({
-                    state: { value: AlbumType.album },
-                    handleChange,
-                    handleBlur: vi.fn(),
-                });
-            }
-            return children({ state: { value: null }, handleChange: vi.fn(), handleBlur: vi.fn() });
+      Field: ({ children, name }: any) => {
+        if (name === 'type') {
+          return children({
+            state: { value: AlbumType.album },
+            handleChange,
+            handleBlur: vi.fn(),
+          });
         }
+        return children({ state: { value: null }, handleChange: vi.fn(), handleBlur: vi.fn() });
+      },
     };
 
     render(<EditAlbumMetadata form={localMockForm} />);
     const select = screen.getByLabelText(/Album Type/i) as HTMLSelectElement;
-    
+
     // Force a change event with invalid value directly since user.selectOptions only works with existing options
     fireEvent.change(select, { target: { value: 'invalid_type' } });
-    
+
     expect(handleChange).not.toHaveBeenCalled();
   });
 
@@ -116,26 +140,26 @@ describe('EditAlbumMetadata', () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
     const localMockForm = {
-        Field: ({ children, name }: any) => {
-            if (name === 'releaseDate') {
-                return children({
-                    state: { value: new Date().toISOString() },
-                    handleChange,
-                    handleBlur: vi.fn(),
-                });
-            }
-            return children({ state: { value: null }, handleChange: vi.fn(), handleBlur: vi.fn() });
+      Field: ({ children, name }: any) => {
+        if (name === 'releaseDate') {
+          return children({
+            state: { value: new Date().toISOString() },
+            handleChange,
+            handleBlur: vi.fn(),
+          });
         }
+        return children({ state: { value: null }, handleChange: vi.fn(), handleBlur: vi.fn() });
+      },
     };
 
     render(<EditAlbumMetadata form={localMockForm} />);
     const mockClearButton = screen.queryByText('Clear Date');
     if (mockClearButton) {
-        await user.click(mockClearButton);
+      await user.click(mockClearButton);
     } else {
-        // If clear button not present in mock, we simulate onChange(null) directly since mock is simplistic
-        // Just trigger the onChange of DatePickerField. In our mock, DatePickerField does not have a clear button.
-        // I will add a clear button to the DatePickerField mock.
+      // If clear button not present in mock, we simulate onChange(null) directly since mock is simplistic
+      // Just trigger the onChange of DatePickerField. In our mock, DatePickerField does not have a clear button.
+      // I will add a clear button to the DatePickerField mock.
     }
   });
 });

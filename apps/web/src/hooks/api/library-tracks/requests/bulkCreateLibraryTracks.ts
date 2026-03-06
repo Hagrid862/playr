@@ -24,10 +24,9 @@ export const bulkCreateLibraryTracks = async ({
   createResponse: BulkCreateLibraryTracksResponse;
   uploadResponse: BulkUploadTrackAudioResponse;
 }> => {
-  const artistIds =
-    explicitArtistIds?.length
-      ? explicitArtistIds
-      : (album.artists?.map((a) => a.id) ?? []);
+  const artistIds = explicitArtistIds?.length
+    ? explicitArtistIds
+    : (album.artists?.map((a) => a.id) ?? []);
   if (artistIds.length === 0) {
     throw new Error('Album must have at least one artist');
   }

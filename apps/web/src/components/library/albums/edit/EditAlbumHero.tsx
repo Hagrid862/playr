@@ -79,7 +79,12 @@ export function EditAlbumHero({
 
       <div className="flex-1 flex flex-col gap-5">
         <form.Field name="name">
-          {(field: { state: { value: string; meta: { isTouched: boolean; errors: unknown[] } }; name: string; handleChange: (v: string) => void; handleBlur: () => void }) => (
+          {(field: {
+            state: { value: string; meta: { isTouched: boolean; errors: unknown[] } };
+            name: string;
+            handleChange: (v: string) => void;
+            handleBlur: () => void;
+          }) => (
             <TextField
               label="Album Title"
               placeholder="e.g. Nevermind"
@@ -110,7 +115,12 @@ export function EditAlbumHero({
             },
           }}
         >
-          {(field: { state: { value: string; meta: { isTouched: boolean; errors: unknown[] } }; name: string; handleChange: (v: string) => void; handleBlur: () => void }) => (
+          {(field: {
+            state: { value: string; meta: { isTouched: boolean; errors: unknown[] } };
+            name: string;
+            handleChange: (v: string) => void;
+            handleBlur: () => void;
+          }) => (
             <TextAreaField
               label="Description"
               placeholder="Tell something about this album..."

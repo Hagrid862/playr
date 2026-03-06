@@ -156,7 +156,9 @@ describe('BulkAlbumUploadForm', () => {
 
     render(<BulkAlbumUploadForm />);
 
-    expect(screen.getByText('Drop audio files anywhere or click to start uploading')).toBeInTheDocument();
+    expect(
+      screen.getByText('Drop audio files anywhere or click to start uploading'),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Album details')).not.toBeInTheDocument();
   });
 
@@ -168,11 +170,13 @@ describe('BulkAlbumUploadForm', () => {
     } as any);
 
     render(<BulkAlbumUploadForm />);
-    
+
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(fileInput, 'click');
 
-    const dropzoneArea = screen.getByText('Drop audio files anywhere or click to start uploading').parentElement;
+    const dropzoneArea = screen.getByText(
+      'Drop audio files anywhere or click to start uploading',
+    ).parentElement;
     await user.click(dropzoneArea!);
 
     expect(clickSpy).toHaveBeenCalled();
@@ -181,7 +185,7 @@ describe('BulkAlbumUploadForm', () => {
   it('handles file selection via hidden input', async () => {
     const user = userEvent.setup();
     const mockAddFiles = vi.fn();
-    
+
     // We need a ref object so we can assert on its value getter/setter if we want, but basically just need the mockAddFiles.
     mockUseBulkAlbumUploadForm.mockReturnValue({
       ...defaultFormHookReturn,
@@ -199,7 +203,7 @@ describe('BulkAlbumUploadForm', () => {
     expect(fileInput).toBeInTheDocument();
 
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' });
-    
+
     // UserEvent approach to file upload
     await user.upload(fileInput, file);
 
@@ -403,7 +407,9 @@ describe('BulkAlbumUploadForm', () => {
     const submitButton = screen.getByRole('button', { name: /Create album & upload 1 track/i });
     expect(submitButton).toBeDisabled();
 
-    const form = screen.getByRole('button', { name: /Create album & upload 1 track/i }).closest('form');
+    const form = screen
+      .getByRole('button', { name: /Create album & upload 1 track/i })
+      .closest('form');
     fireEvent.submit(form!);
 
     expect(mockCreateAlbum).not.toHaveBeenCalled();

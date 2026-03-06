@@ -306,7 +306,9 @@ describe('CreateArtistForm', () => {
     fireEvent.drop(window, { dataTransfer });
 
     expect(screen.getByText(/Too Many Files/i)).toBeInTheDocument();
-    expect(screen.getByText(/You can only upload one an avatar picture at a time/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/You can only upload one an avatar picture at a time/i),
+    ).toBeInTheDocument();
   });
 
   it('shows Invalid File Format dialog when dropping non-image file', () => {

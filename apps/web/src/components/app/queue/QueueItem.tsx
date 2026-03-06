@@ -109,9 +109,9 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
         )}
         <div
           className={cn(
-          'absolute inset-0 flex items-center justify-center transition-opacity opacity-0',
-          !hoverDisabled && 'group-hover:opacity-100',
-        )}
+            'absolute inset-0 flex items-center justify-center transition-opacity opacity-0',
+            !hoverDisabled && 'group-hover:opacity-100',
+          )}
         >
           <PlayIcon weight="fill" className="text-white" size={16} />
         </div>
@@ -119,9 +119,9 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
       <div className="flex-1 min-w-0">
         <div
           className={cn(
-          'text-sm font-medium text-white/90 truncate',
-          !hoverDisabled && 'group-hover:text-white',
-        )}
+            'text-sm font-medium text-white/90 truncate',
+            !hoverDisabled && 'group-hover:text-white',
+          )}
         >
           {track.title}
         </div>

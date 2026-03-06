@@ -45,7 +45,9 @@ export function createMockArtist(overrides: Partial<ZodArtist> = {}): ZodArtist 
   };
 }
 
-export function createMockCreateAlbumRequest(overrides: Partial<CreateLibraryAlbumRequest> = {}): CreateLibraryAlbumRequest {
+export function createMockCreateAlbumRequest(
+  overrides: Partial<CreateLibraryAlbumRequest> = {},
+): CreateLibraryAlbumRequest {
   return {
     name: '',
     description: '',

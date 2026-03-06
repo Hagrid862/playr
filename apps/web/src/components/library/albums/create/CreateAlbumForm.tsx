@@ -42,34 +42,40 @@ export function CreateAlbumForm({
 
   const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
 
-  const handleFileChange = useCallback((file: File | null) => {
-    if (file) {
-      setPreviewUrl(URL.createObjectURL(file));
-      onFileSelect?.(file);
-    } else {
-      setPreviewUrl(null);
-      onFileSelect?.(null);
-    }
-  }, [onFileSelect]);
-
-  const handleFiles = useCallback((files: FileList) => {
-    if (files.length > 1) {
-      setIsMultipleFilesModalOpen(true);
-      return;
-    }
-
-    const file = files[0];
-    if (file.type.startsWith('image/')) {
-      handleFileChange(file);
-      if (fileInputRef.current) {
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        fileInputRef.current.files = dataTransfer.files;
+  const handleFileChange = useCallback(
+    (file: File | null) => {
+      if (file) {
+        setPreviewUrl(URL.createObjectURL(file));
+        onFileSelect?.(file);
+      } else {
+        setPreviewUrl(null);
+        onFileSelect?.(null);
       }
-    } else {
-      setIsFormatModalOpen(true);
-    }
-  }, [handleFileChange]);
+    },
+    [onFileSelect],
+  );
+
+  const handleFiles = useCallback(
+    (files: FileList) => {
+      if (files.length > 1) {
+        setIsMultipleFilesModalOpen(true);
+        return;
+      }
+
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        handleFileChange(file);
+        if (fileInputRef.current) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          fileInputRef.current.files = dataTransfer.files;
+        }
+      } else {
+        setIsFormatModalOpen(true);
+      }
+    },
+    [handleFileChange],
+  );
 
   const handleRemoveImage = useCallback(() => {
     setPreviewUrl(null);

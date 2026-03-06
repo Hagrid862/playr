@@ -22,9 +22,7 @@ describe('CreateTrackFormModals', () => {
     );
 
     expect(screen.getByText('Too Many Files')).toBeInTheDocument();
-    expect(
-      screen.getByText(/You can only upload one audio track at a time/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/You can only upload one audio track at a time/)).toBeInTheDocument();
   });
 
   it('renders Invalid File Format modal when isFormatModalOpen', () => {
