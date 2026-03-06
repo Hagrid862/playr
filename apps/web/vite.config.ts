@@ -50,6 +50,7 @@ export default defineConfig({
         'src/components/landingPage.tsx',
         'src/components/app/Sidebar.tsx',
         'src/components/layout/sidebar-layout.tsx',
+        'src/**/__tests__/**/*',
       ],
     },
     setupFiles: ['./src/setupTests.ts'],
