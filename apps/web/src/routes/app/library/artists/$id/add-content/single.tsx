@@ -1,8 +1,8 @@
-import { CreateAlbumForm } from '@/components/library/albums/CreateAlbumForm';
+import { CreateAlbumForm } from '@/components/library/albums/create/CreateAlbumForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCreateLibraryAlbum } from '@/hooks/api/library-albums/useCreateLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
-import { useCreateAlbumForm } from '@/hooks/forms/useCreateAlbumForm';
+import { useCreateAlbumForm } from '@/components/library/albums/create/useCreateAlbumForm';
 import { InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
