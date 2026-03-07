@@ -1,14 +1,14 @@
 import { AuthenticatedUser } from '@/common/types/auth.types';
 import {
-    Body,
-    Controller,
-    HttpCode,
-    Post,
-    Request,
-    Response,
-    UnauthorizedException,
-    UseGuards,
-    UseInterceptors,
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Request,
+  Response,
+  UnauthorizedException,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
@@ -22,8 +22,8 @@ import { LogoutCommand } from './commands/impl/logout.command';
 import { RefreshTokensCommand } from './commands/impl/refresh-tokens.command';
 import { RegisterCommand } from './commands/impl/register.command';
 import {
-    REFRESH_TOKEN_COOKIE_NAME,
-    REFRESH_TOKEN_COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
 } from './constants/cookie.constants';
 import { LoginResponseDto } from './dto/login.response.dto';
 import { LogoutResponseDto } from './dto/logout.response.dto';

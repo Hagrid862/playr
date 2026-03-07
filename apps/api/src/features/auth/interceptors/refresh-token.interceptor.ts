@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Response as ExpressResponse } from 'express';
 import { map } from 'rxjs/operators';
 import {
-    REFRESH_TOKEN_COOKIE_NAME,
-    REFRESH_TOKEN_COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
 } from '../constants/cookie.constants';
 
 @Injectable()
