@@ -1,15 +1,16 @@
 import { AuthenticatedUser } from '@/common/types/auth.types';
 import {
-  Body,
-  Controller,
-  HttpCode,
-  Post,
-  Request,
-  Response,
-  UnauthorizedException,
-  UseGuards,
-  UseInterceptors,
+    Body,
+    Controller,
+    HttpCode,
+    Post,
+    Request,
+    Response,
+    UnauthorizedException,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -20,6 +21,10 @@ import { LoginCommand } from './commands/impl/login.command';
 import { LogoutCommand } from './commands/impl/logout.command';
 import { RefreshTokensCommand } from './commands/impl/refresh-tokens.command';
 import { RegisterCommand } from './commands/impl/register.command';
+import {
+    REFRESH_TOKEN_COOKIE_NAME,
+    REFRESH_TOKEN_COOKIE_OPTIONS,
+} from './constants/cookie.constants';
 import { LoginResponseDto } from './dto/login.response.dto';
 import { LogoutResponseDto } from './dto/logout.response.dto';
 import { RefreshResponseDto } from './dto/refresh.response.dto';
@@ -33,7 +38,10 @@ import { RefreshTokenInterceptor } from './interceptors/refresh-token.intercepto
 @Throttle({ default: { limit: 10, ttl: 60000 } })
 @UseInterceptors(RefreshTokenInterceptor)
 export class AuthController {
-  constructor(private commandBus: CommandBus) {}
+  constructor(
+    private commandBus: CommandBus,
+    private config: ConfigService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -89,7 +97,11 @@ export class AuthController {
     if (req.user.sessionId) {
       await this.commandBus.execute(new LogoutCommand(req.user.sessionId));
     }
-    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
+      path: REFRESH_TOKEN_COOKIE_OPTIONS.path,
+      sameSite: REFRESH_TOKEN_COOKIE_OPTIONS.sameSite,
+      secure: this.config.get('NODE_ENV') === 'production',
+    });
   }
 
   @Post('refresh')
@@ -105,7 +117,7 @@ export class AuthController {
     type: ApiErrorResponseDto,
   })
   async refresh(@Request() req: ExpressRequest) {
-    const refreshToken = req.cookies?.refreshToken;
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
