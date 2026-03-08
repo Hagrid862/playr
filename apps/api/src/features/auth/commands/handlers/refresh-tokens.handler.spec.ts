@@ -1,30 +1,26 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { RefreshTokensHandler } from './refresh-tokens.handler';
-import { RefreshTokensCommand } from '../impl/refresh-tokens.command';
-import { TokenService } from '../../services/token.service';
-import { SessionRepository } from '../../../../shared/repositories/session.repository';
-import { UserRepository } from '../../../../shared/repositories/user.repository';
-import { UnauthorizedException } from '@nestjs/common';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { UnauthorizedException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { UserRepository } from '../../../../shared/repositories/user.repository';
+import { TokenService } from '../../services/token.service';
+import { RefreshTokensCommand } from '../impl/refresh-tokens.command';
+import { RefreshTokensHandler } from './refresh-tokens.handler';
 
 describe('RefreshTokensHandler', () => {
   let handler: RefreshTokensHandler;
   let tokenService: DeepMocked<TokenService>;
-  let sessionRepository: DeepMocked<SessionRepository>;
   let userRepository: DeepMocked<UserRepository>;
 
   beforeEach(async () => {
     tokenService = createMock<TokenService>();
-    sessionRepository = createMock<SessionRepository>();
     userRepository = createMock<UserRepository>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RefreshTokensHandler,
         { provide: TokenService, useValue: tokenService },
-        { provide: SessionRepository, useValue: sessionRepository },
         { provide: UserRepository, useValue: userRepository },
       ],
     }).compile();
@@ -93,7 +89,7 @@ describe('RefreshTokensHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow('Invalid refresh token');
     });
 
-    it('should revoke session and throw if token is already revoked', async () => {
+    it('should throw if token is already revoked (no session revoke)', async () => {
       // Arrange
       tokenService.verifyRefreshToken.mockResolvedValue({
         userId: mockUserId,
@@ -104,8 +100,7 @@ describe('RefreshTokensHandler', () => {
 
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow(UnauthorizedException);
-      await expect(handler.execute(command)).rejects.toThrow('Security breach detected');
-      expect(sessionRepository.revoke).toHaveBeenCalledWith(mockSessionId);
+      await expect(handler.execute(command)).rejects.toThrow('Session expired. Please login again.');
     });
 
     it('should throw UnauthorizedException if user not found', async () => {

@@ -80,6 +80,11 @@ describe('AuthController', () => {
         sameSite: 'lax',
         secure: false,
       });
+      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', {
+        path: '/auth/refresh',
+        sameSite: 'lax',
+        secure: false,
+      });
     });
 
     it('should not execute LogoutCommand if sessionId is missing but still clear cookie', async () => {
@@ -91,6 +96,11 @@ describe('AuthController', () => {
       expect(commandBus.execute).not.toHaveBeenCalled();
       expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', {
         path: '/',
+        sameSite: 'lax',
+        secure: false,
+      });
+      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', {
+        path: '/auth/refresh',
         sameSite: 'lax',
         secure: false,
       });
