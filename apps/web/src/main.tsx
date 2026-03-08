@@ -16,6 +16,14 @@ import { useAuthStore } from './stores/auth.store';
 
 // Create a client
 const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        if (error instanceof ApiError && error.status === 401) return false;
+        return failureCount < 3;
+      },
+    },
+  },
   mutationCache: new MutationCache({
     onError: (error) => {
       if (error instanceof ApiError) {
