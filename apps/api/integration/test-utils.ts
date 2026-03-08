@@ -1,6 +1,7 @@
 import './setup-env';
 
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
@@ -75,7 +76,7 @@ export async function createIntegrationApp(
   app.use(cookieParser());
 
   // Replicate global setup from main.ts
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(app.get(ConfigService)));
   app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
   app.useGlobalPipes(new ZodValidationPipe());
 
