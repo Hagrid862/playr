@@ -104,7 +104,7 @@ export function EditTrackForm({
               <div className="w-24">
                 <TextField
                   label="Disk No."
-                  // @ts-expect-error TextField types are too strict
+                  placeholder="1"
                   type="number"
                   value={String(field.state.value ?? '')}
                   error={
@@ -125,7 +125,7 @@ export function EditTrackForm({
               <div className="flex-1">
                 <TextField
                   label="Track No."
-                  // @ts-expect-error TextField types are too strict
+                  placeholder="1"
                   type="number"
                   value={String(field.state.value ?? '')}
                   error={

@@ -89,7 +89,7 @@ export class AuthController {
     if (req.user.sessionId) {
       await this.commandBus.execute(new LogoutCommand(req.user.sessionId));
     }
-    res.clearCookie('refreshToken', { path: '/auth/refresh' });
+    res.clearCookie('refreshToken', { path: '/' });
   }
 
   @Post('refresh')

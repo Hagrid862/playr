@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Run all commands from the root directory. To run a command for a single package/app, use the --filter flag (e.g., pnpm run <command> --filter <package-name>).

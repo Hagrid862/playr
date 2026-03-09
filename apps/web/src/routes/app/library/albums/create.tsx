@@ -5,9 +5,16 @@ import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLib
 import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists';
 import { useUploadLibraryArtistAvatar } from '@/hooks/api/library-artists/useUploadLibraryArtistAvatar';
 import { useLibraryStore } from '@/stores/library.store';
-import { InfoIcon, PlusIcon, UserIcon, UsersIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import {
+  InfoIcon,
+  PlusIcon,
+  UploadSimpleIcon,
+  UserIcon,
+  UsersIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react';
 import { CreateLibraryArtistRequest } from '@repo/contracts';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/app/library/albums/create')({
@@ -61,7 +68,7 @@ function RouteComponent() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl">
           <button
             onClick={() => setView('pick')}
             className="flex flex-col items-center gap-6 p-8 rounded-2xl bg-stone-900/40 border border-white/5 hover:border-primary/50 hover:bg-stone-800/40 transition-all group text-left"
@@ -91,6 +98,21 @@ function RouteComponent() {
               </p>
             </div>
           </button>
+
+          <Link
+            to="/app/library/albums/bulk-create"
+            className="flex flex-col items-center gap-6 p-8 rounded-2xl bg-stone-900/40 border border-white/5 hover:border-primary/50 hover:bg-stone-800/40 transition-all group text-left"
+          >
+            <div className="p-4 rounded-full bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+              <UploadSimpleIcon size={32} weight="duotone" />
+            </div>
+            <div className="flex flex-col items-center text-center gap-2">
+              <h3 className="text-lg font-semibold text-white">Bulk upload</h3>
+              <p className="text-sm text-muted-foreground">
+                Upload multiple MP3 files and create an album with extracted metadata in one go.
+              </p>
+            </div>
+          </Link>
         </div>
       </div>
     );

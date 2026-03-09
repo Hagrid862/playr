@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+If you modify dependencies (package.json), Dockerfiles, or other files that require a rebuild, DO NOT run dev commands. Instead, rebuild the Docker images and restart containers to apply changes and reinstall dependencies by running:

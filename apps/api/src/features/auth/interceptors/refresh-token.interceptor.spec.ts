@@ -53,7 +53,7 @@ describe('RefreshTokenInterceptor', () => {
       expect.objectContaining({
         httpOnly: true,
         secure: false,
-        path: '/auth/refresh',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       }),
     );

@@ -7,10 +7,11 @@ import { routeTree } from './routeTree.gen';
 
 import './styles.css';
 
-import { QueryClient, QueryClientProvider, MutationCache } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { ApiError } from '@/lib/api-error';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
+import { TooltipProvider } from './components/ui/tooltip';
 import { useAuthStore } from './stores/auth.store';
 
 // Create a client
@@ -54,6 +55,12 @@ const rootElement = document.getElementById('app');
 
 function Root() {
   const auth = useAuthStore();
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  if (!hasHydrated) {
+    return null;
+  }
+
   return <RouterProvider router={router} context={{ auth }} />;
 }
 
@@ -62,7 +69,9 @@ if (rootElement && !rootElement.innerHTML) {
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <Root />
+        <TooltipProvider>
+          <Root />
+        </TooltipProvider>
       </QueryClientProvider>
     </StrictMode>,
   );

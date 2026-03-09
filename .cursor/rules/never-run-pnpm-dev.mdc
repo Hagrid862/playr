@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+NEVER use pnpm dev or pnpm dev:host. We assume the application is already running in Docker Compose.

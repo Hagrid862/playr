@@ -1,6 +1,7 @@
 import React from 'react';
 import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { DotsSixVerticalIcon, MusicNotesIcon, PlayIcon, TrashIcon } from '@phosphor-icons/react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -10,19 +11,55 @@ export interface QueueItemProps {
   track: PlayrQueueItem;
   onPlay: (track: PlayrQueueItem) => void;
   onRemove: (uniqueId: string, event: React.MouseEvent) => void;
+  /** When true, disables hover effects (e.g. when another item is being dragged) */
+  isDragActive?: boolean;
 }
 
-export function QueueItem({ track, onPlay, onRemove }: QueueItemProps) {
+/** Renders the overlay preview for drag - no useSortable (rendered outside SortableContext) */
+export function QueueItemOverlay({ track }: { track: PlayrQueueItem }) {
+  return (
+    <div>
+      <div
+        className="group flex items-center gap-2 p-2 rounded-md opacity-50 bg-stone-800/80 transition-colors cursor-grabbing"
+        style={{ transform: 'scale(0.85)', transformOrigin: 'center center' }}
+      >
+        <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
+          {track.album?.cover?.url ? (
+            <img
+              src={track.album.cover.url}
+              alt={track.title}
+              className="h-full w-full object-cover opacity-80"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center opacity-80">
+              <MusicNotesIcon className="text-white/20" size={16} />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-white/60 truncate">{track.title}</div>
+          <div className="text-xs text-white/40 truncate">
+            {track.artists?.map((a: { name: string }) => a.name).join(', ')}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: QueueItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: track.uniqueId,
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: isDragging ? undefined : CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 1 : 0,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.2 : 1,
   };
+
+  const hoverDisabled = isDragActive || isDragging;
 
   return (
     <motion.div
@@ -32,13 +69,19 @@ export function QueueItem({ track, onPlay, onRemove }: QueueItemProps) {
       exit={{ opacity: 0, scale: 0.8, filter: 'blur(8px)', transition: { duration: 0.2 } }}
       ref={setNodeRef}
       style={style}
-      className="group flex items-center gap-2 p-2 rounded-md hover:bg-white/5 transition-colors cursor-pointer"
+      className={cn(
+        'group flex items-center gap-2 p-2 rounded-md transition-colors cursor-pointer',
+        !hoverDisabled && 'hover:bg-white/5',
+      )}
       onClick={() => onPlay(track)}
     >
       <div
         {...attributes}
         {...listeners}
-        className="text-white/20 hover:text-white/50 cursor-grab active:cursor-grabbing p-1 -ml-1"
+        className={cn(
+          'text-white/20 cursor-grab active:cursor-grabbing p-1 -ml-1',
+          !hoverDisabled && 'hover:text-white/50',
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <DotsSixVerticalIcon size={20} />
@@ -49,19 +92,37 @@ export function QueueItem({ track, onPlay, onRemove }: QueueItemProps) {
           <img
             src={track.album.cover.url}
             alt={track.title}
-            className="h-full w-full object-cover group-hover:opacity-40 transition-opacity"
+            className={cn(
+              'h-full w-full object-cover transition-opacity',
+              !hoverDisabled && 'group-hover:opacity-40',
+            )}
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center group-hover:opacity-40 transition-opacity">
+          <div
+            className={cn(
+              'h-full w-full flex items-center justify-center transition-opacity',
+              !hoverDisabled && 'group-hover:opacity-40',
+            )}
+          >
             <MusicNotesIcon className="text-white/20" size={16} />
           </div>
         )}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <div
+          className={cn(
+          'absolute inset-0 flex items-center justify-center transition-opacity opacity-0',
+          !hoverDisabled && 'group-hover:opacity-100',
+        )}
+        >
           <PlayIcon weight="fill" className="text-white" size={16} />
         </div>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-white/90 truncate group-hover:text-white">
+        <div
+          className={cn(
+          'text-sm font-medium text-white/90 truncate',
+          !hoverDisabled && 'group-hover:text-white',
+        )}
+        >
           {track.title}
         </div>
         <div className="text-xs text-white/50 truncate">
@@ -71,7 +132,10 @@ export function QueueItem({ track, onPlay, onRemove }: QueueItemProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-white/20 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
+        className={cn(
+          'h-8 w-8 text-white/20 transition-all opacity-0',
+          !hoverDisabled && 'group-hover:opacity-100 hover:text-red-400 hover:bg-red-400/10',
+        )}
         onClick={(e) => onRemove(track.uniqueId, e)}
       >
         <TrashIcon />

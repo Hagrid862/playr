@@ -75,7 +75,7 @@ describe('AuthController', () => {
       await controller.logout(req, res);
 
       expect(commandBus.execute).toHaveBeenCalledWith(new LogoutCommand('session-id'));
-      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', { path: '/auth/refresh' });
+      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', { path: '/' });
     });
 
     it('should not execute LogoutCommand if sessionId is missing but still clear cookie', async () => {
@@ -85,7 +85,7 @@ describe('AuthController', () => {
       await controller.logout(req, res);
 
       expect(commandBus.execute).not.toHaveBeenCalled();
-      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', { path: '/auth/refresh' });
+      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', { path: '/' });
     });
   });
 

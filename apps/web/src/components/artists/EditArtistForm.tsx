@@ -368,7 +368,7 @@ export function EditArtistForm({
         <Button variant="ghost" type="button" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading} className="min-w-32 group rounded-xl">
+        <Button type="submit" disabled={isLoading} className="min-w-32 group">
           {isLoading ? (
             <>
               <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />

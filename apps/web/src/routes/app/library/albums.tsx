@@ -1,7 +1,14 @@
 import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useLibraryStore } from '@/stores/library.store';
-import { PlusIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, PlusIcon, PlusSquareIcon } from '@phosphor-icons/react';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/app/library/albums')({
@@ -14,6 +21,7 @@ function AlbumLayout() {
 
   const isIndex =
     location.pathname === '/app/library/albums' || location.pathname === '/app/library/albums/';
+  const isBulkCreate = segments.includes('bulk-create');
   const isCreate = segments.includes('create');
   const isEdit = segments.includes('edit');
   const isAddContent = segments.includes('add-content');
@@ -26,8 +34,10 @@ function AlbumLayout() {
     albumId ? state.privateAlbums.find((a) => a.id === albumId) : null,
   );
 
-  const title = isCreate
-    ? 'Create Album'
+  const title = isBulkCreate
+    ? 'Bulk Create Album'
+    : isCreate
+      ? 'Create Album'
     : isEdit
       ? `Edit ${album?.name ?? 'Album'}`
       : isAddContent
@@ -49,12 +59,29 @@ function AlbumLayout() {
               </Link>
             </Button>
           ) : album?.visibility === 'private' && isDetail && albumId ? (
-            <Button variant="outline" asChild>
-              <Link to="/app/library/albums/$id/add-content" params={{ id: albumId }}>
-                <PlusIcon />
-                Add Content
-              </Link>
-            </Button>
+            <ButtonGroup>
+              <Button variant="outline" asChild>
+                <Link to="/app/library/albums/$id/add-content" params={{ id: albumId }}>
+                  <PlusIcon />
+                  Add Content
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <CaretDownIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/app/library/albums/$id/add-content/bulk" params={{ id: albumId }}>
+                      <PlusSquareIcon size={18} className="mr-2" />
+                      Bulk Upload
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ButtonGroup>
           ) : null
         }
         showBackButton={!isIndex}
