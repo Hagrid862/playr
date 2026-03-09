@@ -10,7 +10,8 @@ export interface PlayerState {
   volume: number;
   currentTime: number;
   duration: number;
-  quality: StreamAudioQuality;
+  quality: StreamAudioQuality | 'auto';
+  availableQualities: (StreamAudioQuality | 'auto')[];
   queue: QueueItem[];
   originalQueue: QueueItem[];
   history: QueueItem[];
@@ -25,7 +26,8 @@ export interface PlayerState {
   setVolume: (volume: number) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
-  setQuality: (quality: StreamAudioQuality) => void;
+  setQuality: (quality: StreamAudioQuality | 'auto') => void;
+  setAvailableQualities: (qualities: (StreamAudioQuality | 'auto')[]) => void;
   setQueue: (queue: ZodTrack[]) => void;
   nextTrack: () => void;
   previousTrack: () => void;
@@ -68,7 +70,8 @@ export const usePlayerStore = create<PlayerState>()(
       volume: 1,
       currentTime: 0,
       duration: 0,
-      quality: StreamAudioQuality.standard,
+      quality: 'auto',
+      availableQualities: ['auto'] as (StreamAudioQuality | 'auto')[],
       queue: [],
       originalQueue: [],
       history: [],
@@ -136,6 +139,7 @@ export const usePlayerStore = create<PlayerState>()(
       setCurrentTime: (currentTime) => set({ currentTime }),
       setDuration: (duration) => set({ duration }),
       setQuality: (quality) => set({ quality }),
+      setAvailableQualities: (availableQualities) => set({ availableQualities }),
       setQueue: (queue) =>
         set({
           queue: queue.map(toQueueItem),

@@ -45,7 +45,7 @@ export class AlbumsController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
-  ) { }
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)

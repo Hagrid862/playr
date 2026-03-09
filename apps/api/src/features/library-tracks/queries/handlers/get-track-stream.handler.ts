@@ -35,8 +35,7 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
       switch (target) {
         case StreamAudioQuality.lossless:
-          if (format === AudioFormat.flac) return 100;
-          if (quality === AudioQuality.original) return 90;
+          if (format === AudioFormat.flac || format === AudioFormat.wav) return 100;
           return 0;
 
         case StreamAudioQuality.high:
