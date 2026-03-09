@@ -2,6 +2,10 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { ConfigService } from '@nestjs/config';
 import { Response as ExpressResponse } from 'express';
 import { map } from 'rxjs/operators';
+import {
+  REFRESH_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
+} from '../constants/cookie.constants';
 
 @Injectable()
 export class RefreshTokenInterceptor implements NestInterceptor {
@@ -15,12 +19,9 @@ export class RefreshTokenInterceptor implements NestInterceptor {
         if (data && data.refreshToken) {
           const { refreshToken, ...rest } = data;
 
-          response.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
+          response.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+            ...REFRESH_TOKEN_COOKIE_OPTIONS,
             secure: this.config.get('NODE_ENV') === 'production',
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
           });
 
           // Return data without the refreshToken to prevent it from reaching the client body

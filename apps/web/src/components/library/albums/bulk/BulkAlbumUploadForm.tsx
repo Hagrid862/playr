@@ -1,16 +1,16 @@
+import { GlobalDropzone } from '@/components/ui/GlobalDropzone';
 import { Separator } from '@/components/ui/separator';
 import { useCreateLibraryAlbum } from '@/hooks/api/library-albums/useCreateLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
-import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists';
+import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { useBulkAlbumUploadForm } from '@/hooks/forms/useBulkAlbumUploadForm';
 import { useLibraryStore } from '@/stores/library.store';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { CoverSelectionBanner } from '../../tracks/CoverSelectionBanner';
+import { CoverSelectionBanner } from '../../tracks/bulk/CoverSelectionBanner';
 import { BulkAlbumDetailsSection } from './BulkAlbumDetailsSection';
-import { BulkAlbumFileDropzone } from './BulkAlbumFileDropzone';
 import { BulkAlbumProcessingOverlay } from './BulkAlbumProcessingOverlay';
 import { BulkAlbumTracksSection } from './BulkAlbumTracksSection';
 
@@ -21,8 +21,7 @@ export function BulkAlbumUploadForm() {
   const artists = useLibraryStore((state) => state.privateArtists);
 
   const { mutateAsync: createAlbum, isPending: isCreatingAlbum } = useCreateLibraryAlbum();
-  const { mutateAsync: uploadCover, isPending: isUploadingCover } =
-    useUploadLibraryAlbumCover();
+  const { mutateAsync: uploadCover, isPending: isUploadingCover } = useUploadLibraryAlbumCover();
   const { mutateAsync: bulkCreateTracks, isPending: isUploadingTracks } =
     useBulkCreateLibraryTracks();
 
@@ -115,17 +114,36 @@ export function BulkAlbumUploadForm() {
         : 'Scanning tracks for cover art...';
 
   return (
-    <div className="flex flex-col gap-6">
-      {isProcessing && (
-        <BulkAlbumProcessingOverlay message={processingMessage} />
-      )}
+    <GlobalDropzone
+      onDrop={addFiles}
+      className="flex flex-col gap-6"
+      overlayTitle="Drop audio files to upload"
+      overlayDescription="Your tracks will be processed automatically"
+    >
+      {isProcessing && <BulkAlbumProcessingOverlay message={processingMessage} />}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <BulkAlbumFileDropzone
-          tracksCount={tracks.length}
-          onFilesAdded={addFiles}
-          fileInputRef={fileInputRef}
-        />
+        {tracks.length === 0 && (
+          <div
+            className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-muted-foreground/25 rounded-xl bg-muted/5 cursor-pointer hover:border-muted-foreground/50 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = '';
+              }}
+            />
+            <p className="text-sm text-muted-foreground">
+              Drop audio files anywhere or click to start uploading
+            </p>
+          </div>
+        )}
 
         {tracks.length > 0 && (
           <>
@@ -163,6 +181,6 @@ export function BulkAlbumUploadForm() {
           </>
         )}
       </form>
-    </div>
+    </GlobalDropzone>
   );
 }

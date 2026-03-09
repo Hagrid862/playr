@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["src", "playwright.config.ts"]
 }

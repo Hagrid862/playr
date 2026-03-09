@@ -30,7 +30,10 @@ export class PlayerPage {
     // Stable selectors for PlayerTrackInfo
     this.trackTitle = page.getByTestId("track-title");
     this.trackArtist = page.getByTestId("track-artist");
-    this.progressSlider = page.locator('div[role="slider"]').first();
+    // Prefer data-testid; fallback to first slider (progress) when volume popover is closed
+    this.progressSlider = page
+      .getByTestId("progress-slider")
+      .or(page.getByRole("slider").first());
 
     this.moreActionsButton = page.getByRole("button", {
       name: "More Player Actions",

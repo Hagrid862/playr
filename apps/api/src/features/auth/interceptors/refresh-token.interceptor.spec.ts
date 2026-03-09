@@ -1,10 +1,10 @@
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CallHandler, ExecutionContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { RefreshTokenInterceptor } from './refresh-token.interceptor';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { of } from 'rxjs';
 import { Response } from 'express';
+import { of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RefreshTokenInterceptor } from './refresh-token.interceptor';
 
 describe('RefreshTokenInterceptor', () => {
   let interceptor: RefreshTokenInterceptor;
@@ -54,6 +54,7 @@ describe('RefreshTokenInterceptor', () => {
         httpOnly: true,
         secure: false,
         path: '/',
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       }),
     );

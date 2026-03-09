@@ -20,6 +20,38 @@ class ResizeObserverMock implements ResizeObserver {
 vi.stubGlobal('ResizeObserver', ResizeObserverMock);
 
 /**
+ * DataTransfer Polyfill
+ * JSDOM does not provide DataTransfer. Required for drag-and-drop tests.
+ */
+if (typeof globalThis.DataTransfer === 'undefined') {
+  class DataTransferPolyfill {
+    private _files: File[] = [];
+
+    get items() {
+      const files = this._files;
+      return {
+        get length() {
+          return files.length;
+        },
+        add(file: File) {
+          files.push(file);
+        },
+      };
+    }
+
+    get files(): FileList {
+      const list = this._files;
+      const fileList = Object.assign([...list], {
+        item: (i: number) => list[i] ?? null,
+        length: list.length,
+      }) as FileList;
+      return fileList;
+    }
+  }
+  vi.stubGlobal('DataTransfer', DataTransferPolyfill);
+}
+
+/**
  * PointerEvent Mock
  * JSDOM 27 provides native PointerEvent support. We only provide a fallback
  * implementation for environments where it might be missing.

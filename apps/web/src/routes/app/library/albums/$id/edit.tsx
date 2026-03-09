@@ -1,8 +1,8 @@
-import { EditAlbumForm } from '@/components/library/albums/EditAlbumForm';
+import { EditAlbumForm } from '@/components/library/albums/edit/EditAlbumForm';
+import { useDeleteLibraryAlbumCover } from '@/hooks/api/library-albums/useDeleteLibraryAlbumCover';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useUpdateLibraryAlbum } from '@/hooks/api/library-albums/useUpdateLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
-import { useDeleteLibraryAlbumCover } from '@/hooks/api/library-albums/useDeleteLibraryAlbumCover';
 import type { UpdateLibraryAlbumRequest } from '@repo/contracts';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 

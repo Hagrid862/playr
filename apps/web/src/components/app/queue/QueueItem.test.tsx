@@ -1,7 +1,7 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { QueueItem } from './QueueItem';
+import { QueueItem, QueueItemOverlay } from './QueueItem';
 
 import { useSortable } from '@dnd-kit/sortable';
 
@@ -116,5 +116,63 @@ describe('QueueItem', () => {
     render(<QueueItem track={mockTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
     const container = screen.getByText('Test Title').closest('.group');
     expect(container).toHaveStyle({ zIndex: 1 });
+  });
+
+  it('joins multiple artist names correctly', () => {
+    const multiArtistTrack = {
+      ...mockTrack,
+      artists: [{ name: 'Artist A' }, { name: 'Artist B' }],
+    } as PlayrQueueItem;
+
+    render(<QueueItem track={multiArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
+  });
+
+  it('disables hover styles when isDragActive is true', () => {
+    const { container } = render(
+      <QueueItem track={mockTrack} onPlay={vi.fn()} onRemove={vi.fn()} isDragActive={true} />,
+    );
+    const group = container.querySelector('.group');
+    expect(group).not.toHaveClass('hover:bg-white/5');
+  });
+});
+
+describe('QueueItemOverlay', () => {
+  const mockTrack = {
+    uniqueId: 'test-1',
+    title: 'Test Title',
+    artists: [{ name: 'Test Artist' }],
+    album: { cover: { url: 'http://example.com/cover.jpg' } },
+  } as PlayrQueueItem;
+
+  it('renders with album cover', () => {
+    render(<QueueItemOverlay track={mockTrack} />);
+    expect(screen.getByText('Test Title')).toBeInTheDocument();
+    expect(screen.getByText('Test Artist')).toBeInTheDocument();
+    expect(screen.getByAltText('Test Title')).toHaveAttribute(
+      'src',
+      'http://example.com/cover.jpg',
+    );
+  });
+
+  it('renders fallback icon without cover', () => {
+    const noCoverTrack = {
+      ...mockTrack,
+      album: { cover: null },
+    } as unknown as PlayrQueueItem;
+
+    render(<QueueItemOverlay track={noCoverTrack} />);
+    expect(screen.getByText('Test Title')).toBeInTheDocument();
+    expect(screen.queryByAltText('Test Title')).not.toBeInTheDocument();
+  });
+
+  it('joins multiple artist names correctly', () => {
+    const multiArtistTrack = {
+      ...mockTrack,
+      artists: [{ name: 'Artist A' }, { name: 'Artist B' }],
+    } as PlayrQueueItem;
+
+    render(<QueueItemOverlay track={multiArtistTrack} />);
+    expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
   });
 });

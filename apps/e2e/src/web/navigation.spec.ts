@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { DashboardPage } from "./dashboard.po";
+import { LibraryArtistsPage } from "./library-artists.po";
 import { LoginPage } from "./login.po";
 import { RegistrationPage } from "./registration.po";
-import { LibraryArtistsPage } from "./library-artists.po";
 
 test.describe("Navigation Flow", () => {
   let loginPage: LoginPage;
@@ -71,19 +71,6 @@ test.describe("Navigation Flow", () => {
   });
 
   test("should persist authentication state on reload", async ({ page }) => {
-    // Add telemetry for localStorage
-    await page.addInitScript(() => {
-      const originalSetItem = localStorage.setItem;
-      localStorage.setItem = function (key, value) {
-        const length =
-          value != null && typeof value === "string" ? value.length : "unknown";
-        console.log(
-          `TELEMETRY: localStorage.setItem('${key}', valueLength=${length})`,
-        );
-        originalSetItem.apply(this, [key, value]);
-      };
-    });
-
     await page.goto("/app/library/overview");
     await page.waitForLoadState("networkidle");
     // Verify we are on Library Overview
@@ -100,16 +87,33 @@ test.describe("Navigation Flow", () => {
       await expect(dashboardPage.sidebar).toBeVisible({ timeout: 15000 });
     }
 
-    // Wait for localStorage to be populated
+    // Wait for auth state to be persisted in IndexedDB (auth store uses idb-keyval, not localStorage)
     await page.waitForFunction(
       () => {
-        try {
-          return localStorage.getItem("auth-storage") !== null;
-        } catch {
-          return false;
-        }
+        return new Promise<boolean>((resolve) => {
+          try {
+            const request = indexedDB.open("keyval-store");
+            request.onsuccess = () => {
+              const db = request.result;
+              const tx = db.transaction("keyval", "readonly");
+              const store = tx.objectStore("keyval");
+              const getReq = store.get("auth-storage");
+              getReq.onsuccess = () => {
+                db.close();
+                resolve(getReq.result != null && getReq.result !== undefined);
+              };
+              getReq.onerror = () => {
+                db.close();
+                resolve(false);
+              };
+            };
+            request.onerror = () => resolve(false);
+          } catch {
+            resolve(false);
+          }
+        });
       },
-      { timeout: 5000 },
+      { timeout: 15000 },
     );
 
     await page.reload();
@@ -117,9 +121,30 @@ test.describe("Navigation Flow", () => {
 
     // Check if we were redirected to login
     let currentUrl = page.url();
-    const localStorageAuth = await page.evaluate(() =>
-      localStorage.getItem("auth-storage"),
-    );
+    const idbAuth = await page.evaluate(async () => {
+      return new Promise<unknown>((resolve) => {
+        try {
+          const request = indexedDB.open("keyval-store");
+          request.onsuccess = () => {
+            const db = request.result;
+            const tx = db.transaction("keyval", "readonly");
+            const store = tx.objectStore("keyval");
+            const getReq = store.get("auth-storage");
+            getReq.onsuccess = () => {
+              db.close();
+              resolve(getReq.result);
+            };
+            getReq.onerror = () => {
+              db.close();
+              resolve(null);
+            };
+          };
+          request.onerror = () => resolve(null);
+        } catch {
+          resolve(null);
+        }
+      });
+    });
     console.log(`URL after reload: ${currentUrl}`);
 
     if (currentUrl.includes("/auth/login")) {
@@ -132,7 +157,7 @@ test.describe("Navigation Flow", () => {
 
     if (currentUrl.includes("/auth/login")) {
       throw new Error(
-        `Session lost after reload: redirected to ${currentUrl}. LocalStorage auth: ${localStorageAuth}`,
+        `Session lost after reload: redirected to ${currentUrl}. IndexedDB auth: ${JSON.stringify(idbAuth)}`,
       );
     }
 

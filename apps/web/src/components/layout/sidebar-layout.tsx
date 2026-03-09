@@ -5,10 +5,10 @@ import { useIsMounted } from '@/hooks/use-is-mounted';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Lyrics } from '../app/Lyrics';
 import { AppPlayer } from '../app/Player';
 import { Queue } from '../app/Queue';
-import { Lyrics } from '../app/Lyrics';
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const { isQueueOpen, setQueueOpen, sidebarView } = usePlayerStore();
@@ -46,7 +46,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             <div className="flex-1 overflow-y-auto w-full">
               <main className="w-full pb-32">{children}</main>
             </div>
-            <div className="absolute p-2 bottom-2 left-0 right-0 z-10 h-16 flex items-center justify-center max-w-[calc(100vw-2rem)] min-[800px]:max-w-250 mx-auto">
+            <div className="absolute p-2 bottom-2 left-0 right-0 z-[60] h-16 flex items-center justify-center max-w-[calc(100vw-2rem)] min-[800px]:max-w-250 mx-auto">
               <AppPlayer />
             </div>
           </div>

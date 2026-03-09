@@ -23,7 +23,11 @@ const initialFormData: BulkAlbumFormData = {
   releaseDate: null,
 };
 
-export type BulkAlbumUploadStep = 'idle' | 'creating-album' | 'uploading-cover' | 'uploading-tracks';
+export type BulkAlbumUploadStep =
+  | 'idle'
+  | 'creating-album'
+  | 'uploading-cover'
+  | 'uploading-tracks';
 
 export function useBulkAlbumUploadForm() {
   const [formData, setFormData] = useState<BulkAlbumFormData>(initialFormData);
@@ -72,8 +76,7 @@ export function useBulkAlbumUploadForm() {
         setFormData((prev) => ({
           ...prev,
           name: prev.name || albumName,
-          releaseDate:
-            prev.releaseDate ?? (year ? new Date(year, 0, 1) : null),
+          releaseDate: prev.releaseDate ?? (year ? new Date(year, 0, 1) : null),
         }));
 
         // Update track titles and numbers from metadata
@@ -208,17 +211,17 @@ export function useBulkAlbumUploadForm() {
     }
   }, []);
 
-  const updateFormData = useCallback(<K extends keyof BulkAlbumFormData>(
-    field: K,
-    value: BulkAlbumFormData[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  const updateFormData = useCallback(
+    <K extends keyof BulkAlbumFormData>(field: K, value: BulkAlbumFormData[K]) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
 
   const selectedCoverFile = useMemo(
     () =>
       selectedCoverTrackId != null
-        ? tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ?? null
+        ? (tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ?? null)
         : null,
     [selectedCoverTrackId, tracksWithCovers],
   );

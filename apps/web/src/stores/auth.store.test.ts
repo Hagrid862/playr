@@ -1,6 +1,14 @@
 import { ZodUser } from '@repo/contracts';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from './auth.store';
+
+vi.mock('./idb-storage', () => ({
+  idbStorage: {
+    getItem: vi.fn().mockRejectedValue(new Error('rehydration failed')),
+    setItem: vi.fn().mockResolvedValue(undefined),
+    removeItem: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 const mockUser: ZodUser = {
   id: 'user-1',

@@ -1,13 +1,13 @@
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { RefreshTokensHandler } from './refresh-tokens.handler';
-import { RefreshTokensCommand } from '../impl/refresh-tokens.command';
-import { TokenService } from '../../services/token.service';
+import { User } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionRepository } from '../../../../shared/repositories/session.repository';
 import { UserRepository } from '../../../../shared/repositories/user.repository';
-import { UnauthorizedException } from '@nestjs/common';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { User } from '@repo/db';
+import { TokenService } from '../../services/token.service';
+import { RefreshTokensCommand } from '../impl/refresh-tokens.command';
+import { RefreshTokensHandler } from './refresh-tokens.handler';
 
 describe('RefreshTokensHandler', () => {
   let handler: RefreshTokensHandler;
@@ -93,18 +93,21 @@ describe('RefreshTokensHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow('Invalid refresh token');
     });
 
-    it('should revoke session and throw if token is already revoked', async () => {
+    it('should throw if token is already revoked (no session revoke)', async () => {
       // Arrange
       tokenService.verifyRefreshToken.mockResolvedValue({
         userId: mockUserId,
         sessionId: mockSessionId,
         isRevoked: true,
       });
+      sessionRepository.revoke.mockResolvedValue({ id: mockSessionId } as never);
       const command = new RefreshTokensCommand(mockRefreshToken);
 
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow(UnauthorizedException);
-      await expect(handler.execute(command)).rejects.toThrow('Security breach detected');
+      await expect(handler.execute(command)).rejects.toThrow(
+        'Security breach detected. Please login again.',
+      );
       expect(sessionRepository.revoke).toHaveBeenCalledWith(mockSessionId);
     });
 

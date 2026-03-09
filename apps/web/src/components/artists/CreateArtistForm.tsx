@@ -20,6 +20,8 @@ interface CreateArtistFormProps {
   isLoading: boolean;
   serverErrors?: Partial<Record<keyof CreateLibraryArtistRequest, string>>;
   onSubmit: (values: CreateLibraryArtistRequest, avatarFile?: File) => Promise<void>;
+  /** @internal When false, file input is not rendered. Used by tests to cover ref-null branch. */
+  _testHideFileInput?: boolean;
 }
 
 /**
@@ -40,7 +42,12 @@ const validateWithZod = (value: CreateLibraryArtistRequest) => {
   return errors;
 };
 
-export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateArtistFormProps) {
+export function CreateArtistForm({
+  isLoading,
+  serverErrors,
+  onSubmit,
+  _testHideFileInput = false,
+}: CreateArtistFormProps) {
   const [avatarFile, setAvatarFile] = useState<File>();
   const [previewUrl, setPreviewUrl] = useState<string>();
   const [isDragging, setIsDragging] = useState(false);
@@ -203,13 +210,15 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
 
       <div className="flex flex-col md:flex-row gap-10">
         <div className="flex flex-col items-center gap-3">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-          />
+          {!_testHideFileInput && (
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+          )}
           <div
             onClick={handleAvatarClick}
             className="group relative w-32 h-32 rounded-full bg-stone-800 border-2 border-dashed border-border flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors cursor-pointer"

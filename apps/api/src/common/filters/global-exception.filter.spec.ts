@@ -1,15 +1,19 @@
-import { createMock } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GlobalExceptionFilter } from './global-exception.filter';
 
 describe('GlobalExceptionFilter', () => {
   let filter: GlobalExceptionFilter;
+  let configService: DeepMocked<ConfigService>;
 
   beforeEach(() => {
     vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    filter = new GlobalExceptionFilter();
+    configService = createMock<ConfigService>();
+    configService.get.mockReturnValue('development');
+    filter = new GlobalExceptionFilter(configService);
   });
 
   afterEach(() => {

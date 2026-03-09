@@ -27,7 +27,6 @@ export function cleanFilenameToTitle(
   const toRemove = [...context.artists.filter(Boolean), context.album?.trim()].filter(Boolean);
 
   for (const item of toRemove) {
-    if (!item) continue;
     const escaped = escapeRegExp(item);
     // Match at start: "Artist - " or "Artist -"
     title = title.replace(new RegExp(`^${escaped}\\s*[\\-_]?\\s*`, 'gi'), ' ');
