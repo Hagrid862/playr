@@ -54,6 +54,17 @@ describe('TrackRepository', () => {
       expect(result).toEqual(mockTrack);
       expect(mockTx.track.findFirst).toHaveBeenCalledWith({
         where: { id: 'track-123', deletedAt: null },
+        include: undefined,
+      });
+    });
+
+    it('should include relations when requested', async () => {
+      mockTx.track.findFirst.mockResolvedValue(mockTrack);
+      const result = await repository.findOne({ id: 'track-123' }, true);
+      expect(result).toEqual(mockTrack);
+      expect(mockTx.track.findFirst).toHaveBeenCalledWith({
+        where: { id: 'track-123', deletedAt: null },
+        include: { artists: true, album: true },
       });
     });
   });

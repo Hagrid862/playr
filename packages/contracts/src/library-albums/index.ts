@@ -10,3 +10,4 @@ export * from "./response/delete-library-album.response";
 export * from "./response/get-library-album.response";
 export * from "./response/update-library-album.response";
 export * from "./response/upload-library-album-cover.response";
+export * from "./response/get-library-album-tracks.response";
