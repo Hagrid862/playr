@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { UserSchema } from "../schemas";
-import { createApiResponseSchema } from "../api/response.schema";
 
 export const LoginRequestSchema = z.object({
   email: z
@@ -17,12 +15,3 @@ export const LoginRequestSchema = z.object({
 });
 
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
-
-export const LoginResponseSchema = createApiResponseSchema(
-  z.object({
-    accessToken: z.string(),
-    user: UserSchema,
-  }),
-);
-
-export type LoginResponse = z.infer<typeof LoginResponseSchema>;

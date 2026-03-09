@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createApiResponseSchema } from "../api/response.schema";
+import { createApiResponseSchema } from "../../api/response.schema";
 
 export const LogoutResponseSchema = createApiResponseSchema(z.object({}));
 
