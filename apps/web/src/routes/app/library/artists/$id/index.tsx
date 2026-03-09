@@ -20,6 +20,9 @@ import {
   DiscIcon,
   DotsThreeIcon,
   HeartIcon,
+  ListBulletsIcon,
+  MusicNoteIcon,
+  MusicNotesIcon,
   PencilIcon,
   PlayIcon,
   PlusIcon,
@@ -56,7 +59,31 @@ function RouteComponent() {
     AlbumType.album,
   );
 
+  const { data: epsData, isLoading: isEpsLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    10,
+    AlbumType.ep,
+  );
+
+  const { data: singlesData, isLoading: isSinglesLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    10,
+    AlbumType.single,
+  );
+
+  const { data: compilationsData, isLoading: isCompilationsLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    10,
+    AlbumType.compilation,
+  );
+
   const albums = albumsData?.data?.items?.map((item) => item.album) || [];
+  const eps = epsData?.data?.items?.map((item) => item.album) || [];
+  const singles = singlesData?.data?.items?.map((item) => item.album) || [];
+  const compilations = compilationsData?.data?.items?.map((item) => item.album) || [];
 
   const handleDelete = async () => {
     try {
@@ -108,7 +135,7 @@ function RouteComponent() {
         {/* Avatar & Quick Info */}
         <div className="px-6 -mt-24 flex flex-col md:flex-row items-end gap-6 relative z-10">
           {/* Avatar */}
-          <div className="size-44 p-0 rounded-2xl shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
+          <div className="size-44 p-0 rounded-full shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
             {artist.avatar?.url || artist.avatarId ? (
               <img
                 src={artist.avatar?.url || `/api/images/${artist.avatarId}`}
@@ -135,14 +162,14 @@ function RouteComponent() {
         <div className="flex items-center gap-3">
           <Button
             size="lg"
-            className="h-12 rounded-xl gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
+            className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
           >
             <PlayIcon weight="fill" size={20} /> Play
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="h-12 rounded-xl gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
+            className="h-12 rounded-lg gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
           >
             <ShuffleIcon weight="bold" size={20} /> Shuffle
           </Button>
@@ -150,7 +177,7 @@ function RouteComponent() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
               aria-label="Add to favorites"
             >
               <HeartIcon size={24} />
@@ -160,7 +187,7 @@ function RouteComponent() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                  className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
                   aria-label="More options"
                 >
                   <DotsThreeIcon size={24} weight="bold" />
@@ -251,6 +278,150 @@ function RouteComponent() {
             </div>
           )}
         </div>
+
+        {/* EPs Section */}
+        {(isEpsLoading || eps.length > 0) && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-white/90">EPs</h3>
+              {eps.length > 5 && (
+                <Button
+                  variant="link"
+                  className="text-muted-foreground hover:text-primary p-0 h-auto"
+                >
+                  Show all
+                </Button>
+              )}
+            </div>
+
+            {isEpsLoading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                    <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+                {eps.map((album) => {
+                  if (!album) return null;
+                  return (
+                    <MediaCard
+                      key={album.id}
+                      id={album.id}
+                      title={album.name}
+                      subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                      coverUrl={album.cover?.url ?? undefined}
+                      link={`/app/library/albums/${album.id}`}
+                      placeholderIcon={
+                        <MusicNotesIcon className="size-1/2 text-stone-400" weight="duotone" />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Singles Section */}
+        {(isSinglesLoading || singles.length > 0) && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-white/90">Singles</h3>
+              {singles.length > 5 && (
+                <Button
+                  variant="link"
+                  className="text-muted-foreground hover:text-primary p-0 h-auto"
+                >
+                  Show all
+                </Button>
+              )}
+            </div>
+
+            {isSinglesLoading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                    <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+                {singles.map((album) => {
+                  if (!album) return null;
+                  return (
+                    <MediaCard
+                      key={album.id}
+                      id={album.id}
+                      title={album.name}
+                      subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                      coverUrl={album.cover?.url ?? undefined}
+                      link={`/app/library/albums/${album.id}`}
+                      placeholderIcon={
+                        <MusicNoteIcon className="size-1/2 text-stone-400" weight="duotone" />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Compilations Section */}
+        {(isCompilationsLoading || compilations.length > 0) && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-white/90">Compilations</h3>
+              {compilations.length > 5 && (
+                <Button
+                  variant="link"
+                  className="text-muted-foreground hover:text-primary p-0 h-auto"
+                >
+                  Show all
+                </Button>
+              )}
+            </div>
+
+            {isCompilationsLoading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                    <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+                {compilations.map((album) => {
+                  if (!album) return null;
+                  return (
+                    <MediaCard
+                      key={album.id}
+                      id={album.id}
+                      title={album.name}
+                      subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                      coverUrl={album.cover?.url ?? undefined}
+                      link={`/app/library/albums/${album.id}`}
+                      placeholderIcon={
+                        <ListBulletsIcon className="size-1/2 text-stone-400" weight="duotone" />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

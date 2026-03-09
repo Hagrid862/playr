@@ -78,6 +78,7 @@ function RouteComponent() {
         formData={formData}
         isLoading={isCreatingAlbum || isUploadingCover}
         isValid={isFormValid}
+        type="album"
         onSubmit={handleFormSubmit}
         onChange={handleChange}
         onBlur={handleBlur}
