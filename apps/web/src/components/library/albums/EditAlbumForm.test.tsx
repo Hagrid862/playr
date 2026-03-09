@@ -239,6 +239,7 @@ describe('EditAlbumForm', () => {
           name: 'Updated Album',
         }),
         file,
+        false,
       );
     });
   });
@@ -331,6 +332,7 @@ describe('EditAlbumForm', () => {
           releaseDate: null,
         }),
         undefined,
+        false,
       );
     });
   });

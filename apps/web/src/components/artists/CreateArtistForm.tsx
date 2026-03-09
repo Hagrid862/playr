@@ -5,6 +5,15 @@ import { CreateLibraryArtistRequest, CreateLibraryArtistRequestSchema } from '@r
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { Separator } from '../ui/separator';
 
 interface CreateArtistFormProps {
@@ -34,6 +43,9 @@ const validateWithZod = (value: CreateLibraryArtistRequest) => {
 export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateArtistFormProps) {
   const [avatarFile, setAvatarFile] = useState<File>();
   const [previewUrl, setPreviewUrl] = useState<string>();
+  const [isDragging, setIsDragging] = useState(false);
+  const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
+  const [isMultipleFilesModalOpen, setIsMultipleFilesModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm({
@@ -73,6 +85,70 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
     };
   }, [previewUrl]);
 
+  useEffect(() => {
+    let dragCounter = 0;
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        setIsDragging(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        setIsDragging(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsDragging(false);
+
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        if (e.dataTransfer.files.length > 1) {
+          setIsMultipleFilesModalOpen(true);
+          return;
+        }
+
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith('image/')) {
+          setAvatarFile(file);
+          const objectUrl = URL.createObjectURL(file);
+          setPreviewUrl(objectUrl);
+
+          if (fileInputRef.current) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInputRef.current.files = dataTransfer.files;
+          }
+        } else {
+          setIsFormatModalOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, []);
+
   return (
     <form
       onSubmit={(e) => {
@@ -82,6 +158,49 @@ export function CreateArtistForm({ isLoading, serverErrors, onSubmit }: CreateAr
       }}
       className="flex flex-col gap-8"
     >
+      {isDragging && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="rounded-xl border-2 border-dashed border-primary bg-primary/10 p-12 text-center shadow-lg">
+            <h2 className="text-2xl font-bold text-primary">Drop avatar image here</h2>
+            <p className="mt-2 text-muted-foreground">Release to set the profile picture</p>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={isMultipleFilesModalOpen} onOpenChange={setIsMultipleFilesModalOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Too Many Files</DialogTitle>
+            <DialogDescription>
+              You can only upload one an avatar picture at a time. Please drop exactly one image
+              file.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button onClick={() => setIsMultipleFilesModalOpen(false)}>OK</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isFormatModalOpen} onOpenChange={setIsFormatModalOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Invalid File Format</DialogTitle>
+            <DialogDescription>
+              The file you dropped is not a supported image format. Please upload an image file.
+              Supported formats typically include JPG, PNG, WEBP, etc.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button onClick={() => setIsFormatModalOpen(false)}>OK</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex flex-col md:flex-row gap-10">
         <div className="flex flex-col items-center gap-3">
           <input

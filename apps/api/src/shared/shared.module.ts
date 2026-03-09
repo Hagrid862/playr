@@ -18,6 +18,7 @@ import { TrackRepository } from './repositories/track.repository';
 import { UserRepository } from './repositories/user.repository';
 import { HashingService } from './services/hashing.service';
 import { ImageService } from './services/image.service';
+import { ImageRepository } from './repositories/image.repository';
 import { PrismaService } from './services/prisma.service';
 import { StorageService } from './services/storage.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
@@ -46,6 +47,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     LibraryTrackRepository,
     TrackRepository,
     AudioFileRepository,
+    ImageRepository,
     // guards
     JwtAuthGuard,
     AlbumAccessGuard,
@@ -72,6 +74,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     LibraryTrackRepository,
     TrackRepository,
     AudioFileRepository,
+    ImageRepository,
     // guards
     JwtAuthGuard,
     AlbumAccessGuard,

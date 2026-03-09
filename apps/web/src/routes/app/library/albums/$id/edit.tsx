@@ -2,6 +2,7 @@ import { EditAlbumForm } from '@/components/library/albums/EditAlbumForm';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useUpdateLibraryAlbum } from '@/hooks/api/library-albums/useUpdateLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
+import { useDeleteLibraryAlbumCover } from '@/hooks/api/library-albums/useDeleteLibraryAlbumCover';
 import type { UpdateLibraryAlbumRequest } from '@repo/contracts';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
@@ -20,6 +21,7 @@ function EditAlbumComponent() {
     error: updateError,
   } = useUpdateLibraryAlbum();
   const { mutateAsync: uploadCover, isPending: isUploadingCover } = useUploadLibraryAlbumCover();
+  const { mutateAsync: deleteCover, isPending: isDeletingCover } = useDeleteLibraryAlbumCover();
 
   const album = albumResponse?.data;
 
@@ -40,13 +42,19 @@ function EditAlbumComponent() {
     );
   }
 
-  const handleUpdate = async (data: UpdateLibraryAlbumRequest, cover?: File) => {
+  const handleUpdate = async (
+    data: UpdateLibraryAlbumRequest,
+    cover?: File,
+    shouldDeleteCover?: boolean,
+  ) => {
     try {
-      await updateAlbum({ id, data });
-
-      if (cover) {
+      if (shouldDeleteCover) {
+        await deleteCover({ id });
+      } else if (cover) {
         await uploadCover({ id, file: cover });
       }
+
+      await updateAlbum({ id, data });
 
       navigate({ to: '/app/library/albums/$id', params: { id } });
     } catch (error) {
@@ -62,7 +70,7 @@ function EditAlbumComponent() {
     <div className="flex flex-col gap-8 max-w-3xl mx-auto py-8 px-4">
       <EditAlbumForm
         album={album}
-        isLoading={isUpdating || isUploadingCover}
+        isLoading={isUpdating || isUploadingCover || isDeletingCover}
         serverErrors={updateError?.status === 409 ? { name: updateError.message } : undefined}
         onSubmit={handleUpdate}
         onCancel={handleCancel}

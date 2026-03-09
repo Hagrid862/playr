@@ -1,5 +1,14 @@
 import { DatePickerField, SelectField, TextAreaField, TextField } from '@/components/form';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
   CameraIcon,
@@ -21,7 +30,11 @@ interface EditAlbumFormProps {
   album: ZodAlbum;
   isLoading: boolean;
   serverErrors?: Partial<Record<keyof UpdateLibraryAlbumRequest, string>>;
-  onSubmit: (values: UpdateLibraryAlbumRequest, cover?: File) => Promise<void>;
+  onSubmit: (
+    values: UpdateLibraryAlbumRequest,
+    cover?: File,
+    shouldDeleteCover?: boolean,
+  ) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -52,6 +65,11 @@ export function EditAlbumForm({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [coverPreview, setCoverPreview] = useState<string | undefined>(undefined);
   const [selectedCover, setSelectedCover] = useState<File | undefined>(undefined);
+  const [isCoverRemoved, setIsCoverRemoved] = useState(false);
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
+  const [isMultipleFilesModalOpen, setIsMultipleFilesModalOpen] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -59,12 +77,17 @@ export function EditAlbumForm({
       description: album.description || '',
       type: album.type,
       releaseDate: album.releaseDate || null,
+      coverId: album.coverId || undefined,
     } satisfies UpdateLibraryAlbumRequest,
     validators: {
       onChange: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value, selectedCover);
+      await onSubmit(
+        { ...value, coverId: isCoverRemoved ? null : value.coverId },
+        selectedCover,
+        isCoverRemoved,
+      );
     },
   });
 
@@ -73,6 +96,7 @@ export function EditAlbumForm({
     if (file) {
       setSelectedCover(file);
       setCoverPreview(URL.createObjectURL(file));
+      setIsCoverRemoved(false);
     } else {
       setSelectedCover(undefined);
       setCoverPreview(undefined);
@@ -82,18 +106,78 @@ export function EditAlbumForm({
   const handleRemoveCover = () => {
     setSelectedCover(undefined);
     setCoverPreview(undefined);
+    setIsCoverRemoved(true);
     // Safe: the file input is always rendered, so the ref is always attached
 
     coverInputRef.current!.value = '';
   };
 
   useEffect(() => {
+    let dragCounter = 0;
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        setIsDragging(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        setIsDragging(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsDragging(false);
+
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        if (e.dataTransfer.files.length > 1) {
+          setIsMultipleFilesModalOpen(true);
+          return;
+        }
+
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith('image/')) {
+          setSelectedCover(file);
+          setCoverPreview(URL.createObjectURL(file));
+          setIsCoverRemoved(false);
+
+          if (coverInputRef.current) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            coverInputRef.current.files = dataTransfer.files;
+          }
+        } else {
+          setIsFormatModalOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
     return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
       if (coverPreview) URL.revokeObjectURL(coverPreview);
     };
   }, [coverPreview]);
 
-  const currentCoverUrl = coverPreview || album.cover?.url;
+  const currentCoverUrl = coverPreview || (!isCoverRemoved ? album.cover?.url : undefined);
 
   return (
     <form
@@ -154,7 +238,7 @@ export function EditAlbumForm({
             </div>
           </div>
 
-          {coverPreview ? (
+          {currentCoverUrl ? (
             <Button
               variant="ghost"
               size="sm"
@@ -288,6 +372,53 @@ export function EditAlbumForm({
           )}
         </Button>
       </div>
+
+      {/* Global Drag Overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary/50 m-4 rounded-3xl">
+          <div className="flex flex-col items-center gap-4 text-primary pointer-events-none">
+            <div className="p-4 bg-primary/20 rounded-full animate-pulse">
+              <CameraIcon size={48} weight="duotone" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight">Drop cover image here</h2>
+            <p className="text-muted-foreground">The image will be set as the album cover</p>
+          </div>
+        </div>
+      )}
+
+      {/* Invalid Format Modal */}
+      <Dialog open={isFormatModalOpen} onOpenChange={setIsFormatModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invalid File Format</DialogTitle>
+            <DialogDescription>
+              Please upload an image file (e.g. JPG, PNG, WEBP) for the album cover.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Multiple Files Modal */}
+      <Dialog open={isMultipleFilesModalOpen} onOpenChange={setIsMultipleFilesModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Too Many Files</DialogTitle>
+            <DialogDescription>
+              Please upload only one image file at a time for the album cover.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

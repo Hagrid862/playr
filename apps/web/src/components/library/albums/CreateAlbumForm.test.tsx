@@ -217,7 +217,7 @@ describe('CreateAlbumForm', () => {
 
     await user.upload(fileInput, file);
 
-    const removeButton = screen.getByRole('button', { name: /Remove image/i });
+    const removeButton = screen.getByRole('button', { name: /Remove/i });
     await user.click(removeButton);
 
     expect(screen.queryByAltText('Cover Preview')).not.toBeInTheDocument();
