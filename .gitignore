@@ -39,3 +39,6 @@ yarn-error.log*
 *.pem
 *.tsbuildinfo
 .pnpm-store
+
+# IDEs and editors
+.idea/
