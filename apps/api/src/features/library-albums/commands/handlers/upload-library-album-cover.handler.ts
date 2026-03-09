@@ -22,7 +22,7 @@ export class UploadLibraryAlbumCoverHandler implements ICommandHandler<UploadLib
     private readonly storageService: StorageService,
     private readonly imageService: ImageService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async execute(command: UploadLibraryAlbumCoverCommand): Promise<ZodImage> {
     const { albumId, file, userId } = command;
@@ -38,7 +38,7 @@ export class UploadLibraryAlbumCoverHandler implements ICommandHandler<UploadLib
     }
 
     // Validate image
-    const isValid = await this.imageService.validateImage(file);
+    const isValid = await this.imageService.validateImage(file, 50);
     if (!isValid) {
       throw new BadRequestException('Invalid image or image too large');
     }

@@ -1,26 +1,27 @@
-import { PencilIcon, PlayIcon, TrashIcon } from '@phosphor-icons/react';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '../ui/context-menu';
-
-interface Artist {
-  id: string;
-  name: string;
-}
+} from '@/components/ui/context-menu';
+import { cn } from '@/lib/utils';
+import { PencilIcon, PlayIcon, QueueIcon, TrashIcon } from '@phosphor-icons/react';
+import type { ZodArtist } from '@repo/contracts';
 
 interface SongCardProps {
   id: string;
   trackNumber: number;
   title: string;
-  artists?: Artist[];
+  artists?: Pick<ZodArtist, 'id' | 'name'>[];
   duration: number;
   explicit?: boolean;
+  isActive?: boolean;
+  isPlaying?: boolean;
   onClick?: () => void;
   onEdit?: (id: string) => void;
   onDelete?: (track: { id: string; title: string }) => void;
+  onAddToQueue?: () => void;
+  onPlayNext?: () => void;
 }
 
 function formatDuration(seconds: number) {
@@ -36,25 +37,56 @@ export function SongCard({
   artists,
   duration,
   explicit,
+  isActive,
+  isPlaying,
   onClick,
   onEdit,
   onDelete,
+  onAddToQueue,
+  onPlayNext,
 }: SongCardProps) {
   return (
     <ContextMenu>
       <ContextMenuTrigger>
         <div
+          className={cn(
+            'group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[1] hover:scale-101',
+            isActive ? 'bg-white/10' : '',
+          )}
           onClick={onClick}
-          className="group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[1] hover:scale-101"
         >
-          <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors">
-            <span className="group-hover:hidden">{trackNumber}</span>
-            <PlayIcon className="hidden group-hover:block mx-auto" weight="fill" size={16} />
+          <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors flex justify-center items-center">
+            {isActive && isPlaying ? (
+              <div className="flex items-end gap-0.5 h-3">
+                <div className="w-1 h-3 bg-green-500 animate-music-bar-1" />
+                <div className="w-1 h-2 bg-green-500 animate-music-bar-2" />
+                <div className="w-1 h-3 bg-green-500 animate-music-bar-3" />
+              </div>
+            ) : (
+              <>
+                <span className={cn('group-hover:hidden', isActive && !isPlaying ? 'hidden' : '')}>
+                  {trackNumber}
+                </span>
+                <PlayIcon
+                  className={cn(
+                    'hidden group-hover:block mx-auto',
+                    isActive && !isPlaying ? 'block' : '',
+                  )}
+                  weight="fill"
+                  size={16}
+                />
+              </>
+            )}
           </div>
 
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <div className="font-bold text-stone-200 group-hover:text-white truncate text-base">
+              <div
+                className={cn(
+                  'font-bold truncate text-base',
+                  isActive ? 'text-green-500' : 'text-stone-200 group-hover:text-white',
+                )}
+              >
                 {title}
               </div>
               {explicit && (
@@ -80,6 +112,18 @@ export function SongCard({
           <PencilIcon size={16} />
           Edit
         </ContextMenuItem>
+        {onPlayNext && (
+          <ContextMenuItem onClick={onPlayNext} className="gap-2">
+            <PlayIcon size={16} />
+            Play Next
+          </ContextMenuItem>
+        )}
+        {onAddToQueue && (
+          <ContextMenuItem onClick={onAddToQueue} className="gap-2">
+            <QueueIcon size={16} />
+            Add to Queue
+          </ContextMenuItem>
+        )}
         <ContextMenuItem
           onClick={() => onDelete?.({ id, title })}
           variant="destructive"

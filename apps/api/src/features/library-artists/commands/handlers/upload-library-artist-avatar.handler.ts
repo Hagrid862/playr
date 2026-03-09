@@ -22,7 +22,7 @@ export class UploadLibraryArtistAvatarHandler implements ICommandHandler<UploadL
     private readonly storageService: StorageService,
     private readonly imageService: ImageService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async execute(command: UploadLibraryArtistAvatarCommand): Promise<ZodImage> {
     const { artistId, file, userId } = command;
@@ -37,7 +37,7 @@ export class UploadLibraryArtistAvatarHandler implements ICommandHandler<UploadL
     }
 
     // Validate image
-    const isValid = await this.imageService.validateImage(file);
+    const isValid = await this.imageService.validateImage(file, 50);
     if (!isValid) {
       throw new BadRequestException('Invalid image or image too large');
     }

@@ -1,6 +1,7 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  GetObjectCommandOutput,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -9,6 +10,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileBucket } from '@repo/db';
+import { Readable } from 'stream';
 import { Env } from '../../common/config/env.schema';
 
 export interface UploadOptions {
@@ -83,11 +85,10 @@ export class StorageService {
 
     try {
       const response = await this.s3Client.send(getCommand);
-      const stream = response.Body as any;
-
-      const chunks: any[] = [];
+      const stream = response.Body as Readable;
+      const chunks: Uint8Array[] = [];
       for await (const chunk of stream) {
-        chunks.push(chunk);
+        chunks.push(chunk as Uint8Array);
       }
       return Buffer.concat(chunks);
     } catch (error) {
@@ -194,7 +195,7 @@ export class StorageService {
     bucketType: FileBucket,
     key: string,
     options: { start?: number; end?: number } = {},
-  ): Promise<{ stream: any; size: number; totalSize: number }> {
+  ): Promise<{ stream: GetObjectCommandOutput['Body']; size: number; totalSize: number }> {
     const bucketName = this.getBucketName(bucketType);
 
     let rangeHeader: string | undefined;

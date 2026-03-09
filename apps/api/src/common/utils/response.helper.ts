@@ -14,7 +14,7 @@ export interface StandardizedResponse<T> {
     requestId: string;
     path: string;
     duration?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -32,7 +32,7 @@ export function createStandardizedResponse<T>({
   data?: T | null;
   error?: StandardizedError | null;
   request: Request;
-  extraMeta?: Record<string, any>;
+  extraMeta?: Record<string, unknown>;
   success?: boolean;
 }): StandardizedResponse<T> {
   const headerId = request.headers['x-request-id'];

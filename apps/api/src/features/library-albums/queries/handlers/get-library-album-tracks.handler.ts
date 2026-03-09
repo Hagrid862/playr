@@ -2,7 +2,7 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { GetLibraryAlbumTracksResponse } from '@repo/contracts';
+import { GetLibraryAlbumTracksResponse, type ZodTrack } from '@repo/contracts';
 import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.query';
 
 @QueryHandler(GetLibraryAlbumTracksQuery)
@@ -24,11 +24,13 @@ export class GetLibraryAlbumTracksHandler implements IQueryHandler<GetLibraryAlb
     const items = await this.libraryTrackRepository.findMany({
       where: {
         libraryId: library.id,
-        track: { albumId } as any,
+        track: {
+          albumId,
+        },
       },
-      orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }] as any,
+      orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
     });
 
-    return items.map((lt: any) => lt.track) as any;
+    return (items as unknown as { track: ZodTrack }[]).map((lt) => lt.track);
   }
 }

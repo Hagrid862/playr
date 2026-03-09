@@ -1,7 +1,7 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
+  Catch,
+  ExceptionFilter,
   HttpException,
   HttpStatus,
   Logger,
@@ -31,7 +31,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (typeof message === 'string') {
       errorMessage = message;
     } else if (typeof message === 'object' && message !== null) {
-      errorMessage = (message as any).message || message;
+      const msgObj = message as Record<string, unknown>;
+      errorMessage = (msgObj.message as string | object) || message;
     }
 
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {

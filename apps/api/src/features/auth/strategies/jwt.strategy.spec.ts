@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { JwtStrategy } from './jwt.strategy';
-import { UserRepository } from '../../../shared/repositories/user.repository';
-import { ConfigService } from '@nestjs/config';
-import { UnauthorizedException } from '@nestjs/common';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { User, Gender } from '@repo/db';
+import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Gender, User } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { UserRepository } from '../../../shared/repositories/user.repository';
+import { JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
@@ -55,7 +55,13 @@ describe('JwtStrategy', () => {
   describe('validate', () => {
     it('should return user and sessionId if user exists', async () => {
       // Arrange
-      const payload = { sub: mockUser.id, sessionId: 'session-456' };
+      const payload = {
+        sub: mockUser.id,
+        username: mockUser.username,
+        sessionId: 'session-456',
+        iat: Date.now(),
+        exp: Date.now() + 3600,
+      };
       userRepository.getById.mockResolvedValue(mockUser);
 
       // Act
@@ -68,7 +74,13 @@ describe('JwtStrategy', () => {
 
     it('should throw UnauthorizedException if user does not exist', async () => {
       // Arrange
-      const payload = { sub: 'non-existent', sessionId: 'session-456' };
+      const payload = {
+        sub: 'non-existent',
+        username: 'non-existent',
+        sessionId: 'session-456',
+        iat: Date.now(),
+        exp: Date.now() + 3600,
+      };
       userRepository.getById.mockResolvedValue(null);
 
       // Act & Assert

@@ -22,7 +22,7 @@ export class LibraryTrackRepository {
       where: {
         ...rest,
         track: {
-          ...(track as any),
+          ...((track as object) || {}),
           deletedAt: null,
         },
       },
@@ -41,7 +41,7 @@ export class LibraryTrackRepository {
     where?: LibraryTrackWhereInput;
     take?: number;
     skip?: number;
-    orderBy?: LibraryTrackOrderByWithRelationInput;
+    orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
   }): Promise<LibraryTrack[]> {
     const { track, ...rest } = options.where || {};
     return await this.prisma.client.libraryTrack.findMany({
@@ -50,7 +50,7 @@ export class LibraryTrackRepository {
       where: {
         ...rest,
         track: {
-          ...(track as any),
+          ...((track as object) || {}),
           deletedAt: null,
         },
       },
@@ -81,7 +81,7 @@ export class LibraryTrackRepository {
       where: {
         ...rest,
         track: {
-          ...(track as any),
+          ...((track as object) || {}),
           deletedAt: null,
         },
       },

@@ -4,10 +4,10 @@ import { StorageService } from '@/shared/services/storage.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { UploadTrackAudioResponse } from '@repo/contracts';
 import { AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
 import { Queue } from 'bullmq';
 import { UploadTrackAudioCommand } from '../impl/upload-track-audio.command';
-import { UploadTrackAudioResponse } from '@repo/contracts';
 
 @CommandHandler(UploadTrackAudioCommand)
 export class UploadTrackAudioHandler implements ICommandHandler<UploadTrackAudioCommand> {
@@ -22,14 +22,16 @@ export class UploadTrackAudioHandler implements ICommandHandler<UploadTrackAudio
   async execute(command: UploadTrackAudioCommand): Promise<UploadTrackAudioResponse> {
     const { trackId, userId, file } = command;
 
-    const track = (await this.trackRepository.findOne({ id: trackId }, true)) as any;
+    const track = await this.trackRepository.findOne({ id: trackId }, true);
 
     if (!track) {
       throw new NotFoundException('Track not found');
     }
 
+    const trackWithRelations = track as unknown as { access?: { userId: string; role: string }[] };
+
     // Basic permission check - only owners/editors can upload audio
-    const hasAccess = track.access?.some(
+    const hasAccess = trackWithRelations.access?.some(
       (a: { userId: string; role: string }) =>
         a.userId === userId && (a.role === 'owner' || a.role === 'editor'),
     );

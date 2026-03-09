@@ -93,17 +93,24 @@ describe('CreateTrackForm', () => {
     await user.type(screen.getByLabelText(/track no/i), '2');
     await user.click(screen.getByLabelText(/explicit content/i));
 
+    const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
+    const fileInput = screen.getByLabelText(/audio file/i);
+    await user.upload(fileInput, file);
+
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith({
-        title: 'New Song',
-        trackNumber: 2,
-        diskNumber: 1,
-        explicit: true,
-        albumId: 'album-123',
-        artistIds: ['artist-123'],
-      });
+      expect(onSubmit).toHaveBeenCalledWith(
+        {
+          title: 'New Song',
+          trackNumber: 2,
+          diskNumber: 1,
+          explicit: true,
+          albumId: 'album-123',
+          artistIds: ['artist-123'],
+        },
+        expect.any(File),
+      );
     });
   });
 
@@ -120,6 +127,11 @@ describe('CreateTrackForm', () => {
     render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
+
+    const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
+    const fileInput = screen.getByLabelText(/audio file/i);
+    await user.upload(fileInput, file);
+
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
     await waitFor(() => {
@@ -140,6 +152,11 @@ describe('CreateTrackForm', () => {
 
     await user.type(screen.getByLabelText(/track title/i), 'Song 1');
     await user.click(screen.getByLabelText(/add another track/i));
+
+    const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
+    const fileInput = screen.getByLabelText(/audio file/i);
+    await user.upload(fileInput, file);
+
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
     await waitFor(() => {
@@ -191,6 +208,11 @@ describe('CreateTrackForm', () => {
     render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
+
+    const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
+    const fileInput = screen.getByLabelText(/audio file/i);
+    await user.upload(fileInput, file);
+
     await user.click(screen.getByRole('button', { name: /add track/i }));
 
     await waitFor(() => {
