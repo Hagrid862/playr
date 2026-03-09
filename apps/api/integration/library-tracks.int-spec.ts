@@ -1,9 +1,26 @@
+import { Readable } from 'stream';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Library, LibraryTrack, PrismaClient, TrackGetPayload } from '@repo/db';
+import {
+  Album,
+  Artist,
+  AudioFile,
+  AudioFormat,
+  AudioQuality,
+  FileBucket,
+  Library,
+  LibraryTrack,
+  PrismaClient,
+  ProcessingStatus,
+  TrackAccess,
+  TrackGetPayload,
+  User,
+  Visibility,
+} from '@repo/db';
 import request from 'supertest';
 import { vi } from 'vitest';
+import { StorageService } from '../src/shared/services/storage.service';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import './setup-env';
 import { createIntegrationApp } from './test-utils';
@@ -21,9 +38,16 @@ describe('LibraryTracksController (Integration)', () => {
   let prismaMock: PrismaServiceMock;
   let jwtService: JwtService;
   let config: ConfigService;
+  let storageServiceMock: { getFileStream: any };
 
   beforeAll(async () => {
-    const setup = await createIntegrationApp();
+    storageServiceMock = {
+      getFileStream: vi.fn(),
+    };
+
+    const setup = await createIntegrationApp((builder) => {
+      return builder.overrideProvider(StorageService).useValue(storageServiceMock);
+    });
 
     app = setup.app;
     prismaMock = setup.prismaMock;
@@ -50,6 +74,21 @@ describe('LibraryTracksController (Integration)', () => {
     return `Bearer ${token}`;
   };
 
+  const mockUser: User = {
+    id: 'user-123',
+    username: 'testu',
+    firstName: 'Test',
+    lastName: 'User',
+    birthDate: null,
+    gender: null,
+    description: null,
+    password: 'hashed-password',
+    avatarId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+  };
+
   const mockLibrary: Library = {
     id: 'library-123',
     userId: 'user-123',
@@ -67,7 +106,7 @@ describe('LibraryTracksController (Integration)', () => {
     listenedCount: 0,
     explicit: false,
     lyrics: null,
-    visibility: 'private',
+    visibility: 'private' as Visibility,
     albumId: 'album-123',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -81,11 +120,11 @@ describe('LibraryTracksController (Integration)', () => {
       totalDuration: 3000,
       releaseDate: new Date(),
       coverId: null,
-      visibility: 'public',
+      visibility: 'public' as Visibility,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
-    } as any,
+    } as Album,
     artists: [
       {
         id: 'artist-123',
@@ -95,11 +134,11 @@ describe('LibraryTracksController (Integration)', () => {
         verified: true,
         bannerId: null,
         avatarId: null,
-        visibility: 'public',
+        visibility: 'public' as Visibility,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
-      } as any,
+      } as Artist,
     ],
     access: [
       {
@@ -109,7 +148,7 @@ describe('LibraryTracksController (Integration)', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         trackId: 'track-123',
-      },
+      } as TrackAccess,
     ],
   };
 
@@ -129,7 +168,7 @@ describe('LibraryTracksController (Integration)', () => {
     it('should create a track successfully (201)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.user.findUnique.mockResolvedValue({ id: 'user-123' } as any);
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.album.findFirst.mockResolvedValue(mockTrack.album);
       prismaMock.client.track.create.mockResolvedValue(mockTrack);
@@ -168,9 +207,9 @@ describe('LibraryTracksController (Integration)', () => {
     it('should return a list of tracks (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.user.findUnique.mockResolvedValue({ id: 'user-123' } as any);
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
-      prismaMock.client.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack] as any);
+      prismaMock.client.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack]);
       prismaMock.client.libraryTrack.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())
@@ -189,7 +228,7 @@ describe('LibraryTracksController (Integration)', () => {
     it('should return a track by id (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.user.findUnique.mockResolvedValue({ id: 'user-123' } as any);
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
 
       const response = await request(app.getHttpServer())
@@ -207,7 +246,7 @@ describe('LibraryTracksController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const updatedTrack = { ...mockTrack, title: 'Updated Title' };
 
-      prismaMock.client.user.findUnique.mockResolvedValue({ id: 'user-123' } as any);
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
       prismaMock.client.track.update.mockResolvedValue(updatedTrack);
 
@@ -230,7 +269,7 @@ describe('LibraryTracksController (Integration)', () => {
     it('should delete a track successfully (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.user.findUnique.mockResolvedValue({ id: 'user-123' } as any);
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
       prismaMock.client.track.update.mockResolvedValue({
         ...mockTrack,
@@ -249,6 +288,177 @@ describe('LibraryTracksController (Integration)', () => {
         .expect(200);
 
       expect(response.body.data).toEqual(JSON.parse(JSON.stringify(mockTrack)));
+    });
+  });
+
+  describe('GET /library/tracks/:id/qualities', () => {
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer())
+        .get(`/library/tracks/${mockTrack.id}/qualities`)
+        .expect(401);
+    });
+  });
+
+  describe('POST /library/tracks/:id/audio', () => {
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer()).post(`/library/tracks/${mockTrack.id}/audio`).expect(401);
+    });
+  });
+
+  describe('GET /library/tracks/:id/stream', () => {
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer()).get(`/library/tracks/${mockTrack.id}/stream`).expect(401);
+    });
+
+    it('should return 404 if no processed audio file found', async () => {
+      const authHeader = await getAuthHeader();
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.audioFile.findMany.mockResolvedValue([]);
+
+      await request(app.getHttpServer())
+        .get(`/library/tracks/${mockTrack.id}/stream`)
+        .set('Authorization', authHeader)
+        .expect(404);
+    });
+
+    it('should return full stream successfully for standard quality (default)', async () => {
+      const authHeader = await getAuthHeader();
+      const content = 'test-audio-content';
+      const mockAudioFile: AudioFile = {
+        id: 'audio-123',
+        trackId: mockTrack.id,
+        status: 'complete' as ProcessingStatus,
+        format: 'mp3' as AudioFormat,
+        quality: 'standard' as AudioQuality,
+        size: content.length,
+        bucket: 'tracks' as FileBucket,
+        key: 'track-123.mp3',
+        mimeType: 'audio/mpeg',
+        url: null,
+        duration: 180,
+        bitrate: 320,
+        sampleRate: 44100,
+        channels: 2,
+        isOriginal: true,
+        waveformJson: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
+      prismaMock.client.audioFile.findMany.mockResolvedValue([mockAudioFile]);
+
+      storageServiceMock.getFileStream.mockResolvedValue({
+        stream: Readable.from([Buffer.from(content)]),
+      });
+
+      const response = await request(app.getHttpServer())
+        .get(`/library/tracks/${mockTrack.id}/stream`)
+        .set('Authorization', authHeader)
+        .expect(200);
+
+      expect(response.body.toString()).toBe(content);
+      expect(storageServiceMock.getFileStream).toHaveBeenCalled();
+    });
+
+    it('should return 206 Partial Content for byte-range requests', async () => {
+      const authHeader = await getAuthHeader();
+      const content = 'chunk';
+      const mockAudioFile: AudioFile = {
+        id: 'audio-123',
+        trackId: mockTrack.id,
+        status: 'complete' as ProcessingStatus,
+        format: 'mp3' as AudioFormat,
+        quality: 'standard' as AudioQuality,
+        size: content.length,
+        bucket: 'tracks' as FileBucket,
+        key: 'track-123.mp3',
+        mimeType: 'audio/mpeg',
+        url: null,
+        duration: 180,
+        bitrate: 320,
+        sampleRate: 44100,
+        channels: 2,
+        isOriginal: true,
+        waveformJson: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
+      prismaMock.client.audioFile.findMany.mockResolvedValue([mockAudioFile]);
+
+      storageServiceMock.getFileStream.mockResolvedValue({
+        stream: Readable.from([Buffer.from(content)]),
+      });
+
+      const response = await request(app.getHttpServer())
+        .get(`/library/tracks/${mockTrack.id}/stream`)
+        .set('Authorization', authHeader)
+        .set('Range', `bytes=0-${content.length - 1}`)
+        .expect(206);
+
+      expect(response.body.toString()).toBe(content);
+      expect(response.header['content-range']).toBe(
+        `bytes 0-${content.length - 1}/${content.length}`,
+      );
+    });
+
+    it('should respect requested quality', async () => {
+      const authHeader = await getAuthHeader();
+      const commonFields = {
+        trackId: mockTrack.id,
+        status: 'complete' as ProcessingStatus,
+        format: 'mp3' as AudioFormat,
+        bucket: 'tracks' as FileBucket,
+        mimeType: 'audio/mpeg',
+        url: null,
+        duration: 180,
+        bitrate: 320,
+        sampleRate: 44100,
+        channels: 2,
+        isOriginal: true,
+        waveformJson: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const mockFiles: AudioFile[] = [
+        {
+          ...commonFields,
+          id: 'audio-std',
+          quality: 'standard' as AudioQuality,
+          size: 1000,
+          key: 'std.mp3',
+        },
+        {
+          ...commonFields,
+          id: 'audio-high',
+          quality: 'high' as AudioQuality,
+          size: 2000,
+          key: 'high.mp3',
+        },
+      ];
+
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
+      prismaMock.client.audioFile.findMany.mockResolvedValue(mockFiles);
+
+      storageServiceMock.getFileStream.mockResolvedValue({
+        stream: Readable.from([Buffer.alloc(2000)]),
+      });
+
+      await request(app.getHttpServer())
+        .get(`/library/tracks/${mockTrack.id}/stream?quality=high`)
+        .set('Authorization', authHeader)
+        .expect(200);
+
+      expect(storageServiceMock.getFileStream).toHaveBeenCalledWith(
+        'tracks',
+        'high.mp3',
+        expect.any(Object),
+      );
     });
   });
 });

@@ -4,8 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Gender, User } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { extractTokenFromQuery, JwtStrategy } from './jwt.strategy';
+import { Request } from 'express';
 import { UserRepository } from '../../../shared/repositories/user.repository';
-import { JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
@@ -86,5 +87,22 @@ describe('JwtStrategy', () => {
       // Act & Assert
       await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
     });
+  });
+});
+
+describe('extractTokenFromQuery', () => {
+  it('should return token from the query params if available', () => {
+    const mockReq: Partial<Request> = { query: { token: 'my-token' } };
+    expect(extractTokenFromQuery(mockReq as Request)).toBe('my-token');
+  });
+
+  it('should return null if no token is available in the query params', () => {
+    const mockReq: Partial<Request> = { query: {} };
+    expect(extractTokenFromQuery(mockReq as Request)).toBe(null);
+  });
+
+  it('should return null if req.query is undefined', () => {
+    const mockReq: Partial<Request> = {};
+    expect(extractTokenFromQuery(mockReq as Request)).toBe(null);
   });
 });

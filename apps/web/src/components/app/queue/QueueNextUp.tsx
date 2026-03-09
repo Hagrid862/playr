@@ -40,7 +40,7 @@ export function QueueNextUp({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" aria-label="Next Up" role="region">
       <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider">Next Up</h3>
       <AnimatePresence mode="wait">
         {nextUp.length === 0 ? (

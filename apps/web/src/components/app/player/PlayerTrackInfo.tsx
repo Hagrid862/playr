@@ -46,7 +46,9 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
         {/* Top Row: Title & Artist / Time Reveal */}
         <div className="flex flex-col min-w-0 flex-1 justify-center">
           <div className="text-white font-semibold flex items-center gap-2 truncate text-[14px] leading-tight">
-            <span className="truncate">{trackTitle}</span>
+            <span className="truncate" data-testid="track-title">
+              {trackTitle}
+            </span>
             {isLossless && (
               <TooltipProvider>
                 <Tooltip delayDuration={0}>
@@ -66,6 +68,7 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
             )}
           </div>
           <div
+            data-testid="track-artist"
             className={cn(
               'text-white/50 text-[12px] truncate font-medium transition-all duration-300',
               isHoveringSlider || isDraggingSlider

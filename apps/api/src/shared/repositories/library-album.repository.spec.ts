@@ -67,6 +67,22 @@ describe('LibraryAlbumRepository', () => {
         },
       });
     });
+
+    it('should handle undefined where.album in findOne', async () => {
+      mockTx.libraryAlbum.findFirst.mockResolvedValue(mockLibraryAlbum);
+      await repository.findOne({ libraryId: 'user-123' });
+
+      expect(mockTx.libraryAlbum.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            libraryId: 'user-123',
+            album: {
+              deletedAt: null,
+            },
+          },
+        }),
+      );
+    });
   });
 
   describe('findMany', () => {

@@ -1,6 +1,6 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { StorageService } from '@/shared/services/storage.service';
-import { NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { StreamAudioQuality } from '@repo/contracts';
 import { AudioFile, AudioFormat, AudioQuality, FileBucket, ProcessingStatus } from '@repo/db';
@@ -40,20 +40,23 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
         case StreamAudioQuality.high:
           if (quality === AudioQuality.high) {
-            if (format === AudioFormat.mp3) return 100;
-            if (format === AudioFormat.opus) return 90;
+            if (format === AudioFormat.opus) return 100;
+            if (format === AudioFormat.mp3) return 90;
           }
           return 0;
 
         case StreamAudioQuality.standard:
           if (quality === AudioQuality.standard) {
-            if (format === AudioFormat.mp3) return 100;
-            if (format === AudioFormat.opus) return 90;
+            if (format === AudioFormat.opus) return 100;
+            if (format === AudioFormat.mp3) return 90;
           }
           return 0;
 
         case StreamAudioQuality.low:
-          if (quality === AudioQuality.low && format === AudioFormat.mp3) return 100;
+          if (quality === AudioQuality.low) {
+            if (format === AudioFormat.opus) return 100;
+            if (format === AudioFormat.mp3) return 90;
+          }
           return 0;
 
         default:
@@ -110,13 +113,37 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
     if (query.range) {
       const parts = query.range.replace(/bytes=/, '').split('-');
-      start = parseInt(parts[0], 10);
-      end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+      const suffix = parts[0] === '';
+      const startRaw = suffix ? '' : parts[0];
+      const endRaw = parts[1] ?? '';
 
-      if (start >= totalSize || end >= totalSize) {
-        // We'll throw a specific error that the controller can catch or handle
-        // For now, let's keep it simple and throw an error that results in 416
-        throw new Error('Requested range not satisfiable');
+      if (suffix) {
+        const lastN = parseInt(endRaw, 10);
+        if (!Number.isFinite(lastN) || lastN < 0) {
+          throw new HttpException(
+            'Requested range not satisfiable',
+            HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+          );
+        }
+        start = Math.max(0, totalSize - lastN);
+        end = totalSize - 1;
+      } else {
+        start = parseInt(startRaw, 10);
+        end = endRaw ? parseInt(endRaw, 10) : totalSize - 1;
+        if (
+          !Number.isFinite(start) ||
+          !Number.isFinite(end) ||
+          start < 0 ||
+          end < 0 ||
+          start > end ||
+          start >= totalSize ||
+          end >= totalSize
+        ) {
+          throw new HttpException(
+            'Requested range not satisfiable',
+            HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+          );
+        }
       }
     }
 

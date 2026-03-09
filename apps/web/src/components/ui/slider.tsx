@@ -46,6 +46,34 @@ export function Slider({
     [min, max, step, onChange],
   );
 
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      const steppedValue = Math.round(value / step) * step;
+      let nextValue: number;
+      switch (e.key) {
+        case 'ArrowLeft':
+        case 'ArrowDown':
+          nextValue = Math.max(min, steppedValue - step);
+          break;
+        case 'ArrowRight':
+        case 'ArrowUp':
+          nextValue = Math.min(max, steppedValue + step);
+          break;
+        case 'Home':
+          nextValue = min;
+          break;
+        case 'End':
+          nextValue = max;
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+      onChange?.(Math.min(max, Math.max(min, nextValue)));
+    },
+    [value, min, max, step, onChange],
+  );
+
   const handlePointerDown = (e: React.PointerEvent) => {
     setIsDragging(true);
     handleMove(e.clientX);
@@ -69,10 +97,16 @@ export function Slider({
   return (
     <div
       ref={containerRef}
+      role="slider"
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      tabIndex={0}
       className={cn(
         'relative flex items-center w-full h-4 group cursor-pointer touch-none select-none',
         className,
       )}
+      onKeyDown={handleKeyDown}
       onPointerDown={handlePointerDown}
       {...props}
     >

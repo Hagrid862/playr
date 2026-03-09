@@ -56,3 +56,22 @@ if (typeof window.PointerEvent === 'undefined') {
 
   vi.stubGlobal('PointerEvent', MockPointerEvent);
 }
+
+/**
+ * matchMedia Mock
+ * Essential for components and hooks that rely on media queries (e.g., useMediaQuery).
+ */
+Object.defineProperty(window, 'matchMedia', {
+  configurable: true,
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // Deprecated
+    removeListener: vi.fn(), // Deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});

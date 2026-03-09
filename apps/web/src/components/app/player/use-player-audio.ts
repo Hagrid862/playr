@@ -74,18 +74,23 @@ export function usePlayerAudio() {
   // Sync isPlaying with audio element
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !audio.src) return;
+    if (!audio) return;
+
+    // If not playing, always try to pause (even if src is not loaded yet)
+    if (!isPlaying) {
+      audio.pause();
+      return;
+    }
+
+    // If playing, we need src to be loaded
+    if (!audio.src) return;
 
     const playPromise = async () => {
       try {
-        if (isPlaying) {
-          if (audio.readyState === 0) {
-            audio.load();
-          }
-          await audio.play();
-        } else {
-          audio.pause();
+        if (audio.readyState === 0) {
+          audio.load();
         }
+        await audio.play();
       } catch (err: unknown) {
         if (err instanceof Error && err.name !== 'AbortError') {
           console.error('[AppPlayer] Playback Error:', {

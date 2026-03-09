@@ -49,6 +49,7 @@ export function PlayerActions() {
           <Button
             size="icon"
             variant="ghost"
+            aria-label="More Player Actions"
             className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
           >
             <DotsThreeIcon size={20} weight="bold" />
@@ -123,6 +124,7 @@ export function PlayerActions() {
       <Button
         size="icon"
         variant="ghost"
+        aria-label="Favorite"
         className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
       >
         <StarIcon size={20} />
@@ -130,6 +132,7 @@ export function PlayerActions() {
       <Button
         size="icon"
         variant="ghost"
+        aria-label="Lyrics"
         className={cn(
           'text-white/40 hover:text-white active:scale-95 h-9 w-9',
           isQueueOpen && sidebarView === 'lyrics' && 'text-white bg-white/10',
@@ -148,6 +151,7 @@ export function PlayerActions() {
       <Button
         size="icon"
         variant="ghost"
+        aria-label="Queue"
         className={cn(
           'text-white/40 hover:text-white active:scale-95 h-9 w-9',
           isQueueOpen && sidebarView === 'queue' && 'text-white bg-white/10',
@@ -169,6 +173,7 @@ export function PlayerActions() {
           <Button
             size="icon"
             variant="ghost"
+            aria-label="Volume"
             className="text-white/40 hover:text-white active:scale-95 h-9 w-9 ml-1"
           >
             <SpeakerHighIcon size={20} />

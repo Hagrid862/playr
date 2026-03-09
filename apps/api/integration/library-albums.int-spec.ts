@@ -418,4 +418,36 @@ describe('LibraryAlbumsController (Integration)', () => {
         .expect(400);
     });
   });
+
+  describe('GET /library/albums/:id/tracks', () => {
+    it('should return album tracks successfully (200)', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
+
+      const mockLibraryTrackList = [{ track: { id: 'track-1', title: 'Test Track' } }];
+      prismaMock.client.libraryTrack.findMany.mockResolvedValue(mockLibraryTrackList as any);
+      prismaMock.client.libraryTrack.count.mockResolvedValue(1);
+
+      const response = await request(app.getHttpServer())
+        .get(`/library/albums/${mockAlbum.id}/tracks`)
+        .set('Authorization', authHeader)
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].id).toBe(mockLibraryTrackList[0].track.id);
+    });
+
+    it('should return 404 if album not found', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.album.findFirst.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .get('/library/albums/non-existent/tracks')
+        .set('Authorization', authHeader)
+        .expect(404);
+    });
+  });
 });

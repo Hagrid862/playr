@@ -10,6 +10,11 @@ import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.
 import { UpdateLibraryTrackCommand } from './commands/impl/update-library-track.command';
 import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
+import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
+import { GetTrackStreamQualitiesQuery } from './queries/impl/get-track-stream-qualities.query';
+import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
+import { StreamAudioQuality } from '@repo/contracts';
+import { HttpStatus } from '@nestjs/common';
 
 describe('LibraryTracksController', () => {
   let controller: LibraryTracksController;
@@ -116,6 +121,114 @@ describe('LibraryTracksController', () => {
       expect(commandBus.execute).toHaveBeenCalledWith(
         new DeleteLibraryTrackCommand(trackId, userId),
       );
+    });
+  });
+
+  describe('getTrackQualities', () => {
+    it('should query track qualities', async () => {
+      queryBus.execute.mockResolvedValue(['high']);
+      const result = await controller.getTrackQualities(trackId);
+      expect(queryBus.execute).toHaveBeenCalledWith(new GetTrackStreamQualitiesQuery(trackId));
+      expect(result).toEqual(['high']);
+    });
+  });
+
+  describe('uploadAudio', () => {
+    it('should dispatch upload audio command', async () => {
+      const file = { originalname: 'test.mp3' } as any;
+      commandBus.execute.mockResolvedValue('success');
+      const result = await controller.uploadAudio(trackId, userId, file);
+      expect(commandBus.execute).toHaveBeenCalledWith(
+        new UploadTrackAudioCommand(trackId, userId, file),
+      );
+      expect(result).toBe('success');
+    });
+  });
+
+  describe('getTrackStream', () => {
+    it('should stream track with partial content', async () => {
+      const mockRes = {
+        status: vi.fn(),
+        set: vi.fn(),
+        end: vi.fn(),
+      } as any;
+      const mockStream = { pipe: vi.fn() };
+
+      queryBus.execute.mockResolvedValue({
+        stream: mockStream,
+        metadata: {
+          start: 0,
+          end: 100,
+          totalSize: 1000,
+          mimeType: 'audio/mpeg',
+          quality: 'standard',
+          format: 'mp3',
+          isPartial: true,
+        },
+      });
+
+      await controller.getTrackStream(trackId, 'bytes=0-100', StreamAudioQuality.standard, mockRes);
+
+      expect(queryBus.execute).toHaveBeenCalledWith(
+        new GetTrackStreamQuery(trackId, StreamAudioQuality.standard, 'bytes=0-100'),
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(HttpStatus.PARTIAL_CONTENT);
+      expect(mockRes.set).toHaveBeenCalledWith(
+        expect.objectContaining({ 'Content-Range': 'bytes 0-100/1000' }),
+      );
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+    });
+
+    it('should stream track with OK status if not partial', async () => {
+      const mockRes = {
+        status: vi.fn(),
+        set: vi.fn(),
+        end: vi.fn(),
+      } as any;
+      const mockStream = { pipe: vi.fn() };
+
+      queryBus.execute.mockResolvedValue({
+        stream: mockStream,
+        metadata: {
+          start: 0,
+          end: 999,
+          totalSize: 1000,
+          mimeType: 'audio/mpeg',
+          quality: 'standard',
+          format: 'mp3',
+          isPartial: false,
+        },
+      });
+
+      await controller.getTrackStream(trackId, '', StreamAudioQuality.standard, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+    });
+
+    it('should handle Requested range not satisfiable', async () => {
+      const mockRes = {
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        end: vi.fn(),
+      } as any;
+
+      queryBus.execute.mockRejectedValue(new Error('Requested range not satisfiable'));
+
+      await controller.getTrackStream(trackId, 'bytes=1000-', StreamAudioQuality.standard, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
+      expect(mockRes.header).toHaveBeenCalledWith({ 'Content-Range': 'bytes */*' });
+      expect(mockRes.end).toHaveBeenCalled();
+    });
+
+    it('should throw other errors', async () => {
+      const mockRes = {} as any;
+      queryBus.execute.mockRejectedValue(new Error('Other error'));
+
+      await expect(
+        controller.getTrackStream(trackId, '', StreamAudioQuality.standard, mockRes),
+      ).rejects.toThrow('Other error');
     });
   });
 });

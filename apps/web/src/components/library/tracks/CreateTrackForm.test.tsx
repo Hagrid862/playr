@@ -114,6 +114,18 @@ describe('CreateTrackForm', () => {
     });
   });
 
+  it('shows error when audio file is missing on submit', async () => {
+    const user = userEvent.setup();
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
+
+    // Fill in required fields but omit the file
+    await user.type(screen.getByLabelText(/track title/i), 'New Song');
+    await user.click(screen.getByRole('button', { name: /add track/i }));
+
+    expect(await screen.findByText(/audio file is required/i)).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it('disables submit button when loading', () => {
     render(<CreateTrackForm album={mockAlbum} isLoading={true} onSubmit={onSubmit} />);
     expect(screen.getByRole('button', { name: /adding/i })).toBeDisabled();
@@ -219,6 +231,9 @@ describe('CreateTrackForm', () => {
       expect(onSubmit).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', error);
     });
+
+    expect(screen.getByText('Submission failed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add track/i })).toBeInTheDocument();
 
     consoleSpy.mockRestore();
   });

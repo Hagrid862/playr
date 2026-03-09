@@ -12,7 +12,7 @@ import * as mm from 'music-metadata';
 import * as os from 'os';
 import * as path from 'path';
 
-interface AudioProcessingJobData {
+export interface AudioProcessingJobData {
   audioFileId: string;
   trackId: string;
   userId: string;
