@@ -121,4 +121,35 @@ export class ArtistRepository {
     await this.prisma.client.artist.deleteMany({ where: filter });
     return artistsToDelete;
   }
+
+  async softDeleteCascade(id: string): Promise<Artist> {
+    // 1. Get albums to delete tracks first
+    const albums = await this.prisma.client.album.findMany({
+      where: {
+        artists: { some: { id } },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    const albumIds = albums.map((a) => a.id);
+
+    // 2. Transaction: Mark artist, albums, and tracks as deleted
+    const [deletedArtist] = await this.prisma.mainClient.$transaction([
+      this.prisma.client.artist.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      }),
+      this.prisma.client.album.updateMany({
+        where: { id: { in: albumIds } },
+        data: { deletedAt: new Date() },
+      }),
+      this.prisma.client.track.updateMany({
+        where: { albumId: { in: albumIds } },
+        data: { deletedAt: new Date() },
+      }),
+    ]);
+
+    return deletedArtist;
+  }
 }

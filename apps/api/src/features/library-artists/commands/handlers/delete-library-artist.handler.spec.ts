@@ -47,14 +47,12 @@ describe('DeleteLibraryArtistHandler', () => {
     const mockDeletedArtist = { ...mockArtist, deletedAt: new Date() };
 
     artistRepository.findOne.mockResolvedValue(mockArtist as any);
-    artistRepository.update.mockResolvedValue(mockDeletedArtist as any);
+    artistRepository.softDeleteCascade.mockResolvedValue(mockDeletedArtist as any);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockDeletedArtist);
-    expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
-      deletedAt: expect.any(Date),
-    });
+    expect(artistRepository.softDeleteCascade).toHaveBeenCalledWith(mockArtistId);
   });
 
   it('should throw NotFoundException if artist is missing or permission denied', async () => {
@@ -67,7 +65,7 @@ describe('DeleteLibraryArtistHandler', () => {
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
     artistRepository.findOne.mockResolvedValue(mockArtist as any);
-    artistRepository.update.mockResolvedValue({ invalid: 'data' } as any);
+    artistRepository.softDeleteCascade.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
   });

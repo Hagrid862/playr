@@ -20,17 +20,19 @@ export class DeleteLibraryArtistHandler implements ICommandHandler<DeleteLibrary
       throw new NotFoundException('Artist not found or you do not have permission to delete it');
     }
 
-    // SOFT DELETE
-    const deletedArtist = await this.artistRepository.update(artistId, {
-      deletedAt: new Date(),
-    });
+    try {
+      const deletedArtist = await this.artistRepository.softDeleteCascade(artistId);
 
-    const parsed = ArtistSchema.safeParse(deletedArtist);
+      const parsed = ArtistSchema.safeParse(deletedArtist);
 
-    if (!parsed.success) {
-      throw new InternalServerErrorException('Failed to parse deleted artist');
+      if (!parsed.success) {
+        throw new InternalServerErrorException('Failed to parse deleted artist');
+      }
+
+      return parsed.data;
+    } catch (error) {
+      console.error('Failed to delete artist:', error);
+      throw new InternalServerErrorException('Failed to delete artist');
     }
-
-    return parsed.data;
   }
 }
