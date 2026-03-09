@@ -15,7 +15,7 @@ import {
 } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
 import { useForm } from '@tanstack/react-form';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface EditAlbumFormProps {
   album: ZodAlbum;
@@ -86,6 +86,12 @@ export function EditAlbumForm({
 
     coverInputRef.current!.value = '';
   };
+
+  useEffect(() => {
+    return () => {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+    };
+  }, [coverPreview]);
 
   const currentCoverUrl = coverPreview || album.cover?.url;
 

@@ -17,6 +17,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
+import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
 import {
   DiscIcon,
   DotsThreeIcon,
@@ -27,27 +28,25 @@ import {
   ShuffleIcon,
   TrashIcon,
 } from '@phosphor-icons/react';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
+import { SongCard } from '@/components/library/SongCard';
 
 export const Route = createFileRoute('/app/library/albums/$id/')({
   component: RouteComponent,
 });
 
-function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
 function RouteComponent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [trackToDelete, setTrackToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const { data: albumResponse, isLoading } = useLibraryAlbum(id);
   const { mutateAsync: deleteAlbum, isPending: isDeleting } = useDeleteLibraryAlbum();
+  const { mutateAsync: deleteTrack, isPending: isDeletingTrack } = useDeleteLibraryTrack();
 
   const album = albumResponse?.data;
 
@@ -56,8 +55,22 @@ function RouteComponent() {
       await deleteAlbum(id);
       setIsDeleteDialogOpen(false);
       navigate({ to: '/app/library/albums' });
+      toast.success('Album deleted successfully');
     } catch (error) {
       console.error('Failed to delete album:', error);
+      toast.error('Failed to delete album');
+    }
+  };
+
+  const handleDeleteTrack = async () => {
+    if (!trackToDelete) return;
+    try {
+      await deleteTrack(trackToDelete.id);
+      setTrackToDelete(null);
+      toast.success('Track deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete track:', error);
+      toast.error('Failed to delete track');
     }
   };
 
@@ -217,7 +230,7 @@ function RouteComponent() {
               <p className="text-muted-foreground text-sm font-medium">No tracks available</p>
             </div>
           ) : (
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-8">
               {/* Header Row */}
               <div className="grid grid-cols-[3rem_1fr_auto] gap-4 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-white/5 mb-2">
                 <div className="text-center">#</div>
@@ -225,37 +238,54 @@ function RouteComponent() {
                 <div className="pr-2">Time</div>
               </div>
 
-              {/* Tracks */}
-              {album.tracks.map((track, i) => (
-                <div
-                  key={track.id}
-                  className="group grid grid-cols-[3rem_1fr_auto] gap-4 items-center px-4 py-3 rounded-xl hover:bg-stone-900/40 transition-all cursor-pointer active:scale-[0.99]"
-                >
-                  <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors">
-                    <span className="group-hover:hidden">{track.trackNumber || i + 1}</span>
-                    <PlayIcon
-                      className="hidden group-hover:block mx-auto"
-                      weight="fill"
-                      size={16}
-                    />
-                  </div>
+              {(() => {
+                const tracks = album.tracks || [];
+                const discs = [...new Set(tracks.map((t) => t.diskNumber || 1))].sort(
+                  (a, b) => a - b,
+                );
+                const hasMultipleDiscs = discs.length > 1;
 
-                  <div className="min-w-0">
-                    <div className="font-bold text-stone-200 group-hover:text-white truncate text-base">
-                      {track.title}
-                    </div>
-                    {track.artists && (
-                      <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
-                        {track.artists.map((a) => a.name).join(', ')}
+                return discs.map((discNumber) => {
+                  const discTracks = tracks
+                    .filter((t) => (t.diskNumber || 1) === discNumber)
+                    .sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+
+                  if (discTracks.length === 0) return null;
+
+                  return (
+                    <div key={discNumber} className="flex flex-col gap-2">
+                      {hasMultipleDiscs && (
+                        <div className="flex items-center gap-4 px-4 py-2 mt-4 first:mt-0">
+                          <DiscIcon size={20} className="text-primary" weight="duotone" />
+                          <h4 className="text-sm font-bold uppercase tracking-widest text-white/60">
+                            Disc {discNumber}
+                          </h4>
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        {discTracks.map((track, i) => (
+                          <SongCard
+                            key={track.id}
+                            id={track.id}
+                            trackNumber={track.trackNumber || i + 1}
+                            title={track.title}
+                            artists={track.artists}
+                            duration={track.duration}
+                            explicit={track.explicit}
+                            onEdit={(songId) =>
+                              navigate({
+                                to: '/app/library/albums/$id/songs/$songId/edit',
+                                params: { id, songId },
+                              })
+                            }
+                            onDelete={(trackInfo) => setTrackToDelete(trackInfo)}
+                          />
+                        ))}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="text-sm font-bold text-stone-500 tabular-nums group-hover:text-stone-300">
-                    {formatDuration(track.duration)}
-                  </div>
-                </div>
-              ))}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
@@ -281,6 +311,31 @@ function RouteComponent() {
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Delete Album'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!trackToDelete} onOpenChange={(open) => !open && setTrackToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Track</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">{trackToDelete?.title}</span>? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTrackToDelete(null)}
+              disabled={isDeletingTrack}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteTrack} disabled={isDeletingTrack}>
+              {isDeletingTrack ? 'Deleting...' : 'Delete Track'}
             </Button>
           </DialogFooter>
         </DialogContent>

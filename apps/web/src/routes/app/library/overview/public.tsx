@@ -5,5 +5,5 @@ export const Route = createFileRoute('/app/library/overview/public')({
 });
 
 function RouteComponent() {
-  return <div>Hello "/app/library/overview/public"!</div>;
+  return <div>Hello &quot;/app/library/overview/public&quot;!</div>;
 }

@@ -8,7 +8,7 @@ import {
   ZodArtist,
 } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface EditArtistFormProps {
   artist: ZodArtist;
@@ -82,6 +82,18 @@ export function EditArtistForm({
       setBannerPreview(undefined);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    };
+  }, [bannerPreview]);
 
   return (
     <form
