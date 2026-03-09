@@ -28,6 +28,10 @@ export const envSchema = z.object({
 
   // Throttling
   THROTTLE_ENABLED: z.coerce.boolean().default(true),
+
+  // Redis
+  REDIS_HOST: z.string().default('localhost'),
+  REDIS_PORT: z.coerce.number().default(6379),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -9,14 +9,19 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
+  ParseFilePipeBuilder,
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
 import { UpdateLibraryTrackCommand } from './commands/impl/update-library-track.command';
@@ -28,8 +33,10 @@ import { DeleteLibraryTrackResponseDto } from './dto/response/delete-library-tra
 import { GetLibraryTrackResponseDto } from './dto/response/get-library-track.response.dto';
 import { GetLibraryTracksResponseDto } from './dto/response/get-library-tracks.response.dto';
 import { UpdateLibraryTrackResponseDto } from './dto/response/update-library-track.response.dto';
+import { UploadTrackAudioResponseDto } from './dto/response/upload-track-audio.response.dto';
 import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
+import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
 
 @ApiTags('Library Tracks')
 @Controller('library/tracks')
@@ -146,5 +153,39 @@ export class LibraryTracksController {
   })
   async deleteTrack(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.commandBus.execute(new DeleteLibraryTrackCommand(id, userId));
+  }
+
+  @Post(':id/audio')
+  @UseGuards(JwtAuthGuard, TrackAccessGuard)
+  @CheckTrackAccess('id')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload audio for a track' })
+  @ApiResponse({
+    status: 201,
+    description: 'Audio file uploaded and processing started',
+    type: UploadTrackAudioResponseDto,
+  })
+  @ApiResponse({
+    status: 422,
+    description: 'Invalid file format or size',
+    type: ApiErrorResponseDto,
+  })
+  async uploadAudio(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addMaxSizeValidator({ maxSize: 100 * 1024 * 1024 }) // 100MB
+        .addFileTypeValidator({
+          fileType:
+            /(audio\/mpeg|audio\/wav|audio\/flac|audio\/ogg|audio\/aac|audio\/mp4|audio\/x-wav|audio\/x-flac)/,
+        })
+        .build({
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.commandBus.execute(new UploadTrackAudioCommand(id, userId, file));
   }
 }

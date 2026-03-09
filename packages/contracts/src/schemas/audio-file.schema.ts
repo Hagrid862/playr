@@ -25,6 +25,7 @@ export const AudioFileSchema: z.ZodType<ZodAudioFile> = z.object({
   bitrate: z.number().int().nullable(),
   sampleRate: z.number().int().nullable(),
   channels: z.number().int().nullable(),
+  isOriginal: z.boolean(),
   waveformJson: z.string().nullable(),
   trackId: z.string(),
   quality: z.enum(AudioQuality),

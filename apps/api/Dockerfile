@@ -2,7 +2,7 @@ FROM node:22-alpine AS base
 
 FROM base AS builder
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl ffmpeg
 # Set working directory
 WORKDIR /app
 # Install turbo global
@@ -12,7 +12,7 @@ RUN turbo prune @repo/api --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl ffmpeg
 WORKDIR /app
 
 # First install dependencies (as they change less often)
@@ -38,7 +38,7 @@ RUN pnpm turbo build --filter=@repo/api...
 RUN pnpm install --prod --frozen-lockfile
 
 FROM base AS runner
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl ffmpeg
 WORKDIR /app
 
 # Don't run production as root

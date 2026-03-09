@@ -70,6 +70,32 @@ export class StorageService {
   }
 
   /**
+   * Get a file from the specified bucket as a Buffer
+   */
+  async getFile(bucketType: FileBucket, key: string): Promise<Buffer> {
+    const bucketName = this.getBucketName(bucketType);
+
+    const getCommand = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    try {
+      const response = await this.s3Client.send(getCommand);
+      const stream = response.Body as any;
+
+      const chunks: any[] = [];
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
+    } catch (error) {
+      this.logger.error(`Failed to get file from bucket ${bucketName} with key ${key}`, error);
+      throw new Error(`Failed to get file: ${(error as Error).message}`);
+    }
+  }
+
+  /**
    * Get a presigned URL for a file (typically for private buckets)
    */
   async getPresignedUrl(
