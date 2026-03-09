@@ -16,7 +16,7 @@ export class DeleteLibraryAlbumHandler implements ICommandHandler<DeleteLibraryA
       access: {
         some: {
           userId,
-          role: 'OWNER',
+          role: 'owner',
         },
       },
     });

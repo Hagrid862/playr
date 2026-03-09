@@ -30,7 +30,7 @@ export class UploadLibraryArtistBannerHandler implements ICommandHandler<UploadL
     // Validate artist existence and ownership
     const artist = await this.artistRepository.findOne({
       id: artistId,
-      access: { some: { userId, role: 'OWNER' } },
+      access: { some: { userId, role: 'owner' } },
     });
     if (!artist) {
       throw new NotFoundException('Artist not found');

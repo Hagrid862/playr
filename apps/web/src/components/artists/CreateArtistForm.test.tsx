@@ -155,4 +155,61 @@ describe('CreateArtistForm', () => {
     fireEvent.change(nameInput, { target: { value: '' } });
     expect(screen.queryByText('Artist name is required')).not.toBeInTheDocument();
   });
+
+  it('triggers file input click when avatar is clicked', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    const avatarContainer = screen.getByText(/Upload Photo/i).closest('div');
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(fileInput, 'click');
+
+    fireEvent.click(avatarContainer!);
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it('handles avatar file selection and updates preview', async () => {
+    const user = userEvent.setup();
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
+    const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL');
+
+    const { unmount } = render(<CreateArtistForm {...defaultProps} />);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+    const file = new File(['(⌐□_□)'], 'chucknorris.png', { type: 'image/png' });
+    await user.upload(fileInput, file);
+
+    expect(createObjectUrlSpy).toHaveBeenCalledWith(file);
+    expect(screen.getByAltText('Avatar preview')).toHaveAttribute('src', 'mock-url');
+    expect(screen.getByText('Change Photo')).toBeInTheDocument();
+
+    unmount();
+    expect(revokeObjectUrlSpy).toHaveBeenCalledWith('mock-url');
+  });
+
+  it('submits with the selected avatar file', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
+
+    render(<CreateArtistForm {...defaultProps} />);
+    const nameInput = screen.getByLabelText(/Artist Name/i);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const submitButton = screen.getByRole('button', { name: /Create Artist/i });
+
+    const file = new File(['(⌐□_□)'], 'chucknorris.png', { type: 'image/png' });
+    await user.type(nameInput, 'New Artist');
+    await user.upload(fileInput, file);
+    await user.click(submitButton);
+
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'New Artist' }),
+      file,
+    );
+  });
+
+  it('handles file change with no files selected', () => {
+    render(<CreateArtistForm {...defaultProps} />);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+    fireEvent.change(fileInput, { target: { files: [] } });
+    // Just ensuring it doesn't crash and covers the branch
+  });
 });

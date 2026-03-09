@@ -49,7 +49,7 @@ export class TrackRepository {
         deletedAt: null,
         OR: [
           // 1. Is it Public?
-          { visibility: 'PUBLIC' },
+          { visibility: 'public' },
           // 2. Direct Track Access?
           {
             access: {

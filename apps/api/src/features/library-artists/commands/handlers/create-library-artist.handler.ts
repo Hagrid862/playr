@@ -32,7 +32,7 @@ export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibrary
     const artist = await this.unitOfWork.runInTransaction(async () => {
       const existingArtist = await this.artistRepository.findOne({
         name: request.name,
-        access: { some: { userId, role: 'OWNER' } },
+        access: { some: { userId, role: 'owner' } },
       });
 
       if (existingArtist) {
@@ -42,11 +42,11 @@ export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibrary
       const created = await this.artistRepository.create({
         name: request.name,
         description: request.description,
-        visibility: 'PRIVATE',
+        visibility: 'private',
         access: {
           create: {
             userId: userId,
-            role: 'OWNER',
+            role: 'owner',
           },
         },
       });

@@ -1,0 +1,123 @@
+import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AlbumSchema } from '@repo/contracts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UpdateLibraryAlbumCommand } from '../impl/update-library-album.command';
+import { UpdateLibraryAlbumHandler } from './update-library-album.handler';
+
+describe('UpdateLibraryAlbumHandler', () => {
+  let handler: UpdateLibraryAlbumHandler;
+  let albumRepository: DeepMocked<AlbumRepository>;
+
+  const mockUserId = 'user-123';
+  const mockAlbumId = 'album-123';
+  const mockAlbum = {
+    id: mockAlbumId,
+    name: 'Old Name',
+    description: 'Old Desc',
+    type: 'album',
+    coverId: 'old-cover',
+  };
+
+  beforeEach(async () => {
+    albumRepository = createMock<AlbumRepository>();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UpdateLibraryAlbumHandler,
+        { provide: AlbumRepository, useValue: albumRepository },
+      ],
+    }).compile();
+
+    handler = module.get<UpdateLibraryAlbumHandler>(UpdateLibraryAlbumHandler);
+  });
+
+  it('should update library album successfully', async () => {
+    const request = { name: 'New Name' };
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
+
+    albumRepository.findOne.mockResolvedValueOnce(mockAlbum as any); // Finding existing album
+    albumRepository.findOne.mockResolvedValueOnce(null); // Checking for name collision
+    albumRepository.update.mockResolvedValue({ ...mockAlbum, ...request } as any);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: { ...mockAlbum, ...request },
+    } as any);
+
+    const result = await handler.execute(command);
+
+    expect(result.name).toBe('New Name');
+    expect(albumRepository.update).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({ name: 'New Name' }),
+    );
+  });
+
+  it('should throw NotFoundException if album not found', async () => {
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, {}, mockUserId);
+    albumRepository.findOne.mockResolvedValue(null);
+
+    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw ConflictException if new name is taken', async () => {
+    const request = { name: 'Taken Name' };
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
+
+    albumRepository.findOne.mockResolvedValueOnce(mockAlbum as any); // Existing
+    albumRepository.findOne.mockResolvedValueOnce({ id: 'other' } as any); // Collision
+
+    await expect(handler.execute(command)).rejects.toThrow(ConflictException);
+  });
+
+  it('should disconnect cover if coverId is null', async () => {
+    const request = { coverId: null };
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.update.mockResolvedValue({ ...mockAlbum, coverId: null } as any);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
+
+    await handler.execute(command);
+
+    expect(albumRepository.update).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({
+        cover: { disconnect: true },
+      }),
+    );
+  });
+
+  it('should connect cover if coverId is provided', async () => {
+    const request = { coverId: 'new-cover' };
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.update.mockResolvedValue({ ...mockAlbum, coverId: 'new-cover' } as any);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
+
+    await handler.execute(command);
+
+    expect(albumRepository.update).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({
+        cover: { connect: { id: 'new-cover' } },
+      }),
+    );
+  });
+
+  it('should throw InternalServerErrorException if result parsing fails', async () => {
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, {}, mockUserId);
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.update.mockResolvedValue({ invalid: 'data' } as any);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: false,
+      error: { format: () => ({}) },
+    } as any);
+
+    await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
+  });
+});

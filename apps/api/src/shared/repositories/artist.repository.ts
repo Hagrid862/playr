@@ -48,7 +48,7 @@ export class ArtistRepository {
         id,
         deletedAt: null,
         OR: [
-          { visibility: 'PUBLIC' },
+          { visibility: 'public' },
           {
             access: {
               some: { userId: activeUserId },

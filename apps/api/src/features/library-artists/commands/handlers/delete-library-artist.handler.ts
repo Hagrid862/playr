@@ -13,7 +13,7 @@ export class DeleteLibraryArtistHandler implements ICommandHandler<DeleteLibrary
 
     const artist = await this.artistRepository.findOne({
       id: artistId,
-      access: { some: { userId, role: 'OWNER' } },
+      access: { some: { userId, role: 'owner' } },
     });
 
     if (!artist) {

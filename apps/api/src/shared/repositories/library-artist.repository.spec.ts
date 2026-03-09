@@ -93,6 +93,20 @@ describe('LibraryArtistRepository', () => {
         orderBy: undefined,
       });
     });
+
+    it('should handle undefined where in findMany', async () => {
+      mockTx.libraryArtist.findMany.mockResolvedValue([]);
+      await repository.findMany({});
+      expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            artist: {
+              deletedAt: null,
+            },
+          },
+        }),
+      );
+    });
   });
 
   describe('exists', () => {
@@ -120,6 +134,18 @@ describe('LibraryArtistRepository', () => {
       expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
         where: {
           libraryId: 'lib-123',
+          artist: {
+            deletedAt: null,
+          },
+        },
+      });
+    });
+
+    it('should handle undefined where in count', async () => {
+      mockTx.libraryArtist.count.mockResolvedValue(0);
+      await repository.count();
+      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
+        where: {
           artist: {
             deletedAt: null,
           },

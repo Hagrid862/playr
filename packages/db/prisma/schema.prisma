@@ -250,7 +250,7 @@ model ArtistAccess {
   id       String     @id @default(cuid())
   artistId String
   userId   String
-  role     AccessRole @default(VIEWER)
+  role     AccessRole @default(viewer)
 
   artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -268,7 +268,7 @@ model AlbumAccess {
   id      String     @id @default(cuid())
   albumId String
   userId  String
-  role    AccessRole @default(VIEWER)
+  role    AccessRole @default(viewer)
 
   album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -286,7 +286,7 @@ model TrackAccess {
   id      String     @id @default(cuid())
   trackId String
   userId  String
-  role    AccessRole @default(VIEWER)
+  role    AccessRole @default(viewer)
 
   track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -331,7 +331,7 @@ model Artist {
   description String?    @db.Text
   isCommunity Boolean    @default(false)
   verified    Boolean    @default(false)
-  visibility  Visibility @default(PUBLIC)
+  visibility  Visibility @default(public)
 
   artistProfile    ArtistProfile?    @relation("ArtistProfileArtist")
   communityProfile CommunityProfile? @relation("CommunityProfileArtist")
@@ -370,7 +370,7 @@ model Album {
   totalTracks   Int        @default(0)
   totalDuration Int        @default(0)
   releaseDate   DateTime?
-  visibility    Visibility @default(PUBLIC)
+  visibility    Visibility @default(public)
 
   coverId String? @unique
   cover   Image?  @relation("AlbumCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
@@ -404,7 +404,7 @@ model Track {
   listenedCount Int        @default(0)
   explicit      Boolean    @default(false)
   lyrics        String?    @db.Text
-  visibility    Visibility @default(PUBLIC)
+  visibility    Visibility @default(public)
 
   albumId String
   album   Album  @relation("AlbumTracks", fields: [albumId], references: [id], onDelete: Cascade)
@@ -1058,13 +1058,13 @@ enum ProcessingStatus {
 }
 
 enum AccessRole {
-  OWNER
-  EDITOR
-  VIEWER
+  owner
+  editor
+  viewer
 }
 
 enum Visibility {
-  PUBLIC
-  PRIVATE
-  COMMUNITY
+  public
+  private
+  community
 }

@@ -26,7 +26,7 @@ describe('DeleteLibraryArtistHandler', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    visibility: 'PUBLIC',
+    visibility: 'public',
   };
 
   beforeEach(async () => {

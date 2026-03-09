@@ -13,7 +13,7 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
 
     const artist = await this.artistRepository.findOne({
       id: artistId,
-      access: { some: { userId, role: 'OWNER' } },
+      access: { some: { userId, role: 'owner' } },
     });
 
     if (!artist) {
@@ -23,7 +23,7 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
     if (request.name && request.name !== artist.name) {
       const existingArtistWithName = await this.artistRepository.findOne({
         name: request.name,
-        access: { some: { userId, role: 'OWNER' } },
+        access: { some: { userId, role: 'owner' } },
       });
 
       if (existingArtistWithName) {

@@ -14,8 +14,8 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
     const album = await this.albumRepository.findOne({
       id,
       OR: [
-        { access: { some: { userId, role: 'OWNER' } } },
-        { artists: { some: { access: { some: { userId, role: 'OWNER' } } } } },
+        { access: { some: { userId, role: 'owner' } } },
+        { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
       ],
     });
 
@@ -27,8 +27,8 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
       const existingAlbumWithName = await this.albumRepository.findOne({
         name: request.name,
         OR: [
-          { access: { some: { userId, role: 'OWNER' } } },
-          { artists: { some: { access: { some: { userId, role: 'OWNER' } } } } },
+          { access: { some: { userId, role: 'owner' } } },
+          { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
         ],
       });
 

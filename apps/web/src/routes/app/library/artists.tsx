@@ -62,7 +62,7 @@ function ArtistsLayout() {
                 Add Artist
               </Link>
             </Button>
-          ) : artist?.visibility === 'PRIVATE' && isDetail && artistId ? (
+          ) : artist?.visibility === 'private' && isDetail && artistId ? (
             <Button variant="outline" asChild>
               <Link to="/app/library/artists/$id/add-content" params={{ id: artistId }}>
                 <PlusIcon />
