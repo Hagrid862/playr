@@ -1,5 +1,6 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Reflector } from '@nestjs/core';
+import { BadRequestException } from '@nestjs/common';
 import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -12,6 +13,9 @@ import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
 import { DeleteLibraryAlbumCommand } from './commands/impl/delete-library-album.command';
 import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
+import { BulkCreateLibraryTracksCommand } from '../library-tracks/commands/impl/bulk-create-library-tracks.command';
+import { BulkUploadTrackAudioCommand } from '../library-tracks/commands/impl/bulk-upload-track-audio.command';
+import { DeleteLibraryAlbumCoverCommand } from './commands/impl/delete-library-album-cover.command';
 
 describe('AlbumsController', () => {
   let controller: AlbumsController;
@@ -78,5 +82,81 @@ describe('AlbumsController', () => {
   it('getAlbumTracks should execute GetLibraryAlbumTracksQuery', async () => {
     await controller.getAlbumTracks(mockAlbumId, mockUserId);
     expect(queryBus.execute).toHaveBeenCalledWith(expect.any(GetLibraryAlbumTracksQuery));
+  });
+
+  it('bulkCreateTracks should execute BulkCreateLibraryTracksCommand', async () => {
+    const body = { tracks: [{ title: 'Track 1' }] };
+
+    await controller.bulkCreateTracks(mockAlbumId, body as any, mockUserId);
+
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkCreateLibraryTracksCommand));
+  });
+
+  it('bulkUploadTrackAudio should execute BulkUploadTrackAudioCommand with parsed trackIds', async () => {
+    const trackIds = ['track-1', 'track-2'];
+    const files = [
+      {
+        originalname: 'file1.mp3',
+      } as Express.Multer.File,
+    ];
+
+    await controller.bulkUploadTrackAudio(mockAlbumId, JSON.stringify(trackIds), files, mockUserId);
+
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkUploadTrackAudioCommand));
+  });
+
+  it('bulkUploadTrackAudio should throw BadRequestException when trackIds is not valid JSON', async () => {
+    const files = [] as Express.Multer.File[];
+
+    await expect(
+      controller.bulkUploadTrackAudio(mockAlbumId, 'not-json', files, mockUserId),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('bulkUploadTrackAudio should throw BadRequestException when parsed trackIds is not an array', async () => {
+    const files = [] as Express.Multer.File[];
+
+    await expect(
+      controller.bulkUploadTrackAudio(
+        mockAlbumId,
+        JSON.stringify({ foo: 'bar' }),
+        files,
+        mockUserId,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('bulkUploadTrackAudio should use empty array when trackIdsRaw is undefined', async () => {
+    const files = [] as Express.Multer.File[];
+
+    await controller.bulkUploadTrackAudio(
+      mockAlbumId,
+      undefined as unknown as string,
+      files,
+      mockUserId,
+    );
+
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkUploadTrackAudioCommand));
+  });
+
+  it('bulkUploadTrackAudio should use empty files array when files is undefined', async () => {
+    await controller.bulkUploadTrackAudio(
+      mockAlbumId,
+      JSON.stringify(['track-1']),
+      undefined as unknown as Express.Multer.File[],
+      mockUserId,
+    );
+
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(BulkUploadTrackAudioCommand));
+  });
+
+  it('deleteCover should execute DeleteLibraryAlbumCoverCommand', async () => {
+    await controller.deleteCover(mockAlbumId, mockUserId);
+
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(DeleteLibraryAlbumCoverCommand));
   });
 });

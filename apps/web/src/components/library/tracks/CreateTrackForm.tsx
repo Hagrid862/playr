@@ -79,7 +79,6 @@ export function CreateTrackForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-
   const form = useForm({
     defaultValues: {
       title: '',
@@ -114,7 +113,6 @@ export function CreateTrackForm({
           error instanceof Error ? error.message : 'Submission failed. Please try again.';
         setSubmissionError(message);
         console.error('Submission failed:', error);
-        throw error;
       }
     },
   });
@@ -241,6 +239,9 @@ export function CreateTrackForm({
             ) : null;
           }}
         </form.Subscribe>
+        {submissionError && (
+          <div className="text-destructive text-sm font-medium">{submissionError}</div>
+        )}
         <div className="flex flex-col gap-6">
           <form.Field name="title">
             {(field) => (

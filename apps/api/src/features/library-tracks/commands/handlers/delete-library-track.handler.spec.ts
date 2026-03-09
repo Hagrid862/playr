@@ -65,6 +65,11 @@ describe('DeleteLibraryTrackHandler', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(handler).toBeDefined();
   });
 
   it('should soft delete track, remove library tracks, and delete audio files', async () => {
@@ -106,15 +111,112 @@ describe('DeleteLibraryTrackHandler', () => {
       library: { userId },
     });
     expect(audioFileRepository.delete).toHaveBeenCalledWith('audio-1');
-    expect(storageService.deleteFile).toHaveBeenCalledWith(
-      FileBucket.private,
-      'audio/key',
-    );
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, 'audio/key');
   });
 
   it('should throw NotFoundException if track not found or access denied', async () => {
     trackRepository.findOne.mockResolvedValue(null);
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+    const err = await handler.execute(command).catch((e) => e);
+    expect(err).toBeInstanceOf(NotFoundException);
+    expect(err.message).toBe('Track not found or you do not have permission to delete it');
+    expect(trackRepository.findOne).toHaveBeenCalledWith({
+      id: trackId,
+      access: { some: { userId, role: 'owner' } },
+    });
+  });
+
+  it('should handle track with zero audio files', async () => {
+    trackRepository.findOne.mockResolvedValue(mockTrack);
+    audioFileRepository.findMany.mockResolvedValue([]);
+
+    const result = await handler.execute(command);
+
+    expect(result).toEqual(mockTrack);
+    expect(trackRepository.update).toHaveBeenCalledWith(trackId, {
+      deletedAt: expect.any(Date),
+    });
+    expect(libraryTrackRepository.deleteMany).toHaveBeenCalledWith({
+      trackId,
+      library: { userId },
+    });
+    expect(audioFileRepository.delete).not.toHaveBeenCalled();
+    expect(storageService.deleteFile).not.toHaveBeenCalled();
+  });
+
+  it('should delete multiple audio files and cleanup from storage', async () => {
+    const mockAudioFile1 = {
+      id: 'audio-1',
+      trackId,
+      bucket: FileBucket.private,
+      key: 'audio/key1',
+      url: null,
+      mimeType: 'audio/mpeg',
+      size: 1000,
+      format: 'mp3',
+      duration: 180,
+      bitrate: 320,
+      sampleRate: 44100,
+      channels: 2,
+      isOriginal: true,
+      waveformJson: null,
+      quality: 'original',
+      status: 'complete',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const mockAudioFile2 = {
+      ...mockAudioFile1,
+      id: 'audio-2',
+      key: 'audio/key2',
+    };
+    trackRepository.findOne.mockResolvedValue(mockTrack);
+    audioFileRepository.findMany.mockResolvedValue([mockAudioFile1 as any, mockAudioFile2 as any]);
+
+    const result = await handler.execute(command);
+
+    expect(result).toEqual(mockTrack);
+    expect(audioFileRepository.delete).toHaveBeenCalledWith('audio-1');
+    expect(audioFileRepository.delete).toHaveBeenCalledWith('audio-2');
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, 'audio/key1');
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, 'audio/key2');
+  });
+
+  it('should log error when storage delete fails but still return track', async () => {
+    const mockAudioFile = {
+      id: 'audio-1',
+      trackId,
+      bucket: FileBucket.private,
+      key: 'audio/key',
+      url: null,
+      mimeType: 'audio/mpeg',
+      size: 1000,
+      format: 'mp3',
+      duration: 180,
+      bitrate: 320,
+      sampleRate: 44100,
+      channels: 2,
+      isOriginal: true,
+      waveformJson: null,
+      quality: 'original',
+      status: 'complete',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    trackRepository.findOne.mockResolvedValue(mockTrack);
+    audioFileRepository.findMany.mockResolvedValue([mockAudioFile as any]);
+    storageService.deleteFile.mockRejectedValue(new Error('S3 delete failed'));
+
+    const loggerSpy = vi.spyOn(handler['logger'], 'error');
+
+    const result = await handler.execute(command);
+
+    expect(result).toEqual(mockTrack);
+    await vi.waitFor(() => {
+      expect(loggerSpy).toHaveBeenCalledWith(
+        `Failed to cleanup audio file from S3: ${mockAudioFile.key}`,
+        expect.any(Error),
+      );
+    });
   });
 });

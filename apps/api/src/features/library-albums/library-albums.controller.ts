@@ -4,6 +4,7 @@ import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { AlbumAccessGuard } from '@/shared/guards/album-access.guard';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -15,29 +16,35 @@ import {
   Post,
   Query,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodAlbum, ZodImage } from '@repo/contracts';
+import { BulkCreateLibraryTracksCommand } from '../library-tracks/commands/impl/bulk-create-library-tracks.command';
+import { BulkUploadTrackAudioCommand } from '../library-tracks/commands/impl/bulk-upload-track-audio.command';
 import { CreateLibraryAlbumCommand } from './commands/impl/create-library-album.command';
+import { DeleteLibraryAlbumCoverCommand } from './commands/impl/delete-library-album-cover.command';
 import { DeleteLibraryAlbumCommand } from './commands/impl/delete-library-album.command';
 import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.command';
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
-import { DeleteLibraryAlbumCoverCommand } from './commands/impl/delete-library-album-cover.command';
+import { BulkCreateLibraryTracksRequestDto } from './dto/request/bulk-create-library-tracks.request.dto';
 import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
 import { GetLibraryAlbumsRequestDto } from './dto/request/get-library-albums.request.dto';
 import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
+import { BulkCreateLibraryTracksResponseDto } from './dto/response/bulk-create-library-tracks.response.dto';
+import { BulkUploadTrackAudioResponseDto } from './dto/response/bulk-upload-track-audio.response.dto';
 import { CreateLibraryAlbumResponseDto } from './dto/response/create-library-album.response.dto';
+import { DeleteLibraryAlbumCoverResponseDto } from './dto/response/delete-library-album-cover.response.dto';
+import { DeleteLibraryAlbumResponseDto } from './dto/response/delete-library-album.response.dto';
 import { GetLibraryAlbumTracksResponseDto } from './dto/response/get-library-album-tracks.response.dto';
 import { GetLibraryAlbumResponseDto } from './dto/response/get-library-album.response.dto';
 import { GetLibraryAlbumsResponseDto } from './dto/response/get-library-albums.response.dto';
 import { UpdateLibraryAlbumResponseDto } from './dto/response/update-library-album.response.dto';
 import { UploadLibraryAlbumCoverResponseDto } from './dto/response/upload-library-album-cover.response.dto';
-import { DeleteLibraryAlbumResponseDto } from './dto/response/delete-library-album.response.dto';
-import { DeleteLibraryAlbumCoverResponseDto } from './dto/response/delete-library-album-cover.response.dto';
 import { GetLibraryAlbumTracksQuery } from './queries/impl/get-library-album-tracks.query';
 import { GetLibraryAlbumQuery } from './queries/impl/get-library-album.query';
 import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
@@ -148,6 +155,95 @@ export class AlbumsController {
   })
   async getAlbumTracks(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.queryBus.execute(new GetLibraryAlbumTracksQuery(userId, id));
+  }
+
+  @Post(':id/tracks/bulk')
+  @UseGuards(JwtAuthGuard, AlbumAccessGuard)
+  @CheckAlbumAccess('id')
+  @ApiOperation({ summary: 'Bulk create tracks in album' })
+  @ApiResponse({
+    status: 201,
+    description: 'Tracks created successfully',
+    type: BulkCreateLibraryTracksResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album not found',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 412,
+    description: 'User library not found',
+    type: ApiErrorResponseDto,
+  })
+  async bulkCreateTracks(
+    @Param('id') albumId: string,
+    @Body() body: BulkCreateLibraryTracksRequestDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.commandBus.execute(new BulkCreateLibraryTracksCommand(albumId, body, userId));
+  }
+
+  @Post(':id/tracks/bulk/audio')
+  @UseGuards(JwtAuthGuard, AlbumAccessGuard)
+  @CheckAlbumAccess('id')
+  @UseInterceptors(
+    FilesInterceptor('files', 50, {
+      limits: { fileSize: 100 * 1024 * 1024 }, // 100MB per file
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Bulk upload audio for tracks' })
+  @ApiResponse({
+    status: 201,
+    description: 'Audio files uploaded and processing started',
+    type: BulkUploadTrackAudioResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request (trackIds/files mismatch or invalid)',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Album or track not found',
+    type: ApiErrorResponseDto,
+  })
+  async bulkUploadTrackAudio(
+    @Param('id') albumId: string,
+    @Body('trackIds') trackIdsRaw: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser('id') userId: string,
+  ) {
+    let trackIds: string[];
+    try {
+      const parsed = JSON.parse(trackIdsRaw ?? '[]');
+      if (!Array.isArray(parsed)) {
+        throw new BadRequestException('trackIds must be a JSON array');
+      }
+      trackIds = parsed;
+    } catch {
+      throw new BadRequestException('trackIds must be a valid JSON array of track IDs');
+    }
+
+    return this.commandBus.execute(
+      new BulkUploadTrackAudioCommand(albumId, trackIds, files ?? [], userId),
+    );
   }
 
   @Patch(':id')

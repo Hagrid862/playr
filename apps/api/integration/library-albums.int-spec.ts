@@ -8,7 +8,21 @@ import { StorageService } from '../src/shared/services/storage.service';
 import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import './setup-env';
 import { createIntegrationApp } from './test-utils';
-import { AlbumGetPayload, Image, Library, LibraryAlbum, PrismaClient } from '@repo/db';
+import {
+  AlbumGetPayload,
+  AudioFormat,
+  AudioQuality,
+  FileBucket,
+  Image,
+  Library,
+  LibraryAlbum,
+  PrismaClient,
+  ProcessingStatus,
+  Track,
+  TrackGetPayload,
+  User,
+  Visibility,
+} from '@repo/db';
 
 // Helper type for Album with relations matching repository include
 type AlbumWithRelations = AlbumGetPayload<{
@@ -416,6 +430,283 @@ describe('LibraryAlbumsController (Integration)', () => {
         .set('Authorization', authHeader)
         .attach('file', mockFile, 'cover.txt')
         .expect(400);
+    });
+  });
+
+  describe('POST /library/albums/:id/tracks/bulk', () => {
+    const mockUser: User = {
+      id: 'user-123',
+      username: 'testu',
+      firstName: 'Test',
+      lastName: 'User',
+      birthDate: null,
+      gender: null,
+      description: null,
+      password: 'hashed-password',
+      avatarId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    };
+
+    it('should create multiple tracks successfully (201)', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
+
+      const mockTrack1: Track = {
+        id: 'track-1',
+        title: 'Track 1',
+        trackNumber: 1,
+        diskNumber: 1,
+        duration: 0,
+        listenedCount: 0,
+        explicit: false,
+        lyrics: null,
+        visibility: 'private',
+        albumId: mockAlbum.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      };
+      const mockTrack2: Track = {
+        id: 'track-2',
+        title: 'Track 2',
+        trackNumber: 2,
+        diskNumber: 1,
+        duration: 0,
+        listenedCount: 0,
+        explicit: false,
+        lyrics: null,
+        visibility: 'private',
+        albumId: mockAlbum.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      };
+
+      prismaMock.client.track.create
+        .mockResolvedValueOnce(mockTrack1)
+        .mockResolvedValueOnce(mockTrack2);
+      prismaMock.client.libraryTrack.create.mockResolvedValue({} as any);
+
+      prismaMock.mainClient.$transaction.mockImplementation(
+        async (cb: (client: PrismaClient) => Promise<any>) => cb(prismaMock.client),
+      );
+
+      const response = await request(app.getHttpServer())
+        .post(`/library/albums/${mockAlbum.id}/tracks/bulk`)
+        .set('Authorization', authHeader)
+        .send({
+          tracks: [
+            { title: 'Track 1', trackNumber: 1, diskNumber: 1, artistIds: ['artist-123'] },
+            { title: 'Track 2', trackNumber: 2, diskNumber: 1, artistIds: ['artist-123'] },
+          ],
+        });
+
+      if (response.status !== 201) {
+        console.log(
+          'POST /library/albums/:id/tracks/bulk error:',
+          JSON.stringify(response.body, null, 2),
+        );
+      }
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.tracks).toHaveLength(2);
+      expect(response.body.data.tracks[0].title).toBe('Track 1');
+      expect(response.body.data.tracks[1].title).toBe('Track 2');
+    });
+
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer())
+        .post(`/library/albums/${mockAlbum.id}/tracks/bulk`)
+        .send({
+          tracks: [{ title: 'Track 1', trackNumber: 1, artistIds: ['artist-123'] }],
+        })
+        .expect(401);
+    });
+
+    it('should return 400 for invalid input (missing title)', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
+
+      await request(app.getHttpServer())
+        .post(`/library/albums/${mockAlbum.id}/tracks/bulk`)
+        .set('Authorization', authHeader)
+        .send({
+          tracks: [{ trackNumber: 1, artistIds: ['artist-123'] }],
+        })
+        .expect(400);
+    });
+  });
+
+  describe('POST /library/albums/:id/tracks/bulk/audio', () => {
+    const mockUser: User = {
+      id: 'user-123',
+      username: 'testu',
+      firstName: 'Test',
+      lastName: 'User',
+      birthDate: null,
+      gender: null,
+      description: null,
+      password: 'hashed-password',
+      avatarId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    };
+
+    const mockTrackWithAccess: TrackGetPayload<{
+      include: { artists: true; album: true; access: true };
+    }> = {
+      id: 'track-1',
+      title: 'Track 1',
+      trackNumber: 1,
+      diskNumber: 1,
+      duration: 0,
+      listenedCount: 0,
+      explicit: false,
+      lyrics: null,
+      visibility: 'private' as Visibility,
+      albumId: mockAlbum.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      artists: [],
+      album: mockAlbum,
+      access: [
+        {
+          id: 'access-1',
+          userId: 'user-123',
+          role: 'owner',
+          trackId: 'track-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    };
+
+    it('should upload multiple audio files successfully (201)', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
+
+      prismaMock.client.track.findFirst
+        .mockResolvedValueOnce(mockTrackWithAccess)
+        .mockResolvedValueOnce(mockTrackWithAccess);
+
+      storageServiceMock.uploadFile.mockResolvedValue({
+        url: 'https://cdn.example.com/audio.mp3',
+        key: 'key',
+      });
+
+      const mockAudioFile1 = {
+        id: 'audio-1',
+        trackId: 'track-1',
+        status: ProcessingStatus.pending,
+        format: AudioFormat.mp3,
+        quality: AudioQuality.original,
+        size: 100,
+        bucket: FileBucket.private,
+        key: 'key1',
+        mimeType: 'audio/mpeg',
+        url: 'https://cdn.example.com/audio.mp3',
+        duration: null,
+        bitrate: null,
+        sampleRate: null,
+        channels: null,
+        isOriginal: true,
+        waveformJson: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const mockAudioFile2 = { ...mockAudioFile1, id: 'audio-2', key: 'key2' };
+
+      prismaMock.client.audioFile.create
+        .mockResolvedValueOnce(mockAudioFile1)
+        .mockResolvedValueOnce(mockAudioFile2);
+
+      const response = await request(app.getHttpServer())
+        .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
+        .set('Authorization', authHeader)
+        .field('trackIds', JSON.stringify(['track-1', 'track-1']))
+        .attach('files', Buffer.from('fake-audio-1'), {
+          filename: 'test1.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .attach('files', Buffer.from('fake-audio-2'), {
+          filename: 'test2.mp3',
+          contentType: 'audio/mpeg',
+        });
+
+      if (response.status !== 201) {
+        console.log(
+          'POST /library/albums/:id/tracks/bulk/audio error:',
+          JSON.stringify(response.body, null, 2),
+        );
+      }
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.audioFiles).toHaveLength(2);
+    });
+
+    it('should return 400 if trackIds count does not match files count', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
+
+      await request(app.getHttpServer())
+        .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
+        .set('Authorization', authHeader)
+        .field('trackIds', JSON.stringify(['track-1']))
+        .attach('files', Buffer.from('fake-audio-1'), {
+          filename: 'test1.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .attach('files', Buffer.from('fake-audio-2'), {
+          filename: 'test2.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .expect(400);
+    });
+
+    it('should return 401 if unauthenticated', async () => {
+      await request(app.getHttpServer())
+        .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
+        .field('trackIds', JSON.stringify(['track-1', 'track-2']))
+        .attach('files', Buffer.from('fake-audio-1'), {
+          filename: 'test1.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .attach('files', Buffer.from('fake-audio-2'), {
+          filename: 'test2.mp3',
+          contentType: 'audio/mpeg',
+        })
+        .expect(401);
+    });
+
+    it('should return 400 if more than 50 files are uploaded', async () => {
+      const authHeader = await getAuthHeader();
+      const trackIds = Array.from({ length: 51 }, (_, i) => `track-${i}`);
+      const req = request(app.getHttpServer())
+        .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
+        .set('Authorization', authHeader)
+        .field('trackIds', JSON.stringify(trackIds));
+
+      for (let i = 0; i < 51; i++) {
+        req.attach('files', Buffer.from(`fake-audio-${i}`), {
+          filename: `test${i}.mp3`,
+          contentType: 'audio/mpeg',
+        });
+      }
+
+      await req.expect(400);
     });
   });
 
