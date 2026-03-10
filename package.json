@@ -25,7 +25,8 @@
     "madge": "^8.0.0",
     "prettier": "catalog:",
     "turbo": "^2.7.6",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@9.15.4",
   "engines": {
