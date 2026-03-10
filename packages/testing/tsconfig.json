@@ -9,7 +9,9 @@
     "lib": ["ESNext", "DOM"],
     "rootDir": "src",
     "incremental": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
