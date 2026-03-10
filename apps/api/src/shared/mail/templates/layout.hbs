@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{HtmlTitle}}</title>
+    </head>
+<body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="100%" style="max-width: 600px; border: 1px solid #e2e8f0; border-radius: 12px; border-spacing: 0;">
+                    <tr>
+                        <td style="padding: 0;">
+                            {{> header}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px; color: #1e293b;">
+                            {{{ body }}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0;">
+                            {{> footer}}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
