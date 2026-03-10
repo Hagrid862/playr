@@ -1,0 +1,16 @@
+{
+  "extends": "@repo/configs/typescript/packages.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "types": ["node"],
+    "lib": ["ESNext", "DOM"],
+    "rootDir": "src",
+    "incremental": false,
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
