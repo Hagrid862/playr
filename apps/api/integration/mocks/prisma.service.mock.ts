@@ -1,1 +1,1 @@
-export { PrismaServiceMock } from '@repo/testing/api';
+export { PrismaServiceMock } from '@repo/testing';
