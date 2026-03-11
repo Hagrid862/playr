@@ -1,28 +1,20 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, Image, FileBucket } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { ImageRepository } from './image.repository';
+import { buildImage } from '@repo/testing';
 
 describe('ImageRepository', () => {
   let repository: ImageRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockImage: Image = {
+  const mockImage: Image = buildImage({
     id: 'image-123',
     bucket: FileBucket.private,
     key: 'test-key.jpg',
     url: 'https://test.com/test-key.jpg',
-    mimeType: 'image/jpeg',
-    alt: null,
-    reportId: null,
-    uploadStatus: 'pending',
-    blurhash: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -103,7 +95,7 @@ describe('ImageRepository', () => {
         key: 'test-key.jpg',
         url: 'https://test.com/test-key.jpg',
         mimeType: 'image/jpeg',
-      } as any;
+      };
       const result = await repository.create(data);
       expect(result).toEqual(mockImage);
       expect(mockTx.image.create).toHaveBeenCalledWith({ data });

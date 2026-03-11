@@ -1,34 +1,18 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AudioFile, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AudioFile, PrismaClient, FileBucket, AudioFormat } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 import { AudioFileRepository } from './audio-file.repository';
+import { buildAudioFile } from '@repo/testing';
 
 describe('AudioFileRepository', () => {
   let repository: AudioFileRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockAudioFile: AudioFile = {
+  const mockAudioFile: AudioFile = buildAudioFile({
     id: 'audio-123',
-    bucket: 'private',
-    key: 'tracks/track-123/audio.mp3',
-    url: 'http://localhost:9000/private/tracks/track-123/audio.mp3',
-    mimeType: 'audio/mpeg',
-    size: 5242880,
-    format: 'mp3',
-    duration: 180.5,
-    bitrate: 320000,
-    sampleRate: 44100,
-    channels: 2,
-    isOriginal: true,
-    waveformJson: '[0.1, 0.2, 0.3]',
     trackId: 'track-123',
-    quality: 'original',
-    status: 'complete',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -115,7 +99,15 @@ describe('AudioFileRepository', () => {
   describe('create', () => {
     it('should create an audio file', async () => {
       mockTx.audioFile.create.mockResolvedValue(mockAudioFile);
-      const data = { key: 'test' } as any;
+      const data = {
+        key: 'test',
+        track: { connect: { id: 'track-123' } },
+        bucket: FileBucket.private,
+        mimeType: 'audio/mpeg',
+        size: 1024,
+        format: AudioFormat.mp3,
+        isOriginal: true,
+      };
       const result = await repository.create(data);
       expect(result).toEqual(mockAudioFile);
       expect(mockTx.audioFile.create).toHaveBeenCalledWith({ data });
@@ -125,7 +117,7 @@ describe('AudioFileRepository', () => {
   describe('update', () => {
     it('should update an audio file', async () => {
       mockTx.audioFile.update.mockResolvedValue(mockAudioFile);
-      const data = { status: 'processing' } as any;
+      const data: Partial<AudioFile> = { status: mockAudioFile.status };
       const result = await repository.update('audio-123', data);
       expect(result).toEqual(mockAudioFile);
       expect(mockTx.audioFile.update).toHaveBeenCalledWith({ where: { id: 'audio-123' }, data });

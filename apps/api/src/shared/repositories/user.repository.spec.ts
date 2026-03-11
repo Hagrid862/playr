@@ -1,27 +1,17 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EmailAddress, EmailType, Gender, PrismaClient, User, UserCreateInput } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EmailAddress, EmailType, PrismaClient, User, UserCreateInput } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 import { UserRepository } from './user.repository';
+import { buildUser } from '@repo/testing';
 
 describe('UserRepository', () => {
   let repository: UserRepository;
 
-  const mockUser: User = {
+  const mockUser: User = buildUser({
     id: 'user-id-123',
     username: 'testuser',
-    password: 'hashed-password',
-    firstName: 'John',
-    lastName: 'Doe',
-    birthDate: '01-01-2000',
-    gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  });
 
   let mockTx: DeepMocked<PrismaClient>;
 
@@ -145,10 +135,12 @@ describe('UserRepository', () => {
   describe('getByEmailWithStatus', () => {
     it('should return user with email status', async () => {
       const mockResult = { ...mockUser, emailStatus: 'verified' };
-      mockTx.emailAddress.findFirst.mockResolvedValue({
-        user: mockUser,
-        status: 'verified',
-      } as any);
+      mockTx.emailAddress.findFirst.mockResolvedValue(
+        createMock<EmailAddress & { user: User }>({
+          user: mockUser,
+          status: 'verified',
+        }),
+      );
 
       const result = await repository.getByEmailWithStatus('test@example.com');
       expect(result).toEqual(mockResult);
@@ -202,7 +194,16 @@ describe('UserRepository', () => {
   describe('createMany', () => {
     it('should create multiple users', async () => {
       mockTx.user.createManyAndReturn.mockResolvedValue([mockUser]);
-      const result = await repository.createMany([{} as any]);
+      const result = await repository.createMany([
+        {
+          username: 'user-1',
+          password: 'password',
+          firstName: 'User',
+          lastName: 'One',
+          birthDate: '01-01-2000',
+          gender: mockUser.gender,
+        },
+      ]);
       expect(result).toEqual([mockUser]);
       expect(mockTx.user.createManyAndReturn).toHaveBeenCalled();
     });
@@ -221,7 +222,7 @@ describe('UserRepository', () => {
   describe('deleteMany', () => {
     it('should delete multiple users', async () => {
       mockTx.user.findMany.mockResolvedValue([mockUser]);
-      mockTx.user.deleteMany.mockResolvedValue({ count: 1 } as any);
+      mockTx.user.deleteMany.mockResolvedValue({ count: 1 });
       const result = await repository.deleteMany({ username: 'test' });
       expect(result).toEqual([mockUser]);
       expect(mockTx.user.deleteMany).toHaveBeenCalledWith({ where: { username: 'test' } });

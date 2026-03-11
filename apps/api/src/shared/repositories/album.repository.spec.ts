@@ -1,28 +1,18 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Album, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { AlbumRepository } from './album.repository';
+import { buildAlbum } from '@repo/testing';
 
 describe('AlbumRepository', () => {
   let repository: AlbumRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockAlbum: Album = {
+  const mockAlbum: Album = buildAlbum({
     id: 'album-123',
     name: 'Test Album',
-    description: null,
-    type: 'album',
-    releaseDate: new Date(),
-    visibility: 'private',
-    coverId: null,
-    totalTracks: 0,
-    totalDuration: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -111,7 +101,7 @@ describe('AlbumRepository', () => {
 
   describe('checkAccess', () => {
     it('should return true if album matches access conditions (Public)', async () => {
-      mockTx.album.findFirst.mockResolvedValue({ id: 'album-123' } as any);
+      mockTx.album.findFirst.mockResolvedValue(buildAlbum({ id: 'album-123' }));
       const result = await repository.checkAccess('album-123');
       expect(result).toBe(true);
       expect(mockTx.album.findFirst).toHaveBeenCalledWith(
@@ -130,7 +120,7 @@ describe('AlbumRepository', () => {
     });
 
     it('should return true if album matches access conditions (User)', async () => {
-      mockTx.album.findFirst.mockResolvedValue({ id: 'album-123' } as any);
+      mockTx.album.findFirst.mockResolvedValue(buildAlbum({ id: 'album-123' }));
       const result = await repository.checkAccess('album-123', 'user-123');
       expect(result).toBe(true);
       expect(mockTx.album.findFirst).toHaveBeenCalledWith(
@@ -184,7 +174,9 @@ describe('AlbumRepository', () => {
   describe('create', () => {
     it('should create an album', async () => {
       mockTx.album.create.mockResolvedValue(mockAlbum);
-      const data = { name: 'New Album', type: 'album', visibility: 'private' } as any;
+      const data = {
+        name: 'New Album',
+      };
       const result = await repository.create(data);
       expect(result).toEqual(mockAlbum);
       expect(mockTx.album.create).toHaveBeenCalledWith({ data });
@@ -194,7 +186,7 @@ describe('AlbumRepository', () => {
   describe('createMany', () => {
     it('should create many albums', async () => {
       mockTx.album.createManyAndReturn.mockResolvedValue([mockAlbum]);
-      const data = [{ name: 'Album 1' }] as any;
+      const data = [{ name: 'Album 1' }];
       const result = await repository.createMany(data);
       expect(result).toEqual([mockAlbum]);
       expect(mockTx.album.createManyAndReturn).toHaveBeenCalledWith({ data });
@@ -213,9 +205,9 @@ describe('AlbumRepository', () => {
 
   describe('updateMany', () => {
     it('should update many albums in transaction', async () => {
-      (mockTx as any).$transaction = vi.fn().mockImplementation(async (arg) => {
+      mockTx.$transaction.mockImplementation(async (arg) => {
         if (Array.isArray(arg)) return Promise.all(arg);
-        return arg;
+        return arg as unknown;
       });
       mockTx.album.update.mockResolvedValue(mockAlbum);
 

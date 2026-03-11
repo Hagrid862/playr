@@ -1,32 +1,24 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { type DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Library, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PrismaClient } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryRepository } from './library.repository';
+import { buildLibrary, createMockPrismaClient, createMockPrismaService } from '@repo/testing';
 
 describe('LibraryRepository', () => {
   let repository: LibraryRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockLibrary: Library = {
-    id: 'lib-123',
-    userId: 'user-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  const mockLibrary = buildLibrary({ id: 'lib-123', userId: 'user-123' });
 
   beforeEach(async () => {
-    mockTx = createMock<PrismaClient>();
+    mockTx = createMockPrismaClient();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LibraryRepository,
         {
           provide: PrismaService,
-          useValue: {
-            client: mockTx,
-          },
+          useValue: createMockPrismaService({ client: mockTx }),
         },
       ],
     }).compile();

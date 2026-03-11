@@ -1,27 +1,18 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Artist, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { ArtistRepository } from './artist.repository';
+import { buildArtist, buildAlbum } from '@repo/testing';
 
 describe('ArtistRepository', () => {
   let repository: ArtistRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockArtist: Artist = {
+  const mockArtist: Artist = buildArtist({
     id: 'artist-123',
     name: 'Test Artist',
-    description: null,
-    isCommunity: false,
-    verified: false,
-    bannerId: null,
-    avatarId: null,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -74,13 +65,13 @@ describe('ArtistRepository', () => {
 
   describe('checkAccess', () => {
     it('should return true if artist is public', async () => {
-      mockTx.artist.findFirst.mockResolvedValue({ id: 'artist-123' } as any);
+      mockTx.artist.findFirst.mockResolvedValue(buildArtist({ id: 'artist-123' }));
       const result = await repository.checkAccess('artist-123');
       expect(result).toBe(true);
     });
 
     it('should return true if user has access', async () => {
-      mockTx.artist.findFirst.mockResolvedValue({ id: 'artist-123' } as any);
+      mockTx.artist.findFirst.mockResolvedValue(buildArtist({ id: 'artist-123' }));
       const result = await repository.checkAccess('artist-123', 'user-123');
       expect(result).toBe(true);
     });
@@ -125,7 +116,7 @@ describe('ArtistRepository', () => {
   describe('create', () => {
     it('should create an artist', async () => {
       mockTx.artist.create.mockResolvedValue(mockArtist);
-      const data = { name: 'New Artist', visibility: 'private' } as any;
+      const data = { name: 'New Artist' };
       const result = await repository.create(data);
       expect(result).toEqual(mockArtist);
       expect(mockTx.artist.create).toHaveBeenCalledWith({ data });
@@ -135,7 +126,7 @@ describe('ArtistRepository', () => {
   describe('createMany', () => {
     it('should create many artists', async () => {
       mockTx.artist.createManyAndReturn.mockResolvedValue([mockArtist]);
-      const data = [{ name: 'Artist 1', visibility: 'private' }] as any;
+      const data = [{ name: 'Artist 1' }];
       const result = await repository.createMany(data);
       expect(result).toEqual([mockArtist]);
       expect(mockTx.artist.createManyAndReturn).toHaveBeenCalledWith({ data });
@@ -155,11 +146,11 @@ describe('ArtistRepository', () => {
   describe('updateMany', () => {
     it('should update many artists in transaction', async () => {
       // Mock $transaction properly using mockImplementation
-      (mockTx as any).$transaction = vi.fn().mockImplementation(async (arg) => {
+      mockTx.$transaction.mockImplementation(async (arg) => {
         if (Array.isArray(arg)) {
           return Promise.all(arg);
         }
-        return arg;
+        return arg as any;
       });
 
       mockTx.artist.update.mockResolvedValue(mockArtist);
@@ -198,9 +189,9 @@ describe('ArtistRepository', () => {
   describe('softDeleteCascade', () => {
     it('should soft delete artist and cascade to albums and tracks', async () => {
       const albumIds = ['album-1', 'album-2'];
-      const albums = [{ id: 'album-1' }, { id: 'album-2' }];
+      const albums = albumIds.map((id) => buildAlbum({ id }));
 
-      mockTx.album.findMany.mockResolvedValue(albums as any);
+      mockTx.album.findMany.mockResolvedValue(albums);
 
       // Mock transaction response and individual calls
       mockTx.$transaction.mockResolvedValue([mockArtist, { count: 2 }, { count: 10 }]);

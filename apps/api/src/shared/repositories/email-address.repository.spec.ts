@@ -1,25 +1,21 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailAddress, EmailStatus, EmailType, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { EmailAddressRepository } from './email-address.repository';
+import { buildEmailAddress } from '@repo/testing';
 
 describe('EmailAddressRepository', () => {
   let repository: EmailAddressRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockEmail: EmailAddress = {
+  const mockEmail: EmailAddress = buildEmailAddress({
     id: 'email-id-123',
     email: 'test@example.com',
     userId: 'user-id-123',
     type: EmailType.primary,
     status: EmailStatus.pending,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    verifiedAt: null,
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -152,8 +148,12 @@ describe('EmailAddressRepository', () => {
   describe('CREATE', () => {
     it('should create an email address', async () => {
       mockTx.emailAddress.create.mockResolvedValue(mockEmail);
-      const payload = { email: 'new@example.com', userId: 'user-123', type: EmailType.primary };
-      const result = await repository.create(payload as any);
+      const payload = {
+        email: 'new@example.com',
+        user: { connect: { id: 'user-123' } },
+        type: EmailType.primary,
+      };
+      const result = await repository.create(payload);
       expect(result).toEqual(mockEmail);
       expect(mockTx.emailAddress.create).toHaveBeenCalledWith({ data: payload });
     });
@@ -189,7 +189,7 @@ describe('EmailAddressRepository', () => {
 
     it('deleteMany should remove emails matching filter', async () => {
       mockTx.emailAddress.findMany.mockResolvedValue([mockEmail]);
-      mockTx.emailAddress.deleteMany.mockResolvedValue({ count: 1 } as any);
+      mockTx.emailAddress.deleteMany.mockResolvedValue({ count: 1 });
 
       const result = await repository.deleteMany({ userId: 'user-123' });
       expect(result).toEqual([mockEmail]);

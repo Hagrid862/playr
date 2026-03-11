@@ -1,22 +1,19 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryAlbum, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryAlbumRepository } from './library-album.repository';
+import { buildLibraryAlbum } from '@repo/testing';
 
 describe('LibraryAlbumRepository', () => {
   let repository: LibraryAlbumRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockLibraryAlbum: LibraryAlbum = {
+  const mockLibraryAlbum: LibraryAlbum = buildLibraryAlbum({
     id: 'lib-album-123',
     libraryId: 'user-123',
     albumId: 'album-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  } as any;
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -45,7 +42,7 @@ describe('LibraryAlbumRepository', () => {
       mockTx.libraryAlbum.findFirst.mockResolvedValue(mockLibraryAlbum);
       const result = await repository.findOne({
         libraryId: 'user-123',
-        album: { name: 'Test' } as any,
+        album: { name: 'Test' },
       });
 
       expect(result).toEqual(mockLibraryAlbum);
@@ -170,7 +167,10 @@ describe('LibraryAlbumRepository', () => {
   describe('create', () => {
     it('should create library album', async () => {
       mockTx.libraryAlbum.create.mockResolvedValue(mockLibraryAlbum);
-      const data = { userId: 'u1', albumId: 'a1' } as any;
+      const data = {
+        library: { connect: { id: 'u1' } },
+        album: { connect: { id: 'a1' } },
+      };
       const result = await repository.create(data);
       expect(result).toEqual(mockLibraryAlbum);
       expect(mockTx.libraryAlbum.create).toHaveBeenCalledWith({ data });

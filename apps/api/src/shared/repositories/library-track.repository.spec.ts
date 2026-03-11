@@ -1,24 +1,15 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryTrack, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryTrackRepository } from './library-track.repository';
+import { buildLibraryTrack } from '@repo/testing';
 
 describe('LibraryTrackRepository', () => {
   let repository: LibraryTrackRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockLibraryTrack: LibraryTrack = {
-    id: 'lib-track-123',
-    libraryId: 'library-123',
-    trackId: 'track-123',
-    listenedCount: 0,
-    listenCountResetAt: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  const mockLibraryTrack: LibraryTrack = buildLibraryTrack();
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -56,7 +47,10 @@ describe('LibraryTrackRepository', () => {
 
     it('should handle track filter in where clause', async () => {
       mockTx.libraryTrack.findFirst.mockResolvedValue(mockLibraryTrack);
-      const result = await repository.findOne({ track: { title: 'test' } as any });
+      const result = await repository.findOne({
+        // Cast needed because Prisma where input has nested types
+        track: { title: 'test' },
+      });
       expect(result).toEqual(mockLibraryTrack);
       expect(mockTx.libraryTrack.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -83,7 +77,7 @@ describe('LibraryTrackRepository', () => {
     it('should handle track filter in findMany', async () => {
       mockTx.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack]);
       const result = await repository.findMany({
-        where: { track: { title: 'test' } as any },
+        where: { track: { title: 'test' } },
       });
       expect(result).toEqual([mockLibraryTrack]);
       expect(mockTx.libraryTrack.findMany).toHaveBeenCalledWith(
@@ -110,7 +104,7 @@ describe('LibraryTrackRepository', () => {
 
     it('should handle track filter in count', async () => {
       mockTx.libraryTrack.count.mockResolvedValue(5);
-      const result = await repository.count({ track: { title: 'test' } as any });
+      const result = await repository.count({ track: { title: 'test' } });
       expect(result).toBe(5);
       expect(mockTx.libraryTrack.count).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -148,7 +142,10 @@ describe('LibraryTrackRepository', () => {
   describe('create', () => {
     it('should create a library track', async () => {
       mockTx.libraryTrack.create.mockResolvedValue(mockLibraryTrack);
-      const data = { library: { connect: { id: 'lib-123' } } } as any;
+      const data = {
+        library: { connect: { id: 'lib-123' } },
+        track: { connect: { id: 'track-123' } },
+      };
       const result = await repository.create(data);
       expect(result).toEqual(mockLibraryTrack);
       expect(mockTx.libraryTrack.create).toHaveBeenCalledWith({ data });

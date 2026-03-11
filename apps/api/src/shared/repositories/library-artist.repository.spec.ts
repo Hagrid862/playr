@@ -1,22 +1,19 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryArtist, PrismaClient } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryArtistRepository } from './library-artist.repository';
+import { buildLibraryArtist } from '@repo/testing';
 
 describe('LibraryArtistRepository', () => {
   let repository: LibraryArtistRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockLibraryArtist: LibraryArtist = {
+  const mockLibraryArtist: LibraryArtist = buildLibraryArtist({
     id: 'la-123',
     libraryId: 'lib-123',
     artistId: 'artist-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -162,7 +159,7 @@ describe('LibraryArtistRepository', () => {
         artist: { connect: { id: 'artist-123' } },
       };
 
-      const result = await repository.create(data as any);
+      const result = await repository.create(data);
       expect(result).toEqual(mockLibraryArtist);
       expect(mockTx.libraryArtist.create).toHaveBeenCalledWith({ data });
     });

@@ -1,23 +1,19 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, RefreshToken } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { RefreshTokenRepository } from './refresh-token.repository';
+import { buildRefreshToken } from '@repo/testing';
 
 describe('RefreshTokenRepository', () => {
   let repository: RefreshTokenRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockToken: RefreshToken = {
+  const mockToken: RefreshToken = buildRefreshToken({
     id: 'rt-id-123',
     token: 'token-string',
     sessionId: 'session-id-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    revokedAt: null,
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -45,7 +41,7 @@ describe('RefreshTokenRepository', () => {
   });
 
   it('getByToken should return token with session', async () => {
-    mockTx.refreshToken.findUnique.mockResolvedValue(mockToken as any);
+    mockTx.refreshToken.findUnique.mockResolvedValue(mockToken);
     const result = await repository.getByToken('token-string');
     expect(result).toEqual(mockToken);
     expect(mockTx.refreshToken.findUnique).toHaveBeenCalledWith({
@@ -56,8 +52,11 @@ describe('RefreshTokenRepository', () => {
 
   it('create should save new token', async () => {
     mockTx.refreshToken.create.mockResolvedValue(mockToken);
-    const data = { token: 'new-token', sessionId: 's1' };
-    const result = await repository.create(data as any);
+    const data = {
+      token: 'new-token',
+      session: { connect: { id: 's1' } },
+    };
+    const result = await repository.create(data);
     expect(result).toEqual(mockToken);
     expect(mockTx.refreshToken.create).toHaveBeenCalledWith({ data });
   });
@@ -84,7 +83,7 @@ describe('RefreshTokenRepository', () => {
   });
 
   it('revokeAllBySessionId should revoke multiple tokens', async () => {
-    mockTx.refreshToken.updateMany.mockResolvedValue({ count: 2 } as any);
+    mockTx.refreshToken.updateMany.mockResolvedValue({ count: 2 });
     await repository.revokeAllBySessionId('session-id');
     expect(mockTx.refreshToken.updateMany).toHaveBeenCalledWith({
       where: { sessionId: 'session-id', revokedAt: null },

@@ -1,25 +1,19 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, Session, SessionType } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { SessionRepository } from './session.repository';
+import { buildSession } from '@repo/testing';
 
 describe('SessionRepository', () => {
   let repository: SessionRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockSession: Session = {
+  const mockSession: Session = buildSession({
     id: 'session-id-123',
     userId: 'user-id-123',
-    type: 'web' as SessionType,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    revokedAt: null,
-    deletedAt: null,
-    expiresAt: null,
-    refreshedAt: null,
-  };
+    type: SessionType.user,
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -85,8 +79,10 @@ describe('SessionRepository', () => {
   describe('CREATE', () => {
     it('should create new session', async () => {
       mockTx.session.create.mockResolvedValue(mockSession);
-      const data = { userId: 'user-123' };
-      const result = await repository.create(data as any);
+      const data = {
+        user: { connect: { id: 'user-123' } },
+      };
+      const result = await repository.create(data);
       expect(result).toEqual(mockSession);
       expect(mockTx.session.create).toHaveBeenCalledWith({ data });
     });
@@ -113,7 +109,7 @@ describe('SessionRepository', () => {
     });
 
     it('revokeAllByUserId should revoke multiple sessions', async () => {
-      mockTx.session.updateMany.mockResolvedValue({ count: 5 } as any);
+      mockTx.session.updateMany.mockResolvedValue({ count: 5 });
       await repository.revokeAllByUserId('user-id-123');
       expect(mockTx.session.updateMany).toHaveBeenCalledWith({
         where: { userId: 'user-id-123', revokedAt: null },
@@ -122,7 +118,7 @@ describe('SessionRepository', () => {
     });
 
     it('deleteExpired should remove records', async () => {
-      mockTx.session.deleteMany.mockResolvedValue({ count: 10 } as any);
+      mockTx.session.deleteMany.mockResolvedValue({ count: 10 });
       const result = await repository.deleteExpired();
       expect(result).toBe(10);
       expect(mockTx.session.deleteMany).toHaveBeenCalled();

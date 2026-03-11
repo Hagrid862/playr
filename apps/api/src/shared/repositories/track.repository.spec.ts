@@ -1,29 +1,18 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, Track } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { TrackRepository } from './track.repository';
+import { buildTrack } from '@repo/testing';
 
 describe('TrackRepository', () => {
   let repository: TrackRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockTrack: Track = {
+  const mockTrack: Track = buildTrack({
     id: 'track-123',
-    title: 'Test Track',
-    duration: 180,
-    trackNumber: 1,
-    diskNumber: 1,
-    listenedCount: 0,
-    explicit: false,
-    lyrics: null,
     albumId: 'album-123',
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -85,7 +74,7 @@ describe('TrackRepository', () => {
 
   describe('checkAccess', () => {
     it('should return true if track matches access conditions (Public)', async () => {
-      mockTx.track.findFirst.mockResolvedValue({ id: 'track-123' } as any);
+      mockTx.track.findFirst.mockResolvedValue(buildTrack({ id: 'track-123' }));
       const result = await repository.checkAccess('track-123');
       expect(result).toBe(true);
       expect(mockTx.track.findFirst).toHaveBeenCalledWith(
@@ -105,7 +94,7 @@ describe('TrackRepository', () => {
     });
 
     it('should return true if user has access', async () => {
-      mockTx.track.findFirst.mockResolvedValue({ id: 'track-123' } as any);
+      mockTx.track.findFirst.mockResolvedValue(buildTrack({ id: 'track-123' }));
       const result = await repository.checkAccess('track-123', 'user-123');
       expect(result).toBe(true);
     });
@@ -120,7 +109,10 @@ describe('TrackRepository', () => {
   describe('create', () => {
     it('should create a track', async () => {
       mockTx.track.create.mockResolvedValue(mockTrack);
-      const data = { title: 'New Track' } as any;
+      const data = {
+        title: 'New Track',
+        album: { connect: { id: 'album-123' } },
+      };
       const result = await repository.create(data);
       expect(result).toEqual(mockTrack);
       expect(mockTx.track.create).toHaveBeenCalledWith({ data });
