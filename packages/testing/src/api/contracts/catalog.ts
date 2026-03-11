@@ -1,12 +1,12 @@
-import { AlbumType, Visibility } from '@repo/db';
-import type { ZodArtist, ZodAlbum, ZodTrack } from '@repo/contracts';
-import { buildWithOverrides } from '../../shared';
-import { now } from '../internal/time';
+import { AlbumType, Visibility } from "@repo/db";
+import type { ZodArtist, ZodAlbum, ZodTrack } from "@repo/contracts";
+import { buildWithOverrides } from "../../shared";
+import { now } from "../internal/time";
 
 export function buildZodArtist(overrides: Partial<ZodArtist> = {}): ZodArtist {
   const base: ZodArtist = {
-    id: 'artist-1',
-    name: 'Mock Artist',
+    id: "artist-1",
+    name: "Mock Artist",
     description: null,
     isCommunity: false,
     verified: false,
@@ -23,8 +23,8 @@ export function buildZodArtist(overrides: Partial<ZodArtist> = {}): ZodArtist {
 
 export function buildZodAlbum(overrides: Partial<ZodAlbum> = {}): ZodAlbum {
   const base: ZodAlbum = {
-    id: 'album-1',
-    name: 'Mock Album',
+    id: "album-1",
+    name: "Mock Album",
     description: null,
     type: AlbumType.album,
     releaseDate: now,
@@ -43,15 +43,15 @@ export function buildZodAlbum(overrides: Partial<ZodAlbum> = {}): ZodAlbum {
 
 export function buildZodTrack(overrides: Partial<ZodTrack> = {}): ZodTrack {
   const base: ZodTrack = {
-    id: 'track-1',
-    title: 'Mock Track',
+    id: "track-1",
+    title: "Mock Track",
     trackNumber: 1,
     diskNumber: 1,
     duration: 180,
     listenedCount: 0,
     explicit: false,
     lyrics: null,
-    albumId: 'album-1',
+    albumId: "album-1",
     visibility: Visibility.public,
     createdAt: now,
     updatedAt: now,
@@ -60,4 +60,3 @@ export function buildZodTrack(overrides: Partial<ZodTrack> = {}): ZodTrack {
 
   return buildWithOverrides(base, overrides);
 }
-

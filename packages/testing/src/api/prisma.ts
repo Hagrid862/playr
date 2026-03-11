@@ -1,6 +1,6 @@
-import type { PrismaClient } from '@repo/db';
-import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
-import type { PrismaService } from './prisma-service.types';
+import type { PrismaClient } from "@repo/db";
+import { createMock, type DeepMocked } from "@golevelup/ts-vitest";
+import type { PrismaService } from "./prisma-service.types";
 
 /**
  * Creates a type-safe DeepMocked PrismaClient.
@@ -11,7 +11,7 @@ export function createMockPrismaClient(): DeepMocked<PrismaClient> {
   // Default $transaction to execute callback with the mock client
   client.$transaction.mockImplementation(
     async (callback: (tx: DeepMocked<PrismaClient>) => unknown) =>
-      typeof callback === 'function' ? callback(client) : callback,
+      typeof callback === "function" ? callback(client) : callback,
   );
   return client;
 }

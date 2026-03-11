@@ -1,4 +1,4 @@
-import type { Prisma } from '@repo/db';
+import type { Prisma } from "@repo/db";
 
 /**
  * Minimal UnitOfWorkService interface for testing.

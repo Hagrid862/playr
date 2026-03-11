@@ -2,7 +2,7 @@
  * Minimal PrismaService interface for testing.
  * Matches the shape used by NestJS PrismaService in this repo.
  */
-import type { PrismaClient } from '@repo/db';
+import type { PrismaClient } from "@repo/db";
 
 export interface PrismaService {
   readonly client: PrismaClient;

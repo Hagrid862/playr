@@ -1,5 +1,5 @@
-import type { UnitOfWorkService } from './unit-of-work.types';
-import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
+import type { UnitOfWorkService } from "./unit-of-work.types";
+import { createMock, type DeepMocked } from "@golevelup/ts-vitest";
 
 /**
  * Creates a UnitOfWorkService mock that executes the callback directly

@@ -1,6 +1,6 @@
-import { createMockPrismaClient } from './prisma';
-import type { DeepMocked } from '@golevelup/ts-vitest';
-import type { PrismaClient } from '@repo/db';
+import { createMockPrismaClient } from "./prisma";
+import type { DeepMocked } from "@golevelup/ts-vitest";
+import type { PrismaClient } from "@repo/db";
 
 /**
  * NestJS-injectable PrismaService mock for integration tests.

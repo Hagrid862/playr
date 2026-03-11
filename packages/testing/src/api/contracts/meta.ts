@@ -5,15 +5,15 @@ import type {
   ZodTrackGenre,
   ZodListenHistory,
   ZodSearchHistory,
-} from '@repo/contracts';
-import { buildWithOverrides } from '../../shared';
-import { now } from '../internal/time';
+} from "@repo/contracts";
+import { buildWithOverrides } from "../../shared";
+import { now } from "../internal/time";
 
 export function buildZodGenre(overrides: Partial<ZodGenre> = {}): ZodGenre {
   const base: ZodGenre = {
-    id: 'genre-1',
-    name: 'Test Genre',
-    slug: 'test-genre',
+    id: "genre-1",
+    name: "Test Genre",
+    slug: "test-genre",
     description: null,
     createdAt: now,
     updatedAt: now,
@@ -27,9 +27,9 @@ export function buildZodArtistGenre(
   overrides: Partial<ZodArtistGenre> = {},
 ): ZodArtistGenre {
   const base: ZodArtistGenre = {
-    id: 'artist-genre-1',
-    artistId: 'artist-1',
-    genreId: 'genre-1',
+    id: "artist-genre-1",
+    artistId: "artist-1",
+    genreId: "genre-1",
     createdAt: now,
     updatedAt: now,
   };
@@ -41,9 +41,9 @@ export function buildZodAlbumGenre(
   overrides: Partial<ZodAlbumGenre> = {},
 ): ZodAlbumGenre {
   const base: ZodAlbumGenre = {
-    id: 'album-genre-1',
-    albumId: 'album-1',
-    genreId: 'genre-1',
+    id: "album-genre-1",
+    albumId: "album-1",
+    genreId: "genre-1",
     createdAt: now,
     updatedAt: now,
   };
@@ -55,9 +55,9 @@ export function buildZodTrackGenre(
   overrides: Partial<ZodTrackGenre> = {},
 ): ZodTrackGenre {
   const base: ZodTrackGenre = {
-    id: 'track-genre-1',
-    trackId: 'track-1',
-    genreId: 'genre-1',
+    id: "track-genre-1",
+    trackId: "track-1",
+    genreId: "genre-1",
     createdAt: now,
     updatedAt: now,
   };
@@ -69,12 +69,12 @@ export function buildZodListenHistory(
   overrides: Partial<ZodListenHistory> = {},
 ): ZodListenHistory {
   const base: ZodListenHistory = {
-    id: 'listen-history-1',
+    id: "listen-history-1",
     listenedAt: now,
     durationMs: 180000,
     completed: true,
-    userId: 'user-1',
-    trackId: 'track-1',
+    userId: "user-1",
+    trackId: "track-1",
     createdAt: now,
     updatedAt: now,
   };
@@ -86,10 +86,10 @@ export function buildZodSearchHistory(
   overrides: Partial<ZodSearchHistory> = {},
 ): ZodSearchHistory {
   const base: ZodSearchHistory = {
-    id: 'search-history-1',
-    query: 'test query',
+    id: "search-history-1",
+    query: "test query",
     searchedAt: now,
-    userId: 'user-1',
+    userId: "user-1",
     createdAt: now,
     updatedAt: now,
   };
