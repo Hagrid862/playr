@@ -5,13 +5,11 @@
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "lib": ["ESNext", "DOM"],
     "rootDir": "src",
     "incremental": false,
-    "jsx": "react-jsx",
-    "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

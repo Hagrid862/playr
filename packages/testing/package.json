@@ -2,32 +2,20 @@
   "name": "@repo/testing",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
+      "require": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./shared": {
-      "types": "./dist/shared/index.d.ts",
-      "import": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
-    },
-    "./api": {
-      "types": "./dist/api/index.d.ts",
-      "import": "./dist/api/index.js",
-      "default": "./dist/api/index.js"
-    },
-    "./web": {
-      "types": "./dist/web/index.d.ts",
-      "import": "./dist/web/index.js",
-      "default": "./dist/web/index.js"
     }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@repo/contracts": "workspace:*",
