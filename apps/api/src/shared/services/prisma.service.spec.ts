@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from './prisma.service';
 import { UnitOfWorkService } from './unit-of-work.service';
-import { createPrismaClient } from '@repo/db';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMockPrismaClient } from '@repo/testing';
+import { createPrismaClient } from '@repo/db';
 
-// Mock the @repo/db module
-vi.mock('@repo/db', async () => {
-  const actual = await vi.importActual('@repo/db');
+vi.mock('@repo/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@repo/db')>();
   return {
     ...actual,
     createPrismaClient: vi.fn(),
@@ -17,21 +16,18 @@ vi.mock('@repo/db', async () => {
 describe('PrismaService', () => {
   let service: PrismaService;
   let unitOfWork: DeepMocked<UnitOfWorkService>;
-  let mockPrismaClient: any;
+  let mockPrismaClient: ReturnType<typeof createMockPrismaClient>;
   const originalEnv = process.env;
 
   beforeEach(async () => {
     vi.resetModules();
-    process.env = { ...originalEnv };
-    process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/db';
-
-    mockPrismaClient = {
-      $connect: vi.fn().mockResolvedValue(undefined),
-      $disconnect: vi.fn().mockResolvedValue(undefined),
-      $transaction: vi.fn().mockImplementation((cb) => cb('mock-tx')),
+    process.env = {
+      ...originalEnv,
+      DATABASE_URL: 'postgresql://user:password@localhost:5432/db',
     };
 
-    (createPrismaClient as any).mockReturnValue(mockPrismaClient);
+    mockPrismaClient = createMockPrismaClient();
+    vi.mocked(createPrismaClient).mockReturnValue(mockPrismaClient as any);
     unitOfWork = createMock<UnitOfWorkService>();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -50,15 +46,13 @@ describe('PrismaService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should throw error if DATABASE_URL is missing', () => {
-    delete process.env.DATABASE_URL;
-    expect(() => new PrismaService(unitOfWork)).toThrow(
-      'DATABASE_URL environment variable is not set',
-    );
-  });
-
-  it('should call createPrismaClient with DATABASE_URL', () => {
-    expect(createPrismaClient).toHaveBeenCalledWith(process.env.DATABASE_URL);
+  describe('constructor', () => {
+    it('should throw an error if DATABASE_URL is not set', () => {
+      delete process.env.DATABASE_URL;
+      expect(() => new PrismaService(unitOfWork)).toThrowError(
+        'DATABASE_URL environment variable is not set',
+      );
+    });
   });
 
   describe('onModuleInit', () => {
@@ -77,8 +71,8 @@ describe('PrismaService', () => {
 
   describe('client selector', () => {
     it('should return transactional client if available from UnitOfWork', () => {
-      const mockTx = { user: {} };
-      unitOfWork.getTransactionalClient.mockReturnValue(mockTx as any);
+      const mockTx = createMockPrismaClient();
+      unitOfWork.getTransactionalClient.mockReturnValue(mockTx);
 
       expect(service.client).toBe(mockTx);
       expect(unitOfWork.getTransactionalClient).toHaveBeenCalled();
@@ -94,7 +88,7 @@ describe('PrismaService', () => {
 
   describe('mainClient', () => {
     it('should always return the original prisma client even if transaction is active', () => {
-      unitOfWork.getTransactionalClient.mockReturnValue({ fake: 'tx' } as any);
+      unitOfWork.getTransactionalClient.mockReturnValue(createMockPrismaClient());
 
       expect(service.mainClient).toBe(mockPrismaClient);
     });

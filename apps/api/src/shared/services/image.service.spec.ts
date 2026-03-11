@@ -1,10 +1,11 @@
-import sharp from 'sharp';
+import sharp, { Sharp } from 'sharp';
+import { createMock } from '@golevelup/ts-vitest';
 import { ImageService } from './image.service';
 
 vi.mock('sharp', async (importOriginal) => {
-  const mod = await importOriginal<any>();
+  const mod = await importOriginal<{ default: typeof import('sharp') }>();
   const fn = vi.fn((input, options) => {
-    return mod.default(input, options);
+    return mod.default(input as any, options as any); // Sharp's complex overloads make exact parameter typing difficult here, any is fine for the internal mock wrapper
   });
   Object.assign(fn, mod.default);
   return {
@@ -42,9 +43,11 @@ describe('ImageService', () => {
     });
 
     it('should return default values when metadata is missing', async () => {
-      vi.mocked(sharp).mockReturnValueOnce({
-        metadata: vi.fn().mockResolvedValue({}),
-      } as any);
+      vi.mocked(sharp).mockReturnValueOnce(
+        createMock<Sharp>({
+          metadata: vi.fn().mockResolvedValue({}),
+        }),
+      );
 
       const result = await service.getMetadata(Buffer.from('test'));
       expect(result.width).toBe(0);

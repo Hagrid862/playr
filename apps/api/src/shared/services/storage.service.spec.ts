@@ -1,37 +1,26 @@
 import { ConfigService } from '@nestjs/config';
 import { FileBucket } from '@repo/db';
-import { mockDeep, mockReset } from 'vitest-mock-extended';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { StorageService } from './storage.service';
+import { Env } from '../../common/config/env.schema';
+import {
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3';
 
 const mocks = vi.hoisted(() => ({
   s3Send: vi.fn(),
   getSignedUrl: vi.fn(),
 }));
 
-vi.mock('@aws-sdk/client-s3', () => {
+vi.mock('@aws-sdk/client-s3', async (importActual) => {
+  const actual = await importActual<typeof import('@aws-sdk/client-s3')>();
   return {
-    S3Client: class {
-      send = mocks.s3Send;
-    },
-    PutObjectCommand: class {
-      constructor(public input: any) {
-        Object.assign(this, input);
-      }
-    },
-    GetObjectCommand: class {
-      constructor(public input: any) {
-        Object.assign(this, input);
-      }
-    },
-    DeleteObjectCommand: class {
-      constructor(public input: any) {
-        Object.assign(this, input);
-      }
-    },
-    HeadObjectCommand: class {
-      constructor(public input: any) {
-        Object.assign(this, input);
-      }
+    ...actual,
+    S3Client: class extends actual.S3Client {
+      override send = mocks.s3Send;
     },
   };
 });
@@ -42,15 +31,16 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 
 describe('StorageService', () => {
   let service: StorageService;
-  const configServiceMock = mockDeep<ConfigService>();
+  let configService: DeepMocked<ConfigService<Env>>;
 
   beforeEach(() => {
-    mockReset(configServiceMock);
+    vi.clearAllMocks();
     mocks.s3Send.mockReset();
     mocks.getSignedUrl.mockReset();
+    configService = createMock<ConfigService<Env>>();
 
     // Mock ConfigService returns
-    configServiceMock.get.mockImplementation((key: string) => {
+    configService.get.mockImplementation((key: string) => {
       switch (key) {
         case 'S3_ENDPOINT':
           return 'http://localhost:9000';
@@ -71,7 +61,7 @@ describe('StorageService', () => {
       }
     });
 
-    service = new StorageService(configServiceMock as any);
+    service = new StorageService(configService);
   });
 
   describe('uploadFile', () => {
@@ -83,9 +73,11 @@ describe('StorageService', () => {
 
       expect(mocks.s3Send).toHaveBeenCalled();
       const command = mocks.s3Send.mock.calls[0][0];
-      expect(command.Bucket).toBe('public-bucket');
-      expect(command.Key).toBe(key);
-      expect(command.Body).toBe(file);
+      expect(command).toBeInstanceOf(PutObjectCommand);
+      const putCommand = command;
+      expect(putCommand.input.Bucket).toBe('public-bucket');
+      expect(putCommand.input.Key).toBe(key);
+      expect(putCommand.input.Body).toBe(file);
     });
 
     it('should upload file to private bucket', async () => {
@@ -96,7 +88,8 @@ describe('StorageService', () => {
 
       expect(mocks.s3Send).toHaveBeenCalled();
       const command = mocks.s3Send.mock.calls[0][0];
-      expect(command.Bucket).toBe('private-bucket');
+      expect(command).toBeInstanceOf(PutObjectCommand);
+      expect(command.input.Bucket).toBe('private-bucket');
     });
 
     it('should throw error if upload fails', async () => {
@@ -115,7 +108,7 @@ describe('StorageService', () => {
     });
 
     it('should return S3 endpoint URL for public bucket if CDN not configured', () => {
-      configServiceMock.get.mockImplementation((key: string) => {
+      configService.get.mockImplementation((key: any) => {
         if (key === 'S3_PUBLIC_URL') return undefined;
         if (key === 'S3_ENDPOINT') return 'http://localhost:9000';
         if (key === 'S3_PUBLIC_BUCKET') return 'public-bucket';
@@ -166,7 +159,8 @@ describe('StorageService', () => {
 
       expect(mocks.s3Send).toHaveBeenCalled();
       const command = mocks.s3Send.mock.calls[0][0];
-      expect(command.Bucket).toBe('public-bucket');
+      expect(command).toBeInstanceOf(DeleteObjectCommand);
+      expect(command.input.Bucket).toBe('public-bucket');
     });
 
     it('should throw error if deletion fails', async () => {
@@ -189,6 +183,9 @@ describe('StorageService', () => {
       const buffer = await service.getFile(FileBucket.private, 'test.txt');
       expect(buffer.toString()).toBe('chunk1chunk2');
       expect(mocks.s3Send).toHaveBeenCalled();
+      const command = mocks.s3Send.mock.calls[0][0];
+      expect(command).toBeInstanceOf(GetObjectCommand);
+      expect(command.input.Bucket).toBe('private-bucket');
     });
 
     it('should throw error if getFile fails', async () => {
@@ -210,6 +207,10 @@ describe('StorageService', () => {
       const stats = await service.getFileStats(FileBucket.public, 'test.jpg');
       expect(stats.size).toBe(1024);
       expect(stats.lastModified).toBe(date);
+
+      const command = mocks.s3Send.mock.calls[0][0];
+      expect(command).toBeInstanceOf(HeadObjectCommand);
+      expect(command.input.Bucket).toBe('public-bucket');
     });
 
     it('should handle undefined ContentLength in stats', async () => {
@@ -243,7 +244,9 @@ describe('StorageService', () => {
       expect(result.stream).toBe(mockStream);
       expect(result.size).toBe(500);
       expect(result.totalSize).toBe(1000);
-      expect(mocks.s3Send.mock.calls[0][0].Range).toBe('bytes=0-499');
+      const command = mocks.s3Send.mock.calls[0][0];
+      expect(command).toBeInstanceOf(GetObjectCommand);
+      expect(command.input.Range).toBe('bytes=0-499');
     });
 
     it('should return stream and size without range options', async () => {
@@ -258,7 +261,9 @@ describe('StorageService', () => {
       expect(result.stream).toBe(mockStream);
       expect(result.size).toBe(1000);
       expect(result.totalSize).toBe(1000);
-      expect(mocks.s3Send.mock.calls[0][0].Range).toBeUndefined();
+      const command = mocks.s3Send.mock.calls[0][0];
+      expect(command).toBeInstanceOf(GetObjectCommand);
+      expect(command.input.Range).toBeUndefined();
     });
 
     it('should return stream with start only', async () => {
@@ -269,7 +274,9 @@ describe('StorageService', () => {
 
       await service.getFileStream(FileBucket.private, 'test.mp3', { start: 0 });
 
-      expect(mocks.s3Send.mock.calls[0][0].Range).toBe('bytes=0-');
+      const command = mocks.s3Send.mock.calls[0][0];
+      expect(command).toBeInstanceOf(GetObjectCommand);
+      expect(command.input.Range).toBe('bytes=0-');
     });
 
     it('should return stream with end only', async () => {
@@ -280,7 +287,9 @@ describe('StorageService', () => {
 
       await service.getFileStream(FileBucket.private, 'test.mp3', { end: 499 });
 
-      expect(mocks.s3Send.mock.calls[0][0].Range).toBe('bytes=-499');
+      const command = mocks.s3Send.mock.calls[0][0];
+      expect(command).toBeInstanceOf(GetObjectCommand);
+      expect(command.input.Range).toBe('bytes=-499');
     });
 
     it('should fallback to 0 size if ContentLength not defined', async () => {
@@ -304,7 +313,7 @@ describe('StorageService', () => {
 
   describe('configuration', () => {
     it('should throw error if public bucket is not configured', async () => {
-      configServiceMock.get.mockImplementation((key: string) => {
+      configService.get.mockImplementation((key: any) => {
         if (key === 'S3_PUBLIC_BUCKET') return undefined;
         return 'some-value';
       });
@@ -315,7 +324,7 @@ describe('StorageService', () => {
     });
 
     it('should throw error if private bucket is not configured', async () => {
-      configServiceMock.get.mockImplementation((key: string) => {
+      configService.get.mockImplementation((key: any) => {
         if (key === 'S3_PRIVATE_BUCKET') return undefined;
         return 'some-value';
       });
@@ -326,8 +335,8 @@ describe('StorageService', () => {
     });
 
     it('should handle missing credentials gracefully', () => {
-      configServiceMock.get.mockReturnValue(undefined);
-      const serviceWithNoCreds = new StorageService(configServiceMock as any);
+      configService.get.mockReturnValue(undefined);
+      const serviceWithNoCreds = new StorageService(configService);
       expect(serviceWithNoCreds).toBeDefined();
     });
   });
