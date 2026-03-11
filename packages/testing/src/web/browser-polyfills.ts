@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 /**
  * Sets up common browser API mocks for jsdom tests.
  * Call once in setupFiles (e.g. setupTests.ts).
@@ -14,9 +12,9 @@ export function setupBrowserPolyfills(): void {
     unobserve = vi.fn();
     disconnect = vi.fn();
   }
-  vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+  vi.stubGlobal("ResizeObserver", ResizeObserverMock);
 
-  if (!('DataTransfer' in globalThis)) {
+  if (!("DataTransfer" in globalThis)) {
     class DataTransferPolyfill {
       private _files: File[] = [];
 
@@ -40,10 +38,10 @@ export function setupBrowserPolyfills(): void {
         }) as FileList;
       }
     }
-    vi.stubGlobal('DataTransfer', DataTransferPolyfill);
+    vi.stubGlobal("DataTransfer", DataTransferPolyfill);
   }
 
-  if (typeof window.PointerEvent === 'undefined') {
+  if (typeof window.PointerEvent === "undefined") {
     class MockPointerEvent extends MouseEvent {
       pointerId = 0;
       width = 0;
@@ -55,7 +53,7 @@ export function setupBrowserPolyfills(): void {
       twist = 0;
       altitudeAngle = 0;
       azimuthAngle = 0;
-      pointerType = 'mouse';
+      pointerType = "mouse";
       isPrimary = false;
       persistentId = 0;
 
@@ -72,10 +70,10 @@ export function setupBrowserPolyfills(): void {
         return [];
       }
     }
-    vi.stubGlobal('PointerEvent', MockPointerEvent);
+    vi.stubGlobal("PointerEvent", MockPointerEvent);
   }
 
-  Object.defineProperty(window, 'matchMedia', {
+  Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({

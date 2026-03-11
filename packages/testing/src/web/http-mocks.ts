@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
-import { createMock } from '@golevelup/ts-vitest';
+/// <reference types="vitest/globals" />
+import { createMock } from "@golevelup/ts-vitest";
 
 /**
  * Creates a type-safe mock Response for fetch.
@@ -13,7 +13,7 @@ function createMockResponse(init: {
   return createMock<Response>({
     ok: init.ok ?? true,
     status: init.status ?? 200,
-    statusText: init.statusText ?? 'OK',
+    statusText: init.statusText ?? "OK",
     json: init.json ?? (async () => ({})),
   });
 }
@@ -30,7 +30,7 @@ export function mockFetchWithJson<T>(
     createMockResponse({
       ok: (init.status ?? 200) >= 200 && (init.status ?? 200) < 300,
       status: init.status ?? 200,
-      statusText: init.statusText ?? 'OK',
+      statusText: init.statusText ?? "OK",
       json,
     }),
   );
@@ -47,12 +47,12 @@ export function mockFetchError(
   } = {},
 ): void {
   const status = init.status ?? 500;
-  const body = init.body ?? { message: init.statusText ?? 'Error' };
+  const body = init.body ?? { message: init.statusText ?? "Error" };
   globalThis.fetch = vi.fn().mockResolvedValue(
     createMockResponse({
       ok: false,
       status,
-      statusText: init.statusText ?? 'Error',
+      statusText: init.statusText ?? "Error",
       json: async () => body,
     }),
   );
