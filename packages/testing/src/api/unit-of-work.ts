@@ -8,5 +8,6 @@ import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
 export function createMockUnitOfWork(): DeepMocked<UnitOfWorkService> {
   const mock = createMock<UnitOfWorkService>();
   mock.runInTransaction.mockImplementation(async (work) => work());
+  mock.getTransactionalClient.mockReturnValue(undefined);
   return mock;
 }
