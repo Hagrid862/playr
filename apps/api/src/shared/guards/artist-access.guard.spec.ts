@@ -1,8 +1,9 @@
 import { CHECK_ARTIST_ACCESS_KEY } from '@/common/decorators/check-artist-access.decorator';
+import { createMock } from '@golevelup/ts-vitest';
 import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { HttpArgumentsHost } from '@nestjs/common/interfaces';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArtistRepository } from '../repositories/artist.repository';
 import { ArtistAccessGuard } from './artist-access.guard';
 
@@ -20,13 +21,10 @@ describe('ArtistAccessGuard', () => {
     exists: vi.fn(),
   };
 
-  const mockExecutionContext = {
-    getHandler: vi.fn(),
-    switchToHttp: vi.fn().mockReturnThis(),
-    getRequest: vi.fn(),
-  } as unknown as ExecutionContext;
+  let mockExecutionContext: ReturnType<typeof createMock<ExecutionContext>>;
 
   beforeEach(async () => {
+    mockExecutionContext = createMock<ExecutionContext>();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ArtistAccessGuard,
@@ -66,10 +64,14 @@ describe('ArtistAccessGuard', () => {
 
   it('should return true if artistId is not present in request params', async () => {
     vi.mocked(reflector.get).mockReturnValue('artistId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: {},
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: {},
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
 
     const result = await guard.canActivate(mockExecutionContext);
 
@@ -78,10 +80,14 @@ describe('ArtistAccessGuard', () => {
 
   it('should return true if access check passes', async () => {
     vi.mocked(reflector.get).mockReturnValue('artistId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: { artistId: '123' },
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: { artistId: '123' },
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
     vi.mocked(artistRepository.checkAccess).mockResolvedValue(true);
 
     const result = await guard.canActivate(mockExecutionContext);
@@ -92,10 +98,14 @@ describe('ArtistAccessGuard', () => {
 
   it('should throw NotFoundException if access denied and artist does not exist', async () => {
     vi.mocked(reflector.get).mockReturnValue('artistId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: { artistId: '123' },
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: { artistId: '123' },
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
     vi.mocked(artistRepository.checkAccess).mockResolvedValue(false);
     vi.mocked(artistRepository.exists).mockResolvedValue(false);
 
@@ -105,10 +115,14 @@ describe('ArtistAccessGuard', () => {
 
   it('should throw ForbiddenException if access denied and artist exists', async () => {
     vi.mocked(reflector.get).mockReturnValue('artistId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: { artistId: '123' },
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: { artistId: '123' },
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
     vi.mocked(artistRepository.checkAccess).mockResolvedValue(false);
     vi.mocked(artistRepository.exists).mockResolvedValue(true);
 

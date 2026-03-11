@@ -1,8 +1,9 @@
 import { CHECK_ALBUM_ACCESS_KEY } from '@/common/decorators/check-album-access.decorator';
+import { createMock } from '@golevelup/ts-vitest';
 import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { HttpArgumentsHost } from '@nestjs/common/interfaces';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlbumRepository } from '../repositories/album.repository';
 import { AlbumAccessGuard } from './album-access.guard';
 
@@ -20,13 +21,10 @@ describe('AlbumAccessGuard', () => {
     exists: vi.fn(),
   };
 
-  const mockExecutionContext = {
-    getHandler: vi.fn(),
-    switchToHttp: vi.fn().mockReturnThis(),
-    getRequest: vi.fn(),
-  } as unknown as ExecutionContext;
+  let mockExecutionContext: ReturnType<typeof createMock<ExecutionContext>>;
 
   beforeEach(async () => {
+    mockExecutionContext = createMock<ExecutionContext>();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AlbumAccessGuard,
@@ -66,10 +64,14 @@ describe('AlbumAccessGuard', () => {
 
   it('should return true if albumId is not present in request params', async () => {
     vi.mocked(reflector.get).mockReturnValue('albumId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: {},
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: {},
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
 
     const result = await guard.canActivate(mockExecutionContext);
 
@@ -78,10 +80,14 @@ describe('AlbumAccessGuard', () => {
 
   it('should return true if access check passes', async () => {
     vi.mocked(reflector.get).mockReturnValue('albumId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: { albumId: '123' },
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: { albumId: '123' },
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
     vi.mocked(albumRepository.checkAccess).mockResolvedValue(true);
 
     const result = await guard.canActivate(mockExecutionContext);
@@ -92,10 +98,14 @@ describe('AlbumAccessGuard', () => {
 
   it('should throw NotFoundException if access denied and album does not exist', async () => {
     vi.mocked(reflector.get).mockReturnValue('albumId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: { albumId: '123' },
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: { albumId: '123' },
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
     vi.mocked(albumRepository.checkAccess).mockResolvedValue(false);
     vi.mocked(albumRepository.exists).mockResolvedValue(false);
 
@@ -105,10 +115,14 @@ describe('AlbumAccessGuard', () => {
 
   it('should throw ForbiddenException if access denied and album exists', async () => {
     vi.mocked(reflector.get).mockReturnValue('albumId');
-    vi.mocked(mockExecutionContext.switchToHttp().getRequest).mockReturnValue({
-      params: { albumId: '123' },
-      user: { user: { id: 'userId' } },
-    });
+    mockExecutionContext.switchToHttp.mockReturnValue(
+      createMock<HttpArgumentsHost>({
+        getRequest: vi.fn().mockReturnValue({
+          params: { albumId: '123' },
+          user: { user: { id: 'userId' } },
+        }),
+      }),
+    );
     vi.mocked(albumRepository.checkAccess).mockResolvedValue(false);
     vi.mocked(albumRepository.exists).mockResolvedValue(true);
 
