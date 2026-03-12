@@ -1,6 +1,8 @@
 {
   "extends": "@repo/configs/typescript/packages.json",
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "outDir": "dist",
     "noEmit": false,
     "declaration": true,
