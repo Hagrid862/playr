@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import { BypassResponseInterceptor } from './bypass-interceptor.decorator';
 
 describe('BypassResponseInterceptor Decorator', () => {

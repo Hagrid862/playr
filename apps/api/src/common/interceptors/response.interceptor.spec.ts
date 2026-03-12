@@ -1,11 +1,11 @@
-import { DeepMocked, createMock } from '@golevelup/ts-vitest';
-import { CallHandler, ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { createMockExecutionContext } from '@repo/testing';
+import { CallHandler } from '@nestjs/common';
 import { Request } from 'express';
-import { firstValueFrom, of } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { of, firstValueFrom } from 'rxjs';
 import { WithMeta } from '../utils/with-meta.util';
 import { ResponseInterceptor } from './response.interceptor';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { Reflector } from '@nestjs/core';
 
 describe('ResponseInterceptor', () => {
   let interceptor: ResponseInterceptor<any>;
@@ -32,11 +32,8 @@ describe('ResponseInterceptor', () => {
       startTime: Date.now(),
     });
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () => mockRequest,
-      }),
-      getHandler: () => ({}),
+    const context = createMockExecutionContext<Request>({
+      request: mockRequest,
     });
 
     const next: CallHandler = {
@@ -60,15 +57,11 @@ describe('ResponseInterceptor', () => {
   it('should bypass wrapping if decorator is present', async () => {
     const mockData = { id: 1, name: 'test' };
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () =>
-          createMock<Request>({
-            url: '/test',
-            startTime: Date.now(),
-          }),
+    const context = createMockExecutionContext<Request>({
+      request: createMock<Request>({
+        url: '/test',
+        startTime: Date.now(),
       }),
-      getHandler: () => ({}),
     });
 
     const next: CallHandler = {
@@ -92,11 +85,8 @@ describe('ResponseInterceptor', () => {
       startTime: Date.now(),
     });
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () => mockRequest,
-      }),
-      getHandler: () => ({}),
+    const context = createMockExecutionContext<Request>({
+      request: mockRequest,
     });
 
     const next: CallHandler = {
@@ -107,7 +97,6 @@ describe('ResponseInterceptor', () => {
 
     const result = await firstValueFrom(interceptor.intercept(context, next));
 
-    expect(result.data).toEqual(mockData);
     expect(result.data).toEqual(mockData);
     expect(result.meta).toEqual(expect.objectContaining(mockMeta));
   });
@@ -120,11 +109,8 @@ describe('ResponseInterceptor', () => {
       startTime: undefined,
     });
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () => mockRequest,
-      }),
-      getHandler: () => ({}),
+    const context = createMockExecutionContext<Request>({
+      request: mockRequest,
     });
 
     const next: CallHandler = {
@@ -147,11 +133,8 @@ describe('ResponseInterceptor', () => {
       startTime: undefined,
     });
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () => mockRequest,
-      }),
-      getHandler: () => ({}),
+    const context = createMockExecutionContext<Request>({
+      request: mockRequest,
     });
 
     const next: CallHandler = {
@@ -174,11 +157,8 @@ describe('ResponseInterceptor', () => {
       startTime: undefined,
     });
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () => mockRequest,
-      }),
-      getHandler: () => ({}),
+    const context = createMockExecutionContext<Request>({
+      request: mockRequest,
     });
 
     const next: CallHandler = {
@@ -199,11 +179,8 @@ describe('ResponseInterceptor', () => {
       startTime: undefined,
     });
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () => mockRequest,
-      }),
-      getHandler: () => ({}),
+    const context = createMockExecutionContext<Request>({
+      request: mockRequest,
     });
 
     const next: CallHandler = {
@@ -223,11 +200,8 @@ describe('ResponseInterceptor', () => {
       startTime: undefined,
     });
 
-    const context = createMock<ExecutionContext>({
-      switchToHttp: () => ({
-        getRequest: () => mockRequest,
-      }),
-      getHandler: () => ({}),
+    const context = createMockExecutionContext<Request>({
+      request: mockRequest,
     });
 
     const next: CallHandler = {

@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateEnv } from './env.schema';
 
 describe('envSchema', () => {

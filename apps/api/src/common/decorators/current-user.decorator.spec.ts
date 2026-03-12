@@ -1,9 +1,7 @@
-import { ExecutionContext } from '@nestjs/common';
+import { buildUser, createMockExecutionContext } from '@repo/testing';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { User } from '@repo/db';
-import { describe, expect, it } from 'vitest';
-import { AuthenticatedUser } from '../types/auth.types';
 import { CurrentUser } from './current-user.decorator';
+import { AuthenticatedUser } from '../types/auth.types';
 
 function getParamDecoratorFactory(decorator: (...args: any[]) => ParameterDecorator) {
   class Test {
@@ -18,42 +16,39 @@ function getParamDecoratorFactory(decorator: (...args: any[]) => ParameterDecora
 describe('CurrentUser Decorator', () => {
   const factory = getParamDecoratorFactory(CurrentUser);
 
-  const mockUser = {
+  const mockUser = buildUser({
     id: 'user-123',
     username: 'testuser',
-    email: 'test@example.com',
-  } as unknown as User;
-
-  const createMockContext = (user: User | null): ExecutionContext =>
-    ({
-      switchToHttp: () =>
-        ({
-          getRequest: () => ({
-            user: user ? ({ user } as AuthenticatedUser) : null,
-          }),
-        }) as any,
-    }) as unknown as ExecutionContext;
+  });
 
   it('should return the full user object when no data key is provided', () => {
-    const ctx = createMockContext(mockUser) as ExecutionContext;
+    const ctx = createMockExecutionContext<{ user: AuthenticatedUser | null }>({
+      request: { user: { user: mockUser } },
+    });
     const result = factory(undefined, ctx);
     expect(result).toEqual(mockUser);
   });
 
   it('should return a specific user property when data key is provided', () => {
-    const ctx = createMockContext(mockUser) as ExecutionContext;
+    const ctx = createMockExecutionContext<{ user: AuthenticatedUser | null }>({
+      request: { user: { user: mockUser } },
+    });
     const result = factory('id', ctx);
     expect(result).toBe('user-123');
   });
 
   it('should return null if authContext is missing', () => {
-    const ctx = createMockContext(null) as ExecutionContext;
+    const ctx = createMockExecutionContext<{ user: AuthenticatedUser | null }>({
+      request: { user: null },
+    });
     const result = factory(undefined, ctx);
     expect(result).toBeNull();
   });
 
   it('should return undefined if a non-existent property is requested', () => {
-    const ctx = createMockContext(mockUser);
+    const ctx = createMockExecutionContext<{ user: AuthenticatedUser | null }>({
+      request: { user: { user: mockUser } },
+    });
     const result = factory('nonExistent', ctx);
     expect(result).toBeUndefined();
   });

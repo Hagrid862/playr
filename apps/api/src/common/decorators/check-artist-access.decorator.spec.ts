@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import { CheckArtistAccess } from './check-artist-access.decorator';
 
 describe('CheckArtistAccess Decorator', () => {
