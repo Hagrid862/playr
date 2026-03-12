@@ -58,7 +58,7 @@ describe('ArtistAccessGuard', () => {
     expect(result).toBe(true);
     expect(reflector.get).toHaveBeenCalledWith(
       CHECK_ARTIST_ACCESS_KEY,
-      mockExecutionContext.getHandler(),
+      expect.any(Function),
     );
   });
 

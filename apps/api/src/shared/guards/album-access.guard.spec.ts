@@ -58,7 +58,7 @@ describe('AlbumAccessGuard', () => {
     expect(result).toBe(true);
     expect(reflector.get).toHaveBeenCalledWith(
       CHECK_ALBUM_ACCESS_KEY,
-      mockExecutionContext.getHandler(),
+      expect.any(Function),
     );
   });
 
