@@ -1,8 +1,8 @@
 import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  PutObjectCommand,
+    DeleteObjectCommand,
+    GetObjectCommand,
+    HeadObjectCommand,
+    PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { ConfigService } from '@nestjs/config';
@@ -307,6 +307,22 @@ describe('StorageService', () => {
       mocks.s3Send.mockRejectedValue(new Error('Stream failed'));
       await expect(service.getFileStream(FileBucket.private, 'fail.mp3')).rejects.toThrow(
         'Failed to get file stream: Stream failed',
+      );
+    });
+
+    it('should throw when S3 GetObject returns no body', async () => {
+      mocks.s3Send.mockResolvedValue({ Body: null });
+
+      await expect(service.getFileStream(FileBucket.private, 'no-body.mp3')).rejects.toThrow(
+        'S3 GetObject returned no body',
+      );
+    });
+
+    it('should throw when S3 GetObject returns body without pipe function', async () => {
+      mocks.s3Send.mockResolvedValue({ Body: { pipe: 'not-a-function' } });
+
+      await expect(service.getFileStream(FileBucket.private, 'bad-body.mp3')).rejects.toThrow(
+        'S3 GetObject returned no body',
       );
     });
   });

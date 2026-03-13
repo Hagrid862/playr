@@ -2,6 +2,10 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
+import {
+    REFRESH_TOKEN_COOKIE_NAME,
+    REFRESH_TOKEN_COOKIE_OPTIONS,
+} from '../../features/auth/constants/cookie.constants';
 import { GlobalExceptionFilter } from './global-exception.filter';
 
 describe('GlobalExceptionFilter', () => {
@@ -225,5 +229,126 @@ describe('GlobalExceptionFilter', () => {
         }),
       }),
     );
+  });
+
+  it('should clear refresh token cookie on UNAUTHORIZED when path ends with /auth/refresh', () => {
+    const clearCookie = vi.fn();
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      clearCookie,
+    });
+
+    const mockRequest = createMock<Request>({
+      url: '/auth/refresh',
+      path: '/auth/refresh',
+      method: 'POST',
+      startTime: Date.now(),
+      id: 'test-id',
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    configService.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'development' : undefined,
+    );
+
+    const exception = new HttpException('Token expired', HttpStatus.UNAUTHORIZED);
+
+    filter.catch(exception, mockHost);
+
+    const baseOpts = {
+      sameSite: REFRESH_TOKEN_COOKIE_OPTIONS.sameSite,
+      secure: false, // NODE_ENV is development
+    };
+    expect(clearCookie).toHaveBeenCalledWith(REFRESH_TOKEN_COOKIE_NAME, {
+      ...baseOpts,
+      path: '/',
+    });
+    expect(clearCookie).toHaveBeenCalledWith(REFRESH_TOKEN_COOKIE_NAME, {
+      ...baseOpts,
+      path: '/auth/refresh',
+    });
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
+  });
+
+  it('should clear refresh token cookie with secure flag in production', () => {
+    const clearCookie = vi.fn();
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      clearCookie,
+    });
+
+    const mockRequest = createMock<Request>({
+      url: '/auth/refresh',
+      path: '/auth/refresh',
+      method: 'POST',
+      startTime: Date.now(),
+      id: 'test-id',
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    configService.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'production' : undefined,
+    );
+
+    const filterProd = new GlobalExceptionFilter(configService);
+    const exception = new HttpException('Token expired', HttpStatus.UNAUTHORIZED);
+
+    filterProd.catch(exception, mockHost);
+
+    expect(clearCookie).toHaveBeenCalledWith(REFRESH_TOKEN_COOKIE_NAME, {
+      sameSite: REFRESH_TOKEN_COOKIE_OPTIONS.sameSite,
+      secure: true,
+      path: '/',
+    });
+    expect(clearCookie).toHaveBeenCalledWith(REFRESH_TOKEN_COOKIE_NAME, {
+      sameSite: REFRESH_TOKEN_COOKIE_OPTIONS.sameSite,
+      secure: true,
+      path: '/auth/refresh',
+    });
+  });
+
+  it('should not clear refresh token cookie when path does not end with /auth/refresh', () => {
+    const clearCookie = vi.fn();
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      clearCookie,
+    });
+
+    const mockRequest = createMock<Request>({
+      url: '/auth/login',
+      path: '/auth/login',
+      method: 'POST',
+      startTime: Date.now(),
+      id: 'test-id',
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    const exception = new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+
+    filter.catch(exception, mockHost);
+
+    expect(clearCookie).not.toHaveBeenCalled();
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
   });
 });
