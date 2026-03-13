@@ -5,7 +5,10 @@
     "noEmit": false,
     "types": ["node", "vitest/globals", "multer"],
     "baseUrl": ".",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "paths": {
+      "@/*": ["./src/*"],
+    }
   },
   "include": ["src/**/*", "integration/**/*"],
   "exclude": ["node_modules", "dist"]
