@@ -1,30 +1,18 @@
+import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LoginHandler } from './login.handler';
-import { LoginCommand } from '../impl/login.command';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { User, Gender } from '@repo/db';
 import { UserSchema } from '@repo/contracts';
+import { User } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildUser } from '@repo/testing';
 import { TokenService } from '../../services/token.service';
+import { LoginCommand } from '../impl/login.command';
+import { LoginHandler } from './login.handler';
 
 describe('LoginHandler', () => {
   let handler: LoginHandler;
   let tokenService: DeepMocked<TokenService>;
 
-  const mockUser: User = {
-    id: 'user-id-123',
-    username: 'testuser',
-    password: 'hashed-password',
-    firstName: 'John',
-    lastName: 'Doe',
-    birthDate: '2000-01-01',
-    gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  const mockUser = buildUser();
 
   beforeEach(async () => {
     tokenService = createMock<TokenService>();

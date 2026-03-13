@@ -1,10 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { LogoutHandler } from './logout.handler';
-import { LogoutCommand } from '../impl/logout.command';
-import { SessionRepository } from '../../../../shared/repositories/session.repository';
-import { RefreshTokenRepository } from '../../../../shared/repositories/refresh-token.repository';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { Test, TestingModule } from '@nestjs/testing';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildSession } from '@repo/testing';
+import { RefreshTokenRepository } from '../../../../shared/repositories/refresh-token.repository';
+import { SessionRepository } from '../../../../shared/repositories/session.repository';
+import { LogoutCommand } from '../impl/logout.command';
+import { LogoutHandler } from './logout.handler';
 
 describe('LogoutHandler', () => {
   let handler: LogoutHandler;
@@ -40,8 +41,8 @@ describe('LogoutHandler', () => {
       const sessionId = 'session-id-123';
       const command = new LogoutCommand(sessionId);
 
-      sessionRepository.revoke.mockResolvedValue({ id: sessionId } as any);
-      refreshTokenRepository.revokeAllBySessionId.mockResolvedValue({ count: 5 } as any);
+      sessionRepository.revoke.mockResolvedValue(buildSession({ id: sessionId }));
+      refreshTokenRepository.revokeAllBySessionId.mockResolvedValue(undefined);
 
       // Act
       const result = await handler.execute(command);

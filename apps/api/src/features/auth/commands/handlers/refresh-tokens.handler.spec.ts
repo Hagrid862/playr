@@ -1,8 +1,8 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildSession, buildUser } from '@repo/testing';
 import { SessionRepository } from '../../../../shared/repositories/session.repository';
 import { UserRepository } from '../../../../shared/repositories/user.repository';
 import { TokenService } from '../../services/token.service';
@@ -53,10 +53,9 @@ describe('RefreshTokensHandler', () => {
         isRevoked: false,
       });
 
-      userRepository.getById.mockResolvedValue({
-        id: mockUserId,
-        username: 'test-user',
-      } as User);
+      userRepository.getById.mockResolvedValue(
+        buildUser({ id: mockUserId, username: 'test-user' }),
+      );
 
       tokenService.generateAuthTokens.mockResolvedValue({
         accessToken: 'new-access-token',
@@ -100,7 +99,7 @@ describe('RefreshTokensHandler', () => {
         sessionId: mockSessionId,
         isRevoked: true,
       });
-      sessionRepository.revoke.mockResolvedValue({ id: mockSessionId } as never);
+      sessionRepository.revoke.mockResolvedValue(buildSession({ id: mockSessionId }));
       const command = new RefreshTokensCommand(mockRefreshToken);
 
       // Act & Assert

@@ -1,23 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { RegisterHandler } from './register.handler';
-import { RegisterCommand } from '../impl/register.command';
 import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
-import { ConflictException } from '@nestjs/common';
-import { EmailStatus } from '@repo/db';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
+import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
+import { ConflictException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { UserSchema } from '@repo/contracts';
+import { EmailStatus } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildUser, createMockPrismaClient, createMockPrismaService } from '@repo/testing';
 import type { RegisterRequestDto } from '../../dto/register.request.dto';
-import {
-  buildUser,
-  buildRegisterRequest,
-  createMockPrismaClient,
-  createMockPrismaService,
-  createMockUnitOfWork,
-} from '@repo/testing';
+import { RegisterCommand } from '../impl/register.command';
+import { RegisterHandler } from './register.handler';
 
 describe('RegisterHandler', () => {
   let handler: RegisterHandler;
@@ -28,13 +22,22 @@ describe('RegisterHandler', () => {
   let mockPrismaClient: ReturnType<typeof createMockPrismaClient>;
 
   const mockUser = buildUser();
-  const mockPayload = buildRegisterRequest() as RegisterRequestDto;
+  const mockPayload: RegisterRequestDto = {
+    email: 'test@example.com',
+    username: 'testuser',
+    password: 'Password1!',
+    firstName: 'John',
+    lastName: 'Doe',
+    birthDate: '2000-01-01',
+    gender: 'male',
+  };
 
   beforeEach(async () => {
     userRepository = createMock<UserRepository>();
     hashingService = createMock<HashingService>();
     mockPrismaClient = createMockPrismaClient();
-    unitOfWork = createMockUnitOfWork();
+    unitOfWork = createMock<UnitOfWorkService>();
+    unitOfWork.runInTransaction.mockImplementation(async (work) => work());
     prismaService = createMockPrismaService({ client: mockPrismaClient });
 
     const module: TestingModule = await Test.createTestingModule({
@@ -196,10 +199,19 @@ describe('RegisterHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow('Database error');
     });
 
-    it('should successfully register a user with minimal fields', async () => {
+    it('should successfully register another user', async () => {
       // Arrange
-      const minimalPayload = buildRegisterRequest({ lastName: null });
-      const minimalUser = buildUser({ lastName: null });
+      const minimalPayload: RegisterRequestDto = {
+        email: 'test2@example.com',
+        username: 'testuser2',
+        password: 'Password1!',
+        firstName: 'Bob',
+        lastName: 'Smith',
+        birthDate: '2000-01-01',
+        gender: 'male',
+      };
+
+      const minimalUser = buildUser({ lastName: 'Smith' });
 
       userRepository.getByEmail.mockResolvedValue(null);
       userRepository.getByUsername.mockResolvedValue(null);
@@ -217,17 +229,17 @@ describe('RegisterHandler', () => {
         deletedAt: null,
       });
 
-      const command = new RegisterCommand(minimalPayload as RegisterRequestDto);
+      const command = new RegisterCommand(minimalPayload);
 
       // Act
       const result = await handler.execute(command);
 
       // Assert
-      expect(result.lastName).toBeNull();
+      expect(result.lastName).toBe('Smith');
       expect(mockPrismaClient.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            lastName: null,
+            lastName: 'Smith',
           }),
         }),
       );

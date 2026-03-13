@@ -1,9 +1,9 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
 import { UnauthorizedException } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Gender, User } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildUser } from '@repo/testing';
 import { ValidateUserQuery } from '../queries/impl/validate-user.query';
 import { LocalStrategy } from './local.strategy';
 
@@ -11,20 +11,7 @@ describe('LocalStrategy', () => {
   let strategy: LocalStrategy;
   let queryBus: DeepMocked<QueryBus>;
 
-  const mockUser: User = {
-    id: 'user-id-123',
-    username: 'testuser',
-    password: 'hashed-password',
-    firstName: 'John',
-    lastName: 'Doe',
-    birthDate: '2000-01-01',
-    gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  const mockUser = buildUser();
 
   beforeEach(async () => {
     queryBus = createMock<QueryBus>();

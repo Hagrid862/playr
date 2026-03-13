@@ -1,32 +1,19 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Gender, User } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractTokenFromQuery, JwtStrategy } from './jwt.strategy';
-import { Request } from 'express';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildUser } from '@repo/testing';
+import type { Request } from 'express';
 import { UserRepository } from '../../../shared/repositories/user.repository';
+import { extractTokenFromQuery, JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
   let userRepository: DeepMocked<UserRepository>;
   let configService: DeepMocked<ConfigService>;
 
-  const mockUser: User = {
-    id: 'user-id-123',
-    username: 'testuser',
-    password: 'hashed-password',
-    firstName: 'John',
-    lastName: 'Doe',
-    birthDate: '2000-01-01',
-    gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  const mockUser = buildUser();
 
   beforeEach(async () => {
     userRepository = createMock<UserRepository>();
@@ -92,17 +79,17 @@ describe('JwtStrategy', () => {
 
 describe('extractTokenFromQuery', () => {
   it('should return token from the query params if available', () => {
-    const mockReq: Partial<Request> = { query: { token: 'my-token' } };
-    expect(extractTokenFromQuery(mockReq as Request)).toBe('my-token');
+    const mockReq = createMock<Request>({ query: { token: 'my-token' } });
+    expect(extractTokenFromQuery(mockReq)).toBe('my-token');
   });
 
   it('should return null if no token is available in the query params', () => {
-    const mockReq: Partial<Request> = { query: {} };
-    expect(extractTokenFromQuery(mockReq as Request)).toBe(null);
+    const mockReq = createMock<Request>({ query: {} });
+    expect(extractTokenFromQuery(mockReq)).toBe(null);
   });
 
   it('should return null if req.query is undefined', () => {
-    const mockReq: Partial<Request> = {};
-    expect(extractTokenFromQuery(mockReq as Request)).toBe(null);
+    const mockReq = createMock<Request>();
+    expect(extractTokenFromQuery(mockReq)).toBe(null);
   });
 });

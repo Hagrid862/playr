@@ -3,7 +3,6 @@ import { CallHandler, ExecutionContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { of } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RefreshTokenInterceptor } from './refresh-token.interceptor';
 
 describe('RefreshTokenInterceptor', () => {
@@ -62,7 +61,7 @@ describe('RefreshTokenInterceptor', () => {
       accessToken: 'access-token',
       user: { id: '1' },
     });
-    expect((result as any).refreshToken).toBeUndefined();
+    expect(result).not.toHaveProperty('refreshToken');
   });
 
   it('should set secure cookie in production', async () => {

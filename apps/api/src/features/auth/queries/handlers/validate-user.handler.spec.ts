@@ -1,32 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ValidateUserHandler } from './validate-user.handler';
-import { ValidateUserQuery } from '../impl/validate-user.query';
 import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
-import { EmailStatus, User, Gender } from '@repo/db';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, type DeepMocked } from '@golevelup/ts-vitest';
 import { UnauthorizedException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { EmailStatus } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildUser } from '@repo/testing';
+import { ValidateUserQuery } from '../impl/validate-user.query';
+import { ValidateUserHandler } from './validate-user.handler';
 
 describe('ValidateUserHandler', () => {
   let handler: ValidateUserHandler;
   let userRepository: DeepMocked<UserRepository>;
   let hashingService: DeepMocked<HashingService>;
 
-  const mockUser: User = {
-    id: 'user-id-123',
-    username: 'testuser',
-    password: 'hashed-password',
-    firstName: 'John',
-    lastName: 'Doe',
-    birthDate: '2000-01-01',
-    gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  const mockUser = buildUser();
 
   beforeEach(async () => {
     userRepository = createMock<UserRepository>();
