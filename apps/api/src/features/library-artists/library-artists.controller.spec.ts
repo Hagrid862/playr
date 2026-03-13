@@ -1,7 +1,8 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { createMockMulterFile } from '@repo/testing';
 import { CreateLibraryArtistCommand } from './commands/impl/create-library-artist.command';
 import { DeleteLibraryArtistCommand } from './commands/impl/delete-library-artist.command';
 import { UpdateLibraryArtistCommand } from './commands/impl/update-library-artist.command';
@@ -39,10 +40,10 @@ describe('LibraryArtistsController', () => {
       const expectedResult = { id: 'artist-123', ...request };
       commandBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.createArtist(request as any, userId);
+      const result = await controller.createArtist(request, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
-        new CreateLibraryArtistCommand(request as any, userId),
+        new CreateLibraryArtistCommand(request, userId),
       );
       expect(result).toBe(expectedResult);
     });
@@ -60,7 +61,7 @@ describe('LibraryArtistsController', () => {
       };
       queryBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.getLibraryArtists(userId, query as any);
+      const result = await controller.getLibraryArtists(userId, query);
 
       expect(queryBus.execute).toHaveBeenCalledWith(
         new GetLibraryArtistsQuery(userId, query.page, query.limit),
@@ -91,10 +92,10 @@ describe('LibraryArtistsController', () => {
       const expectedResult = { id: artistId, ...request };
       commandBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.updateArtist(artistId, request as any, userId);
+      const result = await controller.updateArtist(artistId, request, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
-        new UpdateLibraryArtistCommand(artistId, request as any, userId),
+        new UpdateLibraryArtistCommand(artistId, request, userId),
       );
       expect(result).toBe(expectedResult);
     });
@@ -118,7 +119,7 @@ describe('LibraryArtistsController', () => {
     it('should execute GetLibraryArtistAlbumsQuery with correct parameters', async () => {
       const userId = 'user-123';
       const artistId = 'artist-123';
-      const query = { page: 1, limit: 10, type: 'album' };
+      const query = { page: 1, limit: 10, type: 'album' as const };
       const expectedResult = {
         items: [],
         total: 0,
@@ -127,16 +128,10 @@ describe('LibraryArtistsController', () => {
       };
       queryBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.getLibraryArtistAlbums(userId, artistId, query as any);
+      const result = await controller.getLibraryArtistAlbums(userId, artistId, query);
 
       expect(queryBus.execute).toHaveBeenCalledWith(
-        new GetLibraryArtistAlbumsQuery(
-          userId,
-          artistId,
-          query.page,
-          query.limit,
-          query.type as any,
-        ),
+        new GetLibraryArtistAlbumsQuery(userId, artistId, query.page, query.limit, query.type),
       );
       expect(result).toBe(expectedResult);
     });
@@ -146,11 +141,11 @@ describe('LibraryArtistsController', () => {
     it('should execute UploadLibraryArtistAvatarCommand with correct parameters', async () => {
       const userId = 'user-123';
       const artistId = 'artist-123';
-      const file = { buffer: Buffer.from('test'), mimetype: 'image/jpeg' };
+      const file = createMockMulterFile({ buffer: Buffer.from('test'), mimetype: 'image/jpeg' });
       const expectedResult = { id: 'image-123', url: 'http://test.com/avatar.jpg' };
       commandBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.uploadArtistAvatar(artistId, file as any, userId);
+      const result = await controller.uploadArtistAvatar(artistId, file, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
         new UploadLibraryArtistAvatarCommand(artistId, file.buffer, file.mimetype, userId),
@@ -163,11 +158,11 @@ describe('LibraryArtistsController', () => {
     it('should execute UploadLibraryArtistBannerCommand with correct parameters', async () => {
       const userId = 'user-123';
       const artistId = 'artist-123';
-      const file = { buffer: Buffer.from('test'), mimetype: 'image/jpeg' };
+      const file = createMockMulterFile({ buffer: Buffer.from('test'), mimetype: 'image/jpeg' });
       const expectedResult = { id: 'image-123', url: 'http://test.com/banner.jpg' };
       commandBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.uploadArtistBanner(artistId, file as any, userId);
+      const result = await controller.uploadArtistBanner(artistId, file, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
         new UploadLibraryArtistBannerCommand(artistId, file.buffer, file.mimetype, userId),

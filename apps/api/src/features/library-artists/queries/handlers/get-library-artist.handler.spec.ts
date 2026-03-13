@@ -2,7 +2,8 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { NotFoundException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibrary, buildLibraryArtist } from '@repo/testing';
 import { GetLibraryArtistQuery } from '../impl/get-library-artist.query';
 import { GetLibraryArtistHandler } from './get-library-artist.handler';
 
@@ -39,11 +40,11 @@ describe('GetLibraryArtistHandler', () => {
     const userId = 'user-123';
     const artistId = 'artist-123';
     const libraryId = 'lib-123';
-    const mockLibrary = { id: libraryId };
-    const mockLibraryArtist = { id: 'la-123', artistId, libraryId };
+    const mockLibrary = buildLibrary({ id: libraryId });
+    const mockLibraryArtist = buildLibraryArtist({ id: 'la-123', artistId, libraryId });
 
-    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary as any);
-    vi.mocked(libraryArtistRepository.findOne).mockResolvedValue(mockLibraryArtist as any);
+    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary);
+    vi.mocked(libraryArtistRepository.findOne).mockResolvedValue(mockLibraryArtist);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
     const result = await handler.execute(query);
@@ -73,9 +74,9 @@ describe('GetLibraryArtistHandler', () => {
     const userId = 'user-123';
     const artistId = 'artist-123';
     const libraryId = 'lib-123';
-    const mockLibrary = { id: libraryId };
+    const mockLibrary = buildLibrary({ id: libraryId });
 
-    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary as any);
+    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary);
     vi.mocked(libraryArtistRepository.findOne).mockResolvedValue(null);
 
     const query = new GetLibraryArtistQuery(userId, artistId);

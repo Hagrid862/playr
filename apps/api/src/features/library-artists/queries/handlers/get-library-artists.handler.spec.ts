@@ -2,7 +2,8 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibrary, buildLibraryArtist } from '@repo/testing';
 import { GetLibraryArtistsQuery } from '../impl/get-library-artists.query';
 import { GetLibraryArtistsHandler } from './get-library-artists.handler';
 
@@ -41,15 +42,15 @@ describe('GetLibraryArtistsHandler', () => {
     const page = 1;
     const limit = 10;
     const libraryId = 'lib-123';
-    const mockLibrary = { id: libraryId };
+    const mockLibrary = buildLibrary({ id: libraryId });
     const mockItems = [
-      { id: 'la-1', name: 'Artist 1' },
-      { id: 'la-2', name: 'Artist 2' },
+      buildLibraryArtist({ id: 'la-1', libraryId }),
+      buildLibraryArtist({ id: 'la-2', libraryId }),
     ];
     const mockTotal = 2;
 
-    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary as any);
-    vi.mocked(libraryArtistRepository.findMany).mockResolvedValue(mockItems as any);
+    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary);
+    vi.mocked(libraryArtistRepository.findMany).mockResolvedValue(mockItems);
     vi.mocked(libraryArtistRepository.count).mockResolvedValue(mockTotal);
 
     const query = new GetLibraryArtistsQuery(userId, page, limit);

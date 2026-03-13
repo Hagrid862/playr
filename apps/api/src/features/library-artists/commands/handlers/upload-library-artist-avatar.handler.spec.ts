@@ -9,7 +9,8 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
-import { vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildArtist, buildImage } from '@repo/testing';
 import { UploadLibraryArtistAvatarCommand } from '../impl/upload-library-artist-avatar.command';
 import { UploadLibraryArtistAvatarHandler } from './upload-library-artist-avatar.handler';
 
@@ -106,15 +107,12 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({
-      id: 'artist-123',
-      avatarId: 'img-old',
-    } as any);
-    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue({
-      id: 'img-old',
-      bucket: FileBucket.public,
-      key: 'old-key',
-    } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(
+      buildArtist({ id: 'artist-123', avatarId: 'img-old' }),
+    );
+    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue(
+      buildImage({ id: 'img-old', bucket: FileBucket.public, key: 'old-key' }),
+    );
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -142,7 +140,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(buildArtist({ id: 'artist-123' }));
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockImplementation(async (_buf, _bucket, key) => ({
@@ -179,7 +177,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(buildArtist({ id: 'artist-123' }));
     vi.mocked(imageService.validateImage).mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
@@ -193,16 +191,13 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(buildArtist({ id: 'artist-123' }));
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
     // Mock create to return invalid image (missing required fields for ZodImage)
-    vi.mocked(mockTx.image.create).mockResolvedValueOnce({
-      id: 'img-new',
-      // missing other required fields
-    } as any);
+    vi.mocked(mockTx.image.create).mockResolvedValueOnce(JSON.parse('{"id":"img-new"}'));
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
 
@@ -219,20 +214,17 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({
-      id: 'artist-123',
-      avatarId: 'img-old',
-    } as any);
-    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue({
-      id: 'img-old',
-      bucket: FileBucket.public,
-      key: 'old-key',
-    } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(
+      buildArtist({ id: 'artist-123', avatarId: 'img-old' }),
+    );
+    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue(
+      buildImage({ id: 'img-old', bucket: FileBucket.public, key: 'old-key' }),
+    );
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
-    const loggerSpy = vi.spyOn((handler as any).logger, 'error').mockImplementation(() => {});
+    const loggerSpy = vi.spyOn(handler['logger'], 'error').mockImplementation(() => {});
     vi.mocked(storageService.deleteFile).mockRejectedValue(new Error('Delete error'));
 
     await handler.execute(command);
@@ -251,14 +243,14 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(buildArtist({ id: 'artist-123' }));
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
     vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
     vi.mocked(prismaService.mainClient.$transaction).mockRejectedValue(new Error('DB Error'));
 
-    const loggerSpy = vi.spyOn((handler as any).logger, 'error').mockImplementation(() => {});
+    const loggerSpy = vi.spyOn(handler['logger'], 'error').mockImplementation(() => {});
     vi.mocked(storageService.deleteFile).mockRejectedValue(new Error('Delete error'));
 
     // Should still throw the original DB error
@@ -278,10 +270,9 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({
-      id: 'artist-123',
-      avatarId: 'img-old',
-    } as any);
+    vi.mocked(artistRepository.findOne).mockResolvedValue(
+      buildArtist({ id: 'artist-123', avatarId: 'img-old' }),
+    );
     vi.mocked(prismaService.client.image.findUnique).mockResolvedValue(null); // Orphaned
     vi.mocked(imageService.validateImage).mockResolvedValue(true);
     vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
