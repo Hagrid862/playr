@@ -1,9 +1,8 @@
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import { createPrismaClient, PrismaClient } from '@repo/db';
 import { PrismaService } from './prisma.service';
 import { UnitOfWorkService } from './unit-of-work.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { createMockPrismaClient } from '@repo/testing';
-import { createPrismaClient } from '@repo/db';
 
 vi.mock('@repo/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@repo/db')>();
@@ -16,7 +15,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 describe('PrismaService', () => {
   let service: PrismaService;
   let unitOfWork: DeepMocked<UnitOfWorkService>;
-  let mockPrismaClient: ReturnType<typeof createMockPrismaClient>;
+  let mockPrismaClient: DeepMocked<PrismaClient>;
   const originalEnv = process.env;
 
   beforeEach(async () => {
@@ -26,8 +25,8 @@ describe('PrismaService', () => {
       DATABASE_URL: 'postgresql://user:password@localhost:5432/db',
     };
 
-    mockPrismaClient = createMockPrismaClient();
-    vi.mocked(createPrismaClient).mockReturnValue(mockPrismaClient as any);
+    mockPrismaClient = createMock<PrismaClient>();
+    vi.mocked(createPrismaClient).mockReturnValue(mockPrismaClient as unknown as PrismaClient);
     unitOfWork = createMock<UnitOfWorkService>();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -71,7 +70,7 @@ describe('PrismaService', () => {
 
   describe('client selector', () => {
     it('should return transactional client if available from UnitOfWork', () => {
-      const mockTx = createMockPrismaClient();
+      const mockTx = createMock<PrismaClient>();
       unitOfWork.getTransactionalClient.mockReturnValue(mockTx);
 
       expect(service.client).toBe(mockTx);
@@ -88,7 +87,7 @@ describe('PrismaService', () => {
 
   describe('mainClient', () => {
     it('should always return the original prisma client even if transaction is active', () => {
-      unitOfWork.getTransactionalClient.mockReturnValue(createMockPrismaClient());
+      unitOfWork.getTransactionalClient.mockReturnValue(createMock<PrismaClient>());
 
       expect(service.mainClient).toBe(mockPrismaClient);
     });

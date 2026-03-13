@@ -1,9 +1,10 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Artist, PrismaClient } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildAlbum, buildArtist } from '@repo/testing';
 import { PrismaService } from '../services/prisma.service';
 import { ArtistRepository } from './artist.repository';
-import { buildArtist, buildAlbum } from '@repo/testing';
 
 describe('ArtistRepository', () => {
   let repository: ArtistRepository;
@@ -146,11 +147,11 @@ describe('ArtistRepository', () => {
   describe('updateMany', () => {
     it('should update many artists in transaction', async () => {
       // Mock $transaction properly using mockImplementation
-      mockTx.$transaction.mockImplementation(async (arg) => {
+      mockTx.$transaction.mockImplementation(async (arg: unknown) => {
         if (Array.isArray(arg)) {
           return Promise.all(arg);
         }
-        return arg as any;
+        return (arg as (tx: typeof mockTx) => Promise<Artist>)(mockTx);
       });
 
       mockTx.artist.update.mockResolvedValue(mockArtist);

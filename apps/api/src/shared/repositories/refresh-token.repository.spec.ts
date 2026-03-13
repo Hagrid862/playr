@@ -1,9 +1,10 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, RefreshToken } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildRefreshToken } from '@repo/testing';
 import { PrismaService } from '../services/prisma.service';
 import { RefreshTokenRepository } from './refresh-token.repository';
-import { buildRefreshToken } from '@repo/testing';
 
 describe('RefreshTokenRepository', () => {
   let repository: RefreshTokenRepository;

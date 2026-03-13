@@ -1,14 +1,14 @@
-import { ConfigService } from '@nestjs/config';
-import { FileBucket } from '@repo/db';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { StorageService } from './storage.service';
-import { Env } from '../../common/config/env.schema';
 import {
-  PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  PutObjectCommand,
 } from '@aws-sdk/client-s3';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { ConfigService } from '@nestjs/config';
+import { FileBucket } from '@repo/db';
+import { Env } from '../../common/config/env.schema';
+import { StorageService } from './storage.service';
 
 const mocks = vi.hoisted(() => ({
   s3Send: vi.fn(),
@@ -108,7 +108,7 @@ describe('StorageService', () => {
     });
 
     it('should return S3 endpoint URL for public bucket if CDN not configured', () => {
-      configService.get.mockImplementation((key: any) => {
+      configService.get.mockImplementation((key: string) => {
         if (key === 'S3_PUBLIC_URL') return undefined;
         if (key === 'S3_ENDPOINT') return 'http://localhost:9000';
         if (key === 'S3_PUBLIC_BUCKET') return 'public-bucket';
@@ -313,7 +313,7 @@ describe('StorageService', () => {
 
   describe('configuration', () => {
     it('should throw error if public bucket is not configured', async () => {
-      configService.get.mockImplementation((key: any) => {
+      configService.get.mockImplementation((key: string) => {
         if (key === 'S3_PUBLIC_BUCKET') return undefined;
         return 'some-value';
       });
@@ -324,7 +324,7 @@ describe('StorageService', () => {
     });
 
     it('should throw error if private bucket is not configured', async () => {
-      configService.get.mockImplementation((key: any) => {
+      configService.get.mockImplementation((key: string) => {
         if (key === 'S3_PRIVATE_BUCKET') return undefined;
         return 'some-value';
       });

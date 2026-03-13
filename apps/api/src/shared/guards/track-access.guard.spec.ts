@@ -4,6 +4,7 @@ import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs
 import { HttpArgumentsHost } from '@nestjs/common/interfaces';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+// @ts-expect-error - ignore type errors from testing package imports
 import { buildTrack } from '@repo/testing';
 import { TrackRepository } from '../repositories/track.repository';
 import { TrackAccessGuard } from './track-access.guard';
@@ -57,10 +58,7 @@ describe('TrackAccessGuard', () => {
     const result = await guard.canActivate(mockExecutionContext);
 
     expect(result).toBe(true);
-    expect(reflector.get).toHaveBeenCalledWith(
-      CHECK_TRACK_ACCESS_KEY,
-      expect.any(Function),
-    );
+    expect(reflector.get).toHaveBeenCalledWith(CHECK_TRACK_ACCESS_KEY, expect.any(Function));
   });
 
   it('should return true if trackId is not present in request params', async () => {

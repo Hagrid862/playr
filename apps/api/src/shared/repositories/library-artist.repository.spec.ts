@@ -1,9 +1,10 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibraryArtist, PrismaClient } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibraryArtist } from '@repo/testing';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryArtistRepository } from './library-artist.repository';
-import { buildLibraryArtist } from '@repo/testing';
 
 describe('LibraryArtistRepository', () => {
   let repository: LibraryArtistRepository;

@@ -56,10 +56,7 @@ describe('ArtistAccessGuard', () => {
     const result = await guard.canActivate(mockExecutionContext);
 
     expect(result).toBe(true);
-    expect(reflector.get).toHaveBeenCalledWith(
-      CHECK_ARTIST_ACCESS_KEY,
-      expect.any(Function),
-    );
+    expect(reflector.get).toHaveBeenCalledWith(CHECK_ARTIST_ACCESS_KEY, expect.any(Function));
   });
 
   it('should return true if artistId is not present in request params', async () => {

@@ -56,10 +56,7 @@ describe('AlbumAccessGuard', () => {
     const result = await guard.canActivate(mockExecutionContext);
 
     expect(result).toBe(true);
-    expect(reflector.get).toHaveBeenCalledWith(
-      CHECK_ALBUM_ACCESS_KEY,
-      expect.any(Function),
-    );
+    expect(reflector.get).toHaveBeenCalledWith(CHECK_ALBUM_ACCESS_KEY, expect.any(Function));
   });
 
   it('should return true if albumId is not present in request params', async () => {

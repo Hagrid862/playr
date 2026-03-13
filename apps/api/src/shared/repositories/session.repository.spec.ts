@@ -1,9 +1,10 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, Session, SessionType } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildSession } from '@repo/testing';
 import { PrismaService } from '../services/prisma.service';
 import { SessionRepository } from './session.repository';
-import { buildSession } from '@repo/testing';
 
 describe('SessionRepository', () => {
   let repository: SessionRepository;

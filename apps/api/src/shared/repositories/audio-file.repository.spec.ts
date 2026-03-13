@@ -1,9 +1,10 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AudioFile, PrismaClient, FileBucket, AudioFormat } from '@repo/db';
+import { AudioFile, AudioFormat, FileBucket, PrismaClient } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildAudioFile } from '@repo/testing';
 import { PrismaService } from '../services/prisma.service';
 import { AudioFileRepository } from './audio-file.repository';
-import { buildAudioFile } from '@repo/testing';
 
 describe('AudioFileRepository', () => {
   let repository: AudioFileRepository;
