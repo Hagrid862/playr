@@ -26,7 +26,7 @@ describe('PrismaService', () => {
     };
 
     mockPrismaClient = createMock<PrismaClient>();
-    vi.mocked(createPrismaClient).mockReturnValue(mockPrismaClient as unknown as PrismaClient);
+    vi.mocked(createPrismaClient).mockReturnValue(mockPrismaClient as PrismaClient);
     unitOfWork = createMock<UnitOfWorkService>();
 
     const module: TestingModule = await Test.createTestingModule({
