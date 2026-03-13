@@ -24,6 +24,8 @@
   },
   "devDependencies": {
     "@golevelup/ts-vitest": "^2.2.0",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "catalog:",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
