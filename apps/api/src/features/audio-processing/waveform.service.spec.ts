@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import ffmpeg from 'fluent-ffmpeg';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WaveformService } from './waveform.service';
 
 vi.mock('fluent-ffmpeg');

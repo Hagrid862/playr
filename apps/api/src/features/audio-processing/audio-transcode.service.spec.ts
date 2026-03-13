@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AudioFormat } from '@repo/db';
 import ffmpeg from 'fluent-ffmpeg';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioTranscodeService } from './audio-transcode.service';
 
 vi.mock('fluent-ffmpeg');
@@ -28,7 +27,8 @@ describe('AudioTranscodeService', () => {
       expect(service.getMimeType(AudioFormat.flac)).toBe('audio/flac');
       expect(service.getMimeType(AudioFormat.wav)).toBe('audio/wav');
       expect(service.getMimeType(AudioFormat.aac)).toBe('audio/aac');
-      expect(service.getMimeType('other' as AudioFormat)).toBe('application/octet-stream');
+      // @ts-expect-error - here that is expected to be an error
+      expect(service.getMimeType('other')).toBe('application/octet-stream');
     });
   });
 

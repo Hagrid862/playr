@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import { canUserUpdateTrackDuration } from './audio-processing.utils';
 
 describe('audio-processing.utils', () => {
   describe('canUserUpdateTrackDuration', () => {
     it('should return false when track.access is undefined', () => {
-      expect(canUserUpdateTrackDuration({}, 'user-1')).toBe(false);
       expect(canUserUpdateTrackDuration({ access: undefined }, 'user-1')).toBe(false);
+    });
+
+    it('should return false when track.access is empty array', () => {
+      expect(canUserUpdateTrackDuration({ access: [] }, 'user-1')).toBe(false);
     });
 
     it('should return true when user is owner', () => {
