@@ -1,7 +1,6 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
-  GetObjectCommandOutput,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -12,6 +11,15 @@ import { ConfigService } from '@nestjs/config';
 import { FileBucket } from '@repo/db';
 import { Readable } from 'stream';
 import { Env } from '../../common/config/env.schema';
+
+function isNodeReadable(body: unknown): body is Readable {
+  return (
+    body != null &&
+    typeof body === 'object' &&
+    'pipe' in body &&
+    typeof (body as Readable).pipe === 'function'
+  );
+}
 
 export interface UploadOptions {
   contentType?: string;
@@ -195,7 +203,7 @@ export class StorageService {
     bucketType: FileBucket,
     key: string,
     options: { start?: number; end?: number } = {},
-  ): Promise<{ stream: GetObjectCommandOutput['Body']; size: number; totalSize: number }> {
+  ): Promise<{ stream: Readable; size: number; totalSize: number }> {
     const bucketName = this.getBucketName(bucketType);
 
     let rangeHeader: string | undefined;
@@ -211,8 +219,12 @@ export class StorageService {
 
     try {
       const response = await this.s3Client.send(getCommand);
+      const body = response.Body;
+      if (!isNodeReadable(body)) {
+        throw new Error('S3 GetObject returned no body');
+      }
       return {
-        stream: response.Body,
+        stream: body,
         size: response.ContentLength ?? 0,
         totalSize: response.ContentRange
           ? parseInt(response.ContentRange.split('/')[1])
