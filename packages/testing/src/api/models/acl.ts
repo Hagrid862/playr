@@ -1,11 +1,13 @@
 import {
   AccessRole,
-  type ArtistAccess,
   type AlbumAccess,
+  type ArtistAccess,
+  type Track,
   type TrackAccess,
 } from "@repo/db";
 import { buildWithOverrides } from "../../shared";
 import { now } from "../internal/time";
+import { buildTrack } from "./catalog";
 
 export function buildArtistAccess(
   overrides: Partial<ArtistAccess> = {},
@@ -50,4 +52,19 @@ export function buildTrackAccess(
   };
 
   return buildWithOverrides(base, overrides);
+}
+
+export type TrackWithAccess = Track & { access: TrackAccess[] };
+
+export function buildTrackWithAccess(
+  trackOverrides: Partial<Track> = {},
+  accessOverrides: Partial<TrackAccess>[] = [
+    { userId: "user-123", role: AccessRole.owner },
+  ],
+): TrackWithAccess {
+  const track = buildTrack(trackOverrides);
+  const access = accessOverrides.map((o) =>
+    buildTrackAccess({ ...o, trackId: track.id }),
+  );
+  return { ...track, access };
 }
