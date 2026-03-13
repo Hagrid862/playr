@@ -6,26 +6,29 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AudioFileSchema } from '@repo/contracts';
-import { AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
+import { AccessRole, AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
+import {
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildAudioFile,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildTrack,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildTrackWithAccess,
+  // @ts-expect-error - ignore type errors from testing package imports
+  createMockMulterFile,
+} from '@repo/testing';
 import { Queue } from 'bullmq';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkUploadTrackAudioCommand } from '../impl/bulk-upload-track-audio.command';
 import { BulkUploadTrackAudioHandler } from './bulk-upload-track-audio.handler';
 
-const createMockFile = (overrides: Partial<Express.Multer.File> = {}): Express.Multer.File =>
-  ({
+const createMockFile = (overrides: Partial<Parameters<typeof createMockMulterFile>[0]> = {}) =>
+  createMockMulterFile({
     buffer: Buffer.from('test audio content'),
     mimetype: 'audio/mpeg',
     originalname: 'test-song.mp3',
     size: 1024,
-    fieldname: 'file',
-    encoding: '7bit',
-    destination: '',
-    filename: '',
-    path: '',
-    stream: null as any,
     ...overrides,
-  }) as Express.Multer.File;
+  });
 
 describe('BulkUploadTrackAudioHandler', () => {
   let handler: BulkUploadTrackAudioHandler;
@@ -38,33 +41,6 @@ describe('BulkUploadTrackAudioHandler', () => {
   const albumId = 'album-123';
   const trackId1 = 'track-1';
   const trackId2 = 'track-2';
-
-  const mockTrackWithAccess = (trackId: string, albumIdParam: string) => ({
-    id: trackId,
-    albumId: albumIdParam,
-    access: [{ userId, role: 'owner' }],
-  });
-
-  const mockAudioFile = (id: string, trackId: string) => ({
-    id,
-    bucket: FileBucket.private,
-    key: `tracks/${trackId}/originals/key`,
-    url: 'https://storage.url/file',
-    mimeType: 'audio/mpeg',
-    size: 1024,
-    format: AudioFormat.mp3,
-    duration: null,
-    bitrate: null,
-    sampleRate: null,
-    channels: null,
-    isOriginal: true,
-    waveformJson: null,
-    trackId,
-    quality: 'original' as const,
-    status: ProcessingStatus.pending,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
 
   beforeEach(async () => {
     trackRepository = createMock<TrackRepository>();
@@ -142,8 +118,16 @@ describe('BulkUploadTrackAudioHandler', () => {
     });
 
     it('should throw BadRequestException when file has no buffer', async () => {
-      const invalidFile = createMockFile({ buffer: undefined as any });
-      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [invalidFile], userId);
+      const invalidFile = {
+        ...createMockFile(),
+        buffer: undefined,
+      };
+      const command = new BulkUploadTrackAudioCommand(
+        albumId,
+        [trackId1],
+        [invalidFile] as Express.Multer.File[],
+        userId,
+      );
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
       await expect(handler.execute(command)).rejects.toThrow('File at index 0 is empty or invalid');
@@ -183,9 +167,11 @@ describe('BulkUploadTrackAudioHandler', () => {
         [file1, invalidMimeFile],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId) as any);
+      trackRepository.findOne.mockResolvedValue(buildTrackWithAccess({ id: trackId1, albumId }));
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
-      audioFileRepository.create.mockResolvedValue(mockAudioFile('af-1', trackId1) as any);
+      audioFileRepository.create.mockResolvedValue(
+        buildAudioFile({ id: 'af-1', trackId: trackId1 }),
+      );
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -194,7 +180,8 @@ describe('BulkUploadTrackAudioHandler', () => {
     });
 
     it('should throw BadRequestException when file is null', async () => {
-      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [null as any], userId);
+      // @ts-expect-error - testing null file handling
+      const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [null], userId);
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
       await expect(handler.execute(command)).rejects.toThrow('File at index 0 is empty or invalid');
@@ -221,7 +208,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         userId,
       );
       trackRepository.findOne.mockResolvedValue(
-        mockTrackWithAccess(trackId1, 'other-album-id') as any,
+        buildTrackWithAccess({ id: trackId1, albumId: 'other-album-id' }),
       );
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
@@ -237,11 +224,11 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue({
-        id: trackId1,
-        albumId,
-        access: [{ userId: 'other-user', role: 'owner' }],
-      } as any);
+      trackRepository.findOne.mockResolvedValue(
+        buildTrackWithAccess({ id: trackId1, albumId }, [
+          { userId: 'other-user', role: AccessRole.owner },
+        ]),
+      );
 
       await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -256,11 +243,9 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue({
-        id: trackId1,
-        albumId,
-        access: [{ userId, role: 'viewer' }],
-      } as any);
+      trackRepository.findOne.mockResolvedValue(
+        buildTrackWithAccess({ id: trackId1, albumId }, [{ userId, role: AccessRole.viewer }]),
+      );
 
       await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -275,10 +260,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue({
-        id: trackId1,
-        albumId,
-      } as any);
+      trackRepository.findOne.mockResolvedValue(buildTrack({ id: trackId1, albumId }));
 
       await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -289,13 +271,13 @@ describe('BulkUploadTrackAudioHandler', () => {
     it('should allow editor role', async () => {
       const file = createMockFile();
       const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
-      trackRepository.findOne.mockResolvedValue({
-        id: trackId1,
-        albumId,
-        access: [{ userId, role: 'editor' }],
-      } as any);
+      trackRepository.findOne.mockResolvedValue(
+        buildTrackWithAccess({ id: trackId1, albumId }, [{ userId, role: AccessRole.editor }]),
+      );
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
-      audioFileRepository.create.mockResolvedValue(mockAudioFile('af-1', trackId1) as any);
+      audioFileRepository.create.mockResolvedValue(
+        buildAudioFile({ id: 'af-1', trackId: trackId1 }),
+      );
 
       const result = await handler.execute(command);
 
@@ -313,9 +295,11 @@ describe('BulkUploadTrackAudioHandler', () => {
     it('should succeed when file size is exactly 100MB', async () => {
       const file = createMockFile({ size: 100 * 1024 * 1024 });
       const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId) as any);
+      trackRepository.findOne.mockResolvedValue(buildTrackWithAccess({ id: trackId1, albumId }));
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
-      audioFileRepository.create.mockResolvedValue(mockAudioFile('af-1', trackId1) as any);
+      audioFileRepository.create.mockResolvedValue(
+        buildAudioFile({ id: 'af-1', trackId: trackId1 }),
+      );
 
       const result = await handler.execute(command);
 
@@ -335,14 +319,14 @@ describe('BulkUploadTrackAudioHandler', () => {
       );
 
       trackRepository.findOne
-        .mockResolvedValueOnce(mockTrackWithAccess(trackId1, albumId) as any)
-        .mockResolvedValueOnce(mockTrackWithAccess(trackId2, albumId) as any);
+        .mockResolvedValueOnce(buildTrackWithAccess({ id: trackId1, albumId }))
+        .mockResolvedValueOnce(buildTrackWithAccess({ id: trackId2, albumId }));
 
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
 
       audioFileRepository.create
-        .mockResolvedValueOnce(mockAudioFile('af-1', trackId1) as any)
-        .mockResolvedValueOnce(mockAudioFile('af-2', trackId2) as any);
+        .mockResolvedValueOnce(buildAudioFile({ id: 'af-1', trackId: trackId1 }))
+        .mockResolvedValueOnce(buildAudioFile({ id: 'af-2', trackId: trackId2 }));
 
       const result = await handler.execute(command);
 
@@ -400,14 +384,14 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId) as any);
+      trackRepository.findOne.mockResolvedValue(buildTrackWithAccess({ id: trackId1, albumId }));
       storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-      audioFileRepository.create.mockResolvedValue({ invalid: 'data' } as any);
+      audioFileRepository.create.mockResolvedValue(JSON.parse('{"invalid":"data"}'));
 
       vi.spyOn(AudioFileSchema, 'safeParse').mockReturnValue({
         success: false,
         error: { format: () => ({}) },
-      } as any);
+      } as ReturnType<typeof AudioFileSchema.safeParse>);
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -426,11 +410,13 @@ describe('BulkUploadTrackAudioHandler', () => {
       );
 
       trackRepository.findOne
-        .mockResolvedValueOnce(mockTrackWithAccess(trackId1, albumId) as any)
+        .mockResolvedValueOnce(buildTrackWithAccess({ id: trackId1, albumId }))
         .mockResolvedValueOnce(null);
 
       storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-      audioFileRepository.create.mockResolvedValue(mockAudioFile('af-1', trackId1) as any);
+      audioFileRepository.create.mockResolvedValue(
+        buildAudioFile({ id: 'af-1', trackId: trackId1 }),
+      );
 
       await expect(handler.execute(command)).rejects.toThrow(
         new NotFoundException(`Track ${trackId2} not found`),
@@ -541,9 +527,11 @@ describe('BulkUploadTrackAudioHandler', () => {
       const file = createMockFile({ mimetype, originalname });
       const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
 
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId) as any);
+      trackRepository.findOne.mockResolvedValue(buildTrackWithAccess({ id: trackId1, albumId }));
       storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-      audioFileRepository.create.mockResolvedValue(mockAudioFile('af-1', trackId1) as any);
+      audioFileRepository.create.mockResolvedValue(
+        buildAudioFile({ id: 'af-1', trackId: trackId1 }),
+      );
 
       await handler.execute(command);
 

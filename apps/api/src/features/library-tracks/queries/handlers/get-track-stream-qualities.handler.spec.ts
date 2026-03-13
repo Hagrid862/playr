@@ -1,10 +1,12 @@
+import { PrismaService } from '@/shared/services/prisma.service';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '@/shared/services/prisma.service';
 import { StreamAudioQuality } from '@repo/contracts';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GetTrackStreamQualitiesHandler } from './get-track-stream-qualities.handler';
+import { AudioFormat, AudioQuality } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildAudioFile } from '@repo/testing';
 import { GetTrackStreamQualitiesQuery } from '../impl/get-track-stream-qualities.query';
+import { GetTrackStreamQualitiesHandler } from './get-track-stream-qualities.handler';
 
 describe('GetTrackStreamQualitiesHandler', () => {
   let handler: GetTrackStreamQualitiesHandler;
@@ -41,12 +43,12 @@ describe('GetTrackStreamQualitiesHandler', () => {
 
     it('should correctly map audio formats to qualities', async () => {
       prismaService.client.audioFile.findMany.mockResolvedValue([
-        { format: 'flac', quality: 'original' },
-        { format: 'wav', quality: 'original' },
-        { format: 'mp3', quality: 'high' },
-        { format: 'opus', quality: 'standard' },
-        { format: 'mp3', quality: 'low' },
-      ] as any);
+        buildAudioFile({ format: AudioFormat.flac, quality: AudioQuality.original }),
+        buildAudioFile({ format: AudioFormat.wav, quality: AudioQuality.original }),
+        buildAudioFile({ format: AudioFormat.mp3, quality: AudioQuality.high }),
+        buildAudioFile({ format: AudioFormat.opus, quality: AudioQuality.standard }),
+        buildAudioFile({ format: AudioFormat.mp3, quality: AudioQuality.low }),
+      ]);
 
       const result = await handler.execute(new GetTrackStreamQualitiesQuery('track-1'));
 
@@ -58,11 +60,12 @@ describe('GetTrackStreamQualitiesHandler', () => {
     });
 
     it('should normalize uppercase formats and qualities to StreamAudioQuality values', async () => {
-      prismaService.client.audioFile.findMany.mockResolvedValue([
-        { format: 'FLAC', quality: 'ORIGINAL' },
-        { format: 'MP3', quality: 'HIGH' },
-        { format: null, quality: null },
-      ] as any);
+      // Prisma may return uppercase enum strings; handler normalizes them
+      prismaService.client.audioFile.findMany.mockResolvedValue(
+        JSON.parse(
+          '[{"format":"FLAC","quality":"ORIGINAL"},{"format":"MP3","quality":"HIGH"},{"format":null,"quality":null}]',
+        ),
+      );
 
       const result = await handler.execute(new GetTrackStreamQualitiesQuery('track-1'));
 

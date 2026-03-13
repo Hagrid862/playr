@@ -1,20 +1,22 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { Test, TestingModule } from '@nestjs/testing';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Reflector } from '@nestjs/core';
 import { TrackRepository } from '@/shared/repositories/track.repository';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LibraryTracksController } from './library-tracks.controller';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { HttpStatus } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { Test, TestingModule } from '@nestjs/testing';
+import { StreamAudioQuality } from '@repo/contracts';
+import type { Response } from 'express';
+// @ts-expect-error - ignore type errors from testing package imports
+import { createMockMulterFile } from '@repo/testing';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
 import { UpdateLibraryTrackCommand } from './commands/impl/update-library-track.command';
+import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
+import { LibraryTracksController } from './library-tracks.controller';
 import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
-import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
 import { GetTrackStreamQualitiesQuery } from './queries/impl/get-track-stream-qualities.query';
 import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
-import { StreamAudioQuality } from '@repo/contracts';
-import { HttpStatus } from '@nestjs/common';
 
 describe('LibraryTracksController', () => {
   let controller: LibraryTracksController;
@@ -72,7 +74,14 @@ describe('LibraryTracksController', () => {
 
   describe('createTrack', () => {
     it('should create a track', async () => {
-      const body = { title: 'New Track', albumId: 'album-123', artistIds: ['artist-123'] } as any;
+      const body = {
+        title: 'New Track',
+        albumId: 'album-123',
+        artistIds: ['artist-123'],
+        trackNumber: 1,
+        diskNumber: 1,
+        explicit: false,
+      };
       const expectedResult = { id: trackId, title: 'New Track' };
       commandBus.execute.mockResolvedValue(expectedResult);
 
@@ -135,7 +144,7 @@ describe('LibraryTracksController', () => {
 
   describe('uploadAudio', () => {
     it('should dispatch upload audio command', async () => {
-      const file = { originalname: 'test.mp3' } as any;
+      const file = createMockMulterFile({ originalname: 'test.mp3' });
       commandBus.execute.mockResolvedValue('success');
       const result = await controller.uploadAudio(trackId, userId, file);
       expect(commandBus.execute).toHaveBeenCalledWith(
@@ -147,11 +156,11 @@ describe('LibraryTracksController', () => {
 
   describe('getTrackStream', () => {
     it('should stream track with partial content', async () => {
-      const mockRes = {
-        status: vi.fn(),
-        set: vi.fn(),
+      const mockRes = createMock<Response>({
+        status: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
         end: vi.fn(),
-      } as any;
+      });
       const mockStream = { pipe: vi.fn() };
 
       queryBus.execute.mockResolvedValue({
@@ -180,11 +189,11 @@ describe('LibraryTracksController', () => {
     });
 
     it('should stream track with OK status if not partial', async () => {
-      const mockRes = {
-        status: vi.fn(),
-        set: vi.fn(),
+      const mockRes = createMock<Response>({
+        status: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
         end: vi.fn(),
-      } as any;
+      });
       const mockStream = { pipe: vi.fn() };
 
       queryBus.execute.mockResolvedValue({
@@ -207,11 +216,11 @@ describe('LibraryTracksController', () => {
     });
 
     it('should handle Requested range not satisfiable', async () => {
-      const mockRes = {
+      const mockRes = createMock<Response>({
         status: vi.fn().mockReturnThis(),
         header: vi.fn().mockReturnThis(),
         end: vi.fn(),
-      } as any;
+      });
 
       queryBus.execute.mockRejectedValue(new Error('Requested range not satisfiable'));
 
@@ -223,7 +232,7 @@ describe('LibraryTracksController', () => {
     });
 
     it('should throw other errors', async () => {
-      const mockRes = {} as any;
+      const mockRes = createMock<Response>();
       queryBus.execute.mockRejectedValue(new Error('Other error'));
 
       await expect(

@@ -6,8 +6,8 @@ import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Album, Library, Track } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildAlbum, buildLibrary, buildTrack } from '@repo/testing';
 import { CreateLibraryTrackCommand } from '../impl/create-library-track.command';
 import { CreateLibraryTrackHandler } from './create-library-track.handler';
 
@@ -32,44 +32,19 @@ describe('CreateLibraryTrackHandler', () => {
     userId,
   );
 
-  const mockLibrary: Library = {
-    id: 'library-123',
-    userId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockAlbum: Album = {
+  const mockLibrary = buildLibrary({ id: 'library-123', userId });
+  const mockAlbum = buildAlbum({
     id: 'album-123',
     name: 'Test Album',
     description: 'Test Description',
-    type: 'album',
     totalTracks: 10,
     totalDuration: 3000,
-    releaseDate: new Date(),
-    coverId: null,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockTrack: Track = {
+  });
+  const mockTrack = buildTrack({
     id: 'track-123',
     title: 'Test Track',
-    trackNumber: 1,
-    diskNumber: 1,
-    duration: 180,
-    explicit: false,
-    lyrics: null,
-    listenedCount: 0,
     albumId: 'album-123',
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
@@ -131,7 +106,7 @@ describe('CreateLibraryTrackHandler', () => {
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    trackRepository.create.mockResolvedValue({ ...mockTrack, title: 123 as any }); // Invalid title
+    trackRepository.create.mockResolvedValue(JSON.parse('{"id":"track-123","title":123}'));
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
   });

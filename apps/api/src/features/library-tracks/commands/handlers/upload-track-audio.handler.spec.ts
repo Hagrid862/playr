@@ -1,15 +1,16 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { getQueueToken } from '@nestjs/bullmq';
-import { AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
-import { Queue } from 'bullmq';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
-import { UploadTrackAudioHandler } from './upload-track-audio.handler';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { getQueueToken } from '@nestjs/bullmq';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AccessRole, AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
+import { Queue } from 'bullmq';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildAudioFile, buildTrackWithAccess, createMockMulterFile } from '@repo/testing';
 import { UploadTrackAudioCommand } from '../impl/upload-track-audio.command';
+import { UploadTrackAudioHandler } from './upload-track-audio.handler';
 
 describe('UploadTrackAudioHandler', () => {
   let handler: UploadTrackAudioHandler;
@@ -49,18 +50,12 @@ describe('UploadTrackAudioHandler', () => {
   });
 
   describe('execute', () => {
-    const mockFile: Express.Multer.File = {
+    const mockFile = createMockMulterFile({
       buffer: Buffer.from('test audio content'),
       mimetype: 'audio/mpeg',
       originalname: 'test-song.mp3',
       size: 1024,
-      fieldname: 'file',
-      encoding: '7bit',
-      destination: '',
-      filename: '',
-      path: '',
-      stream: null as any,
-    };
+    });
 
     const mockCommand = new UploadTrackAudioCommand(mockTrackId, mockUserId, mockFile);
 
@@ -71,35 +66,36 @@ describe('UploadTrackAudioHandler', () => {
     });
 
     it('should throw ForbiddenException if user has no access', async () => {
-      trackRepository.findOne.mockResolvedValue({
-        id: mockTrackId,
-        access: [{ userId: 'other-user', role: 'owner' }],
-      } as any);
+      trackRepository.findOne.mockResolvedValue(
+        buildTrackWithAccess({ id: mockTrackId }, [
+          { userId: 'other-user', role: AccessRole.owner },
+        ]),
+      );
 
       await expect(handler.execute(mockCommand)).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException if user role is viewer', async () => {
-      trackRepository.findOne.mockResolvedValue({
-        id: mockTrackId,
-        access: [{ userId: mockUserId, role: 'viewer' }],
-      } as any);
+      trackRepository.findOne.mockResolvedValue(
+        buildTrackWithAccess({ id: mockTrackId }, [
+          { userId: mockUserId, role: AccessRole.viewer },
+        ]),
+      );
 
       await expect(handler.execute(mockCommand)).rejects.toThrow(ForbiddenException);
     });
 
     it('should upload file, create audio file record, and dispatch job on success', async () => {
-      trackRepository.findOne.mockResolvedValue({
-        id: mockTrackId,
-        access: [{ userId: mockUserId, role: 'owner' }],
-      } as any);
+      trackRepository.findOne.mockResolvedValue(
+        buildTrackWithAccess({ id: mockTrackId }, [{ userId: mockUserId, role: AccessRole.owner }]),
+      );
 
       const mockUrl = 'https://s3.url/path';
       storageService.uploadFile.mockResolvedValue({ url: mockUrl, key: 'test-key' });
 
-      audioFileRepository.create.mockResolvedValue({
-        id: 'audio-id-123',
-      } as any);
+      audioFileRepository.create.mockResolvedValue(
+        buildAudioFile({ id: 'audio-id-123', trackId: mockTrackId }),
+      );
 
       const result = await handler.execute(mockCommand);
 
@@ -129,7 +125,7 @@ describe('UploadTrackAudioHandler', () => {
         userId: mockUserId,
       });
 
-      expect(result).toEqual({ audioFile: { id: 'audio-id-123' } });
+      expect(result).toEqual({ audioFile: expect.objectContaining({ id: 'audio-id-123' }) });
     });
 
     describe('format detection', () => {
@@ -214,14 +210,17 @@ describe('UploadTrackAudioHandler', () => {
       ];
 
       it.each(scenarios)('$description', async ({ mimetype, originalname, expectedFormat }) => {
-        trackRepository.findOne.mockResolvedValue({
-          id: mockTrackId,
-          access: [{ userId: mockUserId, role: 'owner' }],
-        } as any);
+        trackRepository.findOne.mockResolvedValue(
+          buildTrackWithAccess({ id: mockTrackId }, [
+            { userId: mockUserId, role: AccessRole.owner },
+          ]),
+        );
         storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
-        audioFileRepository.create.mockResolvedValue({ id: 'id' } as any);
+        audioFileRepository.create.mockResolvedValue(
+          buildAudioFile({ id: 'id', trackId: mockTrackId }),
+        );
 
-        const file = { ...mockFile, mimetype, originalname };
+        const file = createMockMulterFile({ ...mockFile, mimetype, originalname });
         await handler.execute(new UploadTrackAudioCommand(mockTrackId, mockUserId, file));
         expect(audioFileRepository.create).toHaveBeenCalledWith(
           expect.objectContaining({ format: expectedFormat }),

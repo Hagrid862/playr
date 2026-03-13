@@ -3,8 +3,8 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Library, LibraryTrack } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibrary, buildLibraryTrack, buildTrack } from '@repo/testing';
 import { GetLibraryTracksQuery } from '../impl/get-library-tracks.query';
 import { GetLibraryTracksHandler } from './get-library-tracks.handler';
 
@@ -16,24 +16,13 @@ describe('GetLibraryTracksHandler', () => {
   const userId = 'user-123';
   const query = new GetLibraryTracksQuery(userId, 1, 10);
 
-  const mockLibrary: Library = {
-    id: 'library-123',
-    userId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockLibraryTrack: LibraryTrack = {
+  const mockLibrary = buildLibrary({ id: 'library-123', userId });
+  const mockTrack = buildTrack({ id: 'track-123', albumId: 'album-123' });
+  const mockLibraryTrack = buildLibraryTrack({
     id: 'lib-track-123',
     libraryId: mockLibrary.id,
-    trackId: 'track-123',
-    listenedCount: 0,
-    listenCountResetAt: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+    trackId: mockTrack.id,
+  });
 
   beforeEach(async () => {
     libraryRepository = createMock<LibraryRepository>();
@@ -56,14 +45,12 @@ describe('GetLibraryTracksHandler', () => {
 
   it('should return paginated library tracks', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryTrackRepository.findMany.mockResolvedValue([
-      { ...mockLibraryTrack, track: mockLibraryTrack } as any,
-    ]);
+    libraryTrackRepository.findMany.mockResolvedValue([{ ...mockLibraryTrack, track: mockTrack }]);
     libraryTrackRepository.count.mockResolvedValue(1);
 
-    const result = (await handler.execute(query)) as any;
+    const result = await handler.execute(query);
 
-    expect(result.items).toEqual([mockLibraryTrack]);
+    expect(result.items).toEqual([mockTrack]);
     expect(result.total).toBe(1);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
     expect(libraryTrackRepository.findMany).toHaveBeenCalledWith({
@@ -77,7 +64,7 @@ describe('GetLibraryTracksHandler', () => {
   it('should filter by albumId if provided', async () => {
     const albumQuery = new GetLibraryTracksQuery(userId, 1, 10, 'album-123');
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryTrackRepository.findMany.mockResolvedValue([mockLibraryTrack]);
+    libraryTrackRepository.findMany.mockResolvedValue([{ ...mockLibraryTrack, track: mockTrack }]);
     libraryTrackRepository.count.mockResolvedValue(1);
 
     await handler.execute(albumQuery);
