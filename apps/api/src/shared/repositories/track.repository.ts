@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   Track,
   TrackCreateInput,
+  TrackGetPayload,
   TrackOrderByWithRelationInput,
   TrackUpdateInput,
   TrackWhereInput,
@@ -16,7 +17,17 @@ export class TrackRepository {
   // QUERIES
   // ─────────────────────────────────────────────────────────────
 
-  async findOne(where: TrackWhereInput, includeRelations = false): Promise<Track | null> {
+  async findOne(where: TrackWhereInput, includeRelations?: false): Promise<Track | null>;
+  async findOne(
+    where: TrackWhereInput,
+    includeRelations: true,
+  ): Promise<TrackGetPayload<{ include: { artists: true; album: true; access: true } }> | null>;
+  async findOne(
+    where: TrackWhereInput,
+    includeRelations = false,
+  ): Promise<
+    Track | TrackGetPayload<{ include: { artists: true; album: true; access: true } }> | null
+  > {
     return await this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
       include: includeRelations ? { artists: true, album: true, access: true } : undefined,
