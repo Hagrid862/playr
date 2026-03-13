@@ -10,7 +10,10 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Album } from '@repo/db';
+import { z } from 'zod';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildAlbum, buildLibrary } from '@repo/testing';
 import { CreateLibraryAlbumCommand } from '../impl/create-library-album.command';
 import { CreateLibraryAlbumHandler } from './create-library-album.handler';
 
@@ -34,21 +37,16 @@ describe('CreateLibraryAlbumHandler', () => {
     artistId: mockArtistId,
   };
 
-  const mockAlbum = {
+  const mockAlbum = buildAlbum({
     id: mockAlbumId,
-    ...mockRequest,
-    visibility: 'PRIVATE',
+    name: mockRequest.name,
+    description: mockRequest.description,
+    type: mockRequest.type,
+    releaseDate: mockRequest.releaseDate,
     coverId: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
     totalTracks: 0,
     totalDuration: 0,
-    cover: null,
-    artists: [],
-    tracks: [],
-    genres: [],
-  };
+  });
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
@@ -74,10 +72,10 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should create library album successfully', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: mockLibraryId } as any);
+    libraryRepository.getByUserId.mockResolvedValue(buildLibrary({ id: mockLibraryId }));
     albumRepository.findOne.mockResolvedValue(null);
-    albumRepository.create.mockResolvedValue(mockAlbum as any);
-    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
+    albumRepository.create.mockResolvedValue(mockAlbum);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum });
 
     const result = await handler.execute(command);
 
@@ -99,8 +97,8 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should throw ConflictException if album name already exists', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: mockLibraryId } as any);
-    albumRepository.findOne.mockResolvedValue({ id: 'existing-id' } as any);
+    libraryRepository.getByUserId.mockResolvedValue(buildLibrary({ id: mockLibraryId }));
+    albumRepository.findOne.mockResolvedValue(buildAlbum({ id: 'existing-id' }));
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -108,14 +106,15 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should throw InternalServerErrorException if result parsing fails', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: mockLibraryId } as any);
+    libraryRepository.getByUserId.mockResolvedValue(buildLibrary({ id: mockLibraryId }));
     albumRepository.findOne.mockResolvedValue(null);
-    albumRepository.create.mockResolvedValue({ invalid: 'data' } as any);
+    const invalidAlbum: Album = JSON.parse('{"invalid":"data"}');
+    albumRepository.create.mockResolvedValue(invalidAlbum);
 
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
       success: false,
-      error: { format: () => ({}) },
-    } as any);
+      error: new z.ZodError([]),
+    } as ReturnType<typeof AlbumSchema.safeParse>);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
   });

@@ -3,7 +3,8 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibrary, buildLibraryAlbum } from '@repo/testing';
 import { GetLibraryAlbumsQuery } from '../impl/get-library-albums.query';
 import { GetLibraryAlbumsHandler } from './get-library-albums.handler';
 
@@ -32,11 +33,14 @@ describe('GetLibraryAlbumsHandler', () => {
 
   it('should return library albums successfully', async () => {
     const query = new GetLibraryAlbumsQuery(mockUserId, 1, 10);
-    const mockItems = [{ id: 'album-1' }, { id: 'album-2' }];
+    const mockItems = [
+      buildLibraryAlbum({ id: 'album-1', libraryId: mockLibraryId }),
+      buildLibraryAlbum({ id: 'album-2', libraryId: mockLibraryId }),
+    ];
     const mockTotal = 2;
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: mockLibraryId } as any);
-    libraryAlbumRepository.findMany.mockResolvedValue(mockItems as any);
+    libraryRepository.getByUserId.mockResolvedValue(buildLibrary({ id: mockLibraryId }));
+    libraryAlbumRepository.findMany.mockResolvedValue(mockItems);
     libraryAlbumRepository.count.mockResolvedValue(mockTotal);
 
     const result = await handler.execute(query);

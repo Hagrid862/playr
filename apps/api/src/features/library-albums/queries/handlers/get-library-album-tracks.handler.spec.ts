@@ -3,8 +3,8 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Library } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibrary, buildLibraryTrack, buildTrack } from '@repo/testing';
 import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.query';
 import { GetLibraryAlbumTracksHandler } from './get-library-album-tracks.handler';
 
@@ -17,39 +17,21 @@ describe('GetLibraryAlbumTracksHandler', () => {
   const albumId = 'album-123';
   const query = new GetLibraryAlbumTracksQuery(userId, albumId);
 
-  const mockLibrary: Library = {
-    id: 'library-123',
-    userId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockTrack = {
+  const mockLibrary = buildLibrary({ id: 'library-123', userId });
+  const mockTrack = buildTrack({
     id: 'track-123',
     title: 'Test Track',
     albumId,
     trackNumber: 1,
     diskNumber: 1,
     duration: 180,
-    listenedCount: 0,
-    explicit: false,
-    lyrics: null,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockLibraryTrack: any = {
+  });
+  const mockLibraryTrack = buildLibraryTrack({
     id: 'lib-track-123',
     libraryId: mockLibrary.id,
     trackId: mockTrack.id,
     track: mockTrack,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     libraryRepository = createMock<LibraryRepository>();
