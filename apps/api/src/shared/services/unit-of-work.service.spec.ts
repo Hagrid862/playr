@@ -1,7 +1,10 @@
+import { DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnitOfWorkService } from './unit-of-work.service';
-import { PrismaService } from './prisma.service';
+import { PrismaClient } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
 import { createMockPrismaClient, createMockPrismaService } from '@repo/testing';
+import { PrismaService } from './prisma.service';
+import { UnitOfWorkService } from './unit-of-work.service';
 
 describe('UnitOfWorkService', () => {
   let service: UnitOfWorkService;
@@ -23,9 +26,11 @@ describe('UnitOfWorkService', () => {
 
   it('should run work in a transaction and make client available via ALS', async () => {
     const mockTransactionClient = createMockPrismaClient();
-    mockPrismaClient.$transaction.mockImplementationOnce(async (callback) => {
-      return callback(mockTransactionClient);
-    });
+    mockPrismaClient.$transaction.mockImplementationOnce(
+      async (callback: (tx: DeepMocked<PrismaClient>) => unknown) => {
+        return callback(mockTransactionClient);
+      },
+    );
 
     await service.runInTransaction(async () => {
       const client = service.getTransactionalClient();
