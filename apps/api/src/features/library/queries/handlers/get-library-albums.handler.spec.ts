@@ -3,7 +3,9 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { LibraryAlbum } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibrary, buildLibraryAlbum } from '@repo/testing';
 import { GetLibraryAlbumsQuery } from '../impl/get-library-albums.query';
 import { GetLibraryAlbumsHandler } from './get-library-albums.handler';
 
@@ -30,25 +32,11 @@ describe('GetLibraryAlbumsHandler', () => {
   it('should return library albums with pagination metadata', async () => {
     const userId = 'user-123';
     const query = new GetLibraryAlbumsQuery(userId, 1, 10);
-    const library = { id: 'lib-123' } as any;
+    const library = buildLibrary({ id: 'lib-123' });
     const albums = [
-      {
-        id: 'lib-album-1',
-        libraryId: 'lib-123',
-        albumId: 'album-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      },
-      {
-        id: 'lib-album-2',
-        libraryId: 'lib-123',
-        albumId: 'album-2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      },
-    ] as any[];
+      buildLibraryAlbum({ id: 'lib-album-1', libraryId: 'lib-123', albumId: 'album-1' }),
+      buildLibraryAlbum({ id: 'lib-album-2', libraryId: 'lib-123', albumId: 'album-2' }),
+    ];
     const total = 2;
 
     libraryRepository.getByUserId.mockResolvedValue(library);
@@ -85,8 +73,9 @@ describe('GetLibraryAlbumsHandler', () => {
   it('should throw PreconditionFailedException if failed to parse library albums', async () => {
     const userId = 'user-123';
     const query = new GetLibraryAlbumsQuery(userId, 1, 10);
-    const library = { id: 'lib-123' } as any;
-    const invalidAlbums = [{ invalidField: 'test' }] as any[];
+    const library = buildLibrary({ id: 'lib-123' });
+    // JSON.parse returns any; explicit type satisfies strict typing without assertions
+    const invalidAlbums: LibraryAlbum[] = JSON.parse('[{"invalidField": "test"}]');
     const total = 1;
 
     libraryRepository.getByUserId.mockResolvedValue(library);

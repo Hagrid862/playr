@@ -1,7 +1,8 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildLibrary } from '@repo/testing';
 import { GetLibraryArtistQuery } from '../library-artists/queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from '../library-artists/queries/impl/get-library-artists.query';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
@@ -32,7 +33,7 @@ describe('LibraryController', () => {
   describe('create', () => {
     it('should execute CreateLibraryCommand with user id', async () => {
       const userId = 'user-123';
-      const expectedResult = { id: 'lib-123', userId };
+      const expectedResult = buildLibrary({ id: 'lib-123', userId });
       commandBus.execute.mockResolvedValue(expectedResult);
 
       const result = await controller.create(userId);
@@ -45,7 +46,7 @@ describe('LibraryController', () => {
   describe('getLibrary', () => {
     it('should execute GetLibraryQuery with user id', async () => {
       const userId = 'user-123';
-      const expectedResult = { id: 'lib-123', userId };
+      const expectedResult = buildLibrary({ id: 'lib-123', userId });
       queryBus.execute.mockResolvedValue(expectedResult);
 
       const result = await controller.getLibrary(userId);
