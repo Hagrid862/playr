@@ -1,7 +1,8 @@
-import { buildUser, createMockExecutionContext } from '@repo/testing';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { CurrentUser } from './current-user.decorator';
+// @ts-expect-error - ignore type errors from testing package imports
+import { buildUser, createMockExecutionContext } from '@repo/testing';
 import { AuthenticatedUser } from '../types/auth.types';
+import { CurrentUser } from './current-user.decorator';
 
 function getParamDecoratorFactory(decorator: (...args: any[]) => ParameterDecorator) {
   class Test {

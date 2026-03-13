@@ -1,11 +1,12 @@
-import { createMockExecutionContext } from '@repo/testing';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CallHandler } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+// @ts-expect-error - ignore type errors from testing package imports
+import { createMockExecutionContext } from '@repo/testing';
 import { Request } from 'express';
-import { of, firstValueFrom } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { WithMeta } from '../utils/with-meta.util';
 import { ResponseInterceptor } from './response.interceptor';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { Reflector } from '@nestjs/core';
 
 describe('ResponseInterceptor', () => {
   let interceptor: ResponseInterceptor<any>;

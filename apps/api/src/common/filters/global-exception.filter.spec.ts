@@ -180,7 +180,8 @@ describe('GlobalExceptionFilter', () => {
       }),
     });
 
-    const exception = new HttpException(null as any, HttpStatus.BAD_REQUEST);
+    // @ts-expect-error - testing null message handling
+    const exception = new HttpException(null, HttpStatus.BAD_REQUEST);
 
     filter.catch(exception, mockHost);
 
@@ -212,7 +213,8 @@ describe('GlobalExceptionFilter', () => {
       }),
     });
 
-    const exception = new HttpException(404 as any, HttpStatus.NOT_FOUND);
+    // @ts-expect-error - testing numeric status code handling
+    const exception = new HttpException(404, HttpStatus.NOT_FOUND);
 
     filter.catch(exception, mockHost);
 
