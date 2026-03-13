@@ -1,20 +1,24 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { LibraryAlbum, LibraryArtist, PrismaClient } from '@repo/db';
+import { PrismaClient } from '@repo/db';
 import {
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildArtistWithRelations,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildImageForIntegration,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildLibrary,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildLibraryArtistWithRelations,
-  // @ts-expect-error - ignore type errors from testing package imports
-  createAuthHeaderFactory,
-  // @ts-expect-error - ignore type errors from testing package imports
-  PrismaServiceMock,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildAlbumWithRelations,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildArtistWithRelations,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildImageForIntegration,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildLibrary,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildLibraryAlbumWithRelations,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildLibraryArtistWithRelations,
+    // @ts-expect-error - ignore type errors from testing package imports
+    createAuthHeaderFactory,
+    // @ts-expect-error - ignore type errors from testing package imports
+    PrismaServiceMock,
 } from '@repo/testing';
 import request from 'supertest';
 import { vi } from 'vitest';
@@ -125,7 +129,7 @@ describe('LibraryArtistsController (Integration)', () => {
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.libraryArtist.findMany.mockResolvedValue([
         mockLibraryArtist,
-      ] as unknown as LibraryArtist[]);
+      ]);
       prismaMock.client.libraryArtist.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())
@@ -163,10 +167,8 @@ describe('LibraryArtistsController (Integration)', () => {
     it('should return an artist by id (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      // GetLibraryArtistHandler uses libraryArtistRepository.findOne
-      // mock as unknown as LibraryArtist because findFirst returns LibraryArtist but we return LibraryArtistWithRelations
       prismaMock.client.libraryArtist.findFirst.mockResolvedValue(
-        mockLibraryArtist as unknown as LibraryArtist,
+        mockLibraryArtist,
       );
 
       const response = await request(app.getHttpServer())
@@ -269,39 +271,26 @@ describe('LibraryArtistsController (Integration)', () => {
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
-      const mockLibraryAlbum = {
+      const mockLibraryAlbum = buildLibraryAlbumWithRelations({
         id: 'lib-album-1',
         libraryId: 'library-123',
         albumId: 'album-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-        album: {
+        album: buildAlbumWithRelations({
           id: 'album-1',
           name: 'Album 1',
-          type: 'album',
           artists: [mockArtist],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          deletedAt: null,
-          coverId: null,
-          releaseDate: new Date(),
-          description: null,
-          totalTracks: 0,
-          totalDuration: 0,
-          visibility: 'public',
-        },
-      };
+        }),
+      });
 
       prismaMock.client.libraryArtist.findFirst.mockResolvedValue(
-        mockLibraryArtist as unknown as LibraryArtist,
+        mockLibraryArtist,
       );
       prismaMock.client.libraryArtist.findUnique.mockResolvedValue(
-        mockLibraryArtist as unknown as LibraryArtist,
+        mockLibraryArtist,
       );
       prismaMock.client.libraryAlbum.findMany.mockResolvedValue([
         mockLibraryAlbum,
-      ] as unknown as LibraryAlbum[]);
+      ]);
       prismaMock.client.libraryAlbum.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())

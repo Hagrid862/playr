@@ -2,39 +2,38 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import {
-  AccessRole,
-  AudioFormat,
-  AudioQuality,
-  FileBucket,
-  LibraryAlbum,
-  PrismaClient,
-  ProcessingStatus,
+    AccessRole,
+    AudioFormat,
+    AudioQuality,
+    FileBucket,
+    PrismaClient,
+    ProcessingStatus,
 } from '@repo/db';
 import {
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildAlbumWithRelations,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildImageForIntegration,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildLibrary,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildLibraryAlbumWithRelations,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildTrack,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildTrackAccess,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildTrackWithRelations,
-  // @ts-expect-error - ignore type errors from testing package imports
-  buildUser,
-  // @ts-expect-error - ignore type errors from testing package imports
-  createAuthHeaderFactory,
-  // @ts-expect-error - ignore type errors from testing package imports
-  DEFAULT_TEST_USER_ID,
-  // @ts-expect-error - ignore type errors from testing package imports
-  PrismaServiceMock,
-  // @ts-expect-error - ignore type errors from testing package imports
-  type AlbumWithRelations
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildAlbumWithRelations,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildImageForIntegration,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildLibrary,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildLibraryAlbumWithRelations,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildTrack,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildTrackAccess,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildTrackWithRelations,
+    // @ts-expect-error - ignore type errors from testing package imports
+    buildUser,
+    // @ts-expect-error - ignore type errors from testing package imports
+    createAuthHeaderFactory,
+    // @ts-expect-error - ignore type errors from testing package imports
+    DEFAULT_TEST_USER_ID,
+    // @ts-expect-error - ignore type errors from testing package imports
+    PrismaServiceMock,
+    // @ts-expect-error - ignore type errors from testing package imports
+    type AlbumWithRelations
 } from '@repo/testing';
 import request from 'supertest';
 import { vi } from 'vitest';
@@ -161,10 +160,9 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
-      // findMany returns LibraryAlbum[] but in reality it returns LibraryAlbumWithRelations[] due to include in repository
       prismaMock.client.libraryAlbum.findMany.mockResolvedValue([
         mockLibraryAlbum,
-      ] as unknown as LibraryAlbum[]);
+      ]);
       prismaMock.client.libraryAlbum.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())
