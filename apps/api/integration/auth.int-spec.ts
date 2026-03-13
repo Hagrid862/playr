@@ -2,9 +2,10 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { EmailAddress, EmailStatus, EmailType, Gender, User } from '@repo/db';
+// @ts-expect-error - ignore type errors from testing package imports
+import { PrismaServiceMock } from '@repo/testing';
 import request from 'supertest';
 import { vi } from 'vitest';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import { createIntegrationApp } from './test-utils';
 
 describe('AuthController (Integration)', () => {

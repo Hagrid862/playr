@@ -1,39 +1,38 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { LibraryAlbum, LibraryArtist, PrismaClient } from '@repo/db';
+import {
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildArtistWithRelations,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildImageForIntegration,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildLibrary,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildLibraryArtistWithRelations,
+  // @ts-expect-error - ignore type errors from testing package imports
+  createAuthHeaderFactory,
+  // @ts-expect-error - ignore type errors from testing package imports
+  PrismaServiceMock,
+} from '@repo/testing';
 import request from 'supertest';
 import { vi } from 'vitest';
 import { ImageService } from '../src/shared/services/image.service';
 import { StorageService } from '../src/shared/services/storage.service';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import './setup-env';
 import { createIntegrationApp } from './test-utils';
-import {
-  ArtistGetPayload,
-  Image,
-  Library,
-  LibraryAlbum,
-  LibraryArtist,
-  PrismaClient,
-} from '@repo/db';
-
-// Helper type for Artist with relations matching repository include
-type ArtistWithRelations = ArtistGetPayload<{
-  include: { avatar: true; banner: true };
-}>;
-
-// Helper type for LibraryArtist with relations matching repository include
-type LibraryArtistWithRelations = LibraryArtist & {
-  artist: ArtistWithRelations;
-};
 
 describe('LibraryArtistsController (Integration)', () => {
   let app: INestApplication;
   let prismaMock: PrismaServiceMock;
-  let jwtService: JwtService;
-  let config: ConfigService;
+  let getAuthHeader: ReturnType<typeof createAuthHeaderFactory>;
   let storageServiceMock: { uploadFile: any; deleteFile: any };
   let imageServiceMock: { validateImage: any; resizeToMaxDimension: any };
+
+  const mockLibrary = buildLibrary();
+  const mockArtist = buildArtistWithRelations();
+  const mockLibraryArtist = buildLibraryArtistWithRelations({ artist: mockArtist });
 
   beforeAll(async () => {
     storageServiceMock = {
@@ -55,8 +54,9 @@ describe('LibraryArtistsController (Integration)', () => {
 
     app = setup.app;
     prismaMock = setup.prismaMock;
-    jwtService = app.get(JwtService);
-    config = app.get(ConfigService);
+    const jwtService = app.get(JwtService);
+    const config = app.get(ConfigService);
+    getAuthHeader = createAuthHeaderFactory(jwtService, config);
   });
 
   beforeEach(() => {
@@ -66,66 +66,6 @@ describe('LibraryArtistsController (Integration)', () => {
   afterAll(async () => {
     await app.close();
   });
-
-  const getAuthHeader = async (userId: string = 'user-123') => {
-    const token = await jwtService.signAsync(
-      { sub: userId, username: 'testuser', sessionId: 'session-123' },
-      {
-        secret: config.get('JWT_ACCESS_SECRET'),
-        expiresIn: '15m',
-      },
-    );
-    return `Bearer ${token}`;
-  };
-
-  const mockLibrary: Library = {
-    id: 'library-123',
-    userId: 'user-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockArtist: ArtistWithRelations = {
-    id: 'artist-123',
-    name: 'Test Artist',
-    description: 'Test Description',
-    isCommunity: false,
-    verified: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    avatarId: null,
-    bannerId: null,
-    visibility: 'private',
-    avatar: null,
-    banner: null,
-  };
-
-  const mockLibraryArtist: LibraryArtistWithRelations = {
-    id: 'lib-artist-123',
-    libraryId: 'library-123',
-    artistId: 'artist-123',
-    artist: mockArtist,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockImage: Image = {
-    id: 'img-123',
-    alt: null,
-    bucket: 'public',
-    key: 'test-key.webp',
-    url: 'https://cdn.example.com/test.webp',
-    mimeType: 'image/webp',
-    blurhash: null,
-    reportId: null,
-    uploadStatus: 'uploaded',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
 
   describe('POST /library/artists', () => {
     it('should create an artist successfully (201)', async () => {
@@ -252,7 +192,7 @@ describe('LibraryArtistsController (Integration)', () => {
   describe('PATCH /library/artists/:id', () => {
     it('should update an artist successfully (200)', async () => {
       const authHeader = await getAuthHeader();
-      const updatedArtist: ArtistWithRelations = { ...mockArtist, name: 'Updated Name' };
+      const updatedArtist = { ...mockArtist, name: 'Updated Name' };
 
       // Reset mocks specific to this test to ensure clean state
       prismaMock.client.artist.findFirst.mockReset();
@@ -393,12 +333,11 @@ describe('LibraryArtistsController (Integration)', () => {
         async (cb: (client: PrismaClient) => Promise<any>) => cb(prismaMock.client),
       );
 
-      const mockAvatarImage: Image = {
-        ...mockImage,
+      const mockAvatarImage = buildImageForIntegration({
         id: 'img-avatar',
         key: 'avatar.webp',
         url: 'https://cdn.example.com/avatar.webp',
-      };
+      });
 
       prismaMock.client.image.create.mockResolvedValue(mockAvatarImage);
 
@@ -436,12 +375,11 @@ describe('LibraryArtistsController (Integration)', () => {
         async (cb: (client: PrismaClient) => Promise<any>) => cb(prismaMock.client),
       );
 
-      const mockBannerImage: Image = {
-        ...mockImage,
+      const mockBannerImage = buildImageForIntegration({
         id: 'img-banner',
         key: 'banner.webp',
         url: 'https://cdn.example.com/banner.webp',
-      };
+      });
 
       prismaMock.client.image.create.mockResolvedValue(mockBannerImage);
 

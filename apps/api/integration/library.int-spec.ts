@@ -3,21 +3,22 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { vi } from 'vitest';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
+// @ts-expect-error - ignore type errors from testing package imports
+import { createAuthHeaderFactory, PrismaServiceMock } from '@repo/testing';
 import { createIntegrationApp } from './test-utils';
 
 describe('LibraryController (Integration)', () => {
   let app: INestApplication;
   let prismaMock: PrismaServiceMock;
-  let jwtService: JwtService;
-  let config: ConfigService;
+  let getAuthHeader: ReturnType<typeof createAuthHeaderFactory>;
 
   beforeAll(async () => {
     const setup = await createIntegrationApp();
     app = setup.app;
     prismaMock = setup.prismaMock;
-    jwtService = app.get(JwtService);
-    config = app.get(ConfigService);
+    const jwtService = app.get(JwtService);
+    const config = app.get(ConfigService);
+    getAuthHeader = createAuthHeaderFactory(jwtService, config);
   });
 
   beforeEach(() => {
@@ -27,17 +28,6 @@ describe('LibraryController (Integration)', () => {
   afterAll(async () => {
     await app.close();
   });
-
-  const getAuthHeader = async (userId: string = 'user-123') => {
-    const token = await jwtService.signAsync(
-      { sub: userId, username: 'testuser', sessionId: 'session-123' },
-      {
-        secret: config.get('JWT_ACCESS_SECRET'),
-        expiresIn: '15m',
-      },
-    );
-    return `Bearer ${token}`;
-  };
 
   describe('POST /library', () => {
     it('should create a library successfully (201)', async () => {

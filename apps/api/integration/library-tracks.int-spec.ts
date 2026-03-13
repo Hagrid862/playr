@@ -1,44 +1,38 @@
-import { Readable } from 'stream';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { AudioFile, AudioFormat, AudioQuality, FileBucket, PrismaClient, ProcessingStatus } from '@repo/db';
 import {
-  Album,
-  Artist,
-  AudioFile,
-  AudioFormat,
-  AudioQuality,
-  FileBucket,
-  Library,
-  LibraryTrack,
-  PrismaClient,
-  ProcessingStatus,
-  TrackAccess,
-  TrackGetPayload,
-  User,
-  Visibility,
-} from '@repo/db';
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildLibrary,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildLibraryTrackWithRelations,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildTrackWithRelations,
+  // @ts-expect-error - ignore type errors from testing package imports
+  buildUser,
+  // @ts-expect-error - ignore type errors from testing package imports
+  createAuthHeaderFactory,
+  // @ts-expect-error - ignore type errors from testing package imports
+  PrismaServiceMock,
+} from '@repo/testing';
+import { Readable } from 'stream';
 import request from 'supertest';
 import { vi } from 'vitest';
 import { StorageService } from '../src/shared/services/storage.service';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import './setup-env';
 import { createIntegrationApp } from './test-utils';
-
-type TrackWithRelations = TrackGetPayload<{
-  include: { artists: true; album: true; access: true };
-}>;
-
-type LibraryTrackWithRelations = LibraryTrack & {
-  track: TrackWithRelations;
-};
 
 describe('LibraryTracksController (Integration)', () => {
   let app: INestApplication;
   let prismaMock: PrismaServiceMock;
-  let jwtService: JwtService;
-  let config: ConfigService;
+  let getAuthHeader: ReturnType<typeof createAuthHeaderFactory>;
   let storageServiceMock: { getFileStream: any };
+
+  const mockUser = buildUser({ username: 'testu' });
+  const mockLibrary = buildLibrary();
+  const mockTrack = buildTrackWithRelations();
+  const mockLibraryTrack = buildLibraryTrackWithRelations({ track: mockTrack });
 
   beforeAll(async () => {
     storageServiceMock = {
@@ -51,8 +45,9 @@ describe('LibraryTracksController (Integration)', () => {
 
     app = setup.app;
     prismaMock = setup.prismaMock;
-    jwtService = app.get(JwtService);
-    config = app.get(ConfigService);
+    const jwtService = app.get(JwtService);
+    const config = app.get(ConfigService);
+    getAuthHeader = createAuthHeaderFactory(jwtService, config);
   });
 
   beforeEach(() => {
@@ -62,107 +57,6 @@ describe('LibraryTracksController (Integration)', () => {
   afterAll(async () => {
     await app.close();
   });
-
-  const getAuthHeader = async (userId: string = 'user-123') => {
-    const token = await jwtService.signAsync(
-      { sub: userId, username: 'testuser', sessionId: 'session-123' },
-      {
-        secret: config.get('JWT_ACCESS_SECRET'),
-        expiresIn: '15m',
-      },
-    );
-    return `Bearer ${token}`;
-  };
-
-  const mockUser: User = {
-    id: 'user-123',
-    username: 'testu',
-    firstName: 'Test',
-    lastName: 'User',
-    birthDate: null,
-    gender: null,
-    description: null,
-    password: 'hashed-password',
-    avatarId: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockLibrary: Library = {
-    id: 'library-123',
-    userId: 'user-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockTrack: TrackWithRelations = {
-    id: 'track-123',
-    title: 'Test Track',
-    trackNumber: 1,
-    diskNumber: 1,
-    duration: 180,
-    listenedCount: 0,
-    explicit: false,
-    lyrics: null,
-    visibility: 'private' as Visibility,
-    albumId: 'album-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    album: {
-      id: 'album-123',
-      name: 'Test Album',
-      description: 'Test Description',
-      type: 'album',
-      totalTracks: 10,
-      totalDuration: 3000,
-      releaseDate: new Date(),
-      coverId: null,
-      visibility: 'public' as Visibility,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-    } as Album,
-    artists: [
-      {
-        id: 'artist-123',
-        name: 'Test Artist',
-        description: 'Test Description',
-        isCommunity: false,
-        verified: true,
-        bannerId: null,
-        avatarId: null,
-        visibility: 'public' as Visibility,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      } as Artist,
-    ],
-    access: [
-      {
-        id: 'access-123',
-        userId: 'user-123',
-        role: 'owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        trackId: 'track-123',
-      } as TrackAccess,
-    ],
-  };
-
-  const mockLibraryTrack: LibraryTrackWithRelations = {
-    id: 'lib-track-123',
-    libraryId: 'library-123',
-    trackId: 'track-123',
-    listenedCount: 0,
-    listenCountResetAt: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    track: mockTrack,
-  };
 
   describe('POST /library/tracks', () => {
     it('should create a track successfully (201)', async () => {

@@ -10,8 +10,9 @@ import { vi } from 'vitest';
 import { AppModule } from '../src/app.module';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
+// @ts-expect-error - ignore type errors from testing package imports
+import { PrismaServiceMock } from '@repo/testing';
 import { PrismaService } from '../src/shared/services/prisma.service';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 
 // Mock BullMQ to avoid Redis connections in integration tests
 vi.mock('@nestjs/bullmq', async () => {
