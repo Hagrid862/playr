@@ -1,8 +1,8 @@
 import {
-    DeleteObjectCommand,
-    GetObjectCommand,
-    HeadObjectCommand,
-    PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { ConfigService } from '@nestjs/config';

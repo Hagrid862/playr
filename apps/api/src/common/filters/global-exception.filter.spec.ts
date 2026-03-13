@@ -3,8 +3,8 @@ import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import {
-    REFRESH_TOKEN_COOKIE_NAME,
-    REFRESH_TOKEN_COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
 } from '../../features/auth/constants/cookie.constants';
 import { GlobalExceptionFilter } from './global-exception.filter';
 
