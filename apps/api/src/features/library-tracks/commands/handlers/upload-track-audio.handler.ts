@@ -28,12 +28,9 @@ export class UploadTrackAudioHandler implements ICommandHandler<UploadTrackAudio
       throw new NotFoundException('Track not found');
     }
 
-    const trackWithRelations = track as unknown as { access?: { userId: string; role: string }[] };
-
     // Basic permission check - only owners/editors can upload audio
-    const hasAccess = trackWithRelations.access?.some(
-      (a: { userId: string; role: string }) =>
-        a.userId === userId && (a.role === 'owner' || a.role === 'editor'),
+    const hasAccess = track.access?.some(
+      (a) => a.userId === userId && (a.role === 'owner' || a.role === 'editor'),
     );
 
     if (!hasAccess) {

@@ -56,16 +56,11 @@ export class BulkUploadTrackAudioHandler implements ICommandHandler<BulkUploadTr
         throw new NotFoundException(`Track ${trackId} not found`);
       }
 
-      const trackWithRelations = track as unknown as {
-        albumId?: string;
-        access?: { userId: string; role: string }[];
-      };
-
-      if (trackWithRelations.albumId !== albumId) {
+      if (track.albumId !== albumId) {
         throw new BadRequestException(`Track ${trackId} does not belong to album ${albumId}`);
       }
 
-      const hasAccess = trackWithRelations.access?.some(
+      const hasAccess = track.access?.some(
         (a) => a.userId === userId && (a.role === 'owner' || a.role === 'editor'),
       );
 
