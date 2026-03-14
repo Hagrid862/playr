@@ -6,6 +6,7 @@ import { cleanupOpenApiDoc, ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import metadata from './metadata';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,6 +25,8 @@ async function bootstrap() {
     .setDescription('The Playr Backend API description')
     .setVersion('1.0')
     .build();
+
+  await SwaggerModule.loadPluginMetadata(() => metadata());
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, cleanupOpenApiDoc(document));
