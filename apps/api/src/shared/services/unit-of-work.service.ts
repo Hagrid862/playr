@@ -8,7 +8,7 @@ import { PrismaService } from './prisma.service';
 export class UnitOfWorkService implements ITransactionContext {
   private readonly als = new AsyncLocalStorage<Prisma.TransactionClient>();
 
-    constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Runs the provided work within a transaction.

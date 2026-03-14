@@ -24,7 +24,11 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { GetTrackStreamQualitiesResponse, StreamAudioQuality, StreamAudioQualitySchema } from '@repo/contracts';
+import {
+  GetTrackStreamQualitiesResponse,
+  StreamAudioQuality,
+  StreamAudioQualitySchema,
+} from '@repo/contracts';
 import type { Response } from 'express';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
@@ -195,7 +199,6 @@ export class LibraryTracksController {
     status: 201,
     description: 'Audio file uploaded and processing started',
     type: UploadTrackAudioResponseDto,
-
   })
   @ApiResponse({
     status: 422,
@@ -240,7 +243,9 @@ export class LibraryTracksController {
     @Query('quality') requestedQuality: string = 'standard',
     @Res() res: Response,
   ) {
-    const requestedQualityEnum: StreamAudioQuality = StreamAudioQualitySchema.parse(requestedQuality) as StreamAudioQuality;
+    const requestedQualityEnum: StreamAudioQuality = StreamAudioQualitySchema.parse(
+      requestedQuality,
+    ) as StreamAudioQuality;
     try {
       const { stream, metadata } = await this.queryBus.execute(
         new GetTrackStreamQuery(id, requestedQualityEnum, range),

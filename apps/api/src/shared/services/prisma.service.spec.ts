@@ -2,7 +2,10 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createPrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TRANSACTION_CONTEXT, type ITransactionContext } from '../interfaces/transaction-context.interface';
+import {
+  TRANSACTION_CONTEXT,
+  type ITransactionContext,
+} from '../interfaces/transaction-context.interface';
 import { PrismaService } from './prisma.service';
 
 // Mock the @repo/db module
@@ -35,10 +38,7 @@ describe('PrismaService', () => {
     transactionContext = createMock<ITransactionContext>();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PrismaService,
-        { provide: TRANSACTION_CONTEXT, useValue: transactionContext },
-      ],
+      providers: [PrismaService, { provide: TRANSACTION_CONTEXT, useValue: transactionContext }],
     }).compile();
 
     service = module.get<PrismaService>(PrismaService);

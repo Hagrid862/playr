@@ -1,6 +1,9 @@
 import { forwardRef, Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { createPrismaClient, PrismaClient } from '@repo/db';
-import { TRANSACTION_CONTEXT, type ITransactionContext } from '../interfaces/transaction-context.interface';
+import {
+  TRANSACTION_CONTEXT,
+  type ITransactionContext,
+} from '../interfaces/transaction-context.interface';
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
