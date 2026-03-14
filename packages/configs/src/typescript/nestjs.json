@@ -5,8 +5,8 @@
   "compilerOptions": {
     "noEmit": false,
     "outDir": "./dist",
-    "module": "nodenext",
-    "moduleResolution": "NodeNext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "target": "esnext",
     "incremental": false,
     "skipLibCheck": true,
