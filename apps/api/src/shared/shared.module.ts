@@ -10,7 +10,9 @@ import { LibraryAlbumRepository } from './repositories/library-album.repository'
 import { LibraryArtistRepository } from './repositories/library-artist.repository';
 import { LibraryTrackRepository } from './repositories/library-track.repository';
 
+import { TRANSACTION_CONTEXT } from './interfaces/transaction-context.interface';
 import { AudioFileRepository } from './repositories/audio-file.repository';
+import { ImageRepository } from './repositories/image.repository';
 import { LibraryRepository } from './repositories/library.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { SessionRepository } from './repositories/session.repository';
@@ -18,7 +20,6 @@ import { TrackRepository } from './repositories/track.repository';
 import { UserRepository } from './repositories/user.repository';
 import { HashingService } from './services/hashing.service';
 import { ImageService } from './services/image.service';
-import { ImageRepository } from './repositories/image.repository';
 import { PrismaService } from './services/prisma.service';
 import { StorageService } from './services/storage.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
@@ -29,10 +30,11 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
   controllers: [],
   providers: [
     // Services
-    PrismaService,
-    HashingService,
     UnitOfWorkService,
+    PrismaService,
+    { provide: TRANSACTION_CONTEXT, useExisting: UnitOfWorkService },
     ImageService,
+    HashingService,
     StorageService,
     // Repositories
     UserRepository,
