@@ -24,7 +24,7 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { StreamAudioQuality, GetTrackStreamQualitiesResponse } from '@repo/contracts';
+import { GetTrackStreamQualitiesResponse, StreamAudioQuality, StreamAudioQualitySchema } from '@repo/contracts';
 import type { Response } from 'express';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
@@ -160,6 +160,7 @@ export class LibraryTracksController {
     return this.commandBus.execute(new DeleteLibraryTrackCommand(id, userId));
   }
 
+  @Get(':id/qualities')
   @ApiResponse({
     status: 401,
     description: 'Unauthorized',
@@ -170,7 +171,6 @@ export class LibraryTracksController {
     description: 'Track not found',
     type: ApiErrorResponseDto,
   })
-  @Get(':id/qualities')
   @ApiOperation({
     summary: 'Get track stream qualities',
     description: 'Retrieves the available audio streaming qualities for a track',
@@ -195,6 +195,7 @@ export class LibraryTracksController {
     status: 201,
     description: 'Audio file uploaded and processing started',
     type: UploadTrackAudioResponseDto,
+
   })
   @ApiResponse({
     status: 422,
@@ -236,12 +237,13 @@ export class LibraryTracksController {
   async getTrackStream(
     @Param('id') id: string,
     @Headers('range') range: string,
-    @Query('quality') requestedQuality: StreamAudioQuality = StreamAudioQuality.standard,
+    @Query('quality') requestedQuality: string = 'standard',
     @Res() res: Response,
   ) {
+    const requestedQualityEnum: StreamAudioQuality = StreamAudioQualitySchema.parse(requestedQuality) as StreamAudioQuality;
     try {
       const { stream, metadata } = await this.queryBus.execute(
-        new GetTrackStreamQuery(id, requestedQuality, range),
+        new GetTrackStreamQuery(id, requestedQualityEnum, range),
       );
 
       const { start, end, totalSize, mimeType, quality, format, isPartial } = metadata;
