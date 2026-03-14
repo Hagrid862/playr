@@ -1,16 +1,14 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import { AsyncLocalStorage } from 'async_hooks';
-import { PrismaService } from './prisma.service';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@repo/db';
+import { AsyncLocalStorage } from 'async_hooks';
+import type { ITransactionContext } from '../interfaces/transaction-context.interface';
+import { PrismaService } from './prisma.service';
 
 @Injectable()
-export class UnitOfWorkService {
+export class UnitOfWorkService implements ITransactionContext {
   private readonly als = new AsyncLocalStorage<Prisma.TransactionClient>();
 
-  constructor(
-    @Inject(forwardRef(() => PrismaService))
-    private readonly prisma: PrismaService,
-  ) {}
+    constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Runs the provided work within a transaction.
@@ -18,11 +16,7 @@ export class UnitOfWorkService {
    */
   async runInTransaction<T>(work: () => Promise<T>): Promise<T> {
     const existingTx = this.als.getStore();
-
-    if (existingTx) {
-      return work();
-    }
-
+    if (existingTx) return work();
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       return this.als.run(tx, work);
     });
