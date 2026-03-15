@@ -24,11 +24,6 @@ export default defineConfig({
   external: [
     '@repo/db',
     '@repo/contracts',
-    '@nestjs/microservices',
-    '@nestjs/websockets',
-    'cache-manager',
-    'class-transformer',
-    'class-validator',
     'crypto',
     'fs',
     'http',
