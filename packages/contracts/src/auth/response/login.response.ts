@@ -11,7 +11,6 @@ export const AuthenticatedLoginResponseSchema = z.object({
 
 export const UnauthenticatedEmailLoginResponseSchema = z.object({
     outcome: z.literal("unauthenticated"),
-    emailVerificationToken: z.string(),
     user: UserSchema,
 });
 

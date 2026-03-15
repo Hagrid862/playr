@@ -4,7 +4,6 @@ import { z } from "zod";
 
 export const RegisterResponseSchema = createApiResponseSchema(
     z.object({
-        emailVerificationToken: z.string(),
         user: UserSchema,
     })
 );

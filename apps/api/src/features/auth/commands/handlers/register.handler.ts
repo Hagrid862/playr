@@ -70,7 +70,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
       await this.prisma.client.emailAddress.create({
         data: {
           email,
-          status: EmailStatus.verified, // TODO: change to created after creating email verification system
+          status: EmailStatus.created,
           userId: createdUser.id,
         },
       });

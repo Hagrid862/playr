@@ -40,7 +40,7 @@ model User {
 
   reportTargets ReportTarget[] @relation("UserReportTargets")
 
-  emailSessions EmailSession[] @relation("UserEmailSessions")
+  otpCodes OTPCode[] @relation("UserOTPCodes")
 
   artistAccess ArtistAccess[]
   albumAccess  AlbumAccess[]
@@ -69,7 +69,7 @@ model EmailAddress {
   verifiedAt DateTime?
   deletedAt  DateTime?
 
-  emailSessions EmailSession[] @relation("EmailAddressEmailSessions")
+  otpCodes OTPCode[] @relation("EmailAddressOTPCodes")
 
   @@index([userId])
   @@index([status])
@@ -97,19 +97,19 @@ model Session {
   @@map("sessions")
 }
 
-//only for email verification and password reset
-model EmailSession {
+//for email verification password reset
+model OTPCode {
   id String @id @default(cuid())
 
-  token String @unique
+  code String @unique //hashed code
 
   userId String
-  user   User   @relation("UserEmailSessions", fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserOTPCodes", fields: [userId], references: [id], onDelete: Cascade)
 
   emailAddressId String
-  emailAddress   EmailAddress @relation("EmailAddressEmailSessions", fields: [emailAddressId], references: [id], onDelete: Cascade)
+  emailAddress   EmailAddress @relation("EmailAddressOTPCodes", fields: [emailAddressId], references: [id], onDelete: Cascade)
 
-  type EmailSessionType @default(verification)
+  type OtpCodeType @default(emailVerification)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -118,7 +118,7 @@ model EmailSession {
 
   @@index([userId])
   @@index([emailAddressId])
-  @@map("email_sessions")
+  @@map("otp_codes")
 }
 
 model RefreshToken {
@@ -1097,7 +1097,7 @@ enum Visibility {
   community
 }
 
-enum EmailSessionType {
-  verification
+enum OtpCodeType {
+  emailVerification
   passwordReset
 }
