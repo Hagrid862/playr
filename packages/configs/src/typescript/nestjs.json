@@ -5,7 +5,6 @@
   "compilerOptions": {
     "noEmit": false,
     "outDir": "./dist",
-    "moduleResolution": "bundler",
     "incremental": false,
     "types": ["node"],
     "emitDecoratorMetadata": true,
