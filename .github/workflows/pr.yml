@@ -589,7 +589,7 @@ jobs:
       - name: Run Migrations
         run: pnpm run prisma:push
         env:
-          DATABASE_URL: "postgresql://playr:playr@localhost:2/playr?schema=public"
+          DATABASE_URL: "postgresql://playr:playr@localhost:5432/playr?schema=public"
 
       - name: Run E2E tests
         run: pnpm run test:e2e
