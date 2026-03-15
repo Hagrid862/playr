@@ -9,8 +9,8 @@
   "scripts": {
     "build": "tsup",
     "check-types": "tsc --noEmit --project tsconfig.build.json",
-    "debug": "nest start --debug --watch",
     "dev": "concurrently -n \"BUILD,TYPE\" -c \"cyan,magenta\" \"tsup --watch --clean --onSuccess 'node --enable-source-maps dist/main.js'\" \"tsc --noEmit --watch\"",
+"debug": "concurrently -n \"BUILD,TYPE\" -c \"cyan,magenta\" \"tsup --watch --clean --onSuccess 'node --inspect-brk --enable-source-maps dist/main.js'\" \"tsc --noEmit --watch\"",
     "lint": "eslint \"{src,integration}/**/*.ts\" --fix",
     "start": "node dist/main.js",
     "test:coverage": "vitest run --coverage",
@@ -54,7 +54,6 @@
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
     "@golevelup/ts-vitest": "^2.2.0",
-    "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@repo/configs": "workspace:*",
