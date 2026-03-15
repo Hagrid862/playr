@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-playr}
       POSTGRES_DB: ${POSTGRES_DB:-playr}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-playr} -h localhost -p ${POSTGRES_PORT:-5432}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-playr} -h localhost -p 5432"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
       - "${S3_PORT:-9000}:9000"
       - "${S3_CONSOLE_PORT:-9001}:9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${S3_PORT:-9000}/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -49,7 +49,7 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
     entrypoint: >
       /bin/sh -c "
-        /usr/bin/mc alias set myminio http://minio:${S3_PORT:-9000} \${S3_ACCESS_KEY} \${S3_SECRET_KEY} || true;
+        /usr/bin/mc alias set myminio http://minio:9000 \${S3_ACCESS_KEY} \${S3_SECRET_KEY} || true;
         /usr/bin/mc mb myminio/public --ignore-existing;
         /usr/bin/mc anonymous set download myminio/public;
         /usr/bin/mc mb myminio/private --ignore-existing;
@@ -80,24 +80,24 @@ services:
       dockerfile: apps/api/Dockerfile
     image: playr-api:${IMAGE_TAG:-latest}
     ports:
-      - "8000:${API_PORT:-8000}"
+      - "${API_PORT:-8000}:8000"
     environment:
       PORT: 8000
       DATABASE_URL: postgresql://${POSTGRES_USER:-playr}:${POSTGRES_PASSWORD:-playr}@db:5432/${POSTGRES_DB:-playr}?schema=public
-      S3_ENDPOINT: http://minio:${S3_PORT:-9000}
+      S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
       S3_USE_SSL: ${S3_USE_SSL:-false}
       S3_PUBLIC_BUCKET: ${S3_PUBLIC_BUCKET:-public}
       S3_PRIVATE_BUCKET: ${S3_PRIVATE_BUCKET:-private}
       MAIL_HOST: mailhog
-      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_PORT: 1025
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-secret}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-refresh_secret}
       NODE_ENV: production
       THROTTLE_ENABLED: ${THROTTLE_ENABLED:-true}
       REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PORT: 6379
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:3002}
     depends_on:
       - db
