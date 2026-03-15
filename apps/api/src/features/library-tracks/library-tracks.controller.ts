@@ -3,8 +3,8 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { TrackAccessGuard } from '@/shared/guards/track-access.guard';
-
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -47,6 +47,7 @@ import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
 import { GetTrackStreamQualitiesQuery } from './queries/impl/get-track-stream-qualities.query';
 import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
+
 @ApiTags('Library Tracks')
 @Controller('library/tracks')
 export class LibraryTracksController {
@@ -243,9 +244,11 @@ export class LibraryTracksController {
     @Query('quality') requestedQuality: string = 'standard',
     @Res() res: Response,
   ) {
-    const requestedQualityEnum: StreamAudioQuality = StreamAudioQualitySchema.parse(
-      requestedQuality,
-    ) as StreamAudioQuality;
+    const parseResult = StreamAudioQualitySchema.safeParse(requestedQuality);
+    if (!parseResult.success) {
+      throw new BadRequestException('Invalid quality requested, must be one of: ' + Object.values(StreamAudioQuality).join(', '));
+    }
+    const requestedQualityEnum = parseResult.data;
     try {
       const { stream, metadata } = await this.queryBus.execute(
         new GetTrackStreamQuery(id, requestedQualityEnum, range),

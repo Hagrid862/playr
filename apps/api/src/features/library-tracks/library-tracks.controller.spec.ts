@@ -1,20 +1,20 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { Test, TestingModule } from '@nestjs/testing';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Reflector } from '@nestjs/core';
 import { TrackRepository } from '@/shared/repositories/track.repository';
+import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { HttpStatus } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { Test, TestingModule } from '@nestjs/testing';
+import { StreamAudioQuality } from '@repo/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LibraryTracksController } from './library-tracks.controller';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
 import { UpdateLibraryTrackCommand } from './commands/impl/update-library-track.command';
+import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
+import { LibraryTracksController } from './library-tracks.controller';
 import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
-import { UploadTrackAudioCommand } from './commands/impl/upload-track-audio.command';
 import { GetTrackStreamQualitiesQuery } from './queries/impl/get-track-stream-qualities.query';
 import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
-import { StreamAudioQuality } from '@repo/contracts';
-import { HttpStatus } from '@nestjs/common';
 
 describe('LibraryTracksController', () => {
   let controller: LibraryTracksController;
@@ -229,6 +229,13 @@ describe('LibraryTracksController', () => {
       await expect(
         controller.getTrackStream(trackId, '', StreamAudioQuality.standard, mockRes),
       ).rejects.toThrow('Other error');
+    });
+
+    it('should throw BadRequestException if quality is invalid', async () => {
+      const mockRes = {} as any;
+      await expect(
+        controller.getTrackStream(trackId, '', 'invalid' as any, mockRes),
+      ).rejects.toThrow('Invalid quality requested, must be one of: ' + Object.values(StreamAudioQuality).join(', '));
     });
   });
 });
