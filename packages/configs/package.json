@@ -12,7 +12,10 @@
     "./eslint/react": "./src/eslint/react.js",
     "./eslint/nestjs": "./src/eslint/nestjs.js",
     "./eslint/packages": "./src/eslint/packages.js",
-    "./prettier": "./src/prettier/base.json"
+    "./prettier": "./src/prettier/base.json",
+    "./tsup/base": "./src/tsup/base.js",
+    "./tsup/packages": "./src/tsup/packages.js",
+    "./tsup/nestjs": "./src/tsup/nestjs.js"
   },
   "dependencies": {
     "@eslint/js": "^9.39.2",
@@ -28,6 +31,7 @@
   "peerDependencies": {
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "tsup": "^8.5.1",
     "typescript": "catalog:"
   }
 }
