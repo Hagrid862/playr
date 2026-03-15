@@ -239,6 +239,7 @@ describe('LibraryTracksController', () => {
         'Invalid quality requested, must be one of: ' +
           Object.values(StreamAudioQuality).join(', '),
       );
+      expect(queryBus.execute).not.toHaveBeenCalled();
     });
   });
 });
