@@ -246,7 +246,10 @@ export class LibraryTracksController {
   ) {
     const parseResult = StreamAudioQualitySchema.safeParse(requestedQuality);
     if (!parseResult.success) {
-      throw new BadRequestException('Invalid quality requested, must be one of: ' + Object.values(StreamAudioQuality).join(', '));
+      throw new BadRequestException(
+        'Invalid quality requested, must be one of: ' +
+          Object.values(StreamAudioQuality).join(', '),
+      );
     }
     const requestedQualityEnum = parseResult.data;
     try {

@@ -235,7 +235,10 @@ describe('LibraryTracksController', () => {
       const mockRes = {} as any;
       await expect(
         controller.getTrackStream(trackId, '', 'invalid' as any, mockRes),
-      ).rejects.toThrow('Invalid quality requested, must be one of: ' + Object.values(StreamAudioQuality).join(', '));
+      ).rejects.toThrow(
+        'Invalid quality requested, must be one of: ' +
+          Object.values(StreamAudioQuality).join(', '),
+      );
     });
   });
 });
