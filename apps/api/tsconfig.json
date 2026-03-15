@@ -2,10 +2,8 @@
   "extends": "@repo/configs/typescript/nestjs.json",
 
   "compilerOptions": {
-    "noEmit": false,
     "types": ["node", "vitest/globals", "multer"],
     "baseUrl": ".",
-    "outDir": "./dist"
   },
   "include": ["src/**/*", "integration/**/*"],
   "exclude": ["node_modules", "dist", "src/metadata.ts"]
