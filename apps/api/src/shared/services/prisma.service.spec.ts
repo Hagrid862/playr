@@ -80,7 +80,7 @@ describe('PrismaService', () => {
   });
 
   describe('client selector', () => {
-    it('should return transactional client if available from UnitOfWork', () => {
+    it('should return transactional client if available from transactionContext', () => {
       const mockTx = { user: {} };
       transactionContext.getTransactionalClient.mockReturnValue(mockTx as any);
 
