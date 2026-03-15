@@ -8,9 +8,9 @@
   "author": "",
   "scripts": {
     "build": "tsup",
-    "check-types": "tsc --noEmit --project tsconfig.build.json",
+    "check-types": "tsc --noEmit",
     "dev": "concurrently -n \"BUILD,TYPE\" -c \"cyan,magenta\" \"tsup --watch --clean --onSuccess 'node --enable-source-maps dist/main.js'\" \"tsc --noEmit --watch\"",
-"debug": "concurrently -n \"BUILD,TYPE\" -c \"cyan,magenta\" \"tsup --watch --clean --onSuccess 'node --inspect-brk --enable-source-maps dist/main.js'\" \"tsc --noEmit --watch\"",
+    "debug": "concurrently -n \"BUILD,TYPE\" -c \"cyan,magenta\" \"tsup --watch --clean --onSuccess 'node --inspect-brk --enable-source-maps dist/main.js'\" \"tsc --noEmit --watch\"",
     "lint": "eslint \"{src,integration}/**/*.ts\" --fix",
     "start": "node dist/main.js",
     "test:coverage": "vitest run --coverage",
