@@ -14,10 +14,10 @@
   },
   "private": true,
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsup",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "check-types": "tsc -p tsconfig.json --noEmit",
+    "check-types": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\""
   },
@@ -30,6 +30,7 @@
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "tsup": "^8.5.1",
     "typescript": "catalog:"
   },
   "keywords": [],
