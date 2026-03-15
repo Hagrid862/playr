@@ -32,9 +32,9 @@ overrides:
   multer: ^2.1.1
   hono: ^4.12.4
   '@hono/node-server': ^1.19.10
-  rollup: '>=4.59.0'
+  rollup: ^4.59.0
   serialize-javascript: ^7.0.3
-  flatted: '>=3.4.0'
+  flatted: ^3.4.0
 
 importers:
 
@@ -2508,7 +2508,7 @@ packages:
     resolution: {integrity: sha512-5EdhGZtnu3V88ces7s53hhfK5KSASnJZv8Lulpc04cWO3REESroJXg73DFsOmgbU2BhwV0E20bu2IDZb3VKW4Q==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
-      rollup: '>=4.59.0'
+      rollup: ^4.59.0
     peerDependenciesMeta:
       rollup:
         optional: true
