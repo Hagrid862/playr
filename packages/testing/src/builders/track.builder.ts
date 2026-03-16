@@ -1,5 +1,6 @@
 import {
   rand,
+  randBetweenDate,
   randBoolean,
   randNumber,
   randPastDate,
@@ -10,6 +11,7 @@ import type { Track } from "@repo/db";
 import { Visibility } from "@repo/db";
 
 export function trackBuilder(overrides?: Partial<Track>): Track {
+  const createdAt = randPastDate();
   return {
     id: randUuid(),
     title: randSong(),
@@ -25,8 +27,8 @@ export function trackBuilder(overrides?: Partial<Track>): Track {
       Visibility.community,
     ]),
     albumId: randUuid(),
-    createdAt: randPastDate(),
-    updatedAt: randPastDate(),
+    createdAt,
+    updatedAt: randBetweenDate({ from: createdAt, to: new Date() }),
     deletedAt: null,
     ...overrides,
   };

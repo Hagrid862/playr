@@ -1,5 +1,6 @@
 import {
   rand,
+  randBetweenDate,
   randFilePath,
   randNumber,
   randPastDate,
@@ -14,6 +15,7 @@ import {
 } from "@repo/db";
 
 export function audioFileBuilder(overrides?: Partial<AudioFile>): AudioFile {
+  const createdAt = randPastDate();
   return {
     id: randUuid(),
     bucket: rand([FileBucket.private, FileBucket.public]),
@@ -37,8 +39,8 @@ export function audioFileBuilder(overrides?: Partial<AudioFile>): AudioFile {
     trackId: randUuid(),
     quality: AudioQuality.original,
     status: ProcessingStatus.pending,
-    createdAt: randPastDate(),
-    updatedAt: randPastDate(),
+    createdAt,
+    updatedAt: randBetweenDate({ from: createdAt, to: new Date() }),
     ...overrides,
   };
 }

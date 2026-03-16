@@ -1,5 +1,6 @@
 import {
   rand,
+  randBetweenDate,
   randFileName,
   randPastDate,
   randText,
@@ -9,6 +10,7 @@ import {
 import { FileBucket, ImageUploadStatus, type Image } from "@repo/db";
 
 export function imageBuilder(overrides?: Partial<Image>): Image {
+  const createdAt = randPastDate();
   return {
     id: randUuid(),
     alt: randText({ charCount: 25 }),
@@ -24,8 +26,8 @@ export function imageBuilder(overrides?: Partial<Image>): Image {
       ImageUploadStatus.uploaded,
       ImageUploadStatus.failed,
     ]),
-    createdAt: randPastDate(),
-    updatedAt: randPastDate(),
+    createdAt,
+    updatedAt: randBetweenDate({ from: createdAt, to: new Date() }),
     deletedAt: null,
     ...overrides,
   };
