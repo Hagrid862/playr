@@ -31,7 +31,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\""
   },
   "dependencies": {
-    "@repo/db": "workspace:*"
+    "@repo/db": "workspace:*",
+    "falso": "^0.0.0"
   },
   "devDependencies": {
     "@golevelup/ts-vitest": "^2.2.0",
@@ -47,7 +48,6 @@
     "react-dom": "catalog:",
     "tsup": "^8.5.1",
     "vitest": "^4.0.18"
-
   },
   "peerDependencies": {
     "@nestjs/common": ">=11.0.0",
