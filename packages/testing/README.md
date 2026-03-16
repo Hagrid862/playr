@@ -1,6 +1,6 @@
 # @repo/testing
 
-Shared testing utilities for the Playr monorepo. Provides entity builders and NestJS test helpers to reduce boilerplate across specs.
+Shared testing utilities for the Playr monorepo. Provides entity builders, NestJS test helpers, and web (React) test utilities to reduce boilerplate across specs.
 
 ## Installation
 
@@ -14,7 +14,8 @@ Add as a dev dependency in your app:
 }
 ```
 
-For NestJS helpers, you also need `@golevelup/ts-vitest` and `vitest` in your test environment.
+- **NestJS helpers**: Also need `@golevelup/ts-vitest` and `vitest`.
+- **Web helpers**: Also need `@testing-library/react`, `@tanstack/react-query`, `react`, and `react-dom` (plus `@tanstack/react-router` for router mocks).
 
 ## Exports
 
@@ -22,6 +23,7 @@ For NestJS helpers, you also need `@golevelup/ts-vitest` and `vitest` in your te
 | ---------------------- | ---------------------------------------- |
 | `@repo/testing`        | Entity builders, `TEST_IDS`              |
 | `@repo/testing/nestjs` | NestJS mocks, `createMock`, `DeepMocked` |
+| `@repo/testing/web`    | React render, store mocks, router mock, form mocks |
 
 ---
 
@@ -162,6 +164,94 @@ import { createMock, type DeepMocked } from "@repo/testing/nestjs";
 
 const mockRepo: DeepMocked<UserRepository> = createMock<UserRepository>();
 mockRepo.findById.mockResolvedValue(userBuilder());
+```
+
+---
+
+## Web Helpers
+
+Import from `@repo/testing/web`:
+
+```typescript
+import {
+  customRender,
+  createRouterMock,
+  createPlayerStoreMock,
+  createAuthStoreMock,
+  createLibraryStoreMock,
+  createFormMocks,
+} from "@repo/testing/web";
+```
+
+### customRender
+
+Renders a component with `QueryClientProvider` for tests that need React Query:
+
+```tsx
+import { customRender } from "@repo/testing/web";
+
+customRender(<MyComponent />);
+
+// With custom QueryClient
+customRender(<MyComponent />, { queryClient: myQueryClient });
+```
+
+### createRouterMock
+
+Mocks `@tanstack/react-router` for tests:
+
+```typescript
+import { createRouterMock } from "@repo/testing/web";
+import { vi } from "vitest";
+
+vi.mock("@tanstack/react-router", () => createRouterMock(vi));
+
+// With custom navigate spy
+const mockNavigate = vi.fn();
+vi.mock("@tanstack/react-router", () =>
+  createRouterMock(vi, { mockNavigate }),
+);
+```
+
+### Store Mocks
+
+Create default store state for tests. Override any field via the `overrides` argument.
+
+**createPlayerStoreMock** — player state (currentTrack, isPlaying, queue, etc.):
+
+```typescript
+vi.mock("@/stores/player.store", () => ({ usePlayerStore: vi.fn() }));
+vi.mocked(usePlayerStore).mockReturnValue(
+  createPlayerStoreMock({ isPlaying: true }),
+);
+```
+
+**createAuthStoreMock** — auth state (user, accessToken, isAuthenticated, etc.):
+
+```typescript
+vi.mock("@/stores/auth.store", () => ({ useAuthStore: vi.fn() }));
+vi.mocked(useAuthStore).mockReturnValue(
+  createAuthStoreMock({ isAuthenticated: true }),
+);
+```
+
+**createLibraryStoreMock** — library state (libraryId, privateArtists, etc.):
+
+```typescript
+vi.mock("@/stores/library.store", () => ({ useLibraryStore: vi.fn() }));
+vi.mocked(useLibraryStore).mockReturnValue(
+  createLibraryStoreMock({ libraryId: "lib-123" }),
+);
+```
+
+### createFormMocks
+
+Simplified form components (`TextField`, `TextAreaField`, `SelectField`) for isolating component behavior:
+
+```typescript
+vi.mock("@/components/form", () => ({
+  ...createFormMocks(),
+}));
 ```
 
 ---
