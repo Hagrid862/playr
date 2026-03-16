@@ -9,6 +9,12 @@ import {
 import { Visibility, type Artist } from "@repo/db";
 
 export function artistBuilder(overrides?: Partial<Artist>): Artist {
+  const visibility = rand([
+    Visibility.public,
+    Visibility.private,
+    Visibility.community,
+  ]);
+
   const createdAt = randPastDate();
   return {
     id: randUuid(),
@@ -19,12 +25,8 @@ export function artistBuilder(overrides?: Partial<Artist>): Artist {
     deletedAt: null,
     bannerId: null,
     avatarId: null,
-    visibility: rand([
-      Visibility.public,
-      Visibility.private,
-      Visibility.community,
-    ]),
-    isCommunity: false,
+    visibility,
+    isCommunity: visibility === Visibility.community,
     verified: false,
     ...overrides,
   };

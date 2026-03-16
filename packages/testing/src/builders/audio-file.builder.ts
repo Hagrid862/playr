@@ -15,21 +15,31 @@ import {
 } from "@repo/db";
 
 export function audioFileBuilder(overrides?: Partial<AudioFile>): AudioFile {
+  const format = rand([
+    AudioFormat.mp3,
+    AudioFormat.opus,
+    AudioFormat.flac,
+    AudioFormat.aac,
+    AudioFormat.wav,
+  ]);
+
+  const formatMeta: Record<AudioFormat, { ext: string, mimeType: string }> = {
+    [AudioFormat.mp3]: { ext: "mp3", mimeType: "audio/mpeg" },
+    [AudioFormat.opus]: { ext: "opus", mimeType: "audio/opus" },
+    [AudioFormat.flac]: { ext: "flac", mimeType: "audio/flac" },
+    [AudioFormat.aac]: { ext: "aac", mimeType: "audio/aac" },
+    [AudioFormat.wav]: { ext: "wav", mimeType: "audio/wav" },
+  };
+
   const createdAt = randPastDate();
   return {
     id: randUuid(),
     bucket: rand([FileBucket.private, FileBucket.public]),
-    key: randFilePath() + ".mp3",
+    key: randFilePath() + "." + formatMeta[format].ext,
     url: null,
-    mimeType: "audio/mpeg",
+    mimeType: formatMeta[format].mimeType,
     size: randNumber({ min: 1000, max: 1000000 }),
-    format: rand([
-      AudioFormat.mp3,
-      AudioFormat.opus,
-      AudioFormat.flac,
-      AudioFormat.aac,
-      AudioFormat.wav,
-    ]),
+    format,
     duration: null,
     bitrate: null,
     sampleRate: null,
