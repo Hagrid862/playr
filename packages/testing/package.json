@@ -32,10 +32,11 @@
   },
   "dependencies": {
     "@ngneat/falso": "^8.0.2",
-    "@repo/db": "workspace:*"
+    "@repo/db": "workspace:*",
+    "@golevelup/ts-vitest": "^2.2.0",
+    "vitest": "^4.0.18"
   },
   "devDependencies": {
-    "@golevelup/ts-vitest": "^2.2.0",
     "@nestjs/common": "^11.0.1",
     "@repo/configs": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
@@ -46,8 +47,7 @@
     "@types/react-dom": "^19.2.3",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsup": "^8.5.1",
-    "vitest": "^4.0.18"
+    "tsup": "^8.5.1"
   },
   "peerDependencies": {
     "@nestjs/common": ">=11.0.0",
