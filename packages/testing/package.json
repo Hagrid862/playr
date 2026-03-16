@@ -1,0 +1,46 @@
+{
+  "name": "@repo/testing",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./nestjs": {
+      "types": "./dist/nestjs/index.d.ts",
+      "import": "./dist/nestjs/index.js",
+      "default": "./dist/nestjs/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check-types": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\""
+  },
+  "dependencies": {
+    "@repo/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@golevelup/ts-vitest": "^2.2.0",
+    "@nestjs/common": "^11.0.1",
+    "@repo/configs": "workspace:*",
+    "@types/node": "catalog:",
+    "tsup": "^8.5.1"
+  },
+  "peerDependencies": {
+    "@golevelup/ts-vitest": ">=2.0.0",
+    "@nestjs/common": ">=11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@golevelup/ts-vitest": { "optional": true },
+    "@nestjs/common": { "optional": true }
+  }
+}
