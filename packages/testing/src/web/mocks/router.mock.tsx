@@ -21,7 +21,8 @@ export function createRouterMock(
   options: RouterMockOptions = {},
 ): Record<string, unknown> {
   const mockNavigate = options.mockNavigate ?? vi.fn();
-  const useRouter = options.mockUseRouter ?? (() => ({ navigate: mockNavigate }));
+  const useRouter =
+    options.mockUseRouter ?? (() => ({ navigate: mockNavigate }));
 
   return {
     Link: ({

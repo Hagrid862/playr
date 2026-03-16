@@ -19,7 +19,7 @@ For NestJS helpers, you also need `@golevelup/ts-vitest` and `vitest` in your te
 ## Exports
 
 | Entry Point            | Contents                                 |
-|------------------------|------------------------------------------|
+| ---------------------- | ---------------------------------------- |
 | `@repo/testing`        | Entity builders, `TEST_IDS`              |
 | `@repo/testing/nestjs` | NestJS mocks, `createMock`, `DeepMocked` |
 
@@ -38,7 +38,12 @@ Builders create test data with sensible defaults. Override any field via the `ov
 ### Usage
 
 ```typescript
-import { userBuilder, trackBuilder, artistBuilder, TEST_IDS } from "@repo/testing";
+import {
+  userBuilder,
+  trackBuilder,
+  artistBuilder,
+  TEST_IDS,
+} from "@repo/testing";
 
 // Default entity
 const user = userBuilder();
@@ -105,7 +110,9 @@ const repository = module.get(ArtistRepository);
 // In your test
 mockTx.artist.findFirst.mockResolvedValue(mockArtist);
 const result = await repository.findOne({ id: "artist-123" });
-expect(mockTx.artist.findFirst).toHaveBeenCalledWith({ where: { id: "artist-123", deletedAt: null } });
+expect(mockTx.artist.findFirst).toHaveBeenCalledWith({
+  where: { id: "artist-123", deletedAt: null },
+});
 ```
 
 ### PrismaServiceMock
