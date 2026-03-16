@@ -1,7 +1,14 @@
-import { rand, randFutureDate, randPastDate, randUuid } from "@ngneat/falso";
+import {
+  rand,
+  randBetweenDate,
+  randFutureDate,
+  randPastDate,
+  randUuid,
+} from "@ngneat/falso";
 import { SessionType, type Session } from "@repo/db";
 
 export function sessionBuilder(overrides?: Partial<Session>): Session {
+  const createdAt = randPastDate();
   return {
     id: randUuid(),
     userId: randUuid(),
@@ -11,8 +18,8 @@ export function sessionBuilder(overrides?: Partial<Session>): Session {
       SessionType.admin,
       SessionType.artist,
     ]),
-    createdAt: randPastDate(),
-    updatedAt: randPastDate(),
+    createdAt,
+    updatedAt: randBetweenDate({ from: createdAt, to: new Date() }),
     expiresAt: randFutureDate(),
     refreshedAt: null,
     revokedAt: null,

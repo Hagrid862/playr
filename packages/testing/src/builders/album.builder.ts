@@ -10,6 +10,7 @@ import {
 import { AlbumType, Visibility, type Album } from "@repo/db";
 
 export function albumBuilder(overrides?: Partial<Album>): Album {
+  const createdAt = randPastDate();
   return {
     id: randUuid(),
     name: randSong(),
@@ -32,8 +33,8 @@ export function albumBuilder(overrides?: Partial<Album>): Album {
       Visibility.private,
       Visibility.community,
     ]),
-    createdAt: randPastDate(),
-    updatedAt: randPastDate(),
+    createdAt,
+    updatedAt: randBetweenDate({ from: createdAt, to: new Date() }),
     deletedAt: null,
     ...overrides,
   };

@@ -1,5 +1,6 @@
 import {
   rand,
+  randBetweenDate,
   randParagraph,
   randPastDate,
   randSinger,
@@ -8,12 +9,13 @@ import {
 import { Visibility, type Artist } from "@repo/db";
 
 export function artistBuilder(overrides?: Partial<Artist>): Artist {
+  const createdAt = randPastDate();
   return {
     id: randUuid(),
     name: randSinger(),
     description: randParagraph(),
-    createdAt: randPastDate(),
-    updatedAt: randPastDate(),
+    createdAt,
+    updatedAt: randBetweenDate({ from: createdAt, to: new Date() }),
     deletedAt: null,
     bannerId: null,
     avatarId: null,

@@ -11,6 +11,7 @@ import type { User } from "@repo/db";
 import { Gender } from "@repo/db";
 
 export function userBuilder(overrides?: Partial<User>): User {
+  const createdAt = randPastDate();
   return {
     id: randUuid(),
     username: randUserName({ withAccents: false }),
@@ -22,8 +23,8 @@ export function userBuilder(overrides?: Partial<User>): User {
       to: new Date("2000-01-01"),
     }).toISOString(),
     gender: rand([Gender.male, Gender.female, Gender.other]),
-    createdAt: randPastDate(),
-    updatedAt: randPastDate(),
+    createdAt,
+    updatedAt: randBetweenDate({ from: createdAt, to: new Date() }),
     avatarId: null,
     description: null,
     deletedAt: null,
