@@ -40,8 +40,6 @@ model User {
 
   reportTargets ReportTarget[] @relation("UserReportTargets")
 
-  otpCodes OTPCode[] @relation("UserOTPCodes")
-
   artistAccess ArtistAccess[]
   albumAccess  AlbumAccess[]
   trackAccess  TrackAccess[]
@@ -69,8 +67,6 @@ model EmailAddress {
   verifiedAt DateTime?
   deletedAt  DateTime?
 
-  otpCodes OTPCode[] @relation("EmailAddressOTPCodes")
-
   @@index([userId])
   @@index([status])
   @@map("email_addresses")
@@ -95,30 +91,6 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
   @@map("sessions")
-}
-
-//for email verification password reset
-model OTPCode {
-  id String @id @default(cuid())
-
-  code String @unique //hashed code
-
-  userId String
-  user   User   @relation("UserOTPCodes", fields: [userId], references: [id], onDelete: Cascade)
-
-  emailAddressId String
-  emailAddress   EmailAddress @relation("EmailAddressOTPCodes", fields: [emailAddressId], references: [id], onDelete: Cascade)
-
-  type OtpCodeType @default(emailVerification)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  expiresAt DateTime
-  revokedAt DateTime?
-
-  @@index([userId])
-  @@index([emailAddressId])
-  @@map("otp_codes")
 }
 
 model RefreshToken {
