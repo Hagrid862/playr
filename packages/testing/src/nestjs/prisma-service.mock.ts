@@ -1,6 +1,6 @@
+import { createMock, type DeepMocked } from "@golevelup/ts-vitest";
 import { Injectable } from "@nestjs/common";
 import { PrismaClient } from "@repo/db";
-import { createMock, DeepMocked } from "@golevelup/ts-vitest";
 
 @Injectable()
 export class PrismaServiceMock {
