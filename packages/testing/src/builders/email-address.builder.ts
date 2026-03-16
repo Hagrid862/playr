@@ -13,7 +13,7 @@ export function emailAddressBuilder(
     userId: TEST_IDS.user,
     createdAt: now,
     updatedAt: now,
-    verifiedAt: now,
+    verifiedAt: null,
     deletedAt: null,
     ...overrides,
   };
