@@ -6,5 +6,6 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     "nestjs/index": "src/nestjs/index.ts",
+    "web/index": "src/web/index.ts",
   },
 });
