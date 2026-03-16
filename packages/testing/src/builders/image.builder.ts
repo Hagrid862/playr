@@ -1,20 +1,31 @@
+import {
+  rand,
+  randFileName,
+  randPastDate,
+  randText,
+  randUrl,
+  randUuid,
+} from "@ngneat/falso";
 import { FileBucket, ImageUploadStatus, type Image } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function imageBuilder(overrides?: Partial<Image>): Image {
-  const now = new Date();
   return {
-    id: TEST_IDS.image,
-    alt: "Test Image",
-    bucket: FileBucket.private,
-    key: "test-key.jpg",
-    url: "https://test.com/test-key.jpg",
+    id: randUuid(),
+    alt: randText({ charCount: 25 }),
+    bucket: rand([FileBucket.private, FileBucket.public]),
+    key: randFileName({ extension: "jpg" }),
+    url: randUrl(),
     mimeType: "image/jpeg",
     blurhash: null,
     reportId: null,
-    uploadStatus: ImageUploadStatus.pending,
-    createdAt: now,
-    updatedAt: now,
+    uploadStatus: rand([
+      ImageUploadStatus.pending,
+      ImageUploadStatus.processing,
+      ImageUploadStatus.uploaded,
+      ImageUploadStatus.failed,
+    ]),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     deletedAt: null,
     ...overrides,
   };

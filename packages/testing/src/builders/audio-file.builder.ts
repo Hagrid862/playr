@@ -1,33 +1,44 @@
 import {
+  rand,
+  randFilePath,
+  randNumber,
+  randPastDate,
+  randUuid,
+} from "@ngneat/falso";
+import {
   AudioFormat,
   AudioQuality,
   FileBucket,
   ProcessingStatus,
   type AudioFile,
 } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function audioFileBuilder(overrides?: Partial<AudioFile>): AudioFile {
-  const now = new Date();
   return {
-    id: TEST_IDS.audioFile,
-    bucket: FileBucket.private,
-    key: "path/to/original.mp3",
+    id: randUuid(),
+    bucket: rand([FileBucket.private, FileBucket.public]),
+    key: randFilePath() + ".mp3",
     url: null,
     mimeType: "audio/mpeg",
-    size: 1234,
-    format: AudioFormat.mp3,
+    size: randNumber({ min: 1000, max: 1000000 }),
+    format: rand([
+      AudioFormat.mp3,
+      AudioFormat.opus,
+      AudioFormat.flac,
+      AudioFormat.aac,
+      AudioFormat.wav,
+    ]),
     duration: null,
     bitrate: null,
     sampleRate: null,
     channels: null,
     isOriginal: true,
     waveformJson: null,
-    trackId: TEST_IDS.track,
+    trackId: randUuid(),
     quality: AudioQuality.original,
     status: ProcessingStatus.pending,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     ...overrides,
   };
 }

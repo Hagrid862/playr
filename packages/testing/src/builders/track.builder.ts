@@ -1,22 +1,32 @@
+import {
+  rand,
+  randBoolean,
+  randNumber,
+  randPastDate,
+  randSong,
+  randUuid,
+} from "@ngneat/falso";
 import type { Track } from "@repo/db";
 import { Visibility } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function trackBuilder(overrides?: Partial<Track>): Track {
-  const now = new Date();
   return {
-    id: TEST_IDS.track,
-    title: "Test Track",
-    trackNumber: 1,
-    diskNumber: 1,
-    duration: 180,
-    listenedCount: 0,
-    explicit: false,
+    id: randUuid(),
+    title: randSong(),
+    trackNumber: randNumber({ min: 1, max: 20 }),
+    diskNumber: randNumber({ min: 1, max: 4 }),
+    duration: randNumber({ min: 180, max: 360 }),
+    listenedCount: randNumber({ min: 0, max: 100 }),
+    explicit: randBoolean(),
     lyrics: null,
-    visibility: Visibility.private,
-    albumId: TEST_IDS.album,
-    createdAt: now,
-    updatedAt: now,
+    visibility: rand([
+      Visibility.public,
+      Visibility.private,
+      Visibility.community,
+    ]),
+    albumId: randUuid(),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     deletedAt: null,
     ...overrides,
   };

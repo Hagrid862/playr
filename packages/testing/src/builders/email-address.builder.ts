@@ -1,18 +1,17 @@
+import { randEmail, randPastDate, randUuid } from "@ngneat/falso";
 import { EmailStatus, EmailType, type EmailAddress } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function emailAddressBuilder(
   overrides?: Partial<EmailAddress>,
 ): EmailAddress {
-  const now = new Date();
   return {
-    id: TEST_IDS.emailAddress,
-    email: "test@example.com",
+    id: randUuid(),
+    email: randEmail(),
     type: EmailType.primary,
     status: EmailStatus.pending,
-    userId: TEST_IDS.user,
-    createdAt: now,
-    updatedAt: now,
+    userId: randUuid(),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     verifiedAt: null,
     deletedAt: null,
     ...overrides,
