@@ -14,7 +14,6 @@ Add as a dev dependency in your app:
 }
 ```
 
-- **NestJS helpers**: Also need `@golevelup/ts-vitest` and `vitest`.
 - **Web helpers**: Also need `@testing-library/react`, `@tanstack/react-query`, `react`, and `react-dom` (plus `@tanstack/react-router` for router mocks).
 
 ## Exports
