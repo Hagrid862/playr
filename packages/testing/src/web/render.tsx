@@ -59,7 +59,7 @@ export interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
  * customRender(<MyComponent />);
  *
  * // With initial location
- * customRender(<MyComponent />, { initialLocation: '/albums/123' });
+ * customRender(<MyComponent />, { initialLocation: '/' });
  *
  * // With router context (e.g. auth)
  * customRender(<MyComponent />, { routerContext: { auth: mockAuth } });
