@@ -19,10 +19,10 @@ Add as a dev dependency in your app:
 
 ## Exports
 
-| Entry Point            | Contents                                 |
-| ---------------------- | ---------------------------------------- |
-| `@repo/testing`        | Entity builders, `TEST_IDS`              |
-| `@repo/testing/nestjs` | NestJS mocks, `createMock`, `DeepMocked` |
+| Entry Point            | Contents                                           |
+| ---------------------- | -------------------------------------------------- |
+| `@repo/testing`        | Entity builders, `TEST_IDS`                        |
+| `@repo/testing/nestjs` | NestJS mocks, `createMock`, `DeepMocked`           |
 | `@repo/testing/web`    | React render, store mocks, router mock, form mocks |
 
 ---
@@ -208,9 +208,7 @@ vi.mock("@tanstack/react-router", () => createRouterMock(vi));
 
 // With custom navigate spy
 const mockNavigate = vi.fn();
-vi.mock("@tanstack/react-router", () =>
-  createRouterMock(vi, { mockNavigate }),
-);
+vi.mock("@tanstack/react-router", () => createRouterMock(vi, { mockNavigate }));
 ```
 
 ### Store Mocks

@@ -26,15 +26,15 @@ export function createFormMocks(): Record<
             id={fieldId}
             data-testid={fieldId}
             value={String(props.value ?? "")}
-          onChange={(e) =>
-            (props.onChange as (v: string) => void)?.(
-              (e.target as HTMLInputElement).value,
-            )
-          }
-          onBlur={() => (props.onBlur as () => void)?.()}
-        />
-      </div>
-    );
+            onChange={(e) =>
+              (props.onChange as (v: string) => void)?.(
+                (e.target as HTMLInputElement).value,
+              )
+            }
+            onBlur={() => (props.onBlur as () => void)?.()}
+          />
+        </div>
+      );
     },
     TextAreaField: (props: Record<string, unknown>) => {
       const fieldId = `field-${String(props.label ?? "")
@@ -47,15 +47,15 @@ export function createFormMocks(): Record<
             id={fieldId}
             data-testid={fieldId}
             value={String(props.value ?? "")}
-          onChange={(e) =>
-            (props.onChange as (v: string) => void)?.(
-              (e.target as HTMLTextAreaElement).value,
-            )
-          }
-          onBlur={() => (props.onBlur as () => void)?.()}
-        />
-      </div>
-    );
+            onChange={(e) =>
+              (props.onChange as (v: string) => void)?.(
+                (e.target as HTMLTextAreaElement).value,
+              )
+            }
+            onBlur={() => (props.onBlur as () => void)?.()}
+          />
+        </div>
+      );
     },
     SelectField: (props: Record<string, unknown>) => {
       const fieldId = `field-${String(props.label ?? "")
@@ -68,21 +68,23 @@ export function createFormMocks(): Record<
             id={fieldId}
             data-testid={fieldId}
             value={String(props.value ?? "")}
-          onChange={(e) =>
-            (props.onChange as (v: string) => void)?.(
-              (e.target as HTMLSelectElement).value,
-            )
-          }
-          onBlur={() => (props.onBlur as () => void)?.()}
-        >
-          {(props.options as { value: string; label: string }[])?.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
+            onChange={(e) =>
+              (props.onChange as (v: string) => void)?.(
+                (e.target as HTMLSelectElement).value,
+              )
+            }
+            onBlur={() => (props.onBlur as () => void)?.()}
+          >
+            {(props.options as { value: string; label: string }[])?.map(
+              (opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+      );
     },
   };
 }
