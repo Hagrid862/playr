@@ -8,7 +8,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { render, type RenderOptions } from "@testing-library/react";
-import type { ReactElement } from "react";
+import { useMemo, type ReactElement, type ReactNode } from "react";
 
 function createTestQueryClient() {
   return new QueryClient({
@@ -19,7 +19,7 @@ function createTestQueryClient() {
   });
 }
 
-function createTestRouter(ui: ReactElement, initialLocation = "/") {
+function createTestRouter(ui: ReactNode, initialLocation = "/") {
   const rootRoute = createRootRoute({
     component: () => <Outlet />,
   });
@@ -27,7 +27,7 @@ function createTestRouter(ui: ReactElement, initialLocation = "/") {
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/",
-    component: () => ui,
+    component: () => <>{ui}</>,
   });
 
   const routeTree = rootRoute.addChildren([indexRoute]);
@@ -76,17 +76,23 @@ export function customRender(
     ...renderOptions
   } = options;
 
-  const router = createTestRouter(ui, initialLocation);
-
-  return render(ui, {
-    ...renderOptions,
-    wrapper: () => (
+  const Wrapper = ({ children }: { children: ReactNode }) => {
+    const router = useMemo(
+      () => createTestRouter(children, initialLocation),
+      [initialLocation]
+    );
+    return (
       <QueryClientProvider client={queryClient}>
-        <RouterProvider
-          router={router}
-          {...(routerContext && { context: routerContext })}
-        />
-      </QueryClientProvider>
-    ),
+          <RouterProvider
+            router={router}
+            {...(routerContext && { context: routerContext })}
+          />
+        </QueryClientProvider>
+      );
+    };
+    
+    return render(ui, {
+    ...renderOptions,
+    wrapper: Wrapper,
   });
 }
