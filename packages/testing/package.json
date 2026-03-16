@@ -36,7 +36,6 @@
     "tsup": "^8.5.1"
   },
   "peerDependencies": {
-    "@golevelup/ts-vitest": ">=2.0.0",
     "@nestjs/common": ">=11.0.0"
   },
   "peerDependenciesMeta": {
