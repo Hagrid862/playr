@@ -21,7 +21,7 @@ Add as a dev dependency in your app:
 
 | Entry Point            | Contents                                           |
 | ---------------------- | -------------------------------------------------- |
-| `@repo/testing`        | Entity builders, `TEST_IDS`                        |
+| `@repo/testing`        | Entity builders                                    |
 | `@repo/testing/nestjs` | NestJS mocks, `createMock`, `DeepMocked`           |
 | `@repo/testing/web`    | React render, store mocks, router mock, form mocks |
 
@@ -43,36 +43,23 @@ Builders create test data with sensible defaults. Override any field via the `ov
 import {
   userBuilder,
   trackBuilder,
+  albumBuilder,
   artistBuilder,
-  TEST_IDS,
 } from "@repo/testing";
 
-// Default entity
+// Default entity (IDs are random via randUuid)
 const user = userBuilder();
 
 // Override specific fields
 const admin = userBuilder({ username: "admin", id: "admin-1" });
 
-// Builders use consistent IDs for relations (e.g. track.albumId === album.id)
-const track = trackBuilder();
+// Builders produce random IDs by default. For consistent relations, pass IDs explicitly:
 const album = albumBuilder();
-// track.albumId === TEST_IDS.album === album.id
+const track = trackBuilder({ albumId: album.id });
+expect(track.albumId).toBe(album.id);
 
-// Reference IDs in assertions
-expect(result.id).toBe(TEST_IDS.user);
-```
-
-### TEST_IDS
-
-Shared constants for cross-referencing entities:
-
-```typescript
-import { TEST_IDS } from "@repo/testing";
-
-TEST_IDS.user; // "user-123"
-TEST_IDS.track; // "track-123"
-TEST_IDS.library; // "library-123"
-// ... etc
+// Reference IDs in assertions (use overrides for predictable values)
+expect(admin.id).toBe("admin-1");
 ```
 
 ---
