@@ -15,6 +15,11 @@
       "types": "./dist/nestjs/index.d.ts",
       "import": "./dist/nestjs/index.js",
       "default": "./dist/nestjs/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js",
+      "default": "./dist/web/index.js"
     }
   },
   "scripts": {
@@ -26,20 +31,49 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\""
   },
   "dependencies": {
-    "@repo/db": "workspace:*"
+    "@repo/db": "workspace:*",
+    "vitest": "^4.0.18"
   },
   "devDependencies": {
     "@golevelup/ts-vitest": "^2.2.0",
     "@nestjs/common": "^11.0.1",
     "@repo/configs": "workspace:*",
+    "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-router": "^1.157.16",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "catalog:",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "tsup": "^8.5.1"
   },
   "peerDependencies": {
-    "@nestjs/common": ">=11.0.0"
+    "@nestjs/common": ">=11.0.0",
+    "@tanstack/react-query": ">=5.0.0",
+    "@tanstack/react-router": ">=1.0.0",
+    "@testing-library/react": ">=14.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "peerDependenciesMeta": {
-    "@golevelup/ts-vitest": { "optional": true },
-    "@nestjs/common": { "optional": true }
+    "@nestjs/common": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@testing-library/react": {
+      "optional": true
+    },
+    "@tanstack/react-router": {
+      "optional": true
+    },
+    "@tanstack/react-query": {
+      "optional": true
+    }
   }
 }
