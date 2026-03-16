@@ -1,17 +1,16 @@
+import { randNumber, randPastDate, randUuid } from "@ngneat/falso";
 import { type LibraryTrack } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function libraryTrackBuilder(
   overrides?: Partial<LibraryTrack>,
 ): LibraryTrack {
-  const now = new Date();
   return {
-    id: TEST_IDS.libraryTrack,
-    listenedCount: 0,
-    libraryId: TEST_IDS.library,
-    trackId: TEST_IDS.track,
-    createdAt: now,
-    updatedAt: now,
+    id: randUuid(),
+    listenedCount: randNumber({ min: 0, max: 100 }),
+    libraryId: randUuid(),
+    trackId: randUuid(),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     listenCountResetAt: null,
     deletedAt: null,
     ...overrides,

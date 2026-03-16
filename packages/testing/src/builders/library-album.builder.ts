@@ -1,16 +1,15 @@
+import { randPastDate, randUuid } from "@ngneat/falso";
 import { type LibraryAlbum } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function libraryAlbumBuilder(
   overrides?: Partial<LibraryAlbum>,
 ): LibraryAlbum {
-  const now = new Date();
   return {
-    id: TEST_IDS.libraryAlbum,
-    libraryId: TEST_IDS.library,
-    albumId: TEST_IDS.album,
-    createdAt: now,
-    updatedAt: now,
+    id: randUuid(),
+    libraryId: randUuid(),
+    albumId: randUuid(),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     deletedAt: null,
     ...overrides,
   };

@@ -1,13 +1,12 @@
+import { randPastDate, randUuid } from "@ngneat/falso";
 import { type Library } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function libraryBuilder(overrides?: Partial<Library>): Library {
-  const now = new Date();
   return {
-    id: TEST_IDS.library,
-    userId: TEST_IDS.user,
-    createdAt: now,
-    updatedAt: now,
+    id: randUuid(),
+    userId: randUuid(),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     deletedAt: null,
     ...overrides,
   };

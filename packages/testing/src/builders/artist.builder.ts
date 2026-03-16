@@ -1,18 +1,27 @@
+import {
+  rand,
+  randParagraph,
+  randPastDate,
+  randSinger,
+  randUuid,
+} from "@ngneat/falso";
 import { Visibility, type Artist } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function artistBuilder(overrides?: Partial<Artist>): Artist {
-  const now = new Date();
   return {
-    id: TEST_IDS.artist,
-    name: "Test Artist",
-    description: "Test Description",
-    createdAt: now,
-    updatedAt: now,
+    id: randUuid(),
+    name: randSinger(),
+    description: randParagraph(),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     deletedAt: null,
-    bannerId: TEST_IDS.image,
-    avatarId: TEST_IDS.image,
-    visibility: Visibility.public,
+    bannerId: null,
+    avatarId: null,
+    visibility: rand([
+      Visibility.public,
+      Visibility.private,
+      Visibility.community,
+    ]),
     isCommunity: false,
     verified: false,
     ...overrides,

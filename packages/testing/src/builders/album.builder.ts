@@ -1,20 +1,39 @@
+import {
+  rand,
+  randBetweenDate,
+  randNumber,
+  randParagraph,
+  randPastDate,
+  randSong,
+  randUuid,
+} from "@ngneat/falso";
 import { AlbumType, Visibility, type Album } from "@repo/db";
-import { TEST_IDS } from "./constants";
 
 export function albumBuilder(overrides?: Partial<Album>): Album {
-  const now = new Date();
   return {
-    id: TEST_IDS.album,
-    name: "Test Album",
-    description: "Test Description",
-    type: AlbumType.album,
-    totalTracks: 10,
-    totalDuration: 3000,
-    releaseDate: new Date(),
+    id: randUuid(),
+    name: randSong(),
+    description: randParagraph(),
+    type: rand([
+      AlbumType.album,
+      AlbumType.single,
+      AlbumType.ep,
+      AlbumType.compilation,
+    ]),
+    totalTracks: randNumber({ min: 10, max: 20 }),
+    totalDuration: randNumber({ min: 3000, max: 6000 }),
+    releaseDate: randBetweenDate({
+      from: new Date("2020-01-01"),
+      to: new Date(),
+    }),
     coverId: null,
-    visibility: Visibility.public,
-    createdAt: now,
-    updatedAt: now,
+    visibility: rand([
+      Visibility.public,
+      Visibility.private,
+      Visibility.community,
+    ]),
+    createdAt: randPastDate(),
+    updatedAt: randPastDate(),
     deletedAt: null,
     ...overrides,
   };
