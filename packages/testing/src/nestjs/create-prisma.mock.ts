@@ -1,5 +1,5 @@
-import type { InjectionToken, Provider } from "@nestjs/common";
 import { createMock, type DeepMocked } from "@golevelup/ts-vitest";
+import type { InjectionToken, Provider } from "@nestjs/common";
 import { PrismaClient } from "@repo/db";
 
 /**
@@ -31,7 +31,9 @@ export function createPrismaMock(prismaServiceToken: InjectionToken): {
     if (Array.isArray(arg)) {
       return Promise.all(arg);
     }
-    return arg;
+    throw new TypeError(
+      "PrismaServiceMock.$transaction expects a callback or an array of promises",
+    );
   });
 
   return {
