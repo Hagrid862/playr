@@ -10,15 +10,24 @@ import type { ReactNode } from "react";
  * }));
  * ```
  */
-export function createFormMocks(): Record<string, (props: Record<string, unknown>) => ReactNode> {
+export function createFormMocks(): Record<
+  string,
+  (props: Record<string, unknown>) => ReactNode
+> {
   return {
     TextField: (props: Record<string, unknown>) => (
       <div>
         <label>{String(props.label ?? "")}</label>
         <input
-          data-testid={`field-${String(props.label ?? "").toLowerCase().replace(/\s/g, "-")}`}
+          data-testid={`field-${String(props.label ?? "")
+            .toLowerCase()
+            .replace(/\s/g, "-")}`}
           value={String(props.value ?? "")}
-          onChange={(e) => (props.onChange as (v: string) => void)?.((e.target as HTMLInputElement).value)}
+          onChange={(e) =>
+            (props.onChange as (v: string) => void)?.(
+              (e.target as HTMLInputElement).value,
+            )
+          }
           onBlur={() => (props.onBlur as () => void)?.()}
         />
       </div>
@@ -29,7 +38,11 @@ export function createFormMocks(): Record<string, (props: Record<string, unknown
         <textarea
           data-testid="field-description"
           value={String(props.value ?? "")}
-          onChange={(e) => (props.onChange as (v: string) => void)?.((e.target as HTMLTextAreaElement).value)}
+          onChange={(e) =>
+            (props.onChange as (v: string) => void)?.(
+              (e.target as HTMLTextAreaElement).value,
+            )
+          }
           onBlur={() => (props.onBlur as () => void)?.()}
         />
       </div>
@@ -39,7 +52,11 @@ export function createFormMocks(): Record<string, (props: Record<string, unknown
         <label>{String(props.label ?? "")}</label>
         <select
           value={String(props.value ?? "")}
-          onChange={(e) => (props.onChange as (v: string) => void)?.((e.target as HTMLSelectElement).value)}
+          onChange={(e) =>
+            (props.onChange as (v: string) => void)?.(
+              (e.target as HTMLSelectElement).value,
+            )
+          }
           onBlur={() => (props.onBlur as () => void)?.()}
         >
           {(props.options as { value: string; label: string }[])?.map((opt) => (

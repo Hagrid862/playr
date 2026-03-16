@@ -23,7 +23,7 @@ export class PrismaServiceMock {
     return this._mockClient;
   }
 
-  get mainClient() {  
+  get mainClient() {
     return this._mockClient;
   }
 
