@@ -1,12 +1,12 @@
-interface AuthStoreMock {  
-  accessToken: string | null;  
-  user: unknown | null;  
-  isAuthenticated: boolean;  
-  _hasHydrated: boolean;  
-  setAuth: () => void;  
-  updateAccessToken: () => void;  
-  logout: () => void;  
-} 
+interface AuthStoreMock {
+  accessToken: string | null;
+  user: unknown | null;
+  isAuthenticated: boolean;
+  _hasHydrated: boolean;
+  setAuth: () => void;
+  updateAccessToken: () => void;
+  logout: () => void;
+}
 
 /**
  * Creates a default auth store state for tests. Override any field via overrides.
