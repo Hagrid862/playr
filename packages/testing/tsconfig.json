@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "dist",
     "noEmit": false,
-    "types": ["node"]
+    "types": ["node"],
+    "lib": ["ESNext", "DOM"],
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
