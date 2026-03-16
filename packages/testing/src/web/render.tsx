@@ -79,19 +79,19 @@ export function customRender(
   const Wrapper = ({ children }: { children: ReactNode }) => {
     const router = useMemo(
       () => createTestRouter(children, initialLocation),
-      [initialLocation]
+      [initialLocation],
     );
     return (
       <QueryClientProvider client={queryClient}>
-          <RouterProvider
-            router={router}
-            {...(routerContext && { context: routerContext })}
-          />
-        </QueryClientProvider>
-      );
-    };
-    
-    return render(ui, {
+        <RouterProvider
+          router={router}
+          {...(routerContext && { context: routerContext })}
+        />
+      </QueryClientProvider>
+    );
+  };
+
+  return render(ui, {
     ...renderOptions,
     wrapper: Wrapper,
   });
