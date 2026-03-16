@@ -15,14 +15,17 @@ export function createFormMocks(): Record<
   (props: Record<string, unknown>) => ReactNode
 > {
   return {
-    TextField: (props: Record<string, unknown>) => (
-      <div>
-        <label>{String(props.label ?? "")}</label>
-        <input
-          data-testid={`field-${String(props.label ?? "")
-            .toLowerCase()
-            .replace(/\s/g, "-")}`}
-          value={String(props.value ?? "")}
+    TextField: (props: Record<string, unknown>) => {
+      const fieldId = `field-${String(props.label ?? "")
+        .toLowerCase()
+        .replace(/\s/g, "-")}`;
+      return (
+        <div>
+          <label htmlFor={fieldId}>{String(props.label ?? "")}</label>
+          <input
+            id={fieldId}
+            data-testid={fieldId}
+            value={String(props.value ?? "")}
           onChange={(e) =>
             (props.onChange as (v: string) => void)?.(
               (e.target as HTMLInputElement).value,
@@ -31,13 +34,19 @@ export function createFormMocks(): Record<
           onBlur={() => (props.onBlur as () => void)?.()}
         />
       </div>
-    ),
-    TextAreaField: (props: Record<string, unknown>) => (
-      <div>
-        <label>{String(props.label ?? "")}</label>
-        <textarea
-          data-testid="field-description"
-          value={String(props.value ?? "")}
+    );
+    },
+    TextAreaField: (props: Record<string, unknown>) => {
+      const fieldId = `field-${String(props.label ?? "")
+        .toLowerCase()
+        .replace(/\s/g, "-")}`;
+      return (
+        <div>
+          <label htmlFor={fieldId}>{String(props.label ?? "")}</label>
+          <textarea
+            id={fieldId}
+            data-testid={fieldId}
+            value={String(props.value ?? "")}
           onChange={(e) =>
             (props.onChange as (v: string) => void)?.(
               (e.target as HTMLTextAreaElement).value,
@@ -46,12 +55,19 @@ export function createFormMocks(): Record<
           onBlur={() => (props.onBlur as () => void)?.()}
         />
       </div>
-    ),
-    SelectField: (props: Record<string, unknown>) => (
-      <div>
-        <label>{String(props.label ?? "")}</label>
-        <select
-          value={String(props.value ?? "")}
+    );
+    },
+    SelectField: (props: Record<string, unknown>) => {
+      const fieldId = `field-${String(props.label ?? "")
+        .toLowerCase()
+        .replace(/\s/g, "-")}`;
+      return (
+        <div>
+          <label htmlFor={fieldId}>{String(props.label ?? "")}</label>
+          <select
+            id={fieldId}
+            data-testid={fieldId}
+            value={String(props.value ?? "")}
           onChange={(e) =>
             (props.onChange as (v: string) => void)?.(
               (e.target as HTMLSelectElement).value,
@@ -66,6 +82,7 @@ export function createFormMocks(): Record<
           ))}
         </select>
       </div>
-    ),
+    );
+    },
   };
 }
