@@ -1,38 +1,50 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import request from 'supertest';
-import { vi } from 'vitest';
-import { ImageService } from '../src/shared/services/image.service';
-import { StorageService } from '../src/shared/services/storage.service';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
-import './setup-env';
-import { createIntegrationApp } from './test-utils';
 import {
+  AccessRole,
   AlbumGetPayload,
-  AudioFormat,
-  AudioQuality,
-  FileBucket,
   Image,
   Library,
-  LibraryAlbum,
+  LibraryAlbumGetPayload,
+  LibraryTrackGetPayload,
   PrismaClient,
-  ProcessingStatus,
   Track,
   TrackGetPayload,
   User,
-  Visibility,
 } from '@repo/db';
+import {
+  albumBuilder,
+  artistBuilder,
+  audioFileBuilder,
+  imageBuilder,
+  libraryAlbumBuilder,
+  libraryBuilder,
+  libraryTrackBuilder,
+  trackAccessBuilder,
+  trackBuilder,
+  userBuilder,
+} from '@repo/testing';
+import { PrismaServiceMock } from '@repo/testing/nestjs';
+import request from 'supertest';
+import { ImageService } from '../src/shared/services/image.service';
+import { StorageService } from '../src/shared/services/storage.service';
+import './setup-env';
+import { createIntegrationApp } from './test-utils';
 
-// Helper type for Album with relations matching repository include
 type AlbumWithRelations = AlbumGetPayload<{
   include: { artists: true; genres: true; tracks: true; access: true; cover: true };
 }>;
 
-// Helper type for LibraryAlbum with relations matching repository include
-type LibraryAlbumWithRelations = LibraryAlbum & {
-  album: AlbumWithRelations;
-};
+type LibraryAlbumWithRelations = LibraryAlbumGetPayload<{
+  include: {
+    album: { include: { artists: true; genres: true; tracks: true; access: true; cover: true } };
+  };
+}>;
+
+type LibraryTrackWithRelations = LibraryTrackGetPayload<{
+  include: { track: { include: { artists: true; album: true; access: true } } };
+}>;
 
 describe('LibraryAlbumsController (Integration)', () => {
   let app: INestApplication;
@@ -85,67 +97,43 @@ describe('LibraryAlbumsController (Integration)', () => {
     return `Bearer ${token}`;
   };
 
-  const mockLibrary: Library = {
+  const mockLibrary: Library = libraryBuilder({
     id: 'library-123',
     userId: 'user-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   const mockAlbum: AlbumWithRelations = {
-    id: 'album-123',
-    name: 'Test Album',
-    description: 'Test Description',
-    type: 'album',
-    totalTracks: 10,
-    totalDuration: 3000,
-    releaseDate: new Date(),
-    coverId: null,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    artists: [],
+    ...albumBuilder({
+      id: 'album-123',
+    }),
+    artists: [artistBuilder()],
     genres: [],
     tracks: [],
-    cover: null,
     access: [
       {
         id: 'access-123',
         userId: 'user-123',
+        albumId: 'album-123',
         role: 'owner',
         createdAt: new Date(),
         updatedAt: new Date(),
-        albumId: 'album-123',
       },
     ],
+    cover: null,
   };
 
   const mockLibraryAlbum: LibraryAlbumWithRelations = {
-    id: 'lib-album-123',
-    libraryId: 'library-123',
-    albumId: 'album-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
+    ...libraryAlbumBuilder({
+      id: 'lib-album-123',
+      libraryId: 'library-123',
+      albumId: 'album-123',
+    }),
     album: mockAlbum,
   };
 
-  const mockImage: Image = {
+  const mockImage: Image = imageBuilder({
     id: 'img-123',
-    alt: null,
-    bucket: 'public',
-    key: 'test-key.webp',
-    url: 'https://cdn.example.com/test.webp',
-    mimeType: 'image/webp',
-    blurhash: null,
-    reportId: null,
-    uploadStatus: 'uploaded',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   describe('POST /library/albums', () => {
     it('should create an album successfully (201)', async () => {
@@ -221,10 +209,7 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
-      // findMany returns LibraryAlbum[] but in reality it returns LibraryAlbumWithRelations[] due to include in repository
-      prismaMock.client.libraryAlbum.findMany.mockResolvedValue([
-        mockLibraryAlbum,
-      ] as unknown as LibraryAlbum[]);
+      prismaMock.client.libraryAlbum.findMany.mockResolvedValue([mockLibraryAlbum]);
       prismaMock.client.libraryAlbum.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())
@@ -434,20 +419,9 @@ describe('LibraryAlbumsController (Integration)', () => {
   });
 
   describe('POST /library/albums/:id/tracks/bulk', () => {
-    const mockUser: User = {
+    const mockUser: User = userBuilder({
       id: 'user-123',
-      username: 'testu',
-      firstName: 'Test',
-      lastName: 'User',
-      birthDate: null,
-      gender: null,
-      description: null,
-      password: 'hashed-password',
-      avatarId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-    };
+    });
 
     it('should create multiple tracks successfully (201)', async () => {
       const authHeader = await getAuthHeader();
@@ -456,41 +430,24 @@ describe('LibraryAlbumsController (Integration)', () => {
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
 
-      const mockTrack1: Track = {
+      const mockTrack1: Track = trackBuilder({
         id: 'track-1',
-        title: 'Track 1',
-        trackNumber: 1,
-        diskNumber: 1,
-        duration: 0,
-        listenedCount: 0,
-        explicit: false,
-        lyrics: null,
-        visibility: 'private',
         albumId: mockAlbum.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      };
-      const mockTrack2: Track = {
+      });
+      const mockTrack2: Track = trackBuilder({
         id: 'track-2',
-        title: 'Track 2',
-        trackNumber: 2,
-        diskNumber: 1,
-        duration: 0,
-        listenedCount: 0,
-        explicit: false,
-        lyrics: null,
-        visibility: 'private',
         albumId: mockAlbum.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      };
+      });
 
       prismaMock.client.track.create
         .mockResolvedValueOnce(mockTrack1)
         .mockResolvedValueOnce(mockTrack2);
-      prismaMock.client.libraryTrack.create.mockResolvedValue({} as any);
+      prismaMock.client.libraryTrack.create.mockResolvedValue(
+        libraryTrackBuilder({
+          trackId: mockTrack1.id,
+          libraryId: mockLibrary.id,
+        }),
+      );
 
       prismaMock.mainClient.$transaction.mockImplementation(
         async (cb: (client: PrismaClient) => Promise<any>) => cb(prismaMock.client),
@@ -501,22 +458,25 @@ describe('LibraryAlbumsController (Integration)', () => {
         .set('Authorization', authHeader)
         .send({
           tracks: [
-            { title: 'Track 1', trackNumber: 1, diskNumber: 1, artistIds: ['artist-123'] },
-            { title: 'Track 2', trackNumber: 2, diskNumber: 1, artistIds: ['artist-123'] },
+            {
+              title: mockTrack1.title,
+              trackNumber: mockTrack1.trackNumber,
+              diskNumber: mockTrack1.diskNumber,
+              artistIds: ['artist-123'],
+            },
+            {
+              title: mockTrack2.title,
+              trackNumber: mockTrack2.trackNumber,
+              diskNumber: mockTrack2.diskNumber,
+              artistIds: ['artist-123'],
+            },
           ],
         });
 
-      if (response.status !== 201) {
-        console.log(
-          'POST /library/albums/:id/tracks/bulk error:',
-          JSON.stringify(response.body, null, 2),
-        );
-      }
-
       expect(response.status).toBe(201);
       expect(response.body.data.tracks).toHaveLength(2);
-      expect(response.body.data.tracks[0].title).toBe('Track 1');
-      expect(response.body.data.tracks[1].title).toBe('Track 2');
+      expect(response.body.data.tracks[0].title).toBe(mockTrack1.title);
+      expect(response.body.data.tracks[1].title).toBe(mockTrack2.title);
     });
 
     it('should return 401 if unauthenticated', async () => {
@@ -545,49 +505,22 @@ describe('LibraryAlbumsController (Integration)', () => {
   });
 
   describe('POST /library/albums/:id/tracks/bulk/audio', () => {
-    const mockUser: User = {
-      id: 'user-123',
-      username: 'testu',
-      firstName: 'Test',
-      lastName: 'User',
-      birthDate: null,
-      gender: null,
-      description: null,
-      password: 'hashed-password',
-      avatarId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-    };
+    const mockUser: User = userBuilder();
 
     const mockTrackWithAccess: TrackGetPayload<{
       include: { artists: true; album: true; access: true };
     }> = {
-      id: 'track-1',
-      title: 'Track 1',
-      trackNumber: 1,
-      diskNumber: 1,
-      duration: 0,
-      listenedCount: 0,
-      explicit: false,
-      lyrics: null,
-      visibility: 'private' as Visibility,
-      albumId: mockAlbum.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-      artists: [],
-      album: mockAlbum,
+      ...trackBuilder({ id: 'track-1', albumId: mockAlbum.id }),
       access: [
-        {
+        trackAccessBuilder({
           id: 'access-1',
-          userId: 'user-123',
-          role: 'owner',
+          userId: mockUser.id,
+          role: AccessRole.owner,
           trackId: 'track-1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        }),
       ],
+      artists: [artistBuilder()],
+      album: mockAlbum,
     };
 
     it('should upload multiple audio files successfully (201)', async () => {
@@ -605,27 +538,12 @@ describe('LibraryAlbumsController (Integration)', () => {
         key: 'key',
       });
 
-      const mockAudioFile1 = {
-        id: 'audio-1',
-        trackId: 'track-1',
-        status: ProcessingStatus.pending,
-        format: AudioFormat.mp3,
-        quality: AudioQuality.original,
-        size: 100,
-        bucket: FileBucket.private,
-        key: 'key1',
-        mimeType: 'audio/mpeg',
-        url: 'https://cdn.example.com/audio.mp3',
-        duration: null,
-        bitrate: null,
-        sampleRate: null,
-        channels: null,
-        isOriginal: true,
-        waveformJson: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      const mockAudioFile2 = { ...mockAudioFile1, id: 'audio-2', key: 'key2' };
+      const mockAudioFile1 = audioFileBuilder({
+        trackId: mockTrackWithAccess.id,
+      });
+      const mockAudioFile2 = audioFileBuilder({
+        trackId: mockTrackWithAccess.id,
+      });
 
       prismaMock.client.audioFile.create
         .mockResolvedValueOnce(mockAudioFile1)
@@ -634,22 +552,15 @@ describe('LibraryAlbumsController (Integration)', () => {
       const response = await request(app.getHttpServer())
         .post(`/library/albums/${mockAlbum.id}/tracks/bulk/audio`)
         .set('Authorization', authHeader)
-        .field('trackIds', JSON.stringify(['track-1', 'track-1']))
-        .attach('files', Buffer.from('fake-audio-1'), {
-          filename: 'test1.mp3',
-          contentType: 'audio/mpeg',
+        .field('trackIds', JSON.stringify([mockTrackWithAccess.id, mockTrackWithAccess.id]))
+        .attach('files', Buffer.from(mockAudioFile1.key), {
+          filename: mockAudioFile1.key,
+          contentType: mockAudioFile1.mimeType,
         })
-        .attach('files', Buffer.from('fake-audio-2'), {
-          filename: 'test2.mp3',
-          contentType: 'audio/mpeg',
+        .attach('files', Buffer.from(mockAudioFile2.key), {
+          filename: mockAudioFile2.key,
+          contentType: mockAudioFile2.mimeType,
         });
-
-      if (response.status !== 201) {
-        console.log(
-          'POST /library/albums/:id/tracks/bulk/audio error:',
-          JSON.stringify(response.body, null, 2),
-        );
-      }
 
       expect(response.status).toBe(201);
       expect(response.body.data.audioFiles).toHaveLength(2);
@@ -717,8 +628,18 @@ describe('LibraryAlbumsController (Integration)', () => {
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
 
-      const mockLibraryTrackList = [{ track: { id: 'track-1', title: 'Test Track' } }];
-      prismaMock.client.libraryTrack.findMany.mockResolvedValue(mockLibraryTrackList as any);
+      const mockLibraryTrackList: LibraryTrackWithRelations[] = [
+        {
+          ...libraryTrackBuilder({ trackId: 'track-1' }),
+          track: {
+            ...trackBuilder({ id: 'track-1' }),
+            artists: [artistBuilder()],
+            album: mockAlbum,
+            access: [trackAccessBuilder({ id: 'access-1', userId: 'user-123', role: 'owner' })],
+          },
+        },
+      ];
+      prismaMock.client.libraryTrack.findMany.mockResolvedValue(mockLibraryTrackList);
       prismaMock.client.libraryTrack.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())

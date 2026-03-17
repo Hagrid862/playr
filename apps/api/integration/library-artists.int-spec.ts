@@ -1,13 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import request from 'supertest';
-import { vi } from 'vitest';
-import { ImageService } from '../src/shared/services/image.service';
-import { StorageService } from '../src/shared/services/storage.service';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
-import './setup-env';
-import { createIntegrationApp } from './test-utils';
 import {
   ArtistGetPayload,
   Image,
@@ -16,6 +9,20 @@ import {
   LibraryArtist,
   PrismaClient,
 } from '@repo/db';
+import {
+  albumBuilder,
+  artistBuilder,
+  imageBuilder,
+  libraryAlbumBuilder,
+  libraryArtistBuilder,
+  libraryBuilder,
+} from '@repo/testing';
+import { PrismaServiceMock } from '@repo/testing/nestjs';
+import request from 'supertest';
+import { ImageService } from '../src/shared/services/image.service';
+import { StorageService } from '../src/shared/services/storage.service';
+import './setup-env';
+import { createIntegrationApp } from './test-utils';
 
 // Helper type for Artist with relations matching repository include
 type ArtistWithRelations = ArtistGetPayload<{
@@ -78,54 +85,31 @@ describe('LibraryArtistsController (Integration)', () => {
     return `Bearer ${token}`;
   };
 
-  const mockLibrary: Library = {
+  const mockLibrary: Library = libraryBuilder({
     id: 'library-123',
     userId: 'user-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   const mockArtist: ArtistWithRelations = {
-    id: 'artist-123',
-    name: 'Test Artist',
-    description: 'Test Description',
-    isCommunity: false,
-    verified: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    avatarId: null,
-    bannerId: null,
-    visibility: 'private',
+    ...artistBuilder({
+      id: 'artist-123',
+    }),
     avatar: null,
     banner: null,
   };
 
   const mockLibraryArtist: LibraryArtistWithRelations = {
-    id: 'lib-artist-123',
-    libraryId: 'library-123',
-    artistId: 'artist-123',
+    ...libraryArtistBuilder({
+      id: 'lib-artist-123',
+      libraryId: 'library-123',
+      artistId: 'artist-123',
+    }),
     artist: mockArtist,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
   };
 
-  const mockImage: Image = {
+  const mockImage: Image = imageBuilder({
     id: 'img-123',
-    alt: null,
-    bucket: 'public',
-    key: 'test-key.webp',
-    url: 'https://cdn.example.com/test.webp',
-    mimeType: 'image/webp',
-    blurhash: null,
-    reportId: null,
-    uploadStatus: 'uploaded',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   describe('POST /library/artists', () => {
     it('should create an artist successfully (201)', async () => {
@@ -185,7 +169,7 @@ describe('LibraryArtistsController (Integration)', () => {
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.libraryArtist.findMany.mockResolvedValue([
         mockLibraryArtist,
-      ] as unknown as LibraryArtist[]);
+      ] as LibraryArtist[]);
       prismaMock.client.libraryArtist.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())
@@ -223,10 +207,8 @@ describe('LibraryArtistsController (Integration)', () => {
     it('should return an artist by id (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      // GetLibraryArtistHandler uses libraryArtistRepository.findOne
-      // mock as unknown as LibraryArtist because findFirst returns LibraryArtist but we return LibraryArtistWithRelations
       prismaMock.client.libraryArtist.findFirst.mockResolvedValue(
-        mockLibraryArtist as unknown as LibraryArtist,
+        mockLibraryArtist as LibraryArtist,
       );
 
       const response = await request(app.getHttpServer())
@@ -329,39 +311,28 @@ describe('LibraryArtistsController (Integration)', () => {
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
+      const mockAlbum = albumBuilder({
+        id: 'album-123',
+      });
+
       const mockLibraryAlbum = {
-        id: 'lib-album-1',
-        libraryId: 'library-123',
-        albumId: 'album-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-        album: {
-          id: 'album-1',
-          name: 'Album 1',
-          type: 'album',
-          artists: [mockArtist],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          deletedAt: null,
-          coverId: null,
-          releaseDate: new Date(),
-          description: null,
-          totalTracks: 0,
-          totalDuration: 0,
-          visibility: 'public',
-        },
+        ...libraryAlbumBuilder({
+          id: 'lib-album-123',
+          libraryId: 'library-123',
+          albumId: 'album-123',
+        }),
+        album: mockAlbum,
       };
 
       prismaMock.client.libraryArtist.findFirst.mockResolvedValue(
-        mockLibraryArtist as unknown as LibraryArtist,
+        mockLibraryArtist as LibraryArtist,
       );
       prismaMock.client.libraryArtist.findUnique.mockResolvedValue(
-        mockLibraryArtist as unknown as LibraryArtist,
+        mockLibraryArtist as LibraryArtist,
       );
       prismaMock.client.libraryAlbum.findMany.mockResolvedValue([
         mockLibraryAlbum,
-      ] as unknown as LibraryAlbum[]);
+      ] as LibraryAlbum[]);
       prismaMock.client.libraryAlbum.count.mockResolvedValue(1);
 
       const response = await request(app.getHttpServer())

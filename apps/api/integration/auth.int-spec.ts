@@ -1,10 +1,16 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { EmailAddress, EmailStatus, EmailType, Gender, User } from '@repo/db';
+import { EmailAddress, EmailStatus, EmailType, Gender, Session, User } from '@repo/db';
+import {
+  emailAddressBuilder,
+  refreshTokenBuilder,
+  sessionBuilder,
+  userBuilder,
+} from '@repo/testing';
+import { PrismaServiceMock } from '@repo/testing/nestjs';
 import request from 'supertest';
 import { vi } from 'vitest';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import { createIntegrationApp } from './test-utils';
 
 describe('AuthController (Integration)', () => {
@@ -42,28 +48,17 @@ describe('AuthController (Integration)', () => {
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 
       // Mock successful creation
-      prismaMock.client.user.create.mockResolvedValue({
-        id: 'user-123',
-        ...validRegistration,
-        birthDate: '1990-01-01',
-        description: null,
-        avatarId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      } as User);
-
-      prismaMock.client.emailAddress.create.mockResolvedValue({
-        id: 'email-123',
-        email: validRegistration.email,
-        userId: 'user-123',
-        type: EmailType.primary,
-        status: EmailStatus.verified,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        verifiedAt: new Date(),
-        deletedAt: null,
-      } as EmailAddress);
+      prismaMock.client.user.create.mockResolvedValue(
+        userBuilder({ ...validRegistration, id: 'user-123', username: validRegistration.username }),
+      );
+      prismaMock.client.emailAddress.create.mockResolvedValue(
+        emailAddressBuilder({
+          userId: 'user-123',
+          email: validRegistration.email,
+          type: EmailType.primary,
+          status: EmailStatus.verified,
+        }),
+      );
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')
@@ -74,19 +69,17 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 409 if email already exists', async () => {
-      // Mock repository check finding an existing email
-      // Note: GetByEmail uses prisma.emailAddress.findFirst
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+      const existingEmail = emailAddressBuilder({
         id: 'existing',
         email: validRegistration.email,
         userId: 'user-1',
         type: EmailType.primary,
         status: EmailStatus.verified,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         verifiedAt: new Date(),
-        deletedAt: null,
-        user: { id: 'user-1' } as User,
+      });
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+        ...existingEmail,
+        user: userBuilder({ id: 'user-1' }),
       } as EmailAddress & { user: User });
 
       const response = await request(app.getHttpServer())
@@ -98,23 +91,10 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 409 if username already exists', async () => {
-      // Mock repository check (email ok, username taken)
-      // Note: GetByUsername uses prisma.user.findUnique
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
-      prismaMock.client.user.findUnique.mockResolvedValue({
-        id: 'existing',
-        username: validRegistration.username,
-        password: 'hashed',
-        firstName: 'Existing',
-        lastName: 'User',
-        birthDate: '1990-01-01',
-        gender: Gender.male,
-        description: null,
-        avatarId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      } as User);
+      prismaMock.client.user.findUnique.mockResolvedValue(
+        userBuilder({ id: 'existing', username: validRegistration.username }),
+      );
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')
@@ -160,48 +140,38 @@ describe('AuthController (Integration)', () => {
     };
 
     it('should login successfully and return tokens (200)', async () => {
-      const { ...userBase } = {
+      const hashedPassword = await import('argon2').then((a) => a.hash(loginData.password));
+      const userBase = userBuilder({
         id: 'user-123',
         username: 'testuser',
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        birthDate: '1990-01-01',
-        gender: Gender.male,
-        description: null,
-        avatarId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      };
-
-      const hashedPassword = await import('argon2').then((a) => a.hash(loginData.password));
+        password: hashedPassword,
+      });
+      const email = emailAddressBuilder({
+        id: 'email-123',
+        email: loginData.email,
+        userId: userBase.id,
+        status: EmailStatus.verified,
+        type: EmailType.primary,
+        verifiedAt: new Date(),
+      });
 
       // Mock repository response
       prismaMock.client.emailAddress.findFirst.mockResolvedValue({
-        id: 'email-123',
-        email: loginData.email,
-        userId: 'user-123',
-        status: EmailStatus.verified,
-        type: EmailType.primary,
-        user: {
-          ...userBase,
-          password: hashedPassword,
-        },
-      } as any);
+        ...email,
+        user: userBase,
+      } as EmailAddress & { user: User });
 
       // Mock session creation
       prismaMock.client.session.create.mockResolvedValue({
-        id: 'session-123',
-        userId: 'user-123',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-        revokedAt: null,
-      } as any);
+        ...sessionBuilder({ id: 'session-123', userId: userBase.id }),
+      } as Session);
 
       // Mock refresh token creation
-      prismaMock.client.refreshToken.create.mockResolvedValue({} as any);
+      prismaMock.client.refreshToken.create.mockResolvedValue(
+        refreshTokenBuilder({
+          sessionId: 'session-123',
+        }),
+      );
 
       const response = await request(app.getHttpServer())
         .post('/auth/login')
@@ -221,12 +191,17 @@ describe('AuthController (Integration)', () => {
       const hashedPassword = await import('argon2').then((a) => a.hash('different-password'));
 
       prismaMock.client.emailAddress.findFirst.mockResolvedValue({
-        email: loginData.email,
-        status: EmailStatus.verified,
-        user: {
+        ...emailAddressBuilder({
+          email: loginData.email,
+          status: EmailStatus.verified,
+          userId: 'user-123',
+        }),
+        user: userBuilder({
+          id: 'user-123',
+          username: 'testuser',
           password: hashedPassword,
-        },
-      } as any);
+        }),
+      } as EmailAddress & { user: User });
 
       await request(app.getHttpServer()).post('/auth/login').send(loginData).expect(401);
     });
@@ -249,34 +224,40 @@ describe('AuthController (Integration)', () => {
       );
 
       // Mock database checks
-      prismaMock.client.refreshToken.findUnique.mockResolvedValue({
-        token: signedToken,
-        sessionId,
-        revokedAt: null,
-        deletedAt: null,
-        session: {
+      prismaMock.client.refreshToken.findUnique.mockResolvedValue(
+        refreshTokenBuilder({
+          token: signedToken,
+          sessionId,
+        }),
+      );
+
+      prismaMock.client.session.findUnique.mockResolvedValue(
+        sessionBuilder({
           id: sessionId,
           userId,
-          revokedAt: null,
-          deletedAt: null,
-        },
-      } as any);
+        }),
+      );
 
-      prismaMock.client.session.findUnique.mockResolvedValue({
-        id: sessionId,
-        userId,
-        revokedAt: null,
-        deletedAt: null,
-      } as any);
-
-      prismaMock.client.user.findUnique.mockResolvedValue({
-        id: userId,
-        username: 'testuser',
-      } as any);
+      prismaMock.client.user.findUnique.mockResolvedValue(
+        userBuilder({
+          id: userId,
+          username: 'testuser',
+        }),
+      );
 
       // Mock rotation (revoking old, creating new)
-      prismaMock.client.refreshToken.update.mockResolvedValue({} as any);
-      prismaMock.client.refreshToken.create.mockResolvedValue({} as any);
+      prismaMock.client.refreshToken.update.mockResolvedValue(
+        refreshTokenBuilder({
+          token: signedToken,
+          sessionId,
+        }),
+      );
+      prismaMock.client.refreshToken.create.mockResolvedValue(
+        refreshTokenBuilder({
+          token: signedToken,
+          sessionId,
+        }),
+      );
 
       const response = await request(app.getHttpServer())
         .post('/auth/refresh')
@@ -312,7 +293,12 @@ describe('AuthController (Integration)', () => {
       );
 
       // Mock session revocation
-      prismaMock.client.session.update.mockResolvedValue({} as any);
+      prismaMock.client.session.update.mockResolvedValue(
+        sessionBuilder({
+          id: sessionId,
+          userId,
+        }),
+      );
 
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
