@@ -267,6 +267,9 @@ importers:
       '@repo/configs':
         specifier: workspace:*
         version: link:../../packages/configs
+      '@repo/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
       '@swc/core':
         specifier: ^1.15.18
         version: 1.15.18
