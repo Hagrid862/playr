@@ -1,9 +1,10 @@
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { libraryBuilder, libraryTrackBuilder, trackBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Library } from '@repo/db';
+import { Visibility } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.query';
 import { GetLibraryAlbumTracksHandler } from './get-library-album-tracks.handler';
@@ -17,38 +18,23 @@ describe('GetLibraryAlbumTracksHandler', () => {
   const albumId = 'album-123';
   const query = new GetLibraryAlbumTracksQuery(userId, albumId);
 
-  const mockLibrary: Library = {
-    id: 'library-123',
-    userId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockTrack = {
+  const mockLibrary = libraryBuilder({ id: 'library-123', userId });
+  const mockTrack = trackBuilder({
     id: 'track-123',
     title: 'Test Track',
     albumId,
     trackNumber: 1,
     diskNumber: 1,
     duration: 180,
-    listenedCount: 0,
-    explicit: false,
-    lyrics: null,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
-
-  const mockLibraryTrack: any = {
-    id: 'lib-track-123',
-    libraryId: mockLibrary.id,
-    trackId: mockTrack.id,
+    visibility: Visibility.private,
+  });
+  const mockLibraryTrack = {
+    ...libraryTrackBuilder({
+      id: 'lib-track-123',
+      libraryId: mockLibrary.id,
+      trackId: mockTrack.id,
+    }),
     track: mockTrack,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
   };
 
   beforeEach(async () => {

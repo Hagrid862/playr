@@ -2,49 +2,40 @@ import { CHECK_TRACK_ACCESS_KEY } from '@/common/decorators/check-track-access.d
 import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Visibility } from '@repo/db';
+import { trackBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrackRepository } from '../repositories/track.repository';
 import { TrackAccessGuard } from './track-access.guard';
 
 describe('TrackAccessGuard', () => {
   let guard: TrackAccessGuard;
-  let reflector: Reflector;
-  let trackRepository: TrackRepository;
-
-  const mockReflector = {
-    get: vi.fn(),
-  };
-
-  const mockTrackRepository = {
-    checkAccess: vi.fn(),
-    findOne: vi.fn(),
-  };
-
-  const mockExecutionContext = {
-    getHandler: vi.fn(),
-    switchToHttp: vi.fn().mockReturnThis(),
-    getRequest: vi.fn(),
-  } as unknown as ExecutionContext;
+  let reflector: DeepMocked<Reflector>;
+  let trackRepository: DeepMocked<TrackRepository>;
+  let mockExecutionContext: DeepMocked<ExecutionContext>;
 
   beforeEach(async () => {
+    reflector = createMock<Reflector>();
+    trackRepository = createMock<TrackRepository>();
+    mockExecutionContext = createMock<ExecutionContext>({
+      switchToHttp: vi.fn().mockReturnThis(),
+    } as any);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TrackAccessGuard,
-        {
-          provide: Reflector,
-          useValue: mockReflector,
-        },
-        {
-          provide: TrackRepository,
-          useValue: mockTrackRepository,
-        },
+        { provide: Reflector, useValue: reflector },
+        { provide: TrackRepository, useValue: trackRepository },
       ],
     }).compile();
 
     guard = module.get<TrackAccessGuard>(TrackAccessGuard);
-    reflector = module.get<Reflector>(Reflector);
-    trackRepository = module.get<TrackRepository>(TrackRepository);
 
+    mockExecutionContext.getHandler.mockReturnValue(vi.fn());
+  });
+
+  afterEach(() => {
     vi.clearAllMocks();
   });
 
@@ -111,8 +102,7 @@ describe('TrackAccessGuard', () => {
     });
     vi.mocked(trackRepository.checkAccess).mockResolvedValue(false);
 
-    // Create a complete mock track object to satisfy the Track type
-    const mockTrack = {
+    const mockTrack = trackBuilder({
       id: '123',
       title: 'Test Track',
       trackNumber: 1,
@@ -121,14 +111,12 @@ describe('TrackAccessGuard', () => {
       listenedCount: 0,
       explicit: false,
       lyrics: null,
-      visibility: 'PUBLIC',
+      visibility: Visibility.public,
       albumId: 'album-123',
-      createdAt: new Date(),
-      updatedAt: new Date(),
       deletedAt: null,
-    };
+    });
 
-    vi.mocked(trackRepository.findOne).mockResolvedValue(mockTrack as any);
+    vi.mocked(trackRepository.findOne).mockResolvedValue(mockTrack);
 
     await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(ForbiddenException);
   });

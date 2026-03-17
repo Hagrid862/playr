@@ -2,8 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LoginHandler } from './login.handler';
 import { LoginCommand } from '../impl/login.command';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
-import { User, Gender } from '@repo/db';
+import { userBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { Gender } from '@repo/db';
 import { UserSchema } from '@repo/contracts';
 import { TokenService } from '../../services/token.service';
 
@@ -11,7 +12,7 @@ describe('LoginHandler', () => {
   let handler: LoginHandler;
   let tokenService: DeepMocked<TokenService>;
 
-  const mockUser: User = {
+  const mockUser = userBuilder({
     id: 'user-id-123',
     username: 'testuser',
     password: 'hashed-password',
@@ -19,12 +20,7 @@ describe('LoginHandler', () => {
     lastName: 'Doe',
     birthDate: '2000-01-01',
     gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     tokenService = createMock<TokenService>();
@@ -80,14 +76,14 @@ describe('LoginHandler', () => {
 
     it('should handle user with minimal fields', async () => {
       // Arrange
-      const minimalUser: User = {
+      const minimalUser = userBuilder({
         ...mockUser,
         lastName: null,
         birthDate: null,
         gender: null,
         description: null,
         avatarId: null,
-      };
+      });
 
       tokenService.generateAuthTokens.mockResolvedValue({
         accessToken: 'access-token',

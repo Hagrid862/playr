@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "noEmit": false,
-    "types": ["node"],
+    "types": ["node", "multer"],
     "lib": ["ESNext", "DOM"],
     "jsx": "react-jsx"
   },

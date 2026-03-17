@@ -9,16 +9,18 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
-import { vi } from 'vitest';
+import { artistBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UploadLibraryArtistAvatarCommand } from '../impl/upload-library-artist-avatar.command';
 import { UploadLibraryArtistAvatarHandler } from './upload-library-artist-avatar.handler';
 
-describe('UploadArtistAvatarHandler', () => {
+describe('UploadLibraryArtistAvatarHandler', () => {
   let handler: UploadLibraryArtistAvatarHandler;
-  let artistRepository: ArtistRepository;
-  let storageService: StorageService;
-  let imageService: ImageService;
-  let prismaService: PrismaService;
+  let artistRepository: DeepMocked<ArtistRepository>;
+  let storageService: DeepMocked<StorageService>;
+  let imageService: DeepMocked<ImageService>;
+  let prismaService: DeepMocked<PrismaService>;
 
   const mockTx = {
     image: {
@@ -44,50 +46,30 @@ describe('UploadArtistAvatarHandler', () => {
   };
 
   beforeEach(async () => {
+    artistRepository = createMock<ArtistRepository>();
+    storageService = createMock<StorageService>();
+    imageService = createMock<ImageService>();
+    prismaService = createMock<PrismaService>();
+
+    storageService.deleteFile.mockResolvedValue(undefined);
+    (prismaService as any).client = {
+      image: { findUnique: vi.fn() },
+    };
+    (prismaService as any).mainClient = {
+      $transaction: vi.fn((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UploadLibraryArtistAvatarHandler,
-        {
-          provide: ArtistRepository,
-          useValue: {
-            findOne: vi.fn(),
-          },
-        },
-        {
-          provide: StorageService,
-          useValue: {
-            uploadFile: vi.fn(),
-            deleteFile: vi.fn().mockResolvedValue(undefined),
-          },
-        },
-        {
-          provide: ImageService,
-          useValue: {
-            validateImage: vi.fn(),
-            resizeToMaxDimension: vi.fn(),
-          },
-        },
-        {
-          provide: PrismaService,
-          useValue: {
-            client: {
-              image: {
-                findUnique: vi.fn(),
-              },
-            },
-            mainClient: {
-              $transaction: vi.fn((cb) => cb(mockTx)),
-            },
-          },
-        },
+        { provide: ArtistRepository, useValue: artistRepository },
+        { provide: StorageService, useValue: storageService },
+        { provide: ImageService, useValue: imageService },
+        { provide: PrismaService, useValue: prismaService },
       ],
     }).compile();
 
     handler = module.get<UploadLibraryArtistAvatarHandler>(UploadLibraryArtistAvatarHandler);
-    artistRepository = module.get<ArtistRepository>(ArtistRepository);
-    storageService = module.get<StorageService>(StorageService);
-    imageService = module.get<ImageService>(ImageService);
-    prismaService = module.get<PrismaService>(PrismaService);
 
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-01'));
@@ -96,6 +78,8 @@ describe('UploadArtistAvatarHandler', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should upload artist avatar and cleanup old one successfully', async () => {
@@ -106,18 +90,16 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({
-      id: 'artist-123',
-      avatarId: 'img-old',
-    } as any);
-    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue({
+    const mockArtist = artistBuilder({ id: 'artist-123', avatarId: 'img-old' });
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    vi.mocked((prismaService as any).client.image.findUnique).mockResolvedValue({
       id: 'img-old',
       bucket: FileBucket.public,
       key: 'old-key',
     } as any);
-    vi.mocked(imageService.validateImage).mockResolvedValue(true);
-    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
-    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
     const result = await handler.execute(command);
     const expectedNewKey = `artists/artist-123/avatar-${new Date('2024-01-01').getTime()}.webp`;
@@ -142,15 +124,17 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
-    vi.mocked(imageService.validateImage).mockResolvedValue(true);
-    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
-    vi.mocked(storageService.uploadFile).mockImplementation(async (_buf, _bucket, key) => ({
+    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
+    storageService.uploadFile.mockImplementation(async (_buf, _bucket, key) => ({
       url: 'new-url',
       key,
     }));
 
-    vi.mocked(prismaService.mainClient.$transaction).mockRejectedValue(new Error('DB Error'));
+    vi.mocked((prismaService as any).mainClient.$transaction).mockRejectedValue(
+      new Error('DB Error'),
+    );
 
     await expect(handler.execute(command)).rejects.toThrow('DB Error');
 
@@ -166,7 +150,7 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue(null);
+    artistRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -179,8 +163,8 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
-    vi.mocked(imageService.validateImage).mockResolvedValue(false);
+    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    imageService.validateImage.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });
@@ -193,12 +177,11 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
-    vi.mocked(imageService.validateImage).mockResolvedValue(true);
-    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
-    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
-    // Mock create to return invalid image (missing required fields for ZodImage)
     vi.mocked(mockTx.image.create).mockResolvedValueOnce({
       id: 'img-new',
       // missing other required fields
@@ -206,7 +189,6 @@ describe('UploadArtistAvatarHandler', () => {
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
 
-    // Cleanup should be called
     const expectedNewKey = `artists/artist-123/avatar-${new Date('2024-01-01').getTime()}.webp`;
     expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.public, expectedNewKey);
   });
@@ -219,21 +201,20 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({
-      id: 'artist-123',
-      avatarId: 'img-old',
-    } as any);
-    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue({
+    artistRepository.findOne.mockResolvedValue(
+      artistBuilder({ id: 'artist-123', avatarId: 'img-old' }),
+    );
+    vi.mocked((prismaService as any).client.image.findUnique).mockResolvedValue({
       id: 'img-old',
       bucket: FileBucket.public,
       key: 'old-key',
     } as any);
-    vi.mocked(imageService.validateImage).mockResolvedValue(true);
-    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
-    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
     const loggerSpy = vi.spyOn((handler as any).logger, 'error').mockImplementation(() => {});
-    vi.mocked(storageService.deleteFile).mockRejectedValue(new Error('Delete error'));
+    storageService.deleteFile.mockRejectedValue(new Error('Delete error'));
 
     await handler.execute(command);
 
@@ -251,17 +232,18 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({ id: 'artist-123' } as any);
-    vi.mocked(imageService.validateImage).mockResolvedValue(true);
-    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
-    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
-    vi.mocked(prismaService.mainClient.$transaction).mockRejectedValue(new Error('DB Error'));
+    vi.mocked((prismaService as any).mainClient.$transaction).mockRejectedValue(
+      new Error('DB Error'),
+    );
 
     const loggerSpy = vi.spyOn((handler as any).logger, 'error').mockImplementation(() => {});
-    vi.mocked(storageService.deleteFile).mockRejectedValue(new Error('Delete error'));
+    storageService.deleteFile.mockRejectedValue(new Error('Delete error'));
 
-    // Should still throw the original DB error
     await expect(handler.execute(command)).rejects.toThrow('DB Error');
 
     expect(loggerSpy).toHaveBeenCalledWith(
@@ -278,14 +260,13 @@ describe('UploadArtistAvatarHandler', () => {
       'user-123',
     );
 
-    vi.mocked(artistRepository.findOne).mockResolvedValue({
-      id: 'artist-123',
-      avatarId: 'img-old',
-    } as any);
-    vi.mocked(prismaService.client.image.findUnique).mockResolvedValue(null); // Orphaned
-    vi.mocked(imageService.validateImage).mockResolvedValue(true);
-    vi.mocked(imageService.resizeToMaxDimension).mockResolvedValue(Buffer.from('processed'));
-    vi.mocked(storageService.uploadFile).mockResolvedValue({ url: 'new-url', key: 'new-key' });
+    artistRepository.findOne.mockResolvedValue(
+      artistBuilder({ id: 'artist-123', avatarId: 'img-old' }),
+    );
+    vi.mocked((prismaService as any).client.image.findUnique).mockResolvedValue(null);
+    imageService.validateImage.mockResolvedValue(true);
+    imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
+    storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
     const result = await handler.execute(command);
     const expectedNewKey = `artists/artist-123/avatar-${new Date('2024-01-01').getTime()}.webp`;
@@ -299,7 +280,6 @@ describe('UploadArtistAvatarHandler', () => {
     );
     expect(mockTx.image.delete).toHaveBeenCalledWith({ where: { id: 'img-old' } });
 
-    // Should NOT attempt to delete old file from storage because it wasn't found
     expect(storageService.deleteFile).not.toHaveBeenCalledWith(FileBucket.public, 'old-key');
   });
 });

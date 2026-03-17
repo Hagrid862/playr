@@ -1,9 +1,10 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { artistBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ZodArtist } from '@repo/contracts';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { Visibility } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateLibraryArtistCommand } from '../impl/update-library-artist.command';
 import { UpdateLibraryArtistHandler } from './update-library-artist.handler';
 
@@ -13,7 +14,7 @@ describe('UpdateLibraryArtistHandler', () => {
 
   const mockUserId = 'user-123';
   const mockArtistId = 'artist-123';
-  const mockArtist: ZodArtist = {
+  const mockArtist = artistBuilder({
     id: mockArtistId,
     name: 'Old Name',
     description: 'Old Description',
@@ -21,13 +22,8 @@ describe('UpdateLibraryArtistHandler', () => {
     verified: false,
     avatarId: null,
     bannerId: null,
-    avatar: null,
-    banner: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    visibility: 'public',
-  };
+    visibility: Visibility.public,
+  });
 
   beforeEach(async () => {
     artistRepository = createMock<ArtistRepository>();
@@ -42,14 +38,18 @@ describe('UpdateLibraryArtistHandler', () => {
     handler = module.get<UpdateLibraryArtistHandler>(UpdateLibraryArtistHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should update an artist successfully', async () => {
     const dto = { name: 'New Name', description: 'New Description' };
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
-    artistRepository.findOne.mockResolvedValueOnce(mockArtist as any); // Check existence
+    artistRepository.findOne.mockResolvedValueOnce(mockArtist); // Check existence
     artistRepository.findOne.mockResolvedValueOnce(null); // Check name conflict
-    artistRepository.update.mockResolvedValue(mockUpdatedArtist as any);
+    artistRepository.update.mockResolvedValue(mockUpdatedArtist);
 
     const result = await handler.execute(command);
 
@@ -62,8 +62,8 @@ describe('UpdateLibraryArtistHandler', () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
-    artistRepository.findOne.mockResolvedValue(mockArtist as any);
-    artistRepository.update.mockResolvedValue(mockUpdatedArtist as any);
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.update.mockResolvedValue(mockUpdatedArtist);
 
     const result = await handler.execute(command);
 
@@ -87,15 +87,15 @@ describe('UpdateLibraryArtistHandler', () => {
     const dto = { name: 'Taken Name' };
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
 
-    artistRepository.findOne.mockResolvedValueOnce(mockArtist as any); // Existence
-    artistRepository.findOne.mockResolvedValueOnce({ id: 'other-artist' } as any); // Conflict
+    artistRepository.findOne.mockResolvedValueOnce(mockArtist); // Existence
+    artistRepository.findOne.mockResolvedValueOnce(artistBuilder({ id: 'other-artist' })); // Conflict
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, {}, mockUserId);
-    artistRepository.findOne.mockResolvedValue(mockArtist as any);
+    artistRepository.findOne.mockResolvedValue(mockArtist);
     artistRepository.update.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);

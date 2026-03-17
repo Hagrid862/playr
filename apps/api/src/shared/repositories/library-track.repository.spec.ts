@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { libraryTrackBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LibraryTrack, PrismaClient } from '@repo/db';
+import { PrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryTrackRepository } from './library-track.repository';
@@ -9,16 +10,14 @@ describe('LibraryTrackRepository', () => {
   let repository: LibraryTrackRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockLibraryTrack: LibraryTrack = {
+  const mockLibraryTrack = libraryTrackBuilder({
     id: 'lib-track-123',
     libraryId: 'library-123',
     trackId: 'track-123',
     listenedCount: 0,
     listenCountResetAt: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();

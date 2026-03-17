@@ -1,8 +1,9 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { userBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Gender, User } from '@repo/db';
+import { Gender } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { extractTokenFromQuery, JwtStrategy } from './jwt.strategy';
 import { Request } from 'express';
@@ -13,7 +14,7 @@ describe('JwtStrategy', () => {
   let userRepository: DeepMocked<UserRepository>;
   let configService: DeepMocked<ConfigService>;
 
-  const mockUser: User = {
+  const mockUser = userBuilder({
     id: 'user-id-123',
     username: 'testuser',
     password: 'hashed-password',
@@ -21,12 +22,7 @@ describe('JwtStrategy', () => {
     lastName: 'Doe',
     birthDate: '2000-01-01',
     gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     userRepository = createMock<UserRepository>();

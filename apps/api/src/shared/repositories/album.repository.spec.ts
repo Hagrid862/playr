@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { albumBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Album, PrismaClient } from '@repo/db';
+import { AlbumType, PrismaClient, Visibility } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { AlbumRepository } from './album.repository';
@@ -9,20 +10,17 @@ describe('AlbumRepository', () => {
   let repository: AlbumRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockAlbum: Album = {
+  const mockAlbum = albumBuilder({
     id: 'album-123',
     name: 'Test Album',
     description: null,
-    type: 'album',
-    releaseDate: new Date(),
-    visibility: 'private',
+    type: AlbumType.album,
+    visibility: Visibility.private,
     coverId: null,
     totalTracks: 0,
     totalDuration: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
@@ -170,11 +168,11 @@ describe('AlbumRepository', () => {
   describe('count', () => {
     it('should count albums with deletedAt: null filter', async () => {
       mockTx.album.count.mockResolvedValue(10);
-      const result = await repository.count({ type: 'album' });
+      const result = await repository.count({ type: AlbumType.album });
       expect(result).toBe(10);
       expect(mockTx.album.count).toHaveBeenCalledWith({
         where: {
-          type: 'album',
+          type: AlbumType.album,
           deletedAt: null,
         },
       });
@@ -184,7 +182,11 @@ describe('AlbumRepository', () => {
   describe('create', () => {
     it('should create an album', async () => {
       mockTx.album.create.mockResolvedValue(mockAlbum);
-      const data = { name: 'New Album', type: 'album', visibility: 'private' } as any;
+      const data = {
+        name: 'New Album',
+        type: AlbumType.album,
+        visibility: Visibility.private,
+      } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockAlbum);
       expect(mockTx.album.create).toHaveBeenCalledWith({ data });

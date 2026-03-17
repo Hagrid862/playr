@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AudioFormat } from '@repo/db';
 import ffmpeg from 'fluent-ffmpeg';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioTranscodeService } from './audio-transcode.service';
 
 vi.mock('fluent-ffmpeg');
@@ -15,6 +15,10 @@ describe('AudioTranscodeService', () => {
     }).compile();
 
     service = module.get<AudioTranscodeService>(AudioTranscodeService);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it('should be defined', () => {

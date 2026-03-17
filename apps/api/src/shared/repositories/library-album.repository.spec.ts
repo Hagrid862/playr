@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { libraryAlbumBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LibraryAlbum, PrismaClient } from '@repo/db';
+import { PrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryAlbumRepository } from './library-album.repository';
@@ -9,14 +10,12 @@ describe('LibraryAlbumRepository', () => {
   let repository: LibraryAlbumRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockLibraryAlbum: LibraryAlbum = {
+  const mockLibraryAlbum = libraryAlbumBuilder({
     id: 'lib-album-123',
     libraryId: 'user-123',
     albumId: 'album-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
     deletedAt: null,
-  } as any;
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();

@@ -1,56 +1,52 @@
 import { LibraryArtistRepository } from '@/shared/repositories/library-artist.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
+import { libraryArtistBuilder, libraryBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryArtistsQuery } from '../impl/get-library-artists.query';
 import { GetLibraryArtistsHandler } from './get-library-artists.handler';
 
 describe('GetLibraryArtistsHandler', () => {
   let handler: GetLibraryArtistsHandler;
-  let libraryRepository: LibraryRepository;
-  let libraryArtistRepository: LibraryArtistRepository;
+  let libraryRepository: DeepMocked<LibraryRepository>;
+  let libraryArtistRepository: DeepMocked<LibraryArtistRepository>;
+
+  const userId = 'user-123';
+  const page = 1;
+  const limit = 10;
+  const libraryId = 'lib-123';
+  const mockLibrary = libraryBuilder({ id: libraryId, userId });
+  const mockItems = [
+    libraryArtistBuilder({ id: 'la-1', libraryId }),
+    libraryArtistBuilder({ id: 'la-2', libraryId }),
+  ];
+  const mockTotal = 2;
 
   beforeEach(async () => {
+    libraryRepository = createMock<LibraryRepository>();
+    libraryArtistRepository = createMock<LibraryArtistRepository>();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetLibraryArtistsHandler,
-        {
-          provide: LibraryRepository,
-          useValue: {
-            getByUserId: vi.fn(),
-          },
-        },
-        {
-          provide: LibraryArtistRepository,
-          useValue: {
-            findMany: vi.fn(),
-            count: vi.fn(),
-          },
-        },
+        { provide: LibraryRepository, useValue: libraryRepository },
+        { provide: LibraryArtistRepository, useValue: libraryArtistRepository },
       ],
     }).compile();
 
     handler = module.get<GetLibraryArtistsHandler>(GetLibraryArtistsHandler);
-    libraryRepository = module.get<LibraryRepository>(LibraryRepository);
-    libraryArtistRepository = module.get<LibraryArtistRepository>(LibraryArtistRepository);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it('should return library artists list with metadata', async () => {
-    const userId = 'user-123';
-    const page = 1;
-    const limit = 10;
-    const libraryId = 'lib-123';
-    const mockLibrary = { id: libraryId };
-    const mockItems = [
-      { id: 'la-1', name: 'Artist 1' },
-      { id: 'la-2', name: 'Artist 2' },
-    ];
-    const mockTotal = 2;
-
-    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(mockLibrary as any);
-    vi.mocked(libraryArtistRepository.findMany).mockResolvedValue(mockItems as any);
-    vi.mocked(libraryArtistRepository.count).mockResolvedValue(mockTotal);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryArtistRepository.findMany.mockResolvedValue(mockItems);
+    libraryArtistRepository.count.mockResolvedValue(mockTotal);
 
     const query = new GetLibraryArtistsQuery(userId, page, limit);
     const result = await handler.execute(query);
@@ -71,11 +67,7 @@ describe('GetLibraryArtistsHandler', () => {
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
-    const userId = 'user-123';
-    const page = 1;
-    const limit = 10;
-
-    vi.mocked(libraryRepository.getByUserId).mockResolvedValue(null);
+    libraryRepository.getByUserId.mockResolvedValue(null);
 
     const query = new GetLibraryArtistsQuery(userId, page, limit);
 

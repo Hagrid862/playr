@@ -2,49 +2,39 @@ import { CHECK_ALBUM_ACCESS_KEY } from '@/common/decorators/check-album-access.d
 import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlbumRepository } from '../repositories/album.repository';
 import { AlbumAccessGuard } from './album-access.guard';
 
 describe('AlbumAccessGuard', () => {
   let guard: AlbumAccessGuard;
-  let reflector: Reflector;
-  let albumRepository: AlbumRepository;
-
-  const mockReflector = {
-    get: vi.fn(),
-  };
-
-  const mockAlbumRepository = {
-    checkAccess: vi.fn(),
-    exists: vi.fn(),
-  };
-
-  const mockExecutionContext = {
-    getHandler: vi.fn(),
-    switchToHttp: vi.fn().mockReturnThis(),
-    getRequest: vi.fn(),
-  } as unknown as ExecutionContext;
+  let reflector: DeepMocked<Reflector>;
+  let albumRepository: DeepMocked<AlbumRepository>;
+  let mockExecutionContext: DeepMocked<ExecutionContext>;
 
   beforeEach(async () => {
+    const httpHost = createMock<ReturnType<ExecutionContext['switchToHttp']>>();
+
+    reflector = createMock<Reflector>();
+    albumRepository = createMock<AlbumRepository>();
+    mockExecutionContext = createMock<ExecutionContext>({ switchToHttp: () => httpHost });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AlbumAccessGuard,
-        {
-          provide: Reflector,
-          useValue: mockReflector,
-        },
-        {
-          provide: AlbumRepository,
-          useValue: mockAlbumRepository,
-        },
+        { provide: Reflector, useValue: reflector },
+        { provide: AlbumRepository, useValue: albumRepository },
       ],
     }).compile();
 
     guard = module.get<AlbumAccessGuard>(AlbumAccessGuard);
-    reflector = module.get<Reflector>(Reflector);
-    albumRepository = module.get<AlbumRepository>(AlbumRepository);
 
+    vi.clearAllMocks();
+    mockExecutionContext.getHandler.mockReturnValue(vi.fn());
+  });
+
+  afterEach(() => {
     vi.clearAllMocks();
   });
 

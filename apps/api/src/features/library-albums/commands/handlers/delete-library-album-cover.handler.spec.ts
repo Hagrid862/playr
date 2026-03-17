@@ -2,11 +2,12 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { ImageRepository } from '@/shared/repositories/image.repository';
 import { StorageService } from '@/shared/services/storage.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { albumBuilder, imageBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AlbumSchema, ZodAlbum } from '@repo/contracts';
-import { FileBucket } from '@repo/db';
+import { AlbumSchema } from '@repo/contracts';
+import { AlbumType, FileBucket, ImageUploadStatus, Visibility } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryAlbumCoverCommand } from '../impl/delete-library-album-cover.command';
 import { DeleteLibraryAlbumCoverHandler } from './delete-library-album-cover.handler';
@@ -22,45 +23,31 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
   const mockAlbumId = 'album-123';
   const mockCoverId = 'cover-456';
 
-  const mockAlbum: ZodAlbum = {
+  const mockAlbum = albumBuilder({
     id: mockAlbumId,
     name: 'Test Album',
     description: 'Test Description',
-    type: 'album' as any,
+    type: AlbumType.album,
     totalTracks: 10,
     totalDuration: 3000,
     releaseDate: new Date(),
     coverId: mockCoverId,
-    visibility: 'public',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    cover: null,
-    artists: [],
-    tracks: [],
-    genres: [],
-  };
+    visibility: Visibility.public,
+  });
 
-  const mockAlbumWithoutCover: ZodAlbum = {
+  const mockAlbumWithoutCover = albumBuilder({
     ...mockAlbum,
     coverId: null,
-    cover: null,
-  };
+  });
 
-  const mockImage = {
+  const mockImage = imageBuilder({
     id: mockCoverId,
     bucket: FileBucket.private,
     key: 'covers/album-123/cover.webp',
     url: 'https://storage.url/cover.webp',
     mimeType: 'image/webp',
-    alt: null,
-    blurhash: null,
-    reportId: null,
-    uploadStatus: 'uploaded' as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+    uploadStatus: ImageUploadStatus.uploaded,
+  });
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
@@ -109,7 +96,7 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should return album as-is when album has no cover', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbumWithoutCover as any);
+      albumRepository.findOne.mockResolvedValue(mockAlbumWithoutCover);
 
       const result = await handler.execute(command);
 
@@ -121,8 +108,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should delete cover successfully and return updated album', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum as any);
-      imageRepository.findOne.mockResolvedValue(mockImage as any);
+      albumRepository.findOne.mockResolvedValue(mockAlbum);
+      imageRepository.findOne.mockResolvedValue(mockImage);
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };
       vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
@@ -144,7 +131,7 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should not call storageService.deleteFile when image record not found', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+      albumRepository.findOne.mockResolvedValue(mockAlbum);
       imageRepository.findOne.mockResolvedValue(null);
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };
@@ -166,8 +153,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should throw Error when AlbumSchema.safeParse fails', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum as any);
-      imageRepository.findOne.mockResolvedValue(mockImage as any);
+      albumRepository.findOne.mockResolvedValue(mockAlbum);
+      imageRepository.findOne.mockResolvedValue(mockImage);
 
       vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
         success: false,
@@ -179,8 +166,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should run album update and image delete within transaction', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum as any);
-      imageRepository.findOne.mockResolvedValue(mockImage as any);
+      albumRepository.findOne.mockResolvedValue(mockAlbum);
+      imageRepository.findOne.mockResolvedValue(mockImage);
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };
       vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
@@ -206,8 +193,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should log error when storage delete fails but still return album', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum as any);
-      imageRepository.findOne.mockResolvedValue(mockImage as any);
+      albumRepository.findOne.mockResolvedValue(mockAlbum);
+      imageRepository.findOne.mockResolvedValue(mockImage);
       storageService.deleteFile.mockRejectedValue(new Error('S3 delete failed'));
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };

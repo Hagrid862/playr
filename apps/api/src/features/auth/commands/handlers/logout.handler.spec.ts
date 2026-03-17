@@ -4,7 +4,7 @@ import { LogoutCommand } from '../impl/logout.command';
 import { SessionRepository } from '../../../../shared/repositories/session.repository';
 import { RefreshTokenRepository } from '../../../../shared/repositories/refresh-token.repository';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 
 describe('LogoutHandler', () => {
   let handler: LogoutHandler;

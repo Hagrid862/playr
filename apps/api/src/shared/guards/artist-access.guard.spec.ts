@@ -1,50 +1,40 @@
 import { CHECK_ARTIST_ACCESS_KEY } from '@/common/decorators/check-artist-access.decorator';
 import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArtistRepository } from '../repositories/artist.repository';
 import { ArtistAccessGuard } from './artist-access.guard';
 
 describe('ArtistAccessGuard', () => {
   let guard: ArtistAccessGuard;
-  let reflector: Reflector;
-  let artistRepository: ArtistRepository;
-
-  const mockReflector = {
-    get: vi.fn(),
-  };
-
-  const mockArtistRepository = {
-    checkAccess: vi.fn(),
-    exists: vi.fn(),
-  };
-
-  const mockExecutionContext = {
-    getHandler: vi.fn(),
-    switchToHttp: vi.fn().mockReturnThis(),
-    getRequest: vi.fn(),
-  } as unknown as ExecutionContext;
+  let reflector: DeepMocked<Reflector>;
+  let artistRepository: DeepMocked<ArtistRepository>;
+  let mockExecutionContext: DeepMocked<ExecutionContext>;
 
   beforeEach(async () => {
+    const httpHost = createMock<ReturnType<ExecutionContext['switchToHttp']>>();
+
+    reflector = createMock<Reflector>();
+    artistRepository = createMock<ArtistRepository>();
+    mockExecutionContext = createMock<ExecutionContext>({ switchToHttp: () => httpHost });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ArtistAccessGuard,
-        {
-          provide: Reflector,
-          useValue: mockReflector,
-        },
-        {
-          provide: ArtistRepository,
-          useValue: mockArtistRepository,
-        },
+        { provide: Reflector, useValue: reflector },
+        { provide: ArtistRepository, useValue: artistRepository },
       ],
     }).compile();
 
     guard = module.get<ArtistAccessGuard>(ArtistAccessGuard);
-    reflector = module.get<Reflector>(Reflector);
-    artistRepository = module.get<ArtistRepository>(ArtistRepository);
 
+    vi.clearAllMocks();
+    mockExecutionContext.getHandler.mockReturnValue(vi.fn());
+  });
+
+  afterEach(() => {
     vi.clearAllMocks();
   });
 
