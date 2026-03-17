@@ -23,7 +23,7 @@ export function audioFileBuilder(overrides?: Partial<AudioFile>): AudioFile {
     AudioFormat.wav,
   ]);
 
-  const formatMeta: Record<AudioFormat, { ext: string, mimeType: string }> = {
+  const formatMeta: Record<AudioFormat, { ext: string; mimeType: string }> = {
     [AudioFormat.mp3]: { ext: "mp3", mimeType: "audio/mpeg" },
     [AudioFormat.opus]: { ext: "opus", mimeType: "audio/opus" },
     [AudioFormat.flac]: { ext: "flac", mimeType: "audio/flac" },
