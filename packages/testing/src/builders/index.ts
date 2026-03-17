@@ -7,6 +7,7 @@ export * from "./library-album.builder";
 export * from "./library-artist.builder";
 export * from "./library-track.builder";
 export * from "./library.builder";
+export * from "./refresh-token.builder";
 export * from "./session.builder";
 export * from "./track.builder";
 export * from "./user.builder";
