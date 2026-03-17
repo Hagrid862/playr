@@ -41,12 +41,14 @@ function createTestRouter(ui: ReactNode, initialLocation = "/") {
   });
 }
 
-export interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
+export interface CustomRenderOptions<
+  TRouterContext extends Record<string, unknown> = Record<string, unknown>,
+> extends Omit<RenderOptions, "wrapper"> {
   queryClient?: QueryClient;
   /** Initial URL for the in-memory router. Defaults to "/". */
   initialLocation?: string;
   /** Context passed to RouterProvider. Use when your app expects router context (e.g. auth). */
-  routerContext?: Record<string, unknown>;
+  routerContext?: TRouterContext;
 }
 
 /**
@@ -65,9 +67,11 @@ export interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
  * customRender(<MyComponent />, { routerContext: { auth: mockAuth } });
  * ```
  */
-export function customRender(
+export function customRender<
+  TRouterContext extends Record<string, unknown> = Record<string, unknown>,
+>(
   ui: ReactElement,
-  options: CustomRenderOptions = {},
+  options: CustomRenderOptions<TRouterContext> = {},
 ): ReturnType<typeof render> {
   const {
     queryClient = createTestQueryClient(),
