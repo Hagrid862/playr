@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
+import { PrismaServiceMock } from '@repo/testing/nestjs';
 import cookieParser from 'cookie-parser';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { vi } from 'vitest';
@@ -11,7 +12,6 @@ import { AppModule } from '../src/app.module';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
 import { PrismaService } from '../src/shared/services/prisma.service';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 
 // Mock BullMQ to avoid Redis connections in integration tests
 vi.mock('@nestjs/bullmq', async () => {
