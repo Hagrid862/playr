@@ -74,11 +74,11 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Invalid credentials or email not verified',
+    description: 'Invalid credentials',
     type: ApiErrorResponseDto,
   })
   async login(@Request() req: ExpressRequest & { user: AuthenticatedUser }) {
-    return this.commandBus.execute(new LoginCommand(req.user.user));
+    return this.commandBus.execute(new LoginCommand(req.user.user, !!req.user.isEmailVerified));
   }
 
   @Post('logout')
