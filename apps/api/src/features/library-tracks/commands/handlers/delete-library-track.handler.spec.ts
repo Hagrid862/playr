@@ -3,10 +3,11 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { FileBucket, Track } from '@repo/db';
+import { type Track, AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
+import { audioFileBuilder, trackBuilder } from '@repo/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
 import { DeleteLibraryTrackHandler } from './delete-library-track.handler';
@@ -23,21 +24,15 @@ describe('DeleteLibraryTrackHandler', () => {
   const trackId = 'track-123';
   const command = new DeleteLibraryTrackCommand(trackId, userId);
 
-  const mockTrack: Track = {
+  const mockTrack: Track = trackBuilder({
     id: trackId,
     title: 'Test Track',
     trackNumber: 1,
     diskNumber: 1,
     duration: 180,
-    listenedCount: 0,
-    explicit: false,
-    lyrics: null,
     albumId: 'album-123',
     visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
@@ -73,28 +68,22 @@ describe('DeleteLibraryTrackHandler', () => {
   });
 
   it('should soft delete track, remove library tracks, and delete audio files', async () => {
-    const mockAudioFile = {
+    const mockAudioFile = audioFileBuilder({
       id: 'audio-1',
       trackId,
       bucket: FileBucket.private,
       key: 'audio/key',
-      url: null,
       mimeType: 'audio/mpeg',
       size: 1000,
-      format: 'mp3',
+      format: AudioFormat.mp3,
       duration: 180,
       bitrate: 320,
       sampleRate: 44100,
       channels: 2,
-      isOriginal: true,
-      waveformJson: null,
-      quality: 'original',
-      status: 'complete',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      status: ProcessingStatus.complete,
+    });
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    audioFileRepository.findMany.mockResolvedValue([mockAudioFile as any]);
+    audioFileRepository.findMany.mockResolvedValue([mockAudioFile]);
 
     const result = await handler.execute(command);
 
@@ -145,33 +134,27 @@ describe('DeleteLibraryTrackHandler', () => {
   });
 
   it('should delete multiple audio files and cleanup from storage', async () => {
-    const mockAudioFile1 = {
+    const mockAudioFile1 = audioFileBuilder({
       id: 'audio-1',
       trackId,
       bucket: FileBucket.private,
       key: 'audio/key1',
-      url: null,
       mimeType: 'audio/mpeg',
       size: 1000,
-      format: 'mp3',
+      format: AudioFormat.mp3,
       duration: 180,
       bitrate: 320,
       sampleRate: 44100,
       channels: 2,
-      isOriginal: true,
-      waveformJson: null,
-      quality: 'original',
-      status: 'complete',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    const mockAudioFile2 = {
+      status: ProcessingStatus.complete,
+    });
+    const mockAudioFile2 = audioFileBuilder({
       ...mockAudioFile1,
       id: 'audio-2',
       key: 'audio/key2',
-    };
+    });
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    audioFileRepository.findMany.mockResolvedValue([mockAudioFile1 as any, mockAudioFile2 as any]);
+    audioFileRepository.findMany.mockResolvedValue([mockAudioFile1, mockAudioFile2]);
 
     const result = await handler.execute(command);
 
@@ -183,28 +166,22 @@ describe('DeleteLibraryTrackHandler', () => {
   });
 
   it('should log error when storage delete fails but still return track', async () => {
-    const mockAudioFile = {
+    const mockAudioFile = audioFileBuilder({
       id: 'audio-1',
       trackId,
       bucket: FileBucket.private,
       key: 'audio/key',
-      url: null,
       mimeType: 'audio/mpeg',
       size: 1000,
-      format: 'mp3',
+      format: AudioFormat.mp3,
       duration: 180,
       bitrate: 320,
       sampleRate: 44100,
       channels: 2,
-      isOriginal: true,
-      waveformJson: null,
-      quality: 'original',
-      status: 'complete',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      status: ProcessingStatus.complete,
+    });
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    audioFileRepository.findMany.mockResolvedValue([mockAudioFile as any]);
+    audioFileRepository.findMany.mockResolvedValue([mockAudioFile]);
     storageService.deleteFile.mockRejectedValue(new Error('S3 delete failed'));
 
     const loggerSpy = vi.spyOn(handler['logger'], 'error');

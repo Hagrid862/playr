@@ -1,8 +1,9 @@
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { libraryBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryCommand } from '../impl/create-library.command';
 import { CreateLibraryHandler } from './create-library.handler';
 
@@ -23,10 +24,14 @@ describe('CreateLibraryHandler', () => {
     handler = module.get<CreateLibraryHandler>(CreateLibraryHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should create a library if it does not exist', async () => {
     const userId = 'user-123';
     const command = new CreateLibraryCommand(userId);
-    const mockLibrary = { id: 'lib-123', userId } as any;
+    const mockLibrary = libraryBuilder({ id: 'lib-123', userId });
 
     libraryRepository.getByUserId.mockResolvedValue(null);
     libraryRepository.create.mockResolvedValue(mockLibrary);
@@ -43,7 +48,7 @@ describe('CreateLibraryHandler', () => {
   it('should throw ConflictException if library already exists', async () => {
     const userId = 'user-123';
     const command = new CreateLibraryCommand(userId);
-    const existingLibrary = { id: 'lib-123', userId } as any;
+    const existingLibrary = libraryBuilder({ id: 'lib-123', userId });
 
     libraryRepository.getByUserId.mockResolvedValue(existingLibrary);
 

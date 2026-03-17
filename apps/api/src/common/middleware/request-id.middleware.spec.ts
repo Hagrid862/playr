@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestIdMiddleware } from './request-id.middleware';
 
 describe('RequestIdMiddleware', () => {
@@ -17,6 +17,11 @@ describe('RequestIdMiddleware', () => {
       setHeader: vi.fn(),
     };
     nextFunction = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should generate a new request ID if header is missing', () => {
@@ -46,7 +51,6 @@ describe('RequestIdMiddleware', () => {
     middleware.use(mockRequest as Request, mockResponse as Response, nextFunction);
 
     expect(mockRequest.startTime).toBe(now);
-    vi.restoreAllMocks();
   });
 
   it('should handle x-request-id being an array', () => {

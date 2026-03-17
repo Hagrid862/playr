@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { sessionBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClient, Session, SessionType } from '@repo/db';
+import { PrismaClient, SessionType } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { SessionRepository } from './session.repository';
@@ -8,21 +9,19 @@ import { SessionRepository } from './session.repository';
 describe('SessionRepository', () => {
   let repository: SessionRepository;
   let mockTx: DeepMocked<PrismaClient>;
-
-  const mockSession: Session = {
-    id: 'session-id-123',
-    userId: 'user-id-123',
-    type: 'web' as SessionType,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    revokedAt: null,
-    deletedAt: null,
-    expiresAt: null,
-    refreshedAt: null,
-  };
+  let mockSession: ReturnType<typeof sessionBuilder>;
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
+    mockSession = sessionBuilder({
+      id: 'session-id-123',
+      userId: 'user-id-123',
+      type: SessionType.user,
+      revokedAt: null,
+      deletedAt: null,
+      expiresAt: null,
+      refreshedAt: null,
+    });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SessionRepository,

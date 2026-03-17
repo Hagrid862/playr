@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@nestjs/common": "^11.0.1",
+    "@types/multer": "^2.0.0",
     "@repo/configs": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-router": "^1.157.16",

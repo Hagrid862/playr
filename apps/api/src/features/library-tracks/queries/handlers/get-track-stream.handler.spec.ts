@@ -1,10 +1,11 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { StorageService } from '@/shared/services/storage.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StreamAudioQuality } from '@repo/contracts';
 import { AudioFormat, AudioQuality, FileBucket } from '@repo/db';
+import { audioFileBuilder } from '@repo/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetTrackStreamQuery } from '../impl/get-track-stream.query';
 import { GetTrackStreamHandler } from './get-track-stream.handler';
@@ -48,31 +49,31 @@ describe('GetTrackStreamHandler', () => {
 
     describe('Quality Selection', () => {
       const mockFiles = [
-        {
-          id: '1',
+        audioFileBuilder({
+          id: 'audio-file-1',
           format: AudioFormat.flac,
           quality: AudioQuality.original,
           size: 100,
           bucket: FileBucket.private,
           key: 'lossless-flac',
-        },
-        {
-          id: '2',
+        }),
+        audioFileBuilder({
+          id: 'audio-file-2',
           format: AudioFormat.mp3,
           quality: AudioQuality.high,
           size: 80,
           bucket: FileBucket.private,
           key: 'high-mp3',
-        },
-        {
-          id: '3',
+        }),
+        audioFileBuilder({
+          id: 'audio-file-3',
           format: AudioFormat.mp3,
           quality: AudioQuality.low,
           size: 20,
           bucket: FileBucket.private,
           key: 'low-mp3',
-        },
-      ] as any[];
+        }),
+      ];
 
       beforeEach(() => {
         audioFileRepository.findMany.mockResolvedValue(mockFiles);
@@ -95,15 +96,15 @@ describe('GetTrackStreamHandler', () => {
 
       it('should return exact match for high quality mp3 when only mp3 is available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          {
-            id: '2',
+          audioFileBuilder({
+            id: 'audio-file-1',
             format: AudioFormat.mp3,
             quality: AudioQuality.high,
             size: 80,
             bucket: FileBucket.public,
             key: 'high-mp3',
-          },
-        ] as any[]);
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.high, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(
@@ -115,23 +116,23 @@ describe('GetTrackStreamHandler', () => {
 
       it('should prefer high quality opus over high quality mp3 when both are available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          {
-            id: '1',
+          audioFileBuilder({
+            id: 'audio-file-1',
             format: AudioFormat.opus,
             quality: AudioQuality.high,
             size: 80,
             bucket: FileBucket.public,
             key: 'high-opus',
-          },
-          {
-            id: '2',
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
             format: AudioFormat.mp3,
             quality: AudioQuality.high,
             size: 80,
             bucket: FileBucket.public,
             key: 'high-mp3',
-          },
-        ] as any[]);
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.high, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(
@@ -143,8 +144,13 @@ describe('GetTrackStreamHandler', () => {
 
       it('should score standard opus specially', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.opus, quality: AudioQuality.standard, size: 80 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.opus,
+            quality: AudioQuality.standard,
+            size: 80,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
@@ -152,8 +158,13 @@ describe('GetTrackStreamHandler', () => {
 
       it('should score standard other format normally', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.mp3, quality: AudioQuality.standard, size: 80 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.standard,
+            size: 80,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
@@ -161,9 +172,19 @@ describe('GetTrackStreamHandler', () => {
 
       it('should return 0 for unhandled formats in high/standard qualities', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.aac, quality: AudioQuality.high, size: 80 },
-          { id: '2', format: AudioFormat.aac, quality: AudioQuality.standard, size: 80 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.aac,
+            quality: AudioQuality.high,
+            size: 80,
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
+            format: AudioFormat.aac,
+            quality: AudioQuality.standard,
+            size: 80,
+          }),
+        ]);
 
         const queryHigh = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.high, '');
         await handler.execute(queryHigh); // Will fallback since score is 0
@@ -176,8 +197,13 @@ describe('GetTrackStreamHandler', () => {
 
       it('should test default fallback quality score', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.mp3, quality: 'unknown' as any, size: 80 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.mp3,
+            quality: 'unknown' as any,
+            size: 80,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, 'unknown' as any, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
@@ -185,15 +211,15 @@ describe('GetTrackStreamHandler', () => {
 
       it('should return exact match for low quality mp3 when only mp3 is available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          {
-            id: '2',
+          audioFileBuilder({
+            id: 'audio-file-1',
             format: AudioFormat.mp3,
             quality: AudioQuality.low,
             size: 20,
             bucket: FileBucket.public,
             key: 'low-mp3',
-          },
-        ] as any[]);
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.low, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(
@@ -205,23 +231,23 @@ describe('GetTrackStreamHandler', () => {
 
       it('should prefer low quality opus over low quality mp3 when both are available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          {
-            id: '1',
+          audioFileBuilder({
+            id: 'audio-file-1',
             format: AudioFormat.opus,
             quality: AudioQuality.low,
             size: 20,
             bucket: FileBucket.public,
             key: 'low-opus',
-          },
-          {
-            id: '2',
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
             format: AudioFormat.mp3,
             quality: AudioQuality.low,
             size: 20,
             bucket: FileBucket.public,
             key: 'low-mp3',
-          },
-        ] as any[]);
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.low, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(
@@ -240,8 +266,13 @@ describe('GetTrackStreamHandler', () => {
 
       it('should fallback to higher quality if lower is missing AND lower check yields nothing', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.flac, quality: AudioQuality.original, size: 100 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.flac,
+            quality: AudioQuality.original,
+            size: 100,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.low, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
@@ -249,9 +280,19 @@ describe('GetTrackStreamHandler', () => {
 
       it('should sort fallback lower qualities by score', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.mp3, quality: AudioQuality.low, size: 20 },
-          { id: '2', format: AudioFormat.mp3, quality: AudioQuality.low, size: 30 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.low,
+            size: 20,
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.low,
+            size: 30,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
@@ -259,9 +300,19 @@ describe('GetTrackStreamHandler', () => {
 
       it('should sort fallback higher qualities by score', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.flac, quality: AudioQuality.original, size: 100 },
-          { id: '2', format: AudioFormat.wav, quality: AudioQuality.original, size: 100 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.flac,
+            quality: AudioQuality.original,
+            size: 100,
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
+            format: AudioFormat.wav,
+            quality: AudioQuality.original,
+            size: 100,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.high, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
@@ -269,8 +320,13 @@ describe('GetTrackStreamHandler', () => {
 
       it('should fallback to first file if all else fails', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.aac, quality: AudioQuality.original, size: 100 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.aac,
+            quality: AudioQuality.original,
+            size: 100,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalled();
@@ -278,15 +334,15 @@ describe('GetTrackStreamHandler', () => {
 
       it('should return 0 for low quality when format is not opus or mp3 and use final fallback', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          {
-            id: '1',
+          audioFileBuilder({
+            id: 'audio-file-1',
             format: AudioFormat.aac,
             quality: AudioQuality.low,
             size: 50,
             bucket: FileBucket.private,
             key: 'low-aac',
-          },
-        ] as any[]);
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.low, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(
@@ -298,15 +354,15 @@ describe('GetTrackStreamHandler', () => {
 
       it('should select wav for lossless when wav is available', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          {
-            id: '1',
+          audioFileBuilder({
+            id: 'audio-file-1',
             format: AudioFormat.wav,
             quality: AudioQuality.original,
             size: 200,
             bucket: FileBucket.private,
             key: 'lossless-wav',
-          },
-        ] as any[]);
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.lossless, '');
         await handler.execute(query);
         expect(storageService.getFileStream).toHaveBeenCalledWith(
@@ -318,10 +374,20 @@ describe('GetTrackStreamHandler', () => {
     });
 
     describe('Range Handling', () => {
+      const mockKey = 'audio-file-1';
+      const mockBucket = FileBucket.private;
+
       beforeEach(() => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.mp3, quality: AudioQuality.standard, size: 1000 },
-        ] as any[]);
+          audioFileBuilder({
+            id: mockKey,
+            format: AudioFormat.mp3,
+            quality: AudioQuality.standard,
+            size: 1000,
+            bucket: mockBucket,
+            key: mockKey,
+          }),
+        ]);
         storageService.getFileStream.mockResolvedValue({
           stream: {} as any,
           size: 1000,
@@ -336,7 +402,7 @@ describe('GetTrackStreamHandler', () => {
           'bytes=0-499',
         );
         await handler.execute(query);
-        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+        expect(storageService.getFileStream).toHaveBeenCalledWith(mockBucket, mockKey, {
           start: 0,
           end: 499,
         });
@@ -349,7 +415,7 @@ describe('GetTrackStreamHandler', () => {
           'bytes=500-',
         );
         await handler.execute(query);
-        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+        expect(storageService.getFileStream).toHaveBeenCalledWith(mockBucket, mockKey, {
           start: 500,
           end: 999,
         });
@@ -358,7 +424,7 @@ describe('GetTrackStreamHandler', () => {
       it('should parse range with only start (no hyphen, parts[1] undefined)', async () => {
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, 'bytes=0');
         await handler.execute(query);
-        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+        expect(storageService.getFileStream).toHaveBeenCalledWith(mockBucket, mockKey, {
           start: 0,
           end: 999,
         });
@@ -380,7 +446,7 @@ describe('GetTrackStreamHandler', () => {
           'bytes=-500',
         );
         await handler.execute(query);
-        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+        expect(storageService.getFileStream).toHaveBeenCalledWith(mockBucket, mockKey, {
           start: 500,
           end: 999,
         });
@@ -420,8 +486,14 @@ describe('GetTrackStreamHandler', () => {
 
       it('should fallback mp3 mimetype properly', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.mp3, quality: AudioQuality.standard, size: 1000 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.standard,
+            size: 1000,
+            mimeType: 'audio/mpeg',
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         const res = await handler.execute(query);
         expect(res.metadata.mimeType).toBe('audio/mpeg');
@@ -429,14 +501,14 @@ describe('GetTrackStreamHandler', () => {
 
       it('should fallback to audio/unknown when mimeType is missing and format is not mp3', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          {
-            id: '1',
+          audioFileBuilder({
+            id: 'audio-file-1',
             format: AudioFormat.opus,
             quality: AudioQuality.standard,
             size: 1000,
-            mimeType: null,
-          },
-        ] as any[]);
+            mimeType: null as any,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         const res = await handler.execute(query);
         expect(res.metadata.mimeType).toBe('audio/unknown');
@@ -444,8 +516,15 @@ describe('GetTrackStreamHandler', () => {
 
       it('should set isPartial when range is provided', async () => {
         audioFileRepository.findMany.mockResolvedValue([
-          { id: '1', format: AudioFormat.mp3, quality: AudioQuality.standard, size: 1000 },
-        ] as any[]);
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.standard,
+            size: 1000,
+            bucket: mockBucket,
+            key: mockKey,
+          }),
+        ]);
         const query = new GetTrackStreamQuery(
           mockTrackId,
           StreamAudioQuality.standard,
@@ -453,7 +532,7 @@ describe('GetTrackStreamHandler', () => {
         );
         const res = await handler.execute(query);
         expect(res.metadata.isPartial).toBe(true);
-        expect(storageService.getFileStream).toHaveBeenCalledWith(undefined, undefined, {
+        expect(storageService.getFileStream).toHaveBeenCalledWith(mockBucket, mockKey, {
           start: 100,
           end: 200,
         });

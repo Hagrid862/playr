@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { FileBucket } from '@repo/db';
-import { mockDeep, mockReset } from 'vitest-mock-extended';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageService } from './storage.service';
 
 const mocks = vi.hoisted(() => ({
@@ -42,10 +43,10 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 
 describe('StorageService', () => {
   let service: StorageService;
-  const configServiceMock = mockDeep<ConfigService>();
+  let configServiceMock: DeepMocked<ConfigService>;
 
   beforeEach(() => {
-    mockReset(configServiceMock);
+    configServiceMock = createMock<ConfigService>();
     mocks.s3Send.mockReset();
     mocks.getSignedUrl.mockReset();
 
@@ -72,6 +73,10 @@ describe('StorageService', () => {
     });
 
     service = new StorageService(configServiceMock as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   describe('uploadFile', () => {

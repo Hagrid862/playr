@@ -12,5 +12,6 @@ export * from "./library.builder";
 export * from "./refresh-token.builder";
 export * from "./session.builder";
 export * from "./track-access.builder";
+export * from "./track-with-access.builder";
 export * from "./track.builder";
 export * from "./user.builder";

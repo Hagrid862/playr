@@ -1,4 +1,5 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { emailAddressBuilder, userBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailAddress, EmailType, Gender, PrismaClient, User, UserCreateInput } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,7 +9,7 @@ import { UserRepository } from './user.repository';
 describe('UserRepository', () => {
   let repository: UserRepository;
 
-  const mockUser: User = {
+  const mockUser = userBuilder({
     id: 'user-id-123',
     username: 'testuser',
     password: 'hashed-password',
@@ -16,12 +17,10 @@ describe('UserRepository', () => {
     lastName: 'Doe',
     birthDate: '01-01-2000',
     gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     avatarId: null,
     description: null,
     deletedAt: null,
-  };
+  });
 
   let mockTx: DeepMocked<PrismaClient>;
 
@@ -77,14 +76,14 @@ describe('UserRepository', () => {
 
   describe('getByEmail', () => {
     it('should return user associated with primary email', async () => {
-      mockTx.emailAddress.findFirst.mockResolvedValue(
-        createMock<EmailAddress & { user: User }>({
+      mockTx.emailAddress.findFirst.mockResolvedValue({
+        ...emailAddressBuilder({
           id: 'email-id',
           email: 'test@example.com',
           type: EmailType.primary,
-          user: mockUser,
         }),
-      );
+        user: mockUser,
+      } as EmailAddress & { user: User });
 
       const result = await repository.getByEmail('test@example.com');
       expect(result).toEqual(mockUser);

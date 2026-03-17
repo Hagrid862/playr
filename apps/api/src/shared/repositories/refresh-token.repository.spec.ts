@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { refreshTokenBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClient, RefreshToken } from '@repo/db';
+import { PrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { RefreshTokenRepository } from './refresh-token.repository';
@@ -9,15 +10,13 @@ describe('RefreshTokenRepository', () => {
   let repository: RefreshTokenRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockToken: RefreshToken = {
+  const mockToken = refreshTokenBuilder({
     id: 'rt-id-123',
     token: 'token-string',
     sessionId: 'session-id-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
     revokedAt: null,
     deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();

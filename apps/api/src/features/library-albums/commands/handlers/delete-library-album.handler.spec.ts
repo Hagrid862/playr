@@ -1,9 +1,10 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { albumBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ZodAlbum } from '@repo/contracts';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { AlbumType, Visibility } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryAlbumCommand } from '../impl/delete-library-album.command';
 import { DeleteLibraryAlbumHandler } from './delete-library-album.handler';
 
@@ -13,24 +14,17 @@ describe('DeleteLibraryAlbumHandler', () => {
 
   const mockUserId = 'user-123';
   const mockAlbumId = 'album-123';
-  const mockAlbum: ZodAlbum = {
+  const mockAlbum = albumBuilder({
     id: mockAlbumId,
     name: 'Test Album',
     description: 'Test Description',
-    type: 'album' as any,
+    type: AlbumType.album,
     totalTracks: 10,
     totalDuration: 3000,
     releaseDate: new Date(),
     coverId: null,
-    visibility: 'public',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    cover: null,
-    artists: [],
-    tracks: [],
-    genres: [],
-  };
+    visibility: Visibility.public,
+  });
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
@@ -45,12 +39,16 @@ describe('DeleteLibraryAlbumHandler', () => {
     handler = module.get<DeleteLibraryAlbumHandler>(DeleteLibraryAlbumHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should delete an album successfully', async () => {
     const command = new DeleteLibraryAlbumCommand(mockAlbumId, mockUserId);
     const mockDeletedAlbum = { ...mockAlbum, deletedAt: new Date() };
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
-    albumRepository.update.mockResolvedValue(mockDeletedAlbum as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.update.mockResolvedValue(mockDeletedAlbum);
 
     const result = await handler.execute(command);
 
@@ -69,7 +67,7 @@ describe('DeleteLibraryAlbumHandler', () => {
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new DeleteLibraryAlbumCommand(mockAlbumId, mockUserId);
-    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
     albumRepository.update.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);

@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { libraryArtistBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LibraryArtist, PrismaClient } from '@repo/db';
+import { PrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { LibraryArtistRepository } from './library-artist.repository';
@@ -9,14 +10,12 @@ describe('LibraryArtistRepository', () => {
   let repository: LibraryArtistRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockLibraryArtist: LibraryArtist = {
+  const mockLibraryArtist = libraryArtistBuilder({
     id: 'la-123',
     libraryId: 'lib-123',
     artistId: 'artist-123',
-    createdAt: new Date(),
-    updatedAt: new Date(),
     deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();

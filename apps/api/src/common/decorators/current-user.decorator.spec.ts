@@ -1,6 +1,7 @@
 import { ExecutionContext } from '@nestjs/common';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { User } from '@repo/db';
+import { userBuilder } from '@repo/testing';
 import { describe, expect, it } from 'vitest';
 import { AuthenticatedUser } from '../types/auth.types';
 import { CurrentUser } from './current-user.decorator';
@@ -18,11 +19,10 @@ function getParamDecoratorFactory(decorator: (...args: any[]) => ParameterDecora
 describe('CurrentUser Decorator', () => {
   const factory = getParamDecoratorFactory(CurrentUser);
 
-  const mockUser = {
+  const mockUser = userBuilder({
     id: 'user-123',
     username: 'testuser',
-    email: 'test@example.com',
-  } as unknown as User;
+  });
 
   const createMockContext = (user: User | null): ExecutionContext =>
     ({

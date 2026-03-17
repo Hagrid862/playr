@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { imageBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClient, Image, FileBucket } from '@repo/db';
+import { FileBucket, ImageUploadStatus, PrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { ImageRepository } from './image.repository';
@@ -9,7 +10,7 @@ describe('ImageRepository', () => {
   let repository: ImageRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockImage: Image = {
+  const mockImage = imageBuilder({
     id: 'image-123',
     bucket: FileBucket.private,
     key: 'test-key.jpg',
@@ -17,12 +18,10 @@ describe('ImageRepository', () => {
     mimeType: 'image/jpeg',
     alt: null,
     reportId: null,
-    uploadStatus: 'pending',
+    uploadStatus: ImageUploadStatus.pending,
     blurhash: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();

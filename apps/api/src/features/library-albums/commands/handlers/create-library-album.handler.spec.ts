@@ -2,7 +2,8 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { albumBuilder, libraryBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import {
   ConflictException,
   InternalServerErrorException,
@@ -10,7 +11,8 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AlbumType, Visibility } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryAlbumCommand } from '../impl/create-library-album.command';
 import { CreateLibraryAlbumHandler } from './create-library-album.handler';
 
@@ -34,21 +36,18 @@ describe('CreateLibraryAlbumHandler', () => {
     artistId: mockArtistId,
   };
 
-  const mockAlbum = {
+  const mockLibrary = libraryBuilder({ id: mockLibraryId, userId: mockUserId });
+  const mockAlbum = albumBuilder({
     id: mockAlbumId,
-    ...mockRequest,
-    visibility: 'PRIVATE',
+    name: mockRequest.name,
+    description: mockRequest.description,
+    type: AlbumType.album,
+    releaseDate: mockRequest.releaseDate,
     coverId: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
     totalTracks: 0,
     totalDuration: 0,
-    cover: null,
-    artists: [],
-    tracks: [],
-    genres: [],
-  };
+    visibility: Visibility.private,
+  });
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
@@ -71,12 +70,17 @@ describe('CreateLibraryAlbumHandler', () => {
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
   it('should create library album successfully', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: mockLibraryId } as any);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(null);
-    albumRepository.create.mockResolvedValue(mockAlbum as any);
+    albumRepository.create.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
 
     const result = await handler.execute(command);
@@ -99,8 +103,8 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should throw ConflictException if album name already exists', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: mockLibraryId } as any);
-    albumRepository.findOne.mockResolvedValue({ id: 'existing-id' } as any);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(albumBuilder({ id: 'existing-id' }));
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -108,7 +112,7 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should throw InternalServerErrorException if result parsing fails', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: mockLibraryId } as any);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(null);
     albumRepository.create.mockResolvedValue({ invalid: 'data' } as any);
 

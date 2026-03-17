@@ -18,6 +18,7 @@ describe('WaveformService', () => {
   });
 
   afterEach(() => {
+    vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 

@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createPrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

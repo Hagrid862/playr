@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { emailAddressBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EmailAddress, EmailStatus, EmailType, PrismaClient } from '@repo/db';
+import { EmailStatus, EmailType, PrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { EmailAddressRepository } from './email-address.repository';
@@ -9,17 +10,15 @@ describe('EmailAddressRepository', () => {
   let repository: EmailAddressRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockEmail: EmailAddress = {
+  const mockEmail = emailAddressBuilder({
     id: 'email-id-123',
     email: 'test@example.com',
     userId: 'user-id-123',
     type: EmailType.primary,
     status: EmailStatus.pending,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     verifiedAt: null,
     deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();

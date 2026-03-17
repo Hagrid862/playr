@@ -2,15 +2,15 @@ import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { LibraryArtistRepository } from '@/shared/repositories/library-artist.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { artistBuilder, libraryBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import {
   ConflictException,
   InternalServerErrorException,
   PreconditionFailedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ZodArtist } from '@repo/contracts';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryArtistCommand } from '../impl/create-library-artist.command';
 import { CreateLibraryArtistHandler } from './create-library-artist.handler';
 
@@ -22,8 +22,8 @@ describe('CreateLibraryArtistHandler', () => {
   let libraryArtistRepository: DeepMocked<LibraryArtistRepository>;
 
   const mockUserId = 'user-123';
-  const mockLibrary = { id: 'library-123', userId: mockUserId };
-  const mockArtist: ZodArtist = {
+  const mockLibrary = libraryBuilder({ id: 'library-123', userId: mockUserId });
+  const mockArtist = artistBuilder({
     id: 'artist-123',
     name: 'Test Artist',
     description: 'Test Description',
@@ -31,13 +31,8 @@ describe('CreateLibraryArtistHandler', () => {
     verified: false,
     avatarId: null,
     bannerId: null,
-    avatar: null,
-    banner: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
     visibility: 'public',
-  };
+  });
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
@@ -61,15 +56,19 @@ describe('CreateLibraryArtistHandler', () => {
     handler = module.get<CreateLibraryArtistHandler>(CreateLibraryArtistHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should create an artist successfully', async () => {
     const command = new CreateLibraryArtistCommand(
       { name: 'Test Artist', description: 'Test Description' },
       mockUserId,
     );
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary as any);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     artistRepository.findOne.mockResolvedValue(null);
-    artistRepository.create.mockResolvedValue(mockArtist as any);
+    artistRepository.create.mockResolvedValue(mockArtist);
 
     const result = await handler.execute(command);
 
@@ -96,7 +95,7 @@ describe('CreateLibraryArtistHandler', () => {
 
   it('should throw ConflictException if artist name is already taken', async () => {
     const command = new CreateLibraryArtistCommand({ name: 'Taken' }, mockUserId);
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary as any);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     artistRepository.findOne.mockResolvedValue({ id: 'existing' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
@@ -104,7 +103,7 @@ describe('CreateLibraryArtistHandler', () => {
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new CreateLibraryArtistCommand({ name: 'Test' }, mockUserId);
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary as any);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     artistRepository.findOne.mockResolvedValue(null);
     artistRepository.create.mockResolvedValue({ invalid: 'data' } as any);
 
