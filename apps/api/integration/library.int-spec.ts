@@ -145,9 +145,13 @@ describe('LibraryController (Integration)', () => {
         {
           ...libraryArtistBuilder({
             libraryId: 'lib-123',
-            artistId: 'artist-1',
+            artistId: 'artist-2',
           }),
-          artist: mockArtist,
+          artist: {
+            ...artistBuilder({ id: 'artist-2', name: 'Artist Two' }),
+            avatar: null,
+            banner: null,
+          },
         },
       ];
 
