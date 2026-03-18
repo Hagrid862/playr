@@ -443,12 +443,19 @@ describe('LibraryAlbumsController (Integration)', () => {
       prismaMock.client.track.create
         .mockResolvedValueOnce(mockTrack1)
         .mockResolvedValueOnce(mockTrack2);
-      prismaMock.client.libraryTrack.create.mockResolvedValue(
-        libraryTrackBuilder({
-          trackId: mockTrack1.id,
-          libraryId: mockLibrary.id,
-        }),
-      );
+      prismaMock.client.libraryTrack.create
+        .mockResolvedValueOnce(
+          libraryTrackBuilder({
+            trackId: mockTrack1.id,
+            libraryId: mockLibrary.id,
+          }),
+        )
+        .mockResolvedValueOnce(
+          libraryTrackBuilder({
+            trackId: mockTrack2.id,
+            libraryId: mockLibrary.id,
+          }),
+        );
 
       prismaMock.mainClient.$transaction.mockImplementation(
         async (cb: (client: PrismaClient) => Promise<any>) => cb(prismaMock.client),
