@@ -10,7 +10,7 @@ import { Queue } from 'bullmq';
 import { BulkUploadTrackAudioCommand } from '../impl/bulk-upload-track-audio.command';
 
 const AUDIO_MIME_TYPES =
-  /(audio\/mpeg|audio\/wav|audio\/flac|audio\/ogg|audio\/aac|audio\/mp4|audio\/x-wav|audio\/x-flac)/;
+  /(audio\/mpeg|audio\/wav|audio\/flac|audio\/ogg|audio\/opus|audio\/aac|audio\/mp4|audio\/x-wav|audio\/x-flac)/;
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 @CommandHandler(BulkUploadTrackAudioCommand)
