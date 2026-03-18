@@ -270,6 +270,7 @@ describe('LibraryTracksController (Integration)', () => {
         .expect(200);
 
       expect(response.body.toString()).toBe(content);
+      expect(response.get('Content-Type')).toBe(mockAudioFile.mimeType);
       expect(storageServiceMock.getFileStream).toHaveBeenCalled();
     });
 
