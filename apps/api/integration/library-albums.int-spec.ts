@@ -14,6 +14,7 @@ import {
   User,
 } from '@repo/db';
 import {
+  albumAccessBuilder,
   albumBuilder,
   artistBuilder,
   audioFileBuilder,
@@ -110,14 +111,14 @@ describe('LibraryAlbumsController (Integration)', () => {
     genres: [],
     tracks: [],
     access: [
-      {
+      albumAccessBuilder({
         id: 'access-123',
         userId: 'user-123',
         albumId: 'album-123',
         role: 'owner',
         createdAt: new Date(),
         updatedAt: new Date(),
-      },
+      }),
     ],
     cover: null,
   };
