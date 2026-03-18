@@ -641,7 +641,14 @@ describe('LibraryAlbumsController (Integration)', () => {
             ...trackBuilder({ id: 'track-1' }),
             artists: [artistBuilder()],
             album: mockAlbum,
-            access: [trackAccessBuilder({ id: 'access-1', userId: 'user-123', role: 'owner' })],
+            access: [
+              trackAccessBuilder({
+                id: 'access-1',
+                userId: 'user-123',
+                role: 'owner',
+                trackId: 'track-1',
+              }),
+            ],
           },
         },
       ];
