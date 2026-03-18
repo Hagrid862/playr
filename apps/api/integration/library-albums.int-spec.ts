@@ -135,6 +135,10 @@ describe('LibraryAlbumsController (Integration)', () => {
     id: 'img-123',
   });
 
+  const mockUser: User = userBuilder({
+    id: 'user-123',
+  });
+
   describe('POST /library/albums', () => {
     it('should create an album successfully (201)', async () => {
       const authHeader = await getAuthHeader();
@@ -419,10 +423,6 @@ describe('LibraryAlbumsController (Integration)', () => {
   });
 
   describe('POST /library/albums/:id/tracks/bulk', () => {
-    const mockUser: User = userBuilder({
-      id: 'user-123',
-    });
-
     it('should create multiple tracks successfully (201)', async () => {
       const authHeader = await getAuthHeader();
 
@@ -505,8 +505,6 @@ describe('LibraryAlbumsController (Integration)', () => {
   });
 
   describe('POST /library/albums/:id/tracks/bulk/audio', () => {
-    const mockUser: User = userBuilder();
-
     const mockTrackWithAccess: TrackGetPayload<{
       include: { artists: true; album: true; access: true };
     }> = {
