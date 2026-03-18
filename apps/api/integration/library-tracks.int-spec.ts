@@ -87,7 +87,14 @@ describe('LibraryTracksController (Integration)', () => {
     ...trackBuilder({ id: 'track-123', albumId: 'album-123' }),
     album: albumBuilder({ id: 'album-123' }),
     artists: [artistBuilder({ id: 'artist-123' })],
-    access: [trackAccessBuilder({ id: 'access-123', userId: 'user-123', role: 'owner' })],
+    access: [
+      trackAccessBuilder({
+        id: 'access-123',
+        userId: 'user-123',
+        role: 'owner',
+        trackId: 'track-123',
+      }),
+    ],
   };
 
   const mockLibraryTrack: LibraryTrackWithRelations = {
