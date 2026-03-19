@@ -7,7 +7,7 @@ import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackSchema } from '@repo/contracts';
-import { AlbumType, Track } from '@repo/db';
+import { AlbumType, Track, Visibility } from '@repo/db';
 import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -59,7 +59,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     totalDuration: 3000,
     releaseDate: new Date(),
     coverId: null,
-    visibility: 'private',
+    visibility: Visibility.private,
   });
 
   const mockTrack1: Track = trackBuilder({
@@ -70,7 +70,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     duration: 0,
     explicit: false,
     albumId,
-    visibility: 'private',
+    visibility: Visibility.private,
   });
 
   const mockTrack2: Track = trackBuilder({
@@ -81,7 +81,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     duration: 0,
     explicit: true,
     albumId,
-    visibility: 'private',
+    visibility: Visibility.private,
   });
 
   beforeEach(async () => {
@@ -136,7 +136,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
       diskNumber: body.tracks[0].diskNumber,
       duration: 0,
       explicit: body.tracks[0].explicit,
-      visibility: 'private',
+      visibility: Visibility.private,
       album: { connect: { id: albumId } },
       artists: { connect: body.tracks[0].artistIds.map((id) => ({ id })) },
       access: {
@@ -152,7 +152,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
       diskNumber: body.tracks[1].diskNumber,
       duration: 0,
       explicit: body.tracks[1].explicit,
-      visibility: 'private',
+      visibility: Visibility.private,
       album: { connect: { id: albumId } },
       artists: { connect: body.tracks[1].artistIds.map((id) => ({ id })) },
       access: {
