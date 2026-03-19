@@ -20,6 +20,11 @@
       "types": "./dist/web/index.d.ts",
       "import": "./dist/web/index.js",
       "default": "./dist/web/index.js"
+    },
+    "./requests": {
+      "types": "./dist/requests/index.d.ts",
+      "import": "./dist/requests/index.js",
+      "default": "./dist/requests/index.js"
     }
   },
   "scripts": {
@@ -32,6 +37,7 @@
   },
   "dependencies": {
     "@ngneat/falso": "^8.0.2",
+    "@repo/contracts": "workspace:*",
     "@repo/db": "workspace:*",
     "@golevelup/ts-vitest": "^2.2.0",
     "vitest": "^4.0.18"
