@@ -23,6 +23,22 @@ export type TrackWithAccessAndAlbumId = TrackWithAccess & {
  * Pass access to customize, or userId/role for default owner access.
  */
 export function trackWithAccessBuilder(
+  overrides: Partial<Track> & {
+    access?: Array<{ userId: string; role: AccessRole }>;
+    albumId: string;
+    userId?: string;
+    role?: AccessRole;
+  },
+): TrackWithAccessAndAlbumId;
+export function trackWithAccessBuilder(
+  overrides?: Partial<Track> & {
+    access?: Array<{ userId: string; role: AccessRole }>;
+    albumId?: string;
+    userId?: string;
+    role?: AccessRole;
+  },
+): TrackWithAccess;
+export function trackWithAccessBuilder(
   overrides?: Partial<Track> & {
     access?: Array<{ userId: string; role: AccessRole }>;
     albumId?: string;
