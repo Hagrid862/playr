@@ -636,9 +636,12 @@ describe('LibraryAlbumsController (Integration)', () => {
 
       const mockLibraryTrackList: LibraryTrackWithRelations[] = [
         {
-          ...libraryTrackBuilder({ trackId: 'track-1' }),
+          ...libraryTrackBuilder({
+            trackId: 'track-1',
+            libraryId: mockLibrary.id,
+          }),
           track: {
-            ...trackBuilder({ id: 'track-1' }),
+            ...trackBuilder({ id: 'track-1', albumId: mockAlbum.id }),
             artists: [artistBuilder()],
             album: mockAlbum,
             access: [
