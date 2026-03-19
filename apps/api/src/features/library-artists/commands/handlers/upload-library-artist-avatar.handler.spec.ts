@@ -52,6 +52,9 @@ describe('UploadLibraryArtistAvatarHandler', () => {
     prismaService = createMock<PrismaService>();
 
     storageService.deleteFile.mockResolvedValue(undefined);
+    // DeepMocked<PrismaService> does not expose client/mainClient; these casts are a deliberate
+    // workaround to inject mocked implementations (image.findUnique, mainClient.$transaction with
+    // mockTx) so transactional code in the handler can be tested.
     (prismaService as any).client = {
       image: { findUnique: vi.fn() },
     };
