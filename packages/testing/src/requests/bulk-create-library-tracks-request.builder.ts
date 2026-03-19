@@ -1,14 +1,14 @@
+import { randUuid } from "@ngneat/falso";
 import type {
   BulkCreateLibraryTrackItem,
   BulkCreateLibraryTracksRequest,
 } from "@repo/contracts";
-import { randUuid } from "@ngneat/falso";
 
 export function bulkCreateLibraryTrackItemBuilder(
   overrides?: Partial<BulkCreateLibraryTrackItem>,
 ): BulkCreateLibraryTrackItem {
   return {
-    title: "",
+    title: "Default Track Title",
     trackNumber: 1,
     diskNumber: 1,
     explicit: false,
