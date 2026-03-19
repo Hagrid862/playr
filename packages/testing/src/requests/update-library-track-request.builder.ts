@@ -2,7 +2,7 @@ import type { UpdateLibraryTrackRequest } from "@repo/contracts";
 
 export function updateLibraryTrackRequestBuilder(
   overrides?: Partial<UpdateLibraryTrackRequest>,
-): UpdateLibraryTrackRequest {
+): Partial<UpdateLibraryTrackRequest> {
   return {
     ...overrides,
   };
