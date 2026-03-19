@@ -9,6 +9,7 @@ import { Env, validateEnv } from './common/config/env.schema';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { FeaturesModule } from './features/features.module';
 import { SharedModule } from './shared/shared.module';
+import { RedisModule } from './common/redis/redis.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SharedModule } from './shared/shared.module';
         },
       }),
     }),
+    RedisModule,
     FeaturesModule,
     SharedModule,
   ],

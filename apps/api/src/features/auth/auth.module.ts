@@ -10,6 +10,7 @@ import { ValidateUserHandler } from './queries/handlers/validate-user.handler';
 import { TokenService } from './services/token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { OtpCodeService } from './services/otp-code.service';
 
 @Module({
   imports: [CqrsModule, PassportModule],
@@ -23,6 +24,7 @@ import { LocalStrategy } from './strategies/local.strategy';
     LocalStrategy,
     JwtStrategy,
     ValidateUserHandler,
+    OtpCodeService,
   ],
   exports: [TokenService],
 })
