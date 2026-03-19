@@ -1,6 +1,6 @@
 ---
 alwaysApply: false
-globs: ["**/*.spec.ts", "**/*.int-spec.ts", "packages/testing/**/*.ts"]
+globs: ["**/*.spec.ts", "**/*.int-spec.ts"]
 ---
 
 # API Testing Standards
