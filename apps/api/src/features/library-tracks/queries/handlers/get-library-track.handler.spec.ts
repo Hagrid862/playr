@@ -50,8 +50,7 @@ describe('GetLibraryTrackHandler', () => {
   });
 
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
-    // @ts-expect-error - we are testing the validation failure
-    trackRepository.findOne.mockResolvedValue(trackBuilder({ ...mockTrack, title: 123 }));
+    trackRepository.findOne.mockResolvedValue(trackBuilder({ title: 123 } as any));
 
     await expect(handler.execute(query)).rejects.toThrow(InternalServerErrorException);
   });
