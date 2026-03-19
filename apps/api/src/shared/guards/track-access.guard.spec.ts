@@ -16,11 +16,11 @@ describe('TrackAccessGuard', () => {
   let mockExecutionContext: DeepMocked<ExecutionContext>;
 
   beforeEach(async () => {
+    const httpHost = createMock<ReturnType<ExecutionContext['switchToHttp']>>();
+
     reflector = createMock<Reflector>();
     trackRepository = createMock<TrackRepository>();
-    mockExecutionContext = createMock<ExecutionContext>({
-      switchToHttp: vi.fn().mockReturnThis(),
-    } as any);
+    mockExecutionContext = createMock<ExecutionContext>({ switchToHttp: () => httpHost });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
