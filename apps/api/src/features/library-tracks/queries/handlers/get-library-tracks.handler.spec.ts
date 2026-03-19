@@ -80,7 +80,8 @@ describe('GetLibraryTracksHandler', () => {
   it('should filter by albumId if provided', async () => {
     const albumQuery = new GetLibraryTracksQuery(userId, 1, 10, 'album-123');
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryTrackRepository.findMany.mockResolvedValue([mockLibraryTrack]);
+    const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
+    libraryTrackRepository.findMany.mockResolvedValue([mockItem]);
     libraryTrackRepository.count.mockResolvedValue(1);
 
     await handler.execute(albumQuery);
