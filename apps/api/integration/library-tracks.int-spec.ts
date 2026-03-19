@@ -125,7 +125,6 @@ describe('LibraryTracksController (Integration)', () => {
           trackNumber: mockTrack.trackNumber,
           diskNumber: mockTrack.diskNumber,
           explicit: mockTrack.explicit,
-          visibility: mockTrack.visibility,
           artistIds: mockTrack.artists.map((artist) => artist.id),
         });
 
