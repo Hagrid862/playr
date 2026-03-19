@@ -85,7 +85,10 @@ describe('UpdateLibraryAlbumHandler', () => {
 
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     albumRepository.update.mockResolvedValue({ ...mockAlbum, coverId: null });
-    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: { ...mockAlbum, coverId: null },
+    } as any);
 
     await handler.execute(command);
 
@@ -103,7 +106,10 @@ describe('UpdateLibraryAlbumHandler', () => {
 
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     albumRepository.update.mockResolvedValue({ ...mockAlbum, coverId: 'new-cover' });
-    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: { ...mockAlbum, coverId: 'new-cover' },
+    } as any);
 
     await handler.execute(command);
 
