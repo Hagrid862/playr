@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from './audio-metadata';
 
 vi.mock('music-metadata', () => ({
   parseBlob: vi.fn(),
@@ -8,6 +7,7 @@ vi.mock('music-metadata', () => ({
 
 import type { IPicture } from 'music-metadata';
 import { parseBlob, selectCover } from 'music-metadata';
+import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from './audio-metadata';
 
 describe('audio-metadata', () => {
   const createFile = (name = 'test.mp3') => new File(['audio'], name, { type: 'audio/mpeg' });
