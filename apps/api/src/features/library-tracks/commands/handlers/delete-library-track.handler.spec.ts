@@ -6,7 +6,7 @@ import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { type Track, AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
+import { type Track, AudioFormat, FileBucket, ProcessingStatus, Visibility } from '@repo/db';
 import { audioFileBuilder, trackBuilder } from '@repo/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
@@ -31,7 +31,7 @@ describe('DeleteLibraryTrackHandler', () => {
     diskNumber: 1,
     duration: 180,
     albumId: 'album-123',
-    visibility: 'private',
+    visibility: Visibility.private,
   });
 
   beforeEach(async () => {
