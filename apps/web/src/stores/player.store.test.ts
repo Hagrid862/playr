@@ -1,22 +1,10 @@
 import { StreamAudioQuality, ZodTrack } from '@repo/contracts';
+import { trackBuilder } from '@repo/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePlayerStore } from './player.store';
 
-const createMockTrack = (id: string, title: string = 'Test Track'): ZodTrack => ({
-  id,
-  title,
-  trackNumber: 1,
-  diskNumber: 1,
-  duration: 180,
-  listenedCount: 0,
-  explicit: false,
-  lyrics: null,
-  albumId: 'album-1',
-  visibility: 'public',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deletedAt: null,
-});
+const createTrack = (id: string, title = 'Test Track'): ZodTrack =>
+  trackBuilder({ id, title }) as ZodTrack;
 
 describe('player.store', () => {
   beforeEach(() => {
@@ -90,13 +78,13 @@ describe('player.store', () => {
 
   describe('addToHistory', () => {
     it('adds item to history and slices at 1024', () => {
-      const track = createMockTrack('1');
+      const track = createTrack('1');
       const queueItem = { ...track, uniqueId: 'uid1' };
       getState().addToHistory(queueItem);
       expect(getState().history).toEqual([queueItem]);
 
       // Just test that it adds to the front
-      const track2 = createMockTrack('2');
+      const track2 = createTrack('2');
       const queueItem2 = { ...track2, uniqueId: 'uid2' };
       getState().addToHistory(queueItem2);
       expect(getState().history).toEqual([queueItem2, queueItem]);
@@ -105,7 +93,7 @@ describe('player.store', () => {
 
   describe('playTrack', () => {
     it('plays a track without providing a queue', () => {
-      const track = createMockTrack('track-1');
+      const track = createTrack('track-1');
       getState().playTrack(track);
 
       const state = getState();
@@ -119,9 +107,9 @@ describe('player.store', () => {
     });
 
     it('plays a track providing a queue where track is inside', () => {
-      const track1 = createMockTrack('track-1');
-      const track2 = createMockTrack('track-2');
-      const track3 = createMockTrack('track-3');
+      const track1 = createTrack('track-1');
+      const track2 = createTrack('track-2');
+      const track3 = createTrack('track-3');
 
       getState().playTrack(track2, [track1, track2, track3]);
 
@@ -134,9 +122,9 @@ describe('player.store', () => {
     });
 
     it('plays a track providing a queue where track is NOT inside (prepends)', () => {
-      const track1 = createMockTrack('track-1');
-      const track2 = createMockTrack('track-2');
-      const trackNew = createMockTrack('track-new');
+      const track1 = createTrack('track-1');
+      const track2 = createTrack('track-2');
+      const trackNew = createTrack('track-new');
 
       getState().playTrack(trackNew, [track1, track2]);
 
@@ -148,10 +136,10 @@ describe('player.store', () => {
     });
 
     it('adds current track to history when playing a new track', () => {
-      const firstTrack = createMockTrack('first');
+      const firstTrack = createTrack('first');
       getState().playTrack(firstTrack);
 
-      const secondTrack = createMockTrack('second');
+      const secondTrack = createTrack('second');
       getState().playTrack(secondTrack);
 
       expect(getState().history.length).toBe(1);
@@ -161,14 +149,14 @@ describe('player.store', () => {
 
   describe('Playback Controls', () => {
     it('pauses', () => {
-      getState().playTrack(createMockTrack('1'));
+      getState().playTrack(createTrack('1'));
       expect(getState().isPlaying).toBe(true);
       getState().pause();
       expect(getState().isPlaying).toBe(false);
     });
 
     it('resumes', () => {
-      getState().playTrack(createMockTrack('1'));
+      getState().playTrack(createTrack('1'));
       getState().pause();
       getState().resume();
       expect(getState().isPlaying).toBe(true);
@@ -183,7 +171,7 @@ describe('player.store', () => {
       getState().togglePlay();
       expect(getState().isPlaying).toBe(false);
 
-      getState().playTrack(createMockTrack('1'));
+      getState().playTrack(createTrack('1'));
       getState().togglePlay();
       expect(getState().isPlaying).toBe(false);
       getState().togglePlay();
@@ -193,7 +181,7 @@ describe('player.store', () => {
 
   describe('Queue Management', () => {
     it('sets queue directly', () => {
-      const tracks = [createMockTrack('1'), createMockTrack('2')];
+      const tracks = [createTrack('1'), createTrack('2')];
       getState().setQueue(tracks);
 
       const state = getState();
@@ -204,17 +192,17 @@ describe('player.store', () => {
     });
 
     it('adds to queue (not shuffled)', () => {
-      getState().setQueue([createMockTrack('1')]);
+      getState().setQueue([createTrack('1')]);
       expect(getState().queue.length).toBe(1);
 
-      getState().addToQueue(createMockTrack('2'));
+      getState().addToQueue(createTrack('2'));
       const state = getState();
       expect(state.queue.length).toBe(2);
       expect(state.queue[1]?.id).toBe('2');
     });
 
     it('removes from queue', () => {
-      getState().setQueue([createMockTrack('1'), createMockTrack('2')]);
+      getState().setQueue([createTrack('1'), createTrack('2')]);
       const uniqueIdToRemove = getState().queue[1]?.uniqueId;
 
       getState().removeFromQueue(uniqueIdToRemove!);
@@ -223,7 +211,7 @@ describe('player.store', () => {
     });
 
     it('reorders queue', () => {
-      getState().setQueue([createMockTrack('1'), createMockTrack('2')]);
+      getState().setQueue([createTrack('1'), createTrack('2')]);
       const q = getState().queue;
       const reversed = [q[1]!, q[0]!];
 
@@ -234,15 +222,15 @@ describe('player.store', () => {
 
   describe('Play Next', () => {
     it('plays next when queue is empty', () => {
-      getState().playNext(createMockTrack('1'));
+      getState().playNext(createTrack('1'));
       expect(getState().currentTrack?.id).toBe('1');
       expect(getState().queue.length).toBe(1);
       expect(getState().isPlaying).toBe(true);
     });
 
     it('inserts it right after current track', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('3')]);
-      getState().playNext(createMockTrack('2'));
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('3')]);
+      getState().playNext(createTrack('2'));
 
       const q = getState().queue;
       expect(q.length).toBe(3);
@@ -252,11 +240,11 @@ describe('player.store', () => {
     });
 
     it('appends it if current track is not found in queue (weird state)', () => {
-      getState().setQueue([createMockTrack('2')]);
+      getState().setQueue([createTrack('2')]);
       // manually force state
-      usePlayerStore.setState({ currentTrack: { ...createMockTrack('1'), uniqueId: 'uid1' } });
+      usePlayerStore.setState({ currentTrack: { ...createTrack('1'), uniqueId: 'uid1' } });
 
-      getState().playNext(createMockTrack('3'));
+      getState().playNext(createTrack('3'));
       const state = getState();
       expect(state.queue[state.queue.length - 1]?.id).toBe('3');
     });
@@ -276,7 +264,7 @@ describe('player.store', () => {
 
   describe('Shuffle', () => {
     it('toggles shuffle on and off preserving original queue', () => {
-      const q = [createMockTrack('1'), createMockTrack('2'), createMockTrack('3')];
+      const q = [createTrack('1'), createTrack('2'), createTrack('3')];
       getState().playTrack(q[0]!, q);
 
       expect(getState().isShuffled).toBe(false);
@@ -301,11 +289,11 @@ describe('player.store', () => {
     });
 
     it('handles adding to queue while shuffled', () => {
-      const q = [createMockTrack('1')];
+      const q = [createTrack('1')];
       getState().playTrack(q[0]!, q);
       getState().toggleShuffle(); // now shuffled
 
-      getState().addToQueue(createMockTrack('2'));
+      getState().addToQueue(createTrack('2'));
       const state = getState();
 
       expect(state.queue.length).toBe(2);
@@ -315,7 +303,7 @@ describe('player.store', () => {
     });
 
     it('handles removing from queue while shuffled', () => {
-      const q = [createMockTrack('1'), createMockTrack('2')];
+      const q = [createTrack('1'), createTrack('2')];
       getState().playTrack(q[0]!, q);
       getState().toggleShuffle();
 
@@ -329,7 +317,7 @@ describe('player.store', () => {
     });
 
     it('toggleShuffle ensures currentTrack is first if it exists in queue, handles when not in queue', () => {
-      const q = [createMockTrack('1')];
+      const q = [createTrack('1')];
       getState().playTrack(q[0]!, q);
 
       // Artificially remove the currentTrack from the queue
@@ -346,7 +334,7 @@ describe('player.store', () => {
     });
 
     it('reordering clears original queue when shuffled', () => {
-      const q = [createMockTrack('1'), createMockTrack('2')];
+      const q = [createTrack('1'), createTrack('2')];
       getState().playTrack(q[0]!, q);
       getState().toggleShuffle();
 
@@ -360,11 +348,11 @@ describe('player.store', () => {
     });
 
     it('playNext while shuffled updates original queue correctly', () => {
-      const q = [createMockTrack('1'), createMockTrack('2')];
+      const q = [createTrack('1'), createTrack('2')];
       getState().playTrack(q[0]!, q);
       getState().toggleShuffle(); // Shuffled
 
-      getState().playNext(createMockTrack('3'));
+      getState().playNext(createTrack('3'));
 
       const state = getState();
       // '3' should be in originalQueue right after '1' (currentTrack)
@@ -375,7 +363,7 @@ describe('player.store', () => {
     });
 
     it('playNext while shuffled when track is not in original queue (weird state)', () => {
-      const q = [createMockTrack('1')];
+      const q = [createTrack('1')];
       getState().playTrack(q[0]!, q);
       getState().toggleShuffle();
 
@@ -384,18 +372,18 @@ describe('player.store', () => {
         originalQueue: s.originalQueue.filter((t) => t.id !== '1'),
       }));
 
-      getState().playNext(createMockTrack('2'));
+      getState().playNext(createTrack('2'));
 
       const state = getState();
       expect(state.originalQueue[state.originalQueue.length - 1]?.id).toBe('2');
     });
 
     it('playNext while shuffled no current track (weird state)', () => {
-      getState().setQueue([createMockTrack('1')]);
+      getState().setQueue([createTrack('1')]);
       getState().toggleShuffle();
       usePlayerStore.setState({ isShuffled: true, currentTrack: null });
 
-      getState().playNext(createMockTrack('2'));
+      getState().playNext(createTrack('2'));
 
       const state = getState();
       expect(state.queue.length).toBe(1);
@@ -404,9 +392,9 @@ describe('player.store', () => {
     });
 
     it('playNext while shuffled and currentTrack is not in queue (weird state)', () => {
-      const track1 = createMockTrack('1');
-      const track2 = createMockTrack('2');
-      const track3 = createMockTrack('3');
+      const track1 = createTrack('1');
+      const track2 = createTrack('2');
+      const track3 = createTrack('3');
 
       getState().playTrack(track1, [track1, track2]);
       getState().toggleShuffle(); // queue: [1, 2], original: [1, 2]
@@ -430,7 +418,7 @@ describe('player.store', () => {
 
   describe('Next/Previous Track', () => {
     it('goes to next track', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('2')]);
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().nextTrack();
 
       expect(getState().currentTrack?.id).toBe('2');
@@ -439,7 +427,7 @@ describe('player.store', () => {
     });
 
     it('goes to previous track', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('2')]);
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().nextTrack(); // Now on '2'
       getState().previousTrack(); // Back to '1'
 
@@ -448,7 +436,7 @@ describe('player.store', () => {
     });
 
     it('restarts current track if > 3s in', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('2')]);
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().nextTrack(); // is on '2'
       getState().setCurrentTime(5); // past 3 seconds
 
@@ -465,7 +453,7 @@ describe('player.store', () => {
     });
 
     it('loops to start if repeatMode = all on nextTrack', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('2')]);
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().toggleRepeatMode(); // 'all'
 
       getState().nextTrack(); // on 2
@@ -475,14 +463,14 @@ describe('player.store', () => {
     });
 
     it('does not loop if repeatMode = off on nextTrack', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('2')]);
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().nextTrack(); // on 2
       getState().nextTrack(); // nothing happens
       expect(getState().currentTrack?.id).toBe('2');
     });
 
     it('loops to end if repeatMode = all on previousTrack', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('2')]);
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().toggleRepeatMode(); // 'all'
 
       getState().previousTrack(); // loops to 2
@@ -491,7 +479,7 @@ describe('player.store', () => {
     });
 
     it('does not loop if repeatMode = off on previousTrack', () => {
-      getState().playTrack(createMockTrack('1'), [createMockTrack('1'), createMockTrack('2')]);
+      getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().previousTrack(); // nothing happens
       expect(getState().currentTrack?.id).toBe('1');
     });
