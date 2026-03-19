@@ -34,6 +34,7 @@ describe('RefreshTokensHandler', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should be defined', () => {
