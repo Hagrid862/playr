@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PageHeader } from './PageHeader';
 
 const mockBack = vi.fn();
@@ -14,41 +14,50 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('PageHeader', () => {
-  it('renders title and description correctly', () => {
-    render(<PageHeader title="Test Title" description="Test Description" />);
-
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test Description')).toBeInTheDocument();
+  beforeEach(() => {
+    mockBack.mockClear();
   });
 
-  it('renders actions when provided', () => {
-    render(<PageHeader title="Test Title" actions={<button>Action Button</button>} />);
+  describe('title and description', () => {
+    it('renders title and description correctly', () => {
+      render(<PageHeader title="Test Title" description="Test Description" />);
 
-    expect(screen.getByRole('button', { name: /Action Button/i })).toBeInTheDocument();
+      expect(screen.getByText('Test Title')).toBeInTheDocument();
+      expect(screen.getByText('Test Description')).toBeInTheDocument();
+    });
+
+    it('does not render description when not provided', () => {
+      render(<PageHeader title="Test Title" />);
+
+      const description = screen.queryByText('Test Description');
+      expect(description).not.toBeInTheDocument();
+    });
   });
 
-  it('shows back button and calls router.history.back() when clicked', async () => {
-    const user = userEvent.setup();
-    render(<PageHeader title="Test Title" showBackButton={true} />);
+  describe('actions', () => {
+    it('renders actions when provided', () => {
+      render(<PageHeader title="Test Title" actions={<button>Action Button</button>} />);
 
-    const backButton = screen.getByRole('button');
-    expect(backButton).toBeInTheDocument();
-
-    await user.click(backButton);
-    expect(mockBack).toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: /Action Button/i })).toBeInTheDocument();
+    });
   });
 
-  it('does not show back button when showBackButton is false', () => {
-    render(<PageHeader title="Test Title" showBackButton={false} />);
+  describe('back button', () => {
+    it('shows back button and calls router.history.back() when clicked', async () => {
+      const user = userEvent.setup();
+      render(<PageHeader title="Test Title" showBackButton={true} />);
 
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
-  });
+      const backButton = screen.getByRole('button');
+      expect(backButton).toBeInTheDocument();
 
-  it('does not render description when not provided', () => {
-    render(<PageHeader title="Test Title" />);
+      await user.click(backButton);
+      expect(mockBack).toHaveBeenCalled();
+    });
 
-    // We check for any p tag or description text
-    const description = screen.queryByText('Test Description');
-    expect(description).not.toBeInTheDocument();
+    it('does not show back button when showBackButton is false', () => {
+      render(<PageHeader title="Test Title" showBackButton={false} />);
+
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
   });
 });

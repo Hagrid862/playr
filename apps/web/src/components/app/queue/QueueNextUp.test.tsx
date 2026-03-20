@@ -2,6 +2,7 @@ import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { createQueueItemFixture } from '../test-utils/player-test-utils';
 import { QueueNextUp } from './QueueNextUp';
 
 const capturedDndHandlers: {
@@ -49,174 +50,121 @@ vi.mock('./QueueItem', () => ({
 
 describe('QueueNextUp', () => {
   const mockNextUp = [
-    { uniqueId: '1', title: 'Track 1' },
-    { uniqueId: '2', title: 'Track 2' },
-  ] as PlayrQueueItem[];
+    createQueueItemFixture({ uniqueId: '1', title: 'Track 1' }),
+    createQueueItemFixture({ uniqueId: '2', title: 'Track 2' }),
+  ];
 
-  it('renders correctly with tracks', () => {
-    render(
-      <QueueNextUp
-        nextUp={mockNextUp}
-        isShuffled={false}
-        onDragEnd={vi.fn()}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    expect(screen.getByText('Next Up')).toBeInTheDocument();
-    expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
-    expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();
-  });
+  const defaultProps = {
+    isShuffled: false,
+    onDragEnd: vi.fn(),
+    onPlayTrack: vi.fn(),
+    onRemoveTrack: vi.fn(),
+  };
 
-  it('renders empty state', () => {
-    render(
-      <QueueNextUp
-        nextUp={[]}
-        isShuffled={false}
-        onDragEnd={vi.fn()}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    expect(screen.getByText('Queue is empty')).toBeInTheDocument();
-  });
-
-  it('renders correctly when shuffled', () => {
-    render(
-      <QueueNextUp
-        nextUp={mockNextUp}
-        isShuffled={true}
-        onDragEnd={vi.fn()}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
-    expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();
-  });
-
-  it('shows overlay when drag starts', async () => {
-    render(
-      <QueueNextUp
-        nextUp={mockNextUp}
-        isShuffled={false}
-        onDragEnd={vi.fn()}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    expect(capturedDndHandlers.onDragStart).toBeDefined();
-    await act(async () => {
-      capturedDndHandlers.onDragStart!({
-        active: { id: '1' },
-        delta: { x: 0, y: 0 },
-        activatorEvent: new Event('dragstart'),
-      } as unknown as DragStartEvent);
+  describe('rendering', () => {
+    it('renders correctly with tracks', () => {
+      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      expect(screen.getByText('Next Up')).toBeInTheDocument();
+      expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
+      expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();
     });
-    expect(screen.getByTestId('queue-item-overlay')).toHaveTextContent('Track 1');
+
+    it('renders empty state', () => {
+      render(<QueueNextUp nextUp={[]} {...defaultProps} />);
+      expect(screen.getByText('Queue is empty')).toBeInTheDocument();
+    });
+
+    it('renders correctly when shuffled', () => {
+      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} isShuffled />);
+      expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
+      expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();
+    });
   });
 
-  it('calls onDragEnd when drag ends', async () => {
-    const onDragEnd = vi.fn();
-    render(
-      <QueueNextUp
-        nextUp={mockNextUp}
-        isShuffled={false}
-        onDragEnd={onDragEnd}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    await act(async () => {
-      capturedDndHandlers.onDragStart!({
-        active: { id: '1' },
-        delta: { x: 0, y: 0 },
-        activatorEvent: new Event('dragstart'),
-      } as unknown as DragStartEvent);
+  describe('drag and drop', () => {
+    it('shows overlay when drag starts', async () => {
+      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      expect(capturedDndHandlers.onDragStart).toBeDefined();
+      await act(async () => {
+        capturedDndHandlers.onDragStart!({
+          active: { id: '1' },
+          delta: { x: 0, y: 0 },
+          activatorEvent: new Event('dragstart'),
+        } as unknown as DragStartEvent);
+      });
+      expect(screen.getByTestId('queue-item-overlay')).toHaveTextContent('Track 1');
     });
-    const mockEvent = {
-      active: { id: '1' },
-      over: { id: '2' },
-      delta: { x: 0, y: 0 },
-    } as DragEndEvent;
-    await act(async () => {
-      capturedDndHandlers.onDragEnd!(mockEvent);
-    });
-    expect(onDragEnd).toHaveBeenCalledWith(mockEvent);
-  });
 
-  it('sets drop line position to top when dragging down', async () => {
-    const { container } = render(
-      <QueueNextUp
-        nextUp={mockNextUp}
-        isShuffled={false}
-        onDragEnd={vi.fn()}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    await act(async () => {
-      capturedDndHandlers.onDragOver!({
-        active: { id: '2' },
-        over: { id: '1' },
-        delta: { x: 0, y: 0 },
-      } as DragOverEvent);
-    });
-    const visibleDropLines = container.querySelectorAll('[class*="opacity-100"]');
-    expect(visibleDropLines.length).toBeGreaterThan(0);
-  });
-
-  it('sets drop line position to bottom when dragging up', async () => {
-    const { container } = render(
-      <QueueNextUp
-        nextUp={mockNextUp}
-        isShuffled={false}
-        onDragEnd={vi.fn()}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    await act(async () => {
-      capturedDndHandlers.onDragOver!({
+    it('calls onDragEnd when drag ends', async () => {
+      const onDragEnd = vi.fn();
+      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} onDragEnd={onDragEnd} />);
+      await act(async () => {
+        capturedDndHandlers.onDragStart!({
+          active: { id: '1' },
+          delta: { x: 0, y: 0 },
+          activatorEvent: new Event('dragstart'),
+        } as unknown as DragStartEvent);
+      });
+      const mockEvent = {
         active: { id: '1' },
         over: { id: '2' },
         delta: { x: 0, y: 0 },
-      } as DragOverEvent);
+      } as DragEndEvent;
+      await act(async () => {
+        capturedDndHandlers.onDragEnd!(mockEvent);
+      });
+      expect(onDragEnd).toHaveBeenCalledWith(mockEvent);
     });
-    const visibleDropLines = container.querySelectorAll('[class*="opacity-100"]');
-    expect(visibleDropLines.length).toBeGreaterThan(0);
-  });
 
-  it('clears over state when dragging over nothing', async () => {
-    render(
-      <QueueNextUp
-        nextUp={mockNextUp}
-        isShuffled={false}
-        onDragEnd={vi.fn()}
-        onPlayTrack={vi.fn()}
-        onRemoveTrack={vi.fn()}
-      />,
-    );
-    await act(async () => {
-      capturedDndHandlers.onDragOver!({
-        active: { id: '1' },
-        over: { id: '2' },
-        delta: { x: 0, y: 0 },
-      } as DragOverEvent);
+    it('sets drop line position to top when dragging down', async () => {
+      const { container } = render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      await act(async () => {
+        capturedDndHandlers.onDragOver!({
+          active: { id: '2' },
+          over: { id: '1' },
+          delta: { x: 0, y: 0 },
+        } as DragOverEvent);
+      });
+      const visibleDropLines = container.querySelectorAll('[class*="opacity-100"]');
+      expect(visibleDropLines.length).toBeGreaterThan(0);
     });
-    await act(async () => {
-      capturedDndHandlers.onDragOver!({
-        active: { id: '1' },
-        over: null,
-        delta: { x: 0, y: 0 },
-      } as DragOverEvent);
+
+    it('sets drop line position to bottom when dragging up', async () => {
+      const { container } = render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      await act(async () => {
+        capturedDndHandlers.onDragOver!({
+          active: { id: '1' },
+          over: { id: '2' },
+          delta: { x: 0, y: 0 },
+        } as DragOverEvent);
+      });
+      const visibleDropLines = container.querySelectorAll('[class*="opacity-100"]');
+      expect(visibleDropLines.length).toBeGreaterThan(0);
     });
-    const visibleDropLines = document.querySelectorAll('[class*="opacity-100"]');
-    const dropLineElements = Array.from(visibleDropLines).filter(
-      (el) =>
-        (el as HTMLElement).classList.contains('rounded-full') &&
-        (el as HTMLElement).classList.contains('transition-all'),
-    );
-    expect(dropLineElements.length).toBe(0);
+
+    it('clears over state when dragging over nothing', async () => {
+      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      await act(async () => {
+        capturedDndHandlers.onDragOver!({
+          active: { id: '1' },
+          over: { id: '2' },
+          delta: { x: 0, y: 0 },
+        } as DragOverEvent);
+      });
+      await act(async () => {
+        capturedDndHandlers.onDragOver!({
+          active: { id: '1' },
+          over: null,
+          delta: { x: 0, y: 0 },
+        } as DragOverEvent);
+      });
+      const visibleDropLines = document.querySelectorAll('[class*="opacity-100"]');
+      const dropLineElements = Array.from(visibleDropLines).filter(
+        (el) =>
+          (el as HTMLElement).classList.contains('rounded-full') &&
+          (el as HTMLElement).classList.contains('transition-all'),
+      );
+      expect(dropLineElements.length).toBe(0);
+    });
   });
 });
