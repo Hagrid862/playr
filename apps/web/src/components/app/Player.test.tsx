@@ -1,5 +1,6 @@
 import { useIsMobile } from '@/hooks/use-mobile';
 import { fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppPlayer } from './Player';
 import { usePlayerAudio } from './player/use-player-audio';
@@ -49,68 +50,73 @@ describe('AppPlayer', () => {
     vi.mocked(usePlayerAudio).mockReturnValue(mockUsePlayerAudio);
   });
 
-  it('renders mobile version when isMobile is true', () => {
-    vi.mocked(useIsMobile).mockReturnValue(true);
-    render(<AppPlayer />);
-    expect(screen.getByTestId('player-mobile')).toBeInTheDocument();
-    expect(screen.queryByTestId('player-controls')).not.toBeInTheDocument();
+  describe('layout', () => {
+    it('renders mobile version when isMobile is true', () => {
+      vi.mocked(useIsMobile).mockReturnValue(true);
+      render(<AppPlayer />);
+      expect(screen.getByTestId('player-mobile')).toBeInTheDocument();
+      expect(screen.queryByTestId('player-controls')).not.toBeInTheDocument();
+    });
+
+    it('renders desktop version when isMobile is false', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      render(<AppPlayer />);
+      expect(screen.getByTestId('player-controls')).toBeInTheDocument();
+      expect(screen.getByTestId('player-track-info')).toBeInTheDocument();
+      expect(screen.getByTestId('player-actions')).toBeInTheDocument();
+      expect(screen.queryByTestId('player-mobile')).not.toBeInTheDocument();
+    });
   });
 
-  it('renders desktop version when isMobile is false', () => {
-    vi.mocked(useIsMobile).mockReturnValue(false);
-    render(<AppPlayer />);
-    expect(screen.getByTestId('player-controls')).toBeInTheDocument();
-    expect(screen.getByTestId('player-track-info')).toBeInTheDocument();
-    expect(screen.getByTestId('player-actions')).toBeInTheDocument();
-    expect(screen.queryByTestId('player-mobile')).not.toBeInTheDocument();
-  });
-
-  it('handles seek and updates audio currentTime', () => {
-    vi.mocked(useIsMobile).mockReturnValue(false);
-    render(<AppPlayer />);
-    fireEvent.click(screen.getByText('Seek'));
-    expect(mockAudioRef.current.currentTime).toBe(42);
-  });
-
-  it('handles seek when audioRef is null', () => {
-    vi.mocked(useIsMobile).mockReturnValue(false);
-    const nullRefMock: ReturnType<typeof usePlayerAudio> = {
-      ...mockUsePlayerAudio,
-      audioRef: {
-        get current() {
-          return null;
-        },
-        set current(_val: HTMLAudioElement | null) {
-          // Do nothing to prevent React from assigning the mounted audio element
-        },
-      } as React.RefObject<HTMLAudioElement>,
-    };
-    vi.mocked(usePlayerAudio).mockReturnValue(nullRefMock);
-    render(<AppPlayer />);
-
-    // Should not throw
-    expect(() => {
+  describe('seek', () => {
+    it('handles seek and updates audio currentTime', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      render(<AppPlayer />);
       fireEvent.click(screen.getByText('Seek'));
-    }).not.toThrow();
+      expect(mockAudioRef.current.currentTime).toBe(42);
+    });
+
+    it('handles seek when audioRef is null', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      const nullRefMock: ReturnType<typeof usePlayerAudio> = {
+        ...mockUsePlayerAudio,
+        audioRef: {
+          get current() {
+            return null;
+          },
+          set current(_val: HTMLAudioElement | null) {
+            // Prevent React from assigning the mounted audio element
+          },
+        } as React.RefObject<HTMLAudioElement>,
+      };
+      vi.mocked(usePlayerAudio).mockReturnValue(nullRefMock);
+      render(<AppPlayer />);
+
+      expect(() => {
+        fireEvent.click(screen.getByText('Seek'));
+      }).not.toThrow();
+    });
   });
 
-  it('passes handlers to audio element', () => {
-    vi.mocked(useIsMobile).mockReturnValue(false);
-    const { container } = render(<AppPlayer />);
-    const audioEl = container.querySelector('audio');
+  describe('audio element', () => {
+    it('passes handlers to audio element', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      const { container } = render(<AppPlayer />);
+      const audioEl = container.querySelector('audio');
 
-    expect(audioEl).toHaveAttribute('src', 'audio-url.mp3');
-    expect(audioEl).toHaveAttribute('crossOrigin', 'anonymous');
+      expect(audioEl).toHaveAttribute('src', 'audio-url.mp3');
+      expect(audioEl).toHaveAttribute('crossOrigin', 'anonymous');
 
-    if (audioEl) {
-      fireEvent.timeUpdate(audioEl);
-      expect(mockUsePlayerAudio.handleTimeUpdate).toHaveBeenCalled();
+      if (audioEl) {
+        fireEvent.timeUpdate(audioEl);
+        expect(mockUsePlayerAudio.handleTimeUpdate).toHaveBeenCalled();
 
-      fireEvent.loadedMetadata(audioEl);
-      expect(mockUsePlayerAudio.handleLoadedMetadata).toHaveBeenCalled();
+        fireEvent.loadedMetadata(audioEl);
+        expect(mockUsePlayerAudio.handleLoadedMetadata).toHaveBeenCalled();
 
-      fireEvent.ended(audioEl);
-      expect(mockUsePlayerAudio.handleTrackEnd).toHaveBeenCalled();
-    }
+        fireEvent.ended(audioEl);
+        expect(mockUsePlayerAudio.handleTrackEnd).toHaveBeenCalled();
+      }
+    });
   });
 });
