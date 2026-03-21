@@ -171,7 +171,7 @@ import {
 
 ### customRender
 
-Renders a component with `QueryClientProvider` and `RouterProvider` for tests that need React Query and/or TanStack Router (`useNavigate`, `useParams`, `Link`, etc.):
+Renders a component with `QueryClientProvider` (React Query). Use this for most UI tests.
 
 ```tsx
 import { customRender } from "@repo/testing/web";
@@ -180,12 +180,15 @@ customRender(<MyComponent />);
 
 // With custom QueryClient
 customRender(<MyComponent />, { queryClient: myQueryClient });
+```
 
-// With initial URL for the in-memory router
-customRender(<MyComponent />, { initialLocation: "/albums/123" });
+For TanStack Router (`useNavigate`, `useParams`, `<Link>`, etc.), use `customRenderWithRouter`. Route content can mount asynchronously; prefer `findBy*` / `waitFor` when needed.
 
-// With router context (e.g. when your app expects auth in router context)
-customRender(<MyComponent />, { routerContext: { auth: mockAuth } });
+```tsx
+import { customRenderWithRouter } from "@repo/testing/web";
+
+customRenderWithRouter(<MyPage />, { initialLocation: "/albums/123" });
+customRenderWithRouter(<MyPage />, { routerContext: { auth: mockAuth } });
 ```
 
 ### createRouterMock
