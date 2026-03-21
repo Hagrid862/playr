@@ -4,12 +4,12 @@ import {
   CreateLibraryTrackRequestSchema,
   ZodAlbumInfer,
 } from '@repo/contracts';
+import { albumBuilder, artistBuilder } from '@repo/testing';
 import { useNavigate } from '@tanstack/react-router';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
-import { createTrackMockAlbum } from '../__tests__/fixtures';
 import { CreateTrackForm } from './CreateTrackForm';
 
 vi.mock('@/lib/audio-metadata', () => ({
@@ -86,6 +86,8 @@ async function uploadFileToInput(
   await user.upload(fileInput as HTMLInputElement, file);
 }
 
+const mockAlbum = { ...albumBuilder(), artists: [artistBuilder()] };
+
 describe('CreateTrackForm', () => {
   const onSubmit = vi.fn();
 
@@ -95,7 +97,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('renders correctly with default values', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     expect(screen.getByLabelText(/track title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/track no/i)).toHaveValue(1);
@@ -106,7 +108,7 @@ describe('CreateTrackForm', () => {
 
   it('validates required fields', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
@@ -119,7 +121,7 @@ describe('CreateTrackForm', () => {
 
   it('submits form with valid data', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['(⌐□_□)'], 'audio.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
@@ -142,8 +144,8 @@ describe('CreateTrackForm', () => {
           trackNumber: 2,
           diskNumber: 1,
           explicit: true,
-          albumId: 'album-123',
-          artistIds: ['artist-123'],
+          albumId: mockAlbum.id,
+          artistIds: [mockAlbum.artists[0].id],
         }),
         expect.any(File),
         null,
@@ -153,7 +155,7 @@ describe('CreateTrackForm', () => {
 
   it('shows error when audio file is missing on submit', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
     await user.click(screen.getByRole('button', { name: /add track/i }));
@@ -163,7 +165,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('disables submit button when loading', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={true} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={true} onSubmit={onSubmit} />);
     expect(screen.getByRole('button', { name: /adding/i })).toBeDisabled();
   });
 
@@ -172,7 +174,7 @@ describe('CreateTrackForm', () => {
     const navigate = vi.fn();
     vi.mocked(useNavigate).mockReturnValue(navigate);
 
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
@@ -192,7 +194,7 @@ describe('CreateTrackForm', () => {
     const navigate = vi.fn();
     vi.mocked(useNavigate).mockReturnValue(navigate);
 
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     expect(screen.getByLabelText(/track no/i)).toHaveValue(1);
 
@@ -215,7 +217,7 @@ describe('CreateTrackForm', () => {
 
   it('updates disk number correctly', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const diskInput = screen.getByLabelText(/disk no/i);
     await user.clear(diskInput);
@@ -232,7 +234,7 @@ describe('CreateTrackForm', () => {
 
     render(
       <CreateTrackForm
-        album={createTrackMockAlbum}
+        album={mockAlbum}
         isLoading={false}
         onSubmit={onSubmit}
         serverErrors={serverErrors}
@@ -247,7 +249,7 @@ describe('CreateTrackForm', () => {
     const user = userEvent.setup();
     onSubmit.mockRejectedValue(new Error('Submission failed'));
 
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
@@ -265,7 +267,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('handles album without artists gracefully', () => {
-    const albumWithoutArtists: ZodAlbumInfer = { ...createTrackMockAlbum, artists: undefined };
+    const albumWithoutArtists: ZodAlbumInfer = { ...mockAlbum, artists: undefined };
     render(<CreateTrackForm album={albumWithoutArtists} isLoading={false} onSubmit={onSubmit} />);
 
     expect(screen.getByRole('button', { name: /add track/i })).toBeInTheDocument();
@@ -273,7 +275,7 @@ describe('CreateTrackForm', () => {
 
   it('handles validation errors correctly and hits branch logic', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const titleInput = screen.getByLabelText(/track title/i);
     await user.type(titleInput, 'a'.repeat(300));
@@ -297,7 +299,7 @@ describe('CreateTrackForm', () => {
     ]) as ZodError<CreateLibraryTrackRequest>;
     safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
@@ -317,7 +319,7 @@ describe('CreateTrackForm', () => {
     ]) as ZodError<CreateLibraryTrackRequest>;
     safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const titleInput = screen.getByLabelText(/track title/i);
     await user.click(titleInput);
@@ -329,7 +331,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('shows drop overlay on dragenter with files', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     fireEvent.dragEnter(window, {
       dataTransfer: { items: [{ type: 'audio/mpeg' }] },
@@ -339,7 +341,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('does not show drop overlay on dragenter without items', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const event = new Event('dragenter', { bubbles: true });
     Object.defineProperty(event, 'dataTransfer', { value: { items: [] }, configurable: true });
@@ -349,7 +351,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('hides drop overlay on dragleave when counter reaches zero', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     fireEvent.dragEnter(window, {
       dataTransfer: { items: [{ type: 'audio/mpeg' }] },
@@ -361,7 +363,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('prevents default behavior on dragover', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const event = new Event('dragover', { bubbles: true });
     const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
@@ -371,7 +373,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('hides drop overlay when dragCounter reaches zero after multiple drag enters', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const dataTransfer = { items: [{ type: 'audio/mpeg' }] };
     fireEvent.dragEnter(window, { dataTransfer });
@@ -386,7 +388,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('opens multiple files modal when dropping multiple files', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file1 = new File(['a'], 'track1.mp3', { type: 'audio/mpeg' });
     const file2 = new File(['b'], 'track2.mp3', { type: 'audio/mpeg' });
@@ -403,7 +405,7 @@ describe('CreateTrackForm', () => {
 
   it('closes multiple files modal when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file1 = new File(['a'], 'track1.mp3', { type: 'audio/mpeg' });
     const file2 = new File(['b'], 'track2.mp3', { type: 'audio/mpeg' });
@@ -420,7 +422,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('opens invalid format modal when dropping non-audio file', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
@@ -435,7 +437,7 @@ describe('CreateTrackForm', () => {
 
   it('closes invalid format modal when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
@@ -449,7 +451,7 @@ describe('CreateTrackForm', () => {
 
   it('sets audio file when dropping valid audio file', async () => {
     const user = userEvent.setup();
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;
@@ -477,7 +479,7 @@ describe('CreateTrackForm', () => {
     const user = userEvent.setup();
     onSubmit.mockRejectedValue('String reject');
 
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(/track title/i), 'New Song');
 
@@ -494,7 +496,7 @@ describe('CreateTrackForm', () => {
   });
 
   it('does nothing on drop if no files are present', () => {
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const event = new Event('drop', { bubbles: true });
     Object.defineProperty(event, 'dataTransfer', { value: { files: [] }, configurable: true });
@@ -506,7 +508,7 @@ describe('CreateTrackForm', () => {
 
   it('handles drop when fileInputRef current is null', async () => {
     mockState.suppressRef = true;
-    render(<CreateTrackForm album={createTrackMockAlbum} isLoading={false} onSubmit={onSubmit} />);
+    render(<CreateTrackForm album={mockAlbum} isLoading={false} onSubmit={onSubmit} />);
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], { length: 1, item: () => file }) as FileList;

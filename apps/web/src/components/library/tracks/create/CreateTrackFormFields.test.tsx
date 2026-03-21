@@ -1,9 +1,8 @@
 import { useForm } from '@tanstack/react-form';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { TrackFormValues } from './useCreateTrackForm';
 import { CreateTrackFormFields } from './CreateTrackFormFields';
-import { mockAlbum } from '../__tests__/fixtures';
+import type { TrackFormValues } from './useCreateTrackForm';
 
 vi.mock('./SingleTrackCoverUpdateBanner', () => ({
   SingleTrackCoverUpdateBanner: () => <div>SingleTrackCoverUpdateBanner</div>,
@@ -32,8 +31,8 @@ function CreateTrackFormFieldsWrapper({
       trackNumber: 1,
       diskNumber: 1,
       explicit: false,
-      albumId: mockAlbum.id,
-      artistIds: mockAlbum.artists?.map((a) => a.id) ?? [],
+      albumId: 'album-123',
+      artistIds: ['artist-123'],
       audioFile: null,
     } as TrackFormValues,
   });

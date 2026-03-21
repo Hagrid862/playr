@@ -1,8 +1,8 @@
 import { extractCoverFromAudioFile } from '@/lib/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/clean-audio-filename.ts';
+import { albumBuilder, artistBuilder } from '@repo/testing';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockAlbum } from '../__tests__/fixtures';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBulkTrackUpload } from './useBulkTrackUpload';
 
 vi.mock('@/lib/audio-metadata', () => ({
@@ -13,6 +13,11 @@ vi.mock('@/lib/clean-audio-filename.ts', () => ({
   cleanFilenameToTitle: vi.fn((name) => name.replace('.mp3', '')),
 }));
 
+const originalCreateObjectURL = global.URL.createObjectURL;
+const originalRevokeObjectURL = global.URL.revokeObjectURL;
+
+const mockAlbum = { ...albumBuilder(), artists: [artistBuilder()] };
+
 describe('useBulkTrackUpload', () => {
   const onSubmit = vi.fn();
 
@@ -20,6 +25,11 @@ describe('useBulkTrackUpload', () => {
     vi.clearAllMocks();
     global.URL.createObjectURL = vi.fn(() => 'blob:test-url');
     global.URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    global.URL.createObjectURL = originalCreateObjectURL;
+    global.URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
   it('initializes with default values', () => {
@@ -69,8 +79,8 @@ describe('useBulkTrackUpload', () => {
       expect(result.current.tracks[1].file.name).toBe('b-track.mp3');
       expect(result.current.tracks[1].trackNumber).toBe(2);
       expect(cleanFilenameToTitle).toHaveBeenCalledWith('b-track.mp3', {
-        artists: ['Artist'],
-        album: 'Test Album',
+        artists: [mockAlbum.artists[0].name],
+        album: mockAlbum.name,
       });
     });
 
@@ -84,7 +94,7 @@ describe('useBulkTrackUpload', () => {
       });
       expect(cleanFilenameToTitle).toHaveBeenCalledWith('a.mp3', {
         artists: [],
-        album: 'Test Album',
+        album: mockAlbum.name,
       });
     });
     it('handles album with missing name gracefully', () => {
@@ -97,7 +107,7 @@ describe('useBulkTrackUpload', () => {
         result.current.addFiles([file] as unknown as FileList);
       });
       expect(cleanFilenameToTitle).toHaveBeenCalledWith('a.mp3', {
-        artists: ['Artist'],
+        artists: [mockAlbum.artists[0].name],
         album: '',
       });
     });

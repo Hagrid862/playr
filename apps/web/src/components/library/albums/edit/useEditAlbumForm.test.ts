@@ -1,9 +1,14 @@
-import type { UpdateLibraryAlbumRequest } from '@repo/contracts';
+import type { UpdateLibraryAlbumRequest, ZodAlbum } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
+import { albumBuilder, imageBuilder } from '@repo/testing';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockAlbum } from '../__tests__/fixtures';
 import { useEditAlbumForm, validateWithZod } from './useEditAlbumForm';
+
+const mockAlbum = {
+  ...albumBuilder(),
+  cover: imageBuilder(),
+} as ZodAlbum;
 
 describe('validateWithZod', () => {
   it('maps multiple validation errors correctly', () => {

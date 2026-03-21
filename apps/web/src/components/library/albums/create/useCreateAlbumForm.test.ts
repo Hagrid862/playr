@@ -1,8 +1,8 @@
-import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { useCreateAlbumForm } from './useCreateAlbumForm';
 import * as contracts from '@repo/contracts';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { useCreateAlbumForm } from './useCreateAlbumForm';
 
 vi.mock('@repo/contracts', async (importOriginal) => {
   const actual = await importOriginal<typeof contracts>();
@@ -17,6 +17,10 @@ vi.mock('@repo/contracts', async (importOriginal) => {
 
 describe('useCreateAlbumForm', () => {
   const artistId = 'artist-123';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useCreateAlbumForm(artistId));

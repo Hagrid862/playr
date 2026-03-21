@@ -3,140 +3,140 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CoverSelectionBanner } from './CoverSelectionBanner';
 
+const defaultTracksWithCovers = [
+  {
+    trackId: 'track-1',
+    trackName: 'track1.mp3',
+    coverFile: new File(['x'], 'cover.jpg', { type: 'image/jpeg' }),
+    previewUrl: 'blob:url1',
+  },
+  {
+    trackId: 'track-2',
+    trackName: 'track2.mp3',
+    coverFile: new File(['x'], 'cover2.jpg', { type: 'image/jpeg' }),
+    previewUrl: 'blob:url2',
+  },
+];
+
+function getOnSelectCover() {
+  return vi.fn();
+}
+
 describe('CoverSelectionBanner', () => {
-  const mockOnSelectCover = vi.fn();
-
-  const defaultTracksWithCovers = [
-    {
-      trackId: 'track-1',
-      trackName: 'track1.mp3',
-      coverFile: new File(['x'], 'cover.jpg', { type: 'image/jpeg' }),
-      previewUrl: 'blob:url1',
-    },
-    {
-      trackId: 'track-2',
-      trackName: 'track2.mp3',
-      coverFile: new File(['x'], 'cover2.jpg', { type: 'image/jpeg' }),
-      previewUrl: 'blob:url2',
-    },
-  ];
-
   beforeEach(() => {
-    mockOnSelectCover.mockClear();
+    vi.clearAllMocks();
   });
 
-  it('renders when album has no cover', () => {
-    render(
-      <CoverSelectionBanner
-        albumHasCover={false}
-        tracksWithCovers={defaultTracksWithCovers}
-        selectedCoverTrackId={null}
-        onSelectCover={mockOnSelectCover}
-      />,
-    );
+  describe('copy', () => {
+    it('renders when album has no cover', () => {
+      const onSelectCover = getOnSelectCover();
+      render(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={defaultTracksWithCovers}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
 
-    expect(screen.getByText('Cover art detected')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Cover art found in 2 tracks. Would you like to use it as the album cover\?/,
-      ),
-    ).toBeInTheDocument();
+      expect(screen.getByText('Cover art detected')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /Cover art found in 2 tracks. Would you like to use it as the album cover\?/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('renders replace copy when album has cover', () => {
+      const onSelectCover = getOnSelectCover();
+      render(
+        <CoverSelectionBanner
+          albumHasCover
+          tracksWithCovers={defaultTracksWithCovers}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByText(
+          /Cover art found in 2 tracks. Would you like to replace the current album cover\?/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('uses singular replace message for one track when album has cover', () => {
+      const onSelectCover = getOnSelectCover();
+      render(
+        <CoverSelectionBanner
+          albumHasCover
+          tracksWithCovers={[defaultTracksWithCovers[0]]}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByText(
+          /Cover art found in 1 track. Would you like to replace the current album cover\?/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('uses singular message for one track when album has no cover', () => {
+      const onSelectCover = getOnSelectCover();
+      render(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={[defaultTracksWithCovers[0]]}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByText(
+          /Cover art found in 1 track. Would you like to use it as the album cover\?/,
+        ),
+      ).toBeInTheDocument();
+    });
   });
 
-  it('renders when album has cover', () => {
-    render(
-      <CoverSelectionBanner
-        albumHasCover
-        tracksWithCovers={defaultTracksWithCovers}
-        selectedCoverTrackId={null}
-        onSelectCover={mockOnSelectCover}
-      />,
-    );
+  describe('selection', () => {
+    it("calls onSelectCover with null when Don't use is clicked", async () => {
+      const user = userEvent.setup();
+      const onSelectCover = getOnSelectCover();
+      render(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={defaultTracksWithCovers}
+          selectedCoverTrackId="track-1"
+          onSelectCover={onSelectCover}
+        />,
+      );
 
-    expect(
-      screen.getByText(
-        /Cover art found in 2 tracks. Would you like to replace the current album cover\?/,
-      ),
-    ).toBeInTheDocument();
-  });
+      await user.click(screen.getByRole('button', { name: "Don't use" }));
 
-  it('renders singular replace message when album has cover and one track', () => {
-    render(
-      <CoverSelectionBanner
-        albumHasCover
-        tracksWithCovers={[defaultTracksWithCovers[0]]}
-        selectedCoverTrackId={null}
-        onSelectCover={mockOnSelectCover}
-      />,
-    );
+      expect(onSelectCover).toHaveBeenCalledWith(null);
+    });
 
-    expect(
-      screen.getByText(
-        /Cover art found in 1 track. Would you like to replace the current album cover\?/,
-      ),
-    ).toBeInTheDocument();
-  });
+    it('calls onSelectCover with trackId when a track cover is clicked', async () => {
+      const user = userEvent.setup();
+      const onSelectCover = getOnSelectCover();
+      render(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={defaultTracksWithCovers}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
 
-  it("calls onSelectCover with null when Don't use is clicked", async () => {
-    const user = userEvent.setup();
-    render(
-      <CoverSelectionBanner
-        albumHasCover={false}
-        tracksWithCovers={defaultTracksWithCovers}
-        selectedCoverTrackId="track-1"
-        onSelectCover={mockOnSelectCover}
-      />,
-    );
+      await user.click(screen.getByRole('button', { name: 'track1.mp3' }));
+      expect(onSelectCover).toHaveBeenCalledWith('track-1');
 
-    await user.click(screen.getByRole('button', { name: "Don't use" }));
-
-    expect(mockOnSelectCover).toHaveBeenCalledWith(null);
-  });
-
-  it('calls onSelectCover with trackId when track cover is clicked', async () => {
-    const user = userEvent.setup();
-    render(
-      <CoverSelectionBanner
-        albumHasCover={false}
-        tracksWithCovers={defaultTracksWithCovers}
-        selectedCoverTrackId={null}
-        onSelectCover={mockOnSelectCover}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'track1.mp3' }));
-
-    expect(mockOnSelectCover).toHaveBeenCalledWith('track-1');
-  });
-
-  it('calls onSelectCover with trackId when second track cover is clicked', async () => {
-    const user = userEvent.setup();
-    render(
-      <CoverSelectionBanner
-        albumHasCover={false}
-        tracksWithCovers={defaultTracksWithCovers}
-        selectedCoverTrackId={null}
-        onSelectCover={mockOnSelectCover}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'track2.mp3' }));
-
-    expect(mockOnSelectCover).toHaveBeenCalledWith('track-2');
-  });
-
-  it('renders singular message when one track has cover', () => {
-    render(
-      <CoverSelectionBanner
-        albumHasCover={false}
-        tracksWithCovers={[defaultTracksWithCovers[0]]}
-        selectedCoverTrackId={null}
-        onSelectCover={mockOnSelectCover}
-      />,
-    );
-
-    expect(
-      screen.getByText(/Cover art found in 1 track. Would you like to use it as the album cover\?/),
-    ).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'track2.mp3' }));
+      expect(onSelectCover).toHaveBeenCalledWith('track-2');
+    });
   });
 });

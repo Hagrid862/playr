@@ -1,8 +1,8 @@
+import { AlbumType } from '@repo/db';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { createMockCreateAlbumRequest } from '../__tests__/fixtures';
 import { CreateAlbumForm } from './CreateAlbumForm';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -66,7 +66,13 @@ describe('CreateAlbumForm', () => {
   const mockOnFileSelect = vi.fn();
 
   const defaultProps = {
-    formData: createMockCreateAlbumRequest(),
+    formData: {
+      name: '',
+      description: '',
+      type: AlbumType.album,
+      artistId: 'artist-123',
+      releaseDate: null,
+    },
     isLoading: false,
     isValid: true,
     onSubmit: mockOnSubmit,
