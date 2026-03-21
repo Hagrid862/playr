@@ -1,5 +1,6 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerMobile } from './PlayerMobile';
@@ -26,7 +27,7 @@ describe('PlayerMobile', () => {
 
   describe('rendering', () => {
     it('renders default empty state', () => {
-      render(<PlayerMobile />);
+      customRender(<PlayerMobile />);
       expect(screen.getByText('No track selected')).toBeInTheDocument();
       expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
     });
@@ -43,7 +44,7 @@ describe('PlayerMobile', () => {
         }),
       );
 
-      render(<PlayerMobile />);
+      customRender(<PlayerMobile />);
       expect(screen.getByText('Test Song')).toBeInTheDocument();
       expect(screen.getByText('Artist A')).toBeInTheDocument();
 
@@ -53,7 +54,7 @@ describe('PlayerMobile', () => {
 
     it('renders pause icon when playing', () => {
       vi.mocked(usePlayerStore).mockReturnValue(buildState({ isPlaying: true }));
-      render(<PlayerMobile />);
+      customRender(<PlayerMobile />);
       const btn = screen.getByRole('button');
       expect(btn).toBeInTheDocument();
     });
@@ -61,7 +62,7 @@ describe('PlayerMobile', () => {
 
   describe('playback', () => {
     it('toggles play', () => {
-      render(<PlayerMobile />);
+      customRender(<PlayerMobile />);
       const btn = screen.getByRole('button');
       fireEvent.click(btn);
       expect(togglePlay).toHaveBeenCalled();

@@ -1,11 +1,12 @@
-import { act, renderHook } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing';
+import { act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useCreateArtistForm } from './useCreateArtistForm';
 
 describe('useCreateArtistForm', () => {
   describe('initialization', () => {
     it('initializes with default values', () => {
-      const { result } = renderHook(() => useCreateArtistForm());
+      const { result } = customRenderHook(() => useCreateArtistForm());
 
       expect(result.current.formData).toEqual({ name: '', description: '' });
       expect(result.current.touched).toEqual({});
@@ -18,7 +19,7 @@ describe('useCreateArtistForm', () => {
 
   describe('handleChange', () => {
     it('handles changes', () => {
-      const { result } = renderHook(() => useCreateArtistForm());
+      const { result } = customRenderHook(() => useCreateArtistForm());
 
       act(() => {
         result.current.handleChange('name', 'Nirvana');
@@ -38,7 +39,7 @@ describe('useCreateArtistForm', () => {
 
   describe('blur and getFieldError', () => {
     it('handles blur', () => {
-      const { result } = renderHook(() => useCreateArtistForm());
+      const { result } = customRenderHook(() => useCreateArtistForm());
 
       act(() => {
         result.current.handleBlur('name');
@@ -49,14 +50,14 @@ describe('useCreateArtistForm', () => {
     });
 
     it('returns undefined for field error if not touched', () => {
-      const { result } = renderHook(() => useCreateArtistForm());
+      const { result } = customRenderHook(() => useCreateArtistForm());
       expect(result.current.getFieldError('name')).toBeUndefined();
     });
   });
 
   describe('submit', () => {
     it('validates form and show all errors on submit', () => {
-      const { result } = renderHook(() => useCreateArtistForm());
+      const { result } = customRenderHook(() => useCreateArtistForm());
 
       let submitResult;
       act(() => {
@@ -69,7 +70,7 @@ describe('useCreateArtistForm', () => {
     });
 
     it('returns data on successful submit', () => {
-      const { result } = renderHook(() => useCreateArtistForm());
+      const { result } = customRenderHook(() => useCreateArtistForm());
 
       act(() => {
         result.current.handleChange('name', 'Nirvana');
@@ -86,7 +87,7 @@ describe('useCreateArtistForm', () => {
 
   describe('validation limits', () => {
     it('handles complex validation errors', () => {
-      const { result } = renderHook(() => useCreateArtistForm());
+      const { result } = customRenderHook(() => useCreateArtistForm());
 
       act(() => {
         result.current.handleChange('name', 'a'.repeat(300));

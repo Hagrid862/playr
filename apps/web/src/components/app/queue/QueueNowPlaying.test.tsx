@@ -1,18 +1,19 @@
 import type { QueueItem } from '@/stores/player.store';
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import {
-  createQueueItemFixture,
-  testAlbumNoCover,
-  testAlbumWithCover,
-  testArtist,
+    createQueueItemFixture,
+    testAlbumNoCover,
+    testAlbumWithCover,
+    testArtist,
 } from '../test-utils/player-test-utils';
 import { QueueNowPlaying } from './QueueNowPlaying';
 
 describe('QueueNowPlaying', () => {
   describe('empty', () => {
     it('renders nothing when currentTrack is null', () => {
-      const { container } = render(<QueueNowPlaying currentTrack={null} />);
+      const { container } = customRender(<QueueNowPlaying currentTrack={null} />);
       expect(container).toBeEmptyDOMElement();
     });
   });
@@ -27,7 +28,7 @@ describe('QueueNowPlaying', () => {
         album,
       };
 
-      render(<QueueNowPlaying currentTrack={track} />);
+      customRender(<QueueNowPlaying currentTrack={track} />);
       expect(screen.getByText('Now Playing')).toBeInTheDocument();
       expect(screen.getByText('Test Song')).toBeInTheDocument();
       expect(screen.getByText('Artist A')).toBeInTheDocument();
@@ -44,7 +45,7 @@ describe('QueueNowPlaying', () => {
         album: testAlbumNoCover(),
       };
 
-      render(<QueueNowPlaying currentTrack={track} />);
+      customRender(<QueueNowPlaying currentTrack={track} />);
       expect(screen.getByText('Test Song 2')).toBeInTheDocument();
       expect(screen.queryByAltText('Test Song 2')).not.toBeInTheDocument();
     });

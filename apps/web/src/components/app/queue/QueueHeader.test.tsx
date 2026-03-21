@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueueHeader } from './QueueHeader';
 
@@ -7,7 +8,7 @@ describe('QueueHeader', () => {
     it('renders correctly and handles clicks', () => {
       const onShowHistory = vi.fn();
       const onToggleQueue = vi.fn();
-      render(<QueueHeader onShowHistory={onShowHistory} onToggleQueue={onToggleQueue} />);
+      customRender(<QueueHeader onShowHistory={onShowHistory} onToggleQueue={onToggleQueue} />);
 
       expect(screen.getByText('Queue')).toBeInTheDocument();
 

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SongCard } from './SongCard';
 
@@ -19,7 +20,7 @@ describe('SongCard', () => {
 
   describe('rendering', () => {
     it('renders song details correctly', () => {
-      render(<SongCard {...getDefaultProps()} />);
+      customRender(<SongCard {...getDefaultProps()} />);
 
       expect(screen.getByText('1')).toBeInTheDocument();
       expect(screen.getByText('Test Song')).toBeInTheDocument();
@@ -28,17 +29,17 @@ describe('SongCard', () => {
     });
 
     it('renders explicit tag when explicit is true', () => {
-      render(<SongCard {...getDefaultProps()} explicit />);
+      customRender(<SongCard {...getDefaultProps()} explicit />);
       expect(screen.getByText('E')).toBeInTheDocument();
     });
 
     it('does not render explicit tag when explicit is false or undefined', () => {
-      render(<SongCard {...getDefaultProps()} />);
+      customRender(<SongCard {...getDefaultProps()} />);
       expect(screen.queryByText('E')).not.toBeInTheDocument();
     });
 
     it('formats multiple artists correctly', () => {
-      render(
+      customRender(
         <SongCard
           {...getDefaultProps()}
           artists={[
@@ -51,7 +52,7 @@ describe('SongCard', () => {
     });
 
     it('renders track number and play icon structure', () => {
-      const { container } = render(<SongCard {...getDefaultProps()} />);
+      const { container } = customRender(<SongCard {...getDefaultProps()} />);
 
       const trackNum = screen.getByText('1');
       expect(trackNum).toHaveClass('group-hover:hidden');
@@ -64,12 +65,12 @@ describe('SongCard', () => {
 
   describe('duration formatting', () => {
     it('formats with leading zero for seconds under 10', () => {
-      render(<SongCard {...getDefaultProps()} duration={65} />);
+      customRender(<SongCard {...getDefaultProps()} duration={65} />);
       expect(screen.getByText('1:05')).toBeInTheDocument();
     });
 
     it('formats durations over 10 minutes', () => {
-      render(<SongCard {...getDefaultProps()} duration={605} />);
+      customRender(<SongCard {...getDefaultProps()} duration={605} />);
       expect(screen.getByText('10:05')).toBeInTheDocument();
     });
   });
@@ -77,7 +78,7 @@ describe('SongCard', () => {
   describe('user interaction', () => {
     it('calls onClick when clicked', () => {
       const onClick = vi.fn();
-      render(<SongCard {...getDefaultProps()} onClick={onClick} />);
+      customRender(<SongCard {...getDefaultProps()} onClick={onClick} />);
 
       fireEvent.click(screen.getByText('Test Song'));
       expect(onClick).toHaveBeenCalledTimes(1);
@@ -87,7 +88,7 @@ describe('SongCard', () => {
   describe('context menu', () => {
     it('calls onEdit with track id', () => {
       const onEdit = vi.fn();
-      render(<SongCard {...getDefaultProps()} onEdit={onEdit} />);
+      customRender(<SongCard {...getDefaultProps()} onEdit={onEdit} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
       fireEvent.click(screen.getByText('Edit'));
@@ -96,7 +97,7 @@ describe('SongCard', () => {
 
     it('calls onDelete with id and title', () => {
       const onDelete = vi.fn();
-      render(<SongCard {...getDefaultProps()} onDelete={onDelete} />);
+      customRender(<SongCard {...getDefaultProps()} onDelete={onDelete} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
       fireEvent.click(screen.getByText('Delete'));
@@ -105,7 +106,7 @@ describe('SongCard', () => {
 
     it('calls onAddToQueue', () => {
       const onAddToQueue = vi.fn();
-      render(<SongCard {...getDefaultProps()} onAddToQueue={onAddToQueue} />);
+      customRender(<SongCard {...getDefaultProps()} onAddToQueue={onAddToQueue} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
       fireEvent.click(screen.getByText('Add to Queue'));
@@ -114,7 +115,7 @@ describe('SongCard', () => {
 
     it('calls onPlayNext', () => {
       const onPlayNext = vi.fn();
-      render(<SongCard {...getDefaultProps()} onPlayNext={onPlayNext} />);
+      customRender(<SongCard {...getDefaultProps()} onPlayNext={onPlayNext} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
       fireEvent.click(screen.getByText('Play Next'));
@@ -124,7 +125,7 @@ describe('SongCard', () => {
 
   describe('active and playing', () => {
     it('applies active styles when isActive', () => {
-      render(<SongCard {...getDefaultProps()} isActive />);
+      customRender(<SongCard {...getDefaultProps()} isActive />);
 
       const titleElement = screen.getByText('Test Song');
       expect(titleElement).toHaveClass('text-green-500');
@@ -137,7 +138,7 @@ describe('SongCard', () => {
     });
 
     it('renders music bars when isActive and isPlaying', () => {
-      const { container } = render(<SongCard {...getDefaultProps()} isActive isPlaying />);
+      const { container } = customRender(<SongCard {...getDefaultProps()} isActive isPlaying />);
 
       expect(screen.queryByText('1')).not.toBeInTheDocument();
       expect(container.querySelector('.animate-music-bar-1')).toBeInTheDocument();
@@ -147,7 +148,7 @@ describe('SongCard', () => {
   describe('processing and failed', () => {
     it('renders Spinner and blocks interaction when isProcessing', () => {
       const onClick = vi.fn();
-      render(<SongCard {...getDefaultProps()} isProcessing onClick={onClick} />);
+      customRender(<SongCard {...getDefaultProps()} isProcessing onClick={onClick} />);
 
       expect(screen.getByLabelText('Processing')).toBeInTheDocument();
       expect(screen.getByText('Test Song').closest('.group')).toHaveClass(
@@ -161,7 +162,7 @@ describe('SongCard', () => {
 
     it('renders WarningIcon and blocks interaction when isFailed', () => {
       const onClick = vi.fn();
-      render(<SongCard {...getDefaultProps()} isFailed onClick={onClick} />);
+      customRender(<SongCard {...getDefaultProps()} isFailed onClick={onClick} />);
 
       expect(screen.getByLabelText('Processing failed')).toBeInTheDocument();
       expect(screen.getByText('Test Song').closest('.group')).toHaveClass(

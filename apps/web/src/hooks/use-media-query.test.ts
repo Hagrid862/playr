@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,19 +33,19 @@ describe('useMediaQuery', () => {
 
   describe('initial match result', () => {
     it('returns true if media query matches', () => {
-      const { result } = renderHook(() => useMediaQuery('(min-width: 768px)'));
+      const { result } = customRenderHook(() => useMediaQuery('(min-width: 768px)'));
       expect(result.current).toBe(true);
     });
 
     it('returns false if media query does not match', () => {
-      const { result } = renderHook(() => useMediaQuery('(min-width: 1024px)'));
+      const { result } = customRenderHook(() => useMediaQuery('(min-width: 1024px)'));
       expect(result.current).toBe(false);
     });
   });
 
   describe('event subscription lifecycle', () => {
     it('subscribes and unsubscribes to matchMedia changes', () => {
-      const { unmount } = renderHook(() => useMediaQuery('(min-width: 768px)'));
+      const { unmount } = customRenderHook(() => useMediaQuery('(min-width: 768px)'));
 
       expect(addEventListenerMock).toHaveBeenCalledWith('change', expect.any(Function));
 

@@ -1,6 +1,6 @@
 import type { BulkTrackItem } from '@/lib/types/library';
-import { trackBuilder } from '@repo/testing';
-import { render, screen } from '@testing-library/react';
+import { customRender, trackBuilder } from '@repo/testing';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkTrackList } from './BulkTrackList';
@@ -38,7 +38,7 @@ describe('BulkTrackList', () => {
 
   describe('empty state', () => {
     it('renders null when tracks empty', () => {
-      const { container } = render(
+      const { container } = customRender(
         <BulkTrackList
           tracks={[]}
           onUpdateTrack={mockOnUpdateTrack}
@@ -53,7 +53,7 @@ describe('BulkTrackList', () => {
 
   describe('header', () => {
     it('renders track count and Clear all button', () => {
-      render(
+      customRender(
         <BulkTrackList
           tracks={[
             { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
@@ -69,7 +69,7 @@ describe('BulkTrackList', () => {
     });
 
     it('renders plural track count for multiple tracks', () => {
-      render(
+      customRender(
         <BulkTrackList
           tracks={[
             { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
@@ -88,7 +88,7 @@ describe('BulkTrackList', () => {
   describe('callbacks', () => {
     it('calls onClearAll when Clear all is clicked', async () => {
       const user = userEvent.setup();
-      render(
+      customRender(
         <BulkTrackList
           tracks={[
             { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
@@ -110,7 +110,7 @@ describe('BulkTrackList', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(
+      customRender(
         <BulkTrackList
           tracks={[track]}
           onUpdateTrack={mockOnUpdateTrack}
@@ -130,7 +130,7 @@ describe('BulkTrackList', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(
+      customRender(
         <BulkTrackList
           tracks={[track]}
           onUpdateTrack={mockOnUpdateTrack}

@@ -1,6 +1,6 @@
 import type { ZodAlbum } from '@repo/contracts';
-import { albumBuilder } from '@repo/testing';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { albumBuilder, customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditAlbumForm } from './EditAlbumForm';
@@ -70,20 +70,20 @@ describe('EditAlbumForm', () => {
   });
 
   it('renders correctly', () => {
-    render(<EditAlbumForm {...defaultProps} />);
+    customRender(<EditAlbumForm {...defaultProps} />);
     expect(screen.getByRole('button', { name: /Save Changes/i })).toBeInTheDocument();
     expect(screen.getByText('Metadata Fields')).toBeInTheDocument();
   });
 
   it('calls onCancel when cancel button is clicked', async () => {
     const user = userEvent.setup();
-    render(<EditAlbumForm {...defaultProps} />);
+    customRender(<EditAlbumForm {...defaultProps} />);
     await user.click(screen.getByRole('button', { name: /Cancel/i }));
     expect(mockOnCancel).toHaveBeenCalled();
   });
 
   it('shows loading state', () => {
-    render(<EditAlbumForm {...defaultProps} isLoading={true} />);
+    customRender(<EditAlbumForm {...defaultProps} isLoading={true} />);
     expect(screen.getByText(/Saving.../i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Saving.../i })).toBeDisabled();
   });
@@ -105,7 +105,7 @@ describe('EditAlbumForm', () => {
       handleCoverSelect: vi.fn(),
     } as unknown as UseEditAlbumFormReturn);
 
-    render(<EditAlbumForm {...defaultProps} />);
+    customRender(<EditAlbumForm {...defaultProps} />);
     await user.click(screen.getByRole('button', { name: /Save Changes/i }));
     expect(mockForm.handleSubmit).toHaveBeenCalled();
   });
@@ -128,7 +128,7 @@ describe('EditAlbumForm', () => {
       handleCoverSelect: mockHandleCoverSelect,
     } as unknown as UseEditAlbumFormReturn);
 
-    render(<EditAlbumForm {...defaultProps} />);
+    customRender(<EditAlbumForm {...defaultProps} />);
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['image'], 'test.png', { type: 'image/png' });
@@ -155,7 +155,7 @@ describe('EditAlbumForm', () => {
       handleCoverSelect: mockHandleCoverSelect,
     } as unknown as UseEditAlbumFormReturn);
 
-    render(<EditAlbumForm {...defaultProps} />);
+    customRender(<EditAlbumForm {...defaultProps} />);
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [] } });
@@ -180,7 +180,7 @@ describe('EditAlbumForm', () => {
       handleCoverSelect: vi.fn(),
     } as unknown as UseEditAlbumFormReturn);
 
-    render(<EditAlbumForm {...defaultProps} />);
+    customRender(<EditAlbumForm {...defaultProps} />);
 
     // Get the input to verify click was called on it
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;

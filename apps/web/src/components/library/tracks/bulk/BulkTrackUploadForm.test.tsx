@@ -1,6 +1,6 @@
 import type { BulkTrackItem } from '@/lib/types/library';
-import { albumBuilder, trackBuilder } from '@repo/testing';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { albumBuilder, customRender, trackBuilder } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkTrackUploadForm } from './BulkTrackUploadForm';
@@ -76,7 +76,7 @@ describe('BulkTrackUploadForm', () => {
   });
 
   it('renders empty state when no tracks', () => {
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     expect(screen.getByText('Drop audio files anywhere to start uploading')).toBeInTheDocument();
   });
@@ -87,7 +87,7 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     expect(screen.getByText('1 track ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeInTheDocument();
@@ -108,14 +108,14 @@ describe('BulkTrackUploadForm', () => {
       ],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     expect(screen.getByText('2 tracks ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Upload 2 tracks/i })).toBeInTheDocument();
   });
 
   it('calls addFiles when files are dropped on window', () => {
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], {
@@ -135,7 +135,7 @@ describe('BulkTrackUploadForm', () => {
       isScanningCovers: true,
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     expect(screen.getByText('Scanning tracks for cover art...')).toBeInTheDocument();
   });
@@ -155,7 +155,7 @@ describe('BulkTrackUploadForm', () => {
       ],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     expect(screen.getByText('CoverSelectionBanner')).toBeInTheDocument();
   });
@@ -167,7 +167,7 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     await user.click(screen.getByRole('button', { name: 'Clear all' }));
 
@@ -181,7 +181,7 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     await user.click(screen.getByRole('button', { name: 'Update' }));
 
@@ -195,7 +195,7 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     await user.click(screen.getByRole('button', { name: 'Remove' }));
 
@@ -216,7 +216,7 @@ describe('BulkTrackUploadForm', () => {
       ],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeDisabled();
   });
@@ -227,7 +227,7 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} isLoading />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} isLoading />);
 
     expect(screen.getByRole('button', { name: /Uploading/i })).toBeDisabled();
   });
@@ -239,7 +239,7 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    render(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
 
     await user.click(screen.getByRole('button', { name: /Upload 1 track/i }));
 

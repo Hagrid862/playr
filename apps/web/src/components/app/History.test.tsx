@@ -1,5 +1,6 @@
 import { QueueItem, usePlayerStore } from '@/stores/player.store';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { History } from './History';
 import { createPlayerStateMock } from './test-utils/player-test-utils';
@@ -26,7 +27,7 @@ describe('History', () => {
 
   describe('empty state', () => {
     it('renders empty state when history is empty', () => {
-      render(<History isVisible={true} onBack={mockOnBack} />);
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
       expect(screen.getByText('No listening history')).toBeInTheDocument();
     });
   });
@@ -49,7 +50,7 @@ describe('History', () => {
         }),
       );
 
-      render(<History isVisible={true} onBack={mockOnBack} />);
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
       expect(screen.getByText('Track 1')).toBeInTheDocument();
       expect(screen.getByText('Artist 1')).toBeInTheDocument();
       expect(screen.getByText('Track 2')).toBeInTheDocument();
@@ -70,7 +71,7 @@ describe('History', () => {
         }),
       );
 
-      render(<History isVisible={true} onBack={mockOnBack} />);
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
       fireEvent.click(screen.getByText('Track 1'));
       expect(mockPlayTrack).toHaveBeenCalledWith(track);
     });
@@ -90,7 +91,7 @@ describe('History', () => {
         }),
       );
 
-      render(<History isVisible={true} onBack={mockOnBack} />);
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
 
       expect(screen.getByText('Track 0')).toBeInTheDocument();
       expect(screen.getByText('Track 19')).toBeInTheDocument();
@@ -109,13 +110,13 @@ describe('History', () => {
 
   describe('navigation', () => {
     it('calls onBack when back button is clicked', () => {
-      render(<History isVisible={true} onBack={mockOnBack} />);
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
       fireEvent.click(screen.getByTitle('Back to Queue'));
       expect(mockOnBack).toHaveBeenCalled();
     });
 
     it('calls toggleQueue when close button is clicked', () => {
-      render(<History isVisible={true} onBack={mockOnBack} />);
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
       const buttons = screen.getAllByRole('button');
       fireEvent.click(buttons[1]);
       expect(mockToggleQueue).toHaveBeenCalled();
@@ -124,7 +125,9 @@ describe('History', () => {
 
   describe('visibility', () => {
     it('applies correct classes based on isVisible', () => {
-      const { container, rerender } = render(<History isVisible={true} onBack={mockOnBack} />);
+      const { container, rerender } = customRender(
+        <History isVisible={true} onBack={mockOnBack} />,
+      );
       expect(container.firstChild).toHaveClass('opacity-100');
       expect(container.firstChild).not.toHaveClass('opacity-0');
 

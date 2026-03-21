@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SelectField } from './SelectField';
 
@@ -24,17 +25,17 @@ describe('SelectField', () => {
 
   describe('rendering', () => {
     it('renders label', () => {
-      render(<SelectField {...getDefaultProps()} />);
+      customRender(<SelectField {...getDefaultProps()} />);
       expect(screen.getByText('Test Label')).toBeInTheDocument();
     });
 
     it('renders error message when error prop is provided', () => {
-      render(<SelectField {...getDefaultProps()} error="Something went wrong" />);
+      customRender(<SelectField {...getDefaultProps()} error="Something went wrong" />);
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     });
 
     it('opens and shows options when trigger is clicked', async () => {
-      render(<SelectField {...getDefaultProps()} />);
+      customRender(<SelectField {...getDefaultProps()} />);
 
       const trigger = screen.getByRole('combobox');
       fireEvent.click(trigger);
@@ -48,7 +49,7 @@ describe('SelectField', () => {
     it('calls onChange and onBlur when an option is selected', async () => {
       const onChange = vi.fn();
       const onBlur = vi.fn();
-      render(<SelectField {...getDefaultProps()} onChange={onChange} onBlur={onBlur} />);
+      customRender(<SelectField {...getDefaultProps()} onChange={onChange} onBlur={onBlur} />);
 
       const trigger = screen.getByRole('combobox');
       fireEvent.click(trigger);

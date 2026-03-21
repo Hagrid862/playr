@@ -3,8 +3,9 @@ import {
   UpdateLibraryTrackRequestSchema,
   ZodTrack,
 } from '@repo/contracts';
+import { customRender } from '@repo/testing';
 import { useNavigate } from '@tanstack/react-router';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
@@ -60,7 +61,7 @@ describe('EditTrackForm', () => {
 
   describe('rendering', () => {
     it('renders correctly with initial values', () => {
-      render(
+      customRender(
         <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
       );
 
@@ -72,7 +73,7 @@ describe('EditTrackForm', () => {
     });
 
     it('disables submit button when loading', () => {
-      render(
+      customRender(
         <EditTrackForm track={mockTrack} albumId={albumId} isLoading={true} onSubmit={onSubmit} />,
       );
       expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
@@ -80,7 +81,7 @@ describe('EditTrackForm', () => {
 
     it('handles track without artists safely', () => {
       const trackWithoutArtists = { ...mockTrack, artists: undefined };
-      render(
+      customRender(
         <EditTrackForm
           track={trackWithoutArtists}
           albumId={albumId}
@@ -99,7 +100,7 @@ describe('EditTrackForm', () => {
       const navigate = vi.fn();
       vi.mocked(useNavigate).mockReturnValue(navigate);
 
-      render(
+      customRender(
         <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
       );
 
@@ -137,7 +138,7 @@ describe('EditTrackForm', () => {
       const error = new Error('Submission failed');
       onSubmit.mockRejectedValue(error);
 
-      render(
+      customRender(
         <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
       );
 
@@ -155,7 +156,7 @@ describe('EditTrackForm', () => {
   describe('validation', () => {
     it('validates required fields', async () => {
       const user = userEvent.setup();
-      render(
+      customRender(
         <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
       );
 
@@ -172,7 +173,7 @@ describe('EditTrackForm', () => {
         title: 'Title already exists',
       };
 
-      render(
+      customRender(
         <EditTrackForm
           track={mockTrack}
           albumId={albumId}
@@ -198,7 +199,7 @@ describe('EditTrackForm', () => {
       ]) as ZodError<UpdateLibraryTrackRequest>;
       safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-      render(
+      customRender(
         <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
       );
 
@@ -220,7 +221,7 @@ describe('EditTrackForm', () => {
       ]) as ZodError<UpdateLibraryTrackRequest>;
       safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-      render(
+      customRender(
         <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
       );
 
@@ -240,7 +241,7 @@ describe('EditTrackForm', () => {
         diskNumber: undefined,
       };
 
-      render(
+      customRender(
         <EditTrackForm
           // @ts-expect-error Testing runtime behavior with partial data
           track={partialTrack}

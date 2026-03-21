@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileField } from './FileField';
 
@@ -21,12 +22,12 @@ describe('FileField', () => {
 
   describe('rendering', () => {
     it('renders with label and optional placeholder and accept', () => {
-      render(<FileField {...getDefaultProps()} placeholder="Select file" accept="image/*" />);
+      customRender(<FileField {...getDefaultProps()} placeholder="Select file" accept="image/*" />);
       expect(screen.getByLabelText('Upload File')).toBeInTheDocument();
     });
 
     it('renders error state', () => {
-      render(<FileField {...getDefaultProps()} error="File too large" />);
+      customRender(<FileField {...getDefaultProps()} error="File too large" />);
       expect(screen.getByText('File too large')).toBeInTheDocument();
 
       const input = screen.getByLabelText('Upload File');
@@ -36,7 +37,9 @@ describe('FileField', () => {
     it('renders clear button when showClearButton and value are set', () => {
       const onChange = vi.fn();
       const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-      render(<FileField {...getDefaultProps()} onChange={onChange} showClearButton value={file} />);
+      customRender(
+        <FileField {...getDefaultProps()} onChange={onChange} showClearButton value={file} />,
+      );
 
       expect(screen.getByRole('button', { name: /Clear file/i })).toBeInTheDocument();
 
@@ -48,7 +51,7 @@ describe('FileField', () => {
   describe('change and blur', () => {
     it('calls onChange when a file is selected', () => {
       const props = getDefaultProps();
-      render(<FileField {...props} />);
+      customRender(<FileField {...props} />);
       const input = screen.getByLabelText('Upload File');
 
       const file = new File(['hello'], 'hello.png', { type: 'image/png' });
@@ -59,7 +62,7 @@ describe('FileField', () => {
 
     it('calls onChange with null when no file is selected', () => {
       const onChange = vi.fn();
-      render(<FileField {...getDefaultProps()} onChange={onChange} />);
+      customRender(<FileField {...getDefaultProps()} onChange={onChange} />);
       const input = screen.getByLabelText('Upload File');
 
       fireEvent.change(input, { target: { files: [] } });
@@ -68,7 +71,7 @@ describe('FileField', () => {
 
     it('calls onBlur when input loses focus', () => {
       const props = getDefaultProps();
-      render(<FileField {...props} />);
+      customRender(<FileField {...props} />);
       const input = screen.getByLabelText('Upload File');
 
       fireEvent.blur(input);
@@ -78,7 +81,7 @@ describe('FileField', () => {
     it('does not call onChange when selection cleared but value exists', () => {
       const onChange = vi.fn();
       const existingFile = new File(['existing'], 'existing.png', { type: 'image/png' });
-      render(<FileField {...getDefaultProps()} onChange={onChange} value={existingFile} />);
+      customRender(<FileField {...getDefaultProps()} onChange={onChange} value={existingFile} />);
 
       const input = screen.getByLabelText('Upload File');
 
@@ -93,7 +96,7 @@ describe('FileField', () => {
       const onChange = vi.fn();
       const file = new File(['hello'], 'hello.png', { type: 'image/png' });
       const inputRef = { current: null as HTMLInputElement | null };
-      render(
+      customRender(
         <FileField
           {...getDefaultProps()}
           onChange={onChange}
@@ -116,7 +119,9 @@ describe('FileField', () => {
     it('falls back to getElementById when inputRef is not provided', () => {
       const onChange = vi.fn();
       const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-      render(<FileField {...getDefaultProps()} onChange={onChange} showClearButton value={file} />);
+      customRender(
+        <FileField {...getDefaultProps()} onChange={onChange} showClearButton value={file} />,
+      );
 
       const input = screen.getByLabelText('Upload File') as HTMLInputElement;
       const valueSetterSpy = vi.spyOn(input, 'value', 'set');
@@ -130,7 +135,9 @@ describe('FileField', () => {
     it('handles getElementById returning null after input is removed', () => {
       const onChange = vi.fn();
       const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-      render(<FileField {...getDefaultProps()} onChange={onChange} showClearButton value={file} />);
+      customRender(
+        <FileField {...getDefaultProps()} onChange={onChange} showClearButton value={file} />,
+      );
 
       const input = screen.getByLabelText('Upload File');
       input.remove();

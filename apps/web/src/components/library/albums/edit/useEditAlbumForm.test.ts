@@ -1,7 +1,7 @@
 import type { UpdateLibraryAlbumRequest, ZodAlbum } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
-import { albumBuilder, imageBuilder } from '@repo/testing';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { albumBuilder, customRenderHook, imageBuilder } from '@repo/testing';
+import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditAlbumForm, validateWithZod } from './useEditAlbumForm';
 
@@ -48,7 +48,7 @@ describe('useEditAlbumForm', () => {
   });
 
   it('initializes with album values', () => {
-    const { result } = renderHook(() =>
+    const { result } = customRenderHook(() =>
       useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
     );
 
@@ -66,7 +66,7 @@ describe('useEditAlbumForm', () => {
       description: null,
       releaseDate: null,
     };
-    const { result } = renderHook(() =>
+    const { result } = customRenderHook(() =>
       useEditAlbumForm({ album: incompleteAlbum, onSubmit: mockOnSubmit }),
     );
 
@@ -76,7 +76,7 @@ describe('useEditAlbumForm', () => {
 
   describe('handleCoverSelect', () => {
     it('sets selected cover and preview for valid image', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -90,7 +90,7 @@ describe('useEditAlbumForm', () => {
     });
 
     it('opens format modal for non-image file', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -105,7 +105,7 @@ describe('useEditAlbumForm', () => {
 
   describe('handleFiles', () => {
     it('opens multiple files modal for more than one file', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -122,7 +122,7 @@ describe('useEditAlbumForm', () => {
     });
 
     it('handles dropped single file and updates selected cover', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -140,7 +140,7 @@ describe('useEditAlbumForm', () => {
 
   describe('handleRemoveCover', () => {
     it('clears cover and sets isCoverRemoved', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -152,7 +152,7 @@ describe('useEditAlbumForm', () => {
     });
 
     it('resets file input context when coverInputRef has current', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -169,7 +169,7 @@ describe('useEditAlbumForm', () => {
 
   describe('submission', () => {
     it('calls onSubmit with correct arguments', async () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -187,7 +187,7 @@ describe('useEditAlbumForm', () => {
     });
 
     it('calls onSubmit with isCoverRemoved when cover is removed', async () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 

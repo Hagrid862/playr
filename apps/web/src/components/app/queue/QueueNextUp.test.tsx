@@ -1,6 +1,7 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
-import { act, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { act, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { createQueueItemFixture } from '../test-utils/player-test-utils';
 import { QueueNextUp } from './QueueNextUp';
@@ -63,19 +64,19 @@ describe('QueueNextUp', () => {
 
   describe('rendering', () => {
     it('renders correctly with tracks', () => {
-      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
       expect(screen.getByText('Next Up')).toBeInTheDocument();
       expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
       expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();
     });
 
     it('renders empty state', () => {
-      render(<QueueNextUp nextUp={[]} {...defaultProps} />);
+      customRender(<QueueNextUp nextUp={[]} {...defaultProps} />);
       expect(screen.getByText('Queue is empty')).toBeInTheDocument();
     });
 
     it('renders correctly when shuffled', () => {
-      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} isShuffled />);
+      customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} isShuffled />);
       expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
       expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();
     });
@@ -83,7 +84,7 @@ describe('QueueNextUp', () => {
 
   describe('drag and drop', () => {
     it('shows overlay when drag starts', async () => {
-      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
       expect(capturedDndHandlers.onDragStart).toBeDefined();
       await act(async () => {
         capturedDndHandlers.onDragStart!({
@@ -97,7 +98,7 @@ describe('QueueNextUp', () => {
 
     it('calls onDragEnd when drag ends', async () => {
       const onDragEnd = vi.fn();
-      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} onDragEnd={onDragEnd} />);
+      customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} onDragEnd={onDragEnd} />);
       await act(async () => {
         capturedDndHandlers.onDragStart!({
           active: { id: '1' },
@@ -117,7 +118,7 @@ describe('QueueNextUp', () => {
     });
 
     it('sets drop line position to top when dragging down', async () => {
-      const { container } = render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      const { container } = customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
       await act(async () => {
         capturedDndHandlers.onDragOver!({
           active: { id: '2' },
@@ -130,7 +131,7 @@ describe('QueueNextUp', () => {
     });
 
     it('sets drop line position to bottom when dragging up', async () => {
-      const { container } = render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      const { container } = customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
       await act(async () => {
         capturedDndHandlers.onDragOver!({
           active: { id: '1' },
@@ -143,7 +144,7 @@ describe('QueueNextUp', () => {
     });
 
     it('clears over state when dragging over nothing', async () => {
-      render(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
       await act(async () => {
         capturedDndHandlers.onDragOver!({
           active: { id: '1' },
