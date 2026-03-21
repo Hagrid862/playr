@@ -1,15 +1,15 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { customRender } from '@repo/testing';
+import {
+  albumBuilder,
+  artistBuilder,
+  customRender,
+  imageBuilder,
+  trackBuilder,
+} from '@repo/testing';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    createPlayerStateMock,
-    createQueueItemFixture,
-    testAlbumNoCover,
-    testAlbumWithCover,
-    testArtist,
-} from '../test-utils/player-test-utils';
+import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerTrackInfo } from './PlayerTrackInfo';
 
 vi.mock('@/stores/player.store', () => ({
@@ -73,9 +73,13 @@ describe('PlayerTrackInfo', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         buildState({
           currentTrack: {
-            ...createQueueItemFixture({ uniqueId: '1', title: 'Test Song' }),
-            artists: [testArtist({ name: 'Artist A' })],
-            album: testAlbumWithCover('http://example.com/cover.jpg'),
+            uniqueId: '1',
+            ...trackBuilder({ title: 'Test Song' }),
+            artists: [artistBuilder({ name: 'Artist A' })],
+            album: {
+              ...albumBuilder({ name: 'Album A' }),
+              cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+            },
           },
         }),
       );
@@ -101,9 +105,13 @@ describe('PlayerTrackInfo', () => {
         buildState({
           quality: StreamAudioQuality.lossless,
           currentTrack: {
-            ...createQueueItemFixture({ uniqueId: '1', title: 'Lossless Song' }),
-            artists: [],
-            album: testAlbumNoCover(),
+            uniqueId: '1',
+            ...trackBuilder({ title: 'Lossless Song' }),
+            artists: [artistBuilder({ name: 'Artist A' })],
+            album: {
+              ...albumBuilder({ name: 'Album A' }),
+              cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+            },
           },
         }),
       );
@@ -117,9 +125,13 @@ describe('PlayerTrackInfo', () => {
         buildState({
           duration: 0,
           currentTrack: {
-            ...createQueueItemFixture({ uniqueId: '2', title: 'Zero Duration Song' }),
-            artists: [],
-            album: testAlbumNoCover(),
+            uniqueId: '2',
+            ...trackBuilder({ title: 'Zero Duration Song' }),
+            artists: [artistBuilder({ name: 'Artist A' })],
+            album: {
+              ...albumBuilder({ name: 'Album A' }),
+              cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+            },
           },
         }),
       );

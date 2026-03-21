@@ -1,9 +1,8 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
-import { customRender } from '@repo/testing';
+import { customRender, trackBuilder } from '@repo/testing';
 import { act, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { createQueueItemFixture } from '../test-utils/player-test-utils';
 import { QueueNextUp } from './QueueNextUp';
 
 const capturedDndHandlers: {
@@ -51,8 +50,8 @@ vi.mock('./QueueItem', () => ({
 
 describe('QueueNextUp', () => {
   const mockNextUp = [
-    createQueueItemFixture({ uniqueId: '1', title: 'Track 1' }),
-    createQueueItemFixture({ uniqueId: '2', title: 'Track 2' }),
+    { ...trackBuilder({ title: 'Track 1' }), uniqueId: '1' },
+    { ...trackBuilder({ title: 'Track 2' }), uniqueId: '2' },
   ];
 
   const defaultProps = {

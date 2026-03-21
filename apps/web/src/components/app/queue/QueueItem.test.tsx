@@ -1,13 +1,13 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
-import { customRender } from '@repo/testing';
+import {
+  albumBuilder,
+  artistBuilder,
+  customRender,
+  imageBuilder,
+  trackBuilder,
+} from '@repo/testing';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import {
-    createQueueItemFixture,
-    testAlbumNoCover,
-    testAlbumWithCover,
-    testArtist,
-} from '../test-utils/player-test-utils';
 import { QueueItem, QueueItemOverlay } from './QueueItem';
 
 import { useSortable } from '@dnd-kit/sortable';
@@ -42,9 +42,13 @@ vi.mock('@dnd-kit/utilities', () => ({
 
 describe('QueueItem', () => {
   const mockTrack: PlayrQueueItem = {
-    ...createQueueItemFixture(),
-    artists: [testArtist({ name: 'Test Artist' })],
-    album: testAlbumWithCover('http://example.com/cover.jpg'),
+    uniqueId: '1',
+    ...trackBuilder({ title: 'Test Title' }),
+    artists: [artistBuilder({ name: 'Test Artist' })],
+    album: {
+      ...albumBuilder({ name: 'Test Album' }),
+      cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+    },
   };
 
   describe('rendering', () => {
@@ -64,9 +68,10 @@ describe('QueueItem', () => {
 
     it('renders fallback icon without cover', () => {
       const noCoverTrack: PlayrQueueItem = {
-        ...createQueueItemFixture(),
-        artists: [testArtist({ name: 'Test Artist' })],
-        album: testAlbumNoCover(),
+        uniqueId: '2',
+        ...trackBuilder({ title: 'Test Title 2' }),
+        artists: [artistBuilder({ name: 'Test Artist' })],
+        album: { ...albumBuilder({ name: 'Test Album' }), cover: null },
       };
 
       customRender(<QueueItem track={noCoverTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
@@ -75,9 +80,13 @@ describe('QueueItem', () => {
 
     it('joins multiple artist names correctly', () => {
       const multiArtistTrack: PlayrQueueItem = {
-        ...createQueueItemFixture(),
-        artists: [testArtist({ name: 'Artist A' }), testArtist({ name: 'Artist B' })],
-        album: testAlbumWithCover('http://example.com/cover.jpg'),
+        uniqueId: '3',
+        ...trackBuilder({ title: 'Test Title 3' }),
+        artists: [artistBuilder({ name: 'Artist A' }), artistBuilder({ name: 'Artist B' })],
+        album: {
+          ...albumBuilder({ name: 'Test Album' }),
+          cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+        },
       };
 
       customRender(<QueueItem track={multiArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
@@ -113,7 +122,7 @@ describe('QueueItem', () => {
 
       const buttons = screen.getAllByRole('button');
       fireEvent.click(buttons[buttons.length - 1]);
-      expect(onRemove).toHaveBeenCalledWith('test-1', expect.anything());
+      expect(onRemove).toHaveBeenCalledWith('1', expect.anything());
     });
 
     it('stops propagation when clicking the drag handle', () => {
@@ -151,9 +160,13 @@ describe('QueueItem', () => {
 
 describe('QueueItemOverlay', () => {
   const mockTrack: PlayrQueueItem = {
-    ...createQueueItemFixture(),
-    artists: [testArtist({ name: 'Test Artist' })],
-    album: testAlbumWithCover('http://example.com/cover.jpg'),
+    uniqueId: '1',
+    ...trackBuilder({ title: 'Test Title' }),
+    artists: [artistBuilder({ name: 'Test Artist' })],
+    album: {
+      ...albumBuilder({ name: 'Test Album' }),
+      cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+    },
   };
 
   describe('rendering', () => {
@@ -169,21 +182,26 @@ describe('QueueItemOverlay', () => {
 
     it('renders fallback icon without cover', () => {
       const noCoverTrack: PlayrQueueItem = {
-        ...createQueueItemFixture(),
-        artists: [testArtist({ name: 'Test Artist' })],
-        album: testAlbumNoCover(),
+        uniqueId: '2',
+        ...trackBuilder({ title: 'Test Title 2' }),
+        artists: [artistBuilder({ name: 'Test Artist' })],
+        album: { ...albumBuilder({ name: 'Test Album' }), cover: null },
       };
 
       customRender(<QueueItemOverlay track={noCoverTrack} />);
-      expect(screen.getByText('Test Title')).toBeInTheDocument();
+      expect(screen.getByText('Test Title 2')).toBeInTheDocument();
       expect(screen.queryByAltText('Test Title')).not.toBeInTheDocument();
     });
 
     it('joins multiple artist names correctly', () => {
       const multiArtistTrack: PlayrQueueItem = {
-        ...createQueueItemFixture(),
-        artists: [testArtist({ name: 'Artist A' }), testArtist({ name: 'Artist B' })],
-        album: testAlbumWithCover('http://example.com/cover.jpg'),
+        uniqueId: '3',
+        ...trackBuilder({ title: 'Test Title 3' }),
+        artists: [artistBuilder({ name: 'Artist A' }), artistBuilder({ name: 'Artist B' })],
+        album: {
+          ...albumBuilder({ name: 'Test Album' }),
+          cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+        },
       };
 
       customRender(<QueueItemOverlay track={multiArtistTrack} />);
