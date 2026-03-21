@@ -1,5 +1,6 @@
 import { UserIcon } from '@phosphor-icons/react';
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MediaCard } from './MediaCard';
 
@@ -40,7 +41,7 @@ describe('MediaCard', () => {
 
   describe('rendering', () => {
     it('renders title, subtitle, cover, and link', () => {
-      render(<MediaCard {...getDefaultProps()} />);
+      customRender(<MediaCard {...getDefaultProps()} />);
 
       expect(screen.getByText('Test Title')).toBeInTheDocument();
       expect(screen.getByText('Test Subtitle')).toBeInTheDocument();
@@ -54,21 +55,23 @@ describe('MediaCard', () => {
     });
 
     it('renders placeholder icon when coverUrl is missing', () => {
-      render(<MediaCard {...getDefaultProps()} coverUrl={undefined} />);
+      customRender(<MediaCard {...getDefaultProps()} coverUrl={undefined} />);
 
       expect(screen.queryByRole('img')).not.toBeInTheDocument();
       expect(screen.getByTestId('user-icon')).toBeInTheDocument();
     });
 
     it('renders default DiscIcon when coverUrl and placeholderIcon are missing', () => {
-      render(<MediaCard {...getDefaultProps()} coverUrl={undefined} placeholderIcon={undefined} />);
+      customRender(
+        <MediaCard {...getDefaultProps()} coverUrl={undefined} placeholderIcon={undefined} />,
+      );
 
       expect(screen.queryByRole('img')).not.toBeInTheDocument();
       expect(document.querySelector('svg')).toBeInTheDocument();
     });
 
     it('renders Unknown when subtitle is missing', () => {
-      render(<MediaCard {...getDefaultProps()} subtitle={undefined} />);
+      customRender(<MediaCard {...getDefaultProps()} subtitle={undefined} />);
 
       expect(screen.getByText('Unknown')).toBeInTheDocument();
     });
@@ -76,12 +79,12 @@ describe('MediaCard', () => {
 
   describe('coverStyle', () => {
     it('applies circle or square classes', () => {
-      const { container: circleContainer } = render(
+      const { container: circleContainer } = customRender(
         <MediaCard {...getDefaultProps()} coverStyle="circle" coverUrl={undefined} />,
       );
       expect(circleContainer.querySelector('.rounded-full')).toBeInTheDocument();
 
-      const { container: squareContainer } = render(
+      const { container: squareContainer } = customRender(
         <MediaCard {...getDefaultProps()} coverStyle="square" coverUrl={undefined} />,
       );
       expect(squareContainer.querySelector('.rounded')).toBeInTheDocument();

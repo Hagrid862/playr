@@ -1,6 +1,7 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
@@ -76,14 +77,14 @@ describe('PlayerActions', () => {
 
   describe('rendering', () => {
     it('renders correctly', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
     });
   });
 
   describe('sidebar toggles', () => {
     it('handles lyrics toggle when queue is closed', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const lyricsBtn = screen.getByRole('button', { name: /lyrics/i });
       fireEvent.click(lyricsBtn);
       expect(setSidebarView).toHaveBeenCalledWith('lyrics');
@@ -94,14 +95,14 @@ describe('PlayerActions', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         buildState({ isQueueOpen: true, sidebarView: 'lyrics' }),
       );
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const lyricsBtn = screen.getByRole('button', { name: /lyrics/i });
       fireEvent.click(lyricsBtn);
       expect(setQueueOpen).toHaveBeenCalledWith(false);
     });
 
     it('handles queue toggle when queue is closed', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const queueBtn = screen.getByRole('button', { name: /queue/i });
       fireEvent.click(queueBtn);
       expect(setSidebarView).toHaveBeenCalledWith('queue');
@@ -112,7 +113,7 @@ describe('PlayerActions', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         buildState({ isQueueOpen: true, sidebarView: 'queue' }),
       );
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const queueBtn = screen.getByRole('button', { name: /queue/i });
       fireEvent.click(queueBtn);
       expect(setQueueOpen).toHaveBeenCalledWith(false);
@@ -121,7 +122,7 @@ describe('PlayerActions', () => {
 
   describe('volume', () => {
     it('handles volume change via slider', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const volumeBtn = screen.getByRole('button', { name: /volume/i });
       fireEvent.click(volumeBtn);
 
@@ -133,35 +134,35 @@ describe('PlayerActions', () => {
 
   describe('audio quality selection', () => {
     it('handles auto quality selection', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const autoItem = screen.getByRole('menuitemcheckbox', { name: /Auto/i });
       fireEvent.click(autoItem);
       expect(setQuality).toHaveBeenCalledWith('auto');
     });
 
     it('handles lossless quality selection', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const losslessItem = screen.getByRole('menuitemcheckbox', { name: /Lossless/i });
       fireEvent.click(losslessItem);
       expect(setQuality).toHaveBeenCalledWith(StreamAudioQuality.lossless);
     });
 
     it('handles high quality selection', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const highItem = screen.getByRole('menuitemcheckbox', { name: /High/i });
       fireEvent.click(highItem);
       expect(setQuality).toHaveBeenCalledWith(StreamAudioQuality.high);
     });
 
     it('handles standard quality selection', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const standardItem = screen.getByRole('menuitemcheckbox', { name: /Standard/i });
       fireEvent.click(standardItem);
       expect(setQuality).toHaveBeenCalledWith(StreamAudioQuality.standard);
     });
 
     it('handles low quality selection', () => {
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const lowItem = screen.getByRole('menuitemcheckbox', { name: /Low/i });
       fireEvent.click(lowItem);
       expect(setQuality).toHaveBeenCalledWith(StreamAudioQuality.low);
@@ -170,7 +171,7 @@ describe('PlayerActions', () => {
     it('does not set quality if requested quality is unavailable', () => {
       vi.mocked(usePlayerStore).mockReturnValue(buildState({ availableQualities: ['auto'] }));
 
-      render(<PlayerActions />);
+      customRender(<PlayerActions />);
       const highItem = screen.getByRole('menuitemcheckbox', { name: /High/i });
       fireEvent.click(highItem);
       expect(setQuality).not.toHaveBeenCalledWith(StreamAudioQuality.high);

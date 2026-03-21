@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PageHeader } from './PageHeader';
@@ -20,14 +21,14 @@ describe('PageHeader', () => {
 
   describe('title and description', () => {
     it('renders title and description correctly', () => {
-      render(<PageHeader title="Test Title" description="Test Description" />);
+      customRender(<PageHeader title="Test Title" description="Test Description" />);
 
       expect(screen.getByText('Test Title')).toBeInTheDocument();
       expect(screen.getByText('Test Description')).toBeInTheDocument();
     });
 
     it('does not render description when not provided', () => {
-      render(<PageHeader title="Test Title" />);
+      customRender(<PageHeader title="Test Title" />);
 
       const description = screen.queryByText('Test Description');
       expect(description).not.toBeInTheDocument();
@@ -36,7 +37,7 @@ describe('PageHeader', () => {
 
   describe('actions', () => {
     it('renders actions when provided', () => {
-      render(<PageHeader title="Test Title" actions={<button>Action Button</button>} />);
+      customRender(<PageHeader title="Test Title" actions={<button>Action Button</button>} />);
 
       expect(screen.getByRole('button', { name: /Action Button/i })).toBeInTheDocument();
     });
@@ -45,7 +46,7 @@ describe('PageHeader', () => {
   describe('back button', () => {
     it('shows back button and calls router.history.back() when clicked', async () => {
       const user = userEvent.setup();
-      render(<PageHeader title="Test Title" showBackButton={true} />);
+      customRender(<PageHeader title="Test Title" showBackButton={true} />);
 
       const backButton = screen.getByRole('button');
       expect(backButton).toBeInTheDocument();
@@ -55,7 +56,7 @@ describe('PageHeader', () => {
     });
 
     it('does not show back button when showBackButton is false', () => {
-      render(<PageHeader title="Test Title" showBackButton={false} />);
+      customRender(<PageHeader title="Test Title" showBackButton={false} />);
 
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });

@@ -1,13 +1,14 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  createPlayerStateMock,
-  createQueueItemFixture,
-  testAlbumNoCover,
-  testAlbumWithCover,
-  testArtist,
+    createPlayerStateMock,
+    createQueueItemFixture,
+    testAlbumNoCover,
+    testAlbumWithCover,
+    testArtist,
 } from '../test-utils/player-test-utils';
 import { PlayerTrackInfo } from './PlayerTrackInfo';
 
@@ -54,7 +55,7 @@ describe('PlayerTrackInfo', () => {
   });
 
   const renderTrackInfo = () =>
-    render(
+    customRender(
       <PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />,
     );
 

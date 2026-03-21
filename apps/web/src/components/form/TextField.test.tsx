@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TextField } from './TextField';
 
@@ -19,21 +20,21 @@ describe('TextField', () => {
 
   describe('rendering', () => {
     it('renders label and placeholder', () => {
-      render(<TextField {...getDefaultProps()} />);
+      customRender(<TextField {...getDefaultProps()} />);
 
       expect(screen.getByText('Username')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Enter username')).toBeInTheDocument();
     });
 
     it('renders value', () => {
-      render(<TextField {...getDefaultProps()} value="john_doe" />);
+      customRender(<TextField {...getDefaultProps()} value="john_doe" />);
 
       const input = screen.getByPlaceholderText('Enter username');
       expect(input).toHaveValue('john_doe');
     });
 
     it('uses provided type', () => {
-      render(<TextField {...getDefaultProps()} type="password" />);
+      customRender(<TextField {...getDefaultProps()} type="password" />);
 
       const input = screen.getByPlaceholderText('Enter username');
       expect(input).toHaveAttribute('type', 'password');
@@ -43,7 +44,7 @@ describe('TextField', () => {
   describe('user input', () => {
     it('calls onChange when value changes', () => {
       const onChange = vi.fn();
-      render(<TextField {...getDefaultProps()} onChange={onChange} />);
+      customRender(<TextField {...getDefaultProps()} onChange={onChange} />);
 
       const input = screen.getByPlaceholderText('Enter username');
       fireEvent.change(input, { target: { value: 'new_username' } });
@@ -53,7 +54,7 @@ describe('TextField', () => {
 
     it('calls onBlur when blurred', () => {
       const onBlur = vi.fn();
-      render(<TextField {...getDefaultProps()} onBlur={onBlur} />);
+      customRender(<TextField {...getDefaultProps()} onBlur={onBlur} />);
 
       const input = screen.getByPlaceholderText('Enter username');
       fireEvent.blur(input);
@@ -64,7 +65,7 @@ describe('TextField', () => {
 
   describe('validation', () => {
     it('renders error message and applies error classes', () => {
-      render(<TextField {...getDefaultProps()} error="Invalid username" />);
+      customRender(<TextField {...getDefaultProps()} error="Invalid username" />);
 
       expect(screen.getByText('Invalid username')).toBeInTheDocument();
 

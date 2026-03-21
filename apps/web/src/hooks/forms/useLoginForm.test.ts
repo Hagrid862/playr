@@ -1,11 +1,12 @@
-import { act, renderHook } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing';
+import { act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useLoginForm } from './useLoginForm';
 
 describe('useLoginForm', () => {
   describe('initialization', () => {
     it('initializes with empty form data', () => {
-      const { result } = renderHook(() => useLoginForm());
+      const { result } = customRenderHook(() => useLoginForm());
       expect(result.current.formData).toEqual({
         email: '',
         password: '',
@@ -16,7 +17,7 @@ describe('useLoginForm', () => {
 
   describe('handleChange', () => {
     it('updates form data on change', () => {
-      const { result } = renderHook(() => useLoginForm());
+      const { result } = customRenderHook(() => useLoginForm());
 
       act(() => {
         result.current.handleChange('email', 'test@example.com');
@@ -28,7 +29,7 @@ describe('useLoginForm', () => {
 
   describe('validation', () => {
     it('validates email format', () => {
-      const { result } = renderHook(() => useLoginForm());
+      const { result } = customRenderHook(() => useLoginForm());
 
       act(() => {
         result.current.handleChange('email', 'invalid-email');
@@ -38,7 +39,7 @@ describe('useLoginForm', () => {
     });
 
     it('validates required fields', () => {
-      const { result } = renderHook(() => useLoginForm());
+      const { result } = customRenderHook(() => useLoginForm());
 
       let submitResult;
       act(() => {
@@ -53,7 +54,7 @@ describe('useLoginForm', () => {
 
   describe('submit', () => {
     it('submits valid data', () => {
-      const { result } = renderHook(() => useLoginForm());
+      const { result } = customRenderHook(() => useLoginForm());
 
       act(() => {
         result.current.handleChange('email', 'user@example.com');
@@ -78,7 +79,7 @@ describe('useLoginForm', () => {
 
   describe('blur and getFieldError', () => {
     it('handles blur and shows errors correctly', () => {
-      const { result } = renderHook(() => useLoginForm());
+      const { result } = customRenderHook(() => useLoginForm());
 
       act(() => {
         result.current.handleChange('email', 'invalid');

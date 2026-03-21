@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { format } from 'date-fns';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DatePickerField } from './DatePickerField';
@@ -19,23 +20,23 @@ describe('DatePickerField', () => {
 
   describe('rendering', () => {
     it('renders label', () => {
-      render(<DatePickerField {...getDefaultProps()} />);
+      customRender(<DatePickerField {...getDefaultProps()} />);
       expect(screen.getByText('Birth Date')).toBeInTheDocument();
     });
 
     it('renders placeholder when no value is provided', () => {
-      render(<DatePickerField {...getDefaultProps()} />);
+      customRender(<DatePickerField {...getDefaultProps()} />);
       expect(screen.getByText('Pick a date')).toBeInTheDocument();
     });
 
     it('renders formatted date when value is provided', () => {
       const date = new Date(2000, 0, 1);
-      render(<DatePickerField {...getDefaultProps()} value={date} />);
+      customRender(<DatePickerField {...getDefaultProps()} value={date} />);
       expect(screen.getByText(format(date, 'PPP'))).toBeInTheDocument();
     });
 
     it('renders error message when error prop is provided', () => {
-      render(<DatePickerField {...getDefaultProps()} error="Date is required" />);
+      customRender(<DatePickerField {...getDefaultProps()} error="Date is required" />);
       expect(screen.getByText('Date is required')).toBeInTheDocument();
     });
   });
@@ -44,7 +45,7 @@ describe('DatePickerField', () => {
     it('opens calendar and selects a date', async () => {
       const onChange = vi.fn();
       const onBlur = vi.fn();
-      render(<DatePickerField {...getDefaultProps()} onChange={onChange} onBlur={onBlur} />);
+      customRender(<DatePickerField {...getDefaultProps()} onChange={onChange} onBlur={onBlur} />);
 
       const trigger = screen.getByRole('button', { name: /pick a date/i });
       fireEvent.click(trigger);
@@ -60,7 +61,7 @@ describe('DatePickerField', () => {
   describe('user input', () => {
     it('calls onBlur when trigger loses focus', () => {
       const onBlur = vi.fn();
-      render(<DatePickerField {...getDefaultProps()} onBlur={onBlur} />);
+      customRender(<DatePickerField {...getDefaultProps()} onBlur={onBlur} />);
 
       const trigger = screen.getByRole('button', { name: /pick a date/i });
       fireEvent.blur(trigger);

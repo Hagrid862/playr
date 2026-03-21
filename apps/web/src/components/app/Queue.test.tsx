@@ -1,6 +1,7 @@
 import { PlayerState, QueueItem, usePlayerStore } from '@/stores/player.store';
 import type { DragEndEvent } from '@dnd-kit/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Queue } from './Queue';
@@ -125,7 +126,7 @@ describe('Queue', () => {
 
   describe('rendering', () => {
     it('renders correctly', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       expect(screen.getByTestId('queue-header')).toBeInTheDocument();
       expect(screen.getByTestId('queue-now-playing')).toBeInTheDocument();
       expect(screen.getByTestId('queue-next-up')).toBeInTheDocument();
@@ -149,14 +150,14 @@ describe('Queue', () => {
         }),
       );
 
-      render(<Queue />);
+      customRender(<Queue />);
       expect(screen.getByTestId('queue-header')).toBeInTheDocument();
     });
   });
 
   describe('history view', () => {
     it('switches to history view and back', () => {
-      render(<Queue />);
+      customRender(<Queue />);
 
       fireEvent.click(screen.getByText('Show History'));
       expect(screen.getByTestId('queue-history')).toHaveAttribute('data-visible', 'true');
@@ -166,7 +167,7 @@ describe('Queue', () => {
     });
 
     it('resets to main view when queue closes', () => {
-      const { rerender } = render(<Queue />);
+      const { rerender } = customRender(<Queue />);
 
       fireEvent.click(screen.getByText('Show History'));
       expect(screen.getByTestId('queue-history')).toHaveAttribute('data-visible', 'true');
@@ -191,19 +192,19 @@ describe('Queue', () => {
 
   describe('queue actions', () => {
     it('handles remove track', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       fireEvent.click(screen.getByText('Remove Next'));
       expect(mockRemoveFromQueue).toHaveBeenCalledWith('2');
     });
 
     it('handles play track', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       fireEvent.click(screen.getByText('Play Next'));
       expect(mockPlayTrack).toHaveBeenCalledWith({ uniqueId: '2' });
     });
 
     it('handles toggle queue', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       fireEvent.click(screen.getByText('Toggle Queue'));
       expect(mockToggleQueue).toHaveBeenCalled();
     });
@@ -211,7 +212,7 @@ describe('Queue', () => {
 
   describe('drag reorder', () => {
     it('handles drag end to reorder queue', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag End'));
 
       expect(mockReorderQueue).toHaveBeenCalledWith([
@@ -222,19 +223,19 @@ describe('Queue', () => {
     });
 
     it('does not reorder if active and over are the same', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag Same'));
       expect(mockReorderQueue).not.toHaveBeenCalled();
     });
 
     it('does not reorder if item not found', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag Invalid'));
       expect(mockReorderQueue).not.toHaveBeenCalled();
     });
 
     it('does not reorder if over is null', () => {
-      render(<Queue />);
+      customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag No Over'));
       expect(mockReorderQueue).not.toHaveBeenCalled();
     });

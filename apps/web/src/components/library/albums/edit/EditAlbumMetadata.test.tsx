@@ -1,5 +1,6 @@
 import { AlbumType } from '@repo/db';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -76,7 +77,7 @@ describe('EditAlbumMetadata', () => {
   };
 
   it('renders correctly', () => {
-    render(<EditAlbumMetadata form={mockForm} />);
+    customRender(<EditAlbumMetadata form={mockForm} />);
     expect(screen.getByLabelText(/Album Type/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Release Date/i)).toBeInTheDocument();
   });
@@ -107,7 +108,7 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    render(<EditAlbumMetadata form={localMockForm} />);
+    customRender(<EditAlbumMetadata form={localMockForm} />);
     const select = screen.getByLabelText(/Album Type/i);
     await user.selectOptions(select, AlbumType.single);
     expect(handleChange).toHaveBeenCalledWith(AlbumType.single);
@@ -138,7 +139,7 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    render(<EditAlbumMetadata form={localMockForm} />);
+    customRender(<EditAlbumMetadata form={localMockForm} />);
     const select = screen.getByLabelText(/Album Type/i) as HTMLSelectElement;
 
     // Force a change event with invalid value directly since user.selectOptions only works with existing options
@@ -173,7 +174,7 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    render(<EditAlbumMetadata form={localMockForm} />);
+    customRender(<EditAlbumMetadata form={localMockForm} />);
     const mockClearButton = screen.queryByText('Clear Date');
     if (mockClearButton) {
       await user.click(mockClearButton);

@@ -1,5 +1,6 @@
 import { QueueItem, usePlayerStore } from '@/stores/player.store';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Lyrics } from './Lyrics';
 import { createPlayerStateMock } from './test-utils/player-test-utils';
@@ -24,7 +25,7 @@ describe('Lyrics', () => {
         }),
       );
 
-      render(<Lyrics />);
+      customRender(<Lyrics />);
       expect(screen.getByText('No track playing')).toBeInTheDocument();
     });
 
@@ -36,7 +37,7 @@ describe('Lyrics', () => {
         }),
       );
 
-      render(<Lyrics />);
+      customRender(<Lyrics />);
       expect(screen.getByText('Test Song')).toBeInTheDocument();
       expect(screen.getByText('Lyrics not available yet.')).toBeInTheDocument();
     });
@@ -51,7 +52,7 @@ describe('Lyrics', () => {
         }),
       );
 
-      render(<Lyrics />);
+      customRender(<Lyrics />);
       const closeBtn = screen.getByRole('button');
       fireEvent.click(closeBtn);
       expect(mockToggleQueue).toHaveBeenCalled();

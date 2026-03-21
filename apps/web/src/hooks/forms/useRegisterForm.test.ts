@@ -1,5 +1,6 @@
 import { RegisterRequest, RegisterRequestSchema } from '@repo/contracts';
-import { act, renderHook } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing';
+import { act } from '@testing-library/react';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { useRegisterForm } from './useRegisterForm';
@@ -30,7 +31,7 @@ describe('useRegisterForm', () => {
 
   describe('initialization', () => {
     it('initializes with empty form data', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       expect(result.current.formData).toEqual({
         username: '',
         firstName: '',
@@ -47,7 +48,7 @@ describe('useRegisterForm', () => {
 
   describe('handleChange', () => {
     it('updates form data on change', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('username', 'newuser');
@@ -59,7 +60,7 @@ describe('useRegisterForm', () => {
 
   describe('username', () => {
     it('validates length too short', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('username', 'ab');
@@ -69,7 +70,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates invalid characters', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('username', 'Invalid User!');
@@ -80,7 +81,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates max length', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       act(() => {
         result.current.handleChange('username', 'a'.repeat(33));
       });
@@ -90,7 +91,7 @@ describe('useRegisterForm', () => {
 
   describe('name fields', () => {
     it('validates first name required and max length', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       act(() => {
         result.current.handleChange('firstName', '');
       });
@@ -103,7 +104,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates last name required and max length', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       act(() => {
         result.current.handleChange('lastName', '');
       });
@@ -118,7 +119,7 @@ describe('useRegisterForm', () => {
 
   describe('birthDate and age', () => {
     it('validates under 13', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       const youngDate = new Date('2015-01-01');
 
       act(() => {
@@ -129,7 +130,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates valid age over 13', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       const oldEnough = new Date('2000-01-01');
 
       act(() => {
@@ -140,7 +141,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates birth date in future', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       const futureDate = new Date(MOCK_DATE);
       futureDate.setFullYear(futureDate.getFullYear() + 1);
 
@@ -151,7 +152,7 @@ describe('useRegisterForm', () => {
     });
 
     it('allows exactly 13 years old', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       const exactAge = new Date('2011-01-01');
 
       act(() => {
@@ -161,7 +162,7 @@ describe('useRegisterForm', () => {
     });
 
     it('rejects 1 day less than 13 years old', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       const almost13 = new Date('2011-01-02');
 
       act(() => {
@@ -173,7 +174,7 @@ describe('useRegisterForm', () => {
 
   describe('email', () => {
     it('validates email format', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('email', 'not-an-email');
@@ -183,7 +184,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates email max length', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       act(() => {
         result.current.handleChange('email', 'a'.repeat(247) + '@example.com');
       });
@@ -193,7 +194,7 @@ describe('useRegisterForm', () => {
 
   describe('password and confirmPassword', () => {
     it('validates password too short', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('password', 'Short1!');
@@ -203,7 +204,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates missing uppercase', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('password', 'password123!');
@@ -215,7 +216,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates missing lowercase', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('password', 'PASSWORD123!');
@@ -227,7 +228,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates missing number', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('password', 'Password!');
@@ -237,7 +238,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates password matching', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('password', 'Password123');
@@ -248,7 +249,7 @@ describe('useRegisterForm', () => {
     });
 
     it('validates password max length', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       act(() => {
         result.current.handleChange('password', 'A1!' + 'a'.repeat(126));
       });
@@ -258,7 +259,7 @@ describe('useRegisterForm', () => {
 
   describe('gender', () => {
     it('blocks submission if gender is missing', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       const partialData = {
         username: 'ValidUser',
@@ -293,7 +294,7 @@ describe('useRegisterForm', () => {
 
   describe('password focus UX', () => {
     it('handles password focus state and showPasswordError', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       expect(result.current.isPasswordFocused).toBe(false);
 
@@ -318,7 +319,7 @@ describe('useRegisterForm', () => {
 
   describe('blur', () => {
     it('marks fields as touched on blur', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleBlur('username');
@@ -330,7 +331,7 @@ describe('useRegisterForm', () => {
 
   describe('handleSubmit', () => {
     it('fails if form is invalid', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       let submitResult: RegisterRequest | null = null;
       act(() => {
         submitResult = result.current.handleSubmit();
@@ -342,7 +343,7 @@ describe('useRegisterForm', () => {
     });
 
     it('returns formatted data if valid', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
       const validData = {
         username: 'ValidUser',
         firstName: '  John  ',
@@ -384,7 +385,7 @@ describe('useRegisterForm', () => {
     });
 
     it('returns null if validation fails (defensive safeParse)', () => {
-      const { result } = renderHook(() => useRegisterForm());
+      const { result } = customRenderHook(() => useRegisterForm());
 
       act(() => {
         result.current.handleChange('username', 'testuser');

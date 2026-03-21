@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PasswordStrengthPopover } from './PasswordStrengthPopover';
 
@@ -14,13 +15,13 @@ describe('PasswordStrengthPopover', () => {
   };
 
   it('renders input field correctly', () => {
-    render(<PasswordStrengthPopover {...defaultProps} />);
+    customRender(<PasswordStrengthPopover {...defaultProps} />);
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
   });
 
   it('calls onChange when input changes', () => {
     const onChange = vi.fn();
-    render(<PasswordStrengthPopover {...defaultProps} onChange={onChange} />);
+    customRender(<PasswordStrengthPopover {...defaultProps} onChange={onChange} />);
 
     const input = screen.getByPlaceholderText('••••••••');
     fireEvent.change(input, { target: { value: 'password' } });
@@ -29,7 +30,7 @@ describe('PasswordStrengthPopover', () => {
   });
 
   it('shows weak strength for simple password', () => {
-    render(<PasswordStrengthPopover {...defaultProps} password="weak" isOpen={true} />);
+    customRender(<PasswordStrengthPopover {...defaultProps} password="weak" isOpen={true} />);
     // Since popover content might be rendered in a portal, we look for text
     expect(screen.getByText('Weak')).toBeInTheDocument();
     expect(screen.getByText('At least 8 characters')).toBeInTheDocument();
@@ -38,7 +39,9 @@ describe('PasswordStrengthPopover', () => {
   it('shows excellent strength for complex password', () => {
     // 8 chars, lowercase, uppercase, number, special
     const strongPassword = 'Password1!';
-    render(<PasswordStrengthPopover {...defaultProps} password={strongPassword} isOpen={true} />);
+    customRender(
+      <PasswordStrengthPopover {...defaultProps} password={strongPassword} isOpen={true} />,
+    );
 
     expect(screen.getByText('Excellent')).toBeInTheDocument();
     // Check if requirements are met (this assumes visual indication, usually handled by class presence or icon)
@@ -48,7 +51,7 @@ describe('PasswordStrengthPopover', () => {
   });
 
   it('updates requirements checklist', () => {
-    render(<PasswordStrengthPopover {...defaultProps} password="pass" isOpen={true} />);
+    customRender(<PasswordStrengthPopover {...defaultProps} password="pass" isOpen={true} />);
     // "At least 8 characters" should strictly NOT be met (conceptually).
     // In the DOM, it's likely just text. The "met" status is visual (icon/color).
     // We can check if the icon is present if we add data-testid or check class logic.
@@ -57,17 +60,17 @@ describe('PasswordStrengthPopover', () => {
   });
 
   it('does not show popover content when closed', () => {
-    render(<PasswordStrengthPopover {...defaultProps} isOpen={false} />);
+    customRender(<PasswordStrengthPopover {...defaultProps} isOpen={false} />);
     expect(screen.queryByText('Password strength')).not.toBeInTheDocument();
   });
 
   it('does not show popover content when password is empty even if open', () => {
-    render(<PasswordStrengthPopover {...defaultProps} password="" isOpen={true} />);
+    customRender(<PasswordStrengthPopover {...defaultProps} password="" isOpen={true} />);
     expect(screen.queryByText('Password strength')).not.toBeInTheDocument();
   });
 
   it('applies error styles when hasError is true', () => {
-    render(<PasswordStrengthPopover {...defaultProps} hasError={true} />);
+    customRender(<PasswordStrengthPopover {...defaultProps} hasError={true} />);
     const input = screen.getByPlaceholderText('••••••••');
     expect(input).toHaveClass('border-destructive');
   });

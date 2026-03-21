@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -7,7 +7,7 @@ import { useIsMounted } from './use-is-mounted';
 describe('useIsMounted', () => {
   describe('client rendering', () => {
     it('returns true after mounting', () => {
-      const { result } = renderHook(() => useIsMounted());
+      const { result } = customRenderHook(() => useIsMounted());
       expect(result.current).toBe(true);
     });
   });

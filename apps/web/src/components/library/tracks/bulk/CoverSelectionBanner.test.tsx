@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CoverSelectionBanner } from './CoverSelectionBanner';
@@ -30,7 +31,7 @@ describe('CoverSelectionBanner', () => {
   describe('copy', () => {
     it('renders when album has no cover', () => {
       const onSelectCover = getOnSelectCover();
-      render(
+      customRender(
         <CoverSelectionBanner
           albumHasCover={false}
           tracksWithCovers={defaultTracksWithCovers}
@@ -49,7 +50,7 @@ describe('CoverSelectionBanner', () => {
 
     it('renders replace copy when album has cover', () => {
       const onSelectCover = getOnSelectCover();
-      render(
+      customRender(
         <CoverSelectionBanner
           albumHasCover
           tracksWithCovers={defaultTracksWithCovers}
@@ -67,7 +68,7 @@ describe('CoverSelectionBanner', () => {
 
     it('uses singular replace message for one track when album has cover', () => {
       const onSelectCover = getOnSelectCover();
-      render(
+      customRender(
         <CoverSelectionBanner
           albumHasCover
           tracksWithCovers={[defaultTracksWithCovers[0]]}
@@ -85,7 +86,7 @@ describe('CoverSelectionBanner', () => {
 
     it('uses singular message for one track when album has no cover', () => {
       const onSelectCover = getOnSelectCover();
-      render(
+      customRender(
         <CoverSelectionBanner
           albumHasCover={false}
           tracksWithCovers={[defaultTracksWithCovers[0]]}
@@ -106,7 +107,7 @@ describe('CoverSelectionBanner', () => {
     it("calls onSelectCover with null when Don't use is clicked", async () => {
       const user = userEvent.setup();
       const onSelectCover = getOnSelectCover();
-      render(
+      customRender(
         <CoverSelectionBanner
           albumHasCover={false}
           tracksWithCovers={defaultTracksWithCovers}
@@ -123,7 +124,7 @@ describe('CoverSelectionBanner', () => {
     it('calls onSelectCover with trackId when a track cover is clicked', async () => {
       const user = userEvent.setup();
       const onSelectCover = getOnSelectCover();
-      render(
+      customRender(
         <CoverSelectionBanner
           albumHasCover={false}
           tracksWithCovers={defaultTracksWithCovers}

@@ -1,5 +1,6 @@
+import { customRender } from '@repo/testing';
 import { useForm } from '@tanstack/react-form';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateTrackFormFields } from './CreateTrackFormFields';
 import type { TrackFormValues } from './useCreateTrackForm';
@@ -61,7 +62,7 @@ describe('CreateTrackFormFields', () => {
   });
 
   it('renders title, disk, track number, explicit, and audio file fields', () => {
-    render(
+    customRender(
       <CreateTrackFormFieldsWrapper
         isScanningMetadata={false}
         trackCoverFile={null}
@@ -80,7 +81,7 @@ describe('CreateTrackFormFields', () => {
   });
 
   it('shows server errors when provided', () => {
-    render(
+    customRender(
       <CreateTrackFormFieldsWrapper
         serverErrors={{ title: 'Title error', trackNumber: 'Track error' }}
         isScanningMetadata={false}
@@ -98,7 +99,7 @@ describe('CreateTrackFormFields', () => {
 
   it('shows SingleTrackCoverUpdateBanner when trackCoverFile and trackCoverPreviewUrl exist', () => {
     const coverFile = new File(['x'], 'cover.jpg', { type: 'image/jpeg' });
-    render(
+    customRender(
       <CreateTrackFormFieldsWrapper
         isScanningMetadata={false}
         trackCoverFile={coverFile}
@@ -114,7 +115,7 @@ describe('CreateTrackFormFields', () => {
 
   it('does not show SingleTrackCoverUpdateBanner when isScanningMetadata', () => {
     const coverFile = new File(['x'], 'cover.jpg', { type: 'image/jpeg' });
-    render(
+    customRender(
       <CreateTrackFormFieldsWrapper
         isScanningMetadata
         trackCoverFile={coverFile}
@@ -129,7 +130,7 @@ describe('CreateTrackFormFields', () => {
   });
 
   it('shows Scanning metadata... when isScanningMetadata', () => {
-    render(
+    customRender(
       <CreateTrackFormFieldsWrapper
         isScanningMetadata
         trackCoverFile={null}

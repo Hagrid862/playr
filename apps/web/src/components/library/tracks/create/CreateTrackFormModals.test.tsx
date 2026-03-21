@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateTrackFormModals } from './CreateTrackFormModals';
@@ -12,7 +13,7 @@ describe('CreateTrackFormModals', () => {
   });
 
   it('renders Too Many Files modal when isMultipleFilesModalOpen', () => {
-    render(
+    customRender(
       <CreateTrackFormModals
         isFormatModalOpen={false}
         setIsFormatModalOpen={mockSetIsFormatModalOpen}
@@ -26,7 +27,7 @@ describe('CreateTrackFormModals', () => {
   });
 
   it('renders Invalid File Format modal when isFormatModalOpen', () => {
-    render(
+    customRender(
       <CreateTrackFormModals
         isFormatModalOpen
         setIsFormatModalOpen={mockSetIsFormatModalOpen}
@@ -43,7 +44,7 @@ describe('CreateTrackFormModals', () => {
 
   it('calls setIsMultipleFilesModalOpen(false) when OK clicked in multiple-files modal', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <CreateTrackFormModals
         isFormatModalOpen={false}
         setIsFormatModalOpen={mockSetIsFormatModalOpen}
@@ -59,7 +60,7 @@ describe('CreateTrackFormModals', () => {
 
   it('calls setIsFormatModalOpen(false) when OK clicked in format modal', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <CreateTrackFormModals
         isFormatModalOpen
         setIsFormatModalOpen={mockSetIsFormatModalOpen}

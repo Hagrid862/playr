@@ -1,5 +1,6 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppPlayer } from './Player';
@@ -53,14 +54,14 @@ describe('AppPlayer', () => {
   describe('layout', () => {
     it('renders mobile version when isMobile is true', () => {
       vi.mocked(useIsMobile).mockReturnValue(true);
-      render(<AppPlayer />);
+      customRender(<AppPlayer />);
       expect(screen.getByTestId('player-mobile')).toBeInTheDocument();
       expect(screen.queryByTestId('player-controls')).not.toBeInTheDocument();
     });
 
     it('renders desktop version when isMobile is false', () => {
       vi.mocked(useIsMobile).mockReturnValue(false);
-      render(<AppPlayer />);
+      customRender(<AppPlayer />);
       expect(screen.getByTestId('player-controls')).toBeInTheDocument();
       expect(screen.getByTestId('player-track-info')).toBeInTheDocument();
       expect(screen.getByTestId('player-actions')).toBeInTheDocument();
@@ -71,7 +72,7 @@ describe('AppPlayer', () => {
   describe('seek', () => {
     it('handles seek and updates audio currentTime', () => {
       vi.mocked(useIsMobile).mockReturnValue(false);
-      render(<AppPlayer />);
+      customRender(<AppPlayer />);
       fireEvent.click(screen.getByText('Seek'));
       expect(mockAudioRef.current.currentTime).toBe(42);
     });
@@ -90,7 +91,7 @@ describe('AppPlayer', () => {
         } as React.RefObject<HTMLAudioElement>,
       };
       vi.mocked(usePlayerAudio).mockReturnValue(nullRefMock);
-      render(<AppPlayer />);
+      customRender(<AppPlayer />);
 
       expect(() => {
         fireEvent.click(screen.getByText('Seek'));
@@ -101,7 +102,7 @@ describe('AppPlayer', () => {
   describe('audio element', () => {
     it('passes handlers to audio element', () => {
       vi.mocked(useIsMobile).mockReturnValue(false);
-      const { container } = render(<AppPlayer />);
+      const { container } = customRender(<AppPlayer />);
       const audioEl = container.querySelector('audio');
 
       expect(audioEl).toHaveAttribute('src', 'audio-url.mp3');

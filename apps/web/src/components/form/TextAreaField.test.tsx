@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TextAreaField } from './TextAreaField';
 
@@ -19,21 +20,21 @@ describe('TextAreaField', () => {
 
   describe('rendering', () => {
     it('renders label and placeholder', () => {
-      render(<TextAreaField {...getDefaultProps()} />);
+      customRender(<TextAreaField {...getDefaultProps()} />);
 
       expect(screen.getByText('Description')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Enter description')).toBeInTheDocument();
     });
 
     it('renders value', () => {
-      render(<TextAreaField {...getDefaultProps()} value="Initial value" />);
+      customRender(<TextAreaField {...getDefaultProps()} value="Initial value" />);
 
       const textarea = screen.getByPlaceholderText('Enter description');
       expect(textarea).toHaveValue('Initial value');
     });
 
     it('does not render error message when error is not provided', () => {
-      render(<TextAreaField {...getDefaultProps()} />);
+      customRender(<TextAreaField {...getDefaultProps()} />);
 
       expect(screen.queryByText(/Field is required/)).not.toBeInTheDocument();
     });
@@ -42,7 +43,7 @@ describe('TextAreaField', () => {
   describe('user input', () => {
     it('calls onChange when value changes', () => {
       const onChange = vi.fn();
-      render(<TextAreaField {...getDefaultProps()} onChange={onChange} />);
+      customRender(<TextAreaField {...getDefaultProps()} onChange={onChange} />);
 
       const textarea = screen.getByPlaceholderText('Enter description');
       fireEvent.change(textarea, { target: { value: 'New content' } });
@@ -52,7 +53,7 @@ describe('TextAreaField', () => {
 
     it('calls onBlur when blurred', () => {
       const onBlur = vi.fn();
-      render(<TextAreaField {...getDefaultProps()} onBlur={onBlur} />);
+      customRender(<TextAreaField {...getDefaultProps()} onBlur={onBlur} />);
 
       const textarea = screen.getByPlaceholderText('Enter description');
       fireEvent.blur(textarea);
@@ -63,7 +64,7 @@ describe('TextAreaField', () => {
 
   describe('validation', () => {
     it('renders error message and applies error classes', () => {
-      render(<TextAreaField {...getDefaultProps()} error="Field is required" />);
+      customRender(<TextAreaField {...getDefaultProps()} error="Field is required" />);
 
       expect(screen.getByText('Field is required')).toBeInTheDocument();
 

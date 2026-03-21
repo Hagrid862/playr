@@ -1,7 +1,8 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { renderHook, waitFor } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing';
+import { waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerAudio } from './use-player-audio';
 
@@ -60,7 +61,7 @@ describe('usePlayerAudio', () => {
 
   describe('initialization', () => {
     it('initializes correctly', () => {
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       expect(result.current.audioRef).toBeDefined();
       expect(result.current.formatTime(65)).toBe('1:05');
       expect(result.current.formatTimeLeft(20, 100)).toBe('-1:20');
@@ -78,7 +79,7 @@ describe('usePlayerAudio', () => {
         fetchJsonOk({ data: [StreamAudioQuality.high, StreamAudioQuality.low] }),
       );
 
-      renderHook(() => usePlayerAudio());
+      customRenderHook(() => usePlayerAudio());
 
       await waitFor(() => {
         expect(setAvailableQualities).toHaveBeenCalledWith([
@@ -97,7 +98,7 @@ describe('usePlayerAudio', () => {
 
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Network error'));
 
-      renderHook(() => usePlayerAudio());
+      customRenderHook(() => usePlayerAudio());
 
       await waitFor(() => {
         expect(setAvailableQualities).toHaveBeenCalledWith(['auto']);
@@ -112,7 +113,7 @@ describe('usePlayerAudio', () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
         fetchJsonOk({ data: 'not an array' }),
       );
-      renderHook(() => usePlayerAudio());
+      customRenderHook(() => usePlayerAudio());
       await waitFor(() => {
         expect(setAvailableQualities).toHaveBeenCalledWith(['auto']);
       });
@@ -125,7 +126,7 @@ describe('usePlayerAudio', () => {
       } as PlayerState);
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(fetchJsonErr(500));
-      renderHook(() => usePlayerAudio());
+      customRenderHook(() => usePlayerAudio());
       await waitFor(() => {
         expect(setAvailableQualities).toHaveBeenCalledWith(['auto']);
         expect(consoleSpy).toHaveBeenCalled();
@@ -142,7 +143,7 @@ describe('usePlayerAudio', () => {
         quality: StreamAudioQuality.high,
       } as PlayerState);
 
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       const url = result.current.getAudioUrl();
       expect(url).toContain('/library/tracks/track-1/stream');
       expect(url).toContain('token=test-token');
@@ -159,7 +160,7 @@ describe('usePlayerAudio', () => {
         quality: 'auto',
       } as PlayerState);
 
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       expect(result.current.getAudioUrl()).toBe(
         'http://localhost:8000/library/tracks/track-1/stream?',
       );
@@ -170,14 +171,14 @@ describe('usePlayerAudio', () => {
         ...defaultStore,
         currentTrack: null,
       } as PlayerState);
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       expect(result.current.getAudioUrl()).toBe('');
     });
   });
 
   describe('handleTrackEnd', () => {
     it('calls nextTrack on track end when not repeat one', () => {
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
       expect(nextTrack).toHaveBeenCalled();
     });
@@ -187,7 +188,7 @@ describe('usePlayerAudio', () => {
         ...defaultStore,
         repeatMode: 'one',
       } as PlayerState);
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       const playMock = vi.fn();
       const audioEl = {
         currentTime: 10,
@@ -205,7 +206,7 @@ describe('usePlayerAudio', () => {
         ...defaultStore,
         repeatMode: 'one',
       } as PlayerState);
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = null;
 
       result.current.handleTrackEnd();
@@ -219,7 +220,7 @@ describe('usePlayerAudio', () => {
         ...defaultStore,
         volume: 0.5,
       } as PlayerState);
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
       const audioEl = document.createElement('audio');
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
@@ -232,7 +233,7 @@ describe('usePlayerAudio', () => {
     });
 
     it('handles time update', () => {
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       const audioEl = { currentTime: 42 } as HTMLAudioElement;
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
       result.current.handleTimeUpdate();
@@ -244,7 +245,7 @@ describe('usePlayerAudio', () => {
         ...defaultStore,
         currentTime: 20,
       } as PlayerState);
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
       const audioEl = { currentTime: 20 } as HTMLAudioElement;
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
@@ -257,7 +258,7 @@ describe('usePlayerAudio', () => {
     });
 
     it('handleTimeUpdate does nothing if audioRef.current is null', () => {
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = null;
       result.current.handleTimeUpdate();
       expect(setCurrentTime).not.toHaveBeenCalled();
@@ -271,7 +272,7 @@ describe('usePlayerAudio', () => {
         isPlaying: false,
         currentTrack: { id: 'track-1' } as unknown,
       } as PlayerState);
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
 
       const playMock = vi.fn().mockResolvedValue(undefined);
       const loadMock = vi.fn();
@@ -314,7 +315,7 @@ describe('usePlayerAudio', () => {
         isPlaying: false,
         currentTrack: { id: 'track-1' } as unknown,
       } as PlayerState);
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
 
       const abortErr = new Error('AbortError');
       abortErr.name = 'AbortError';
@@ -350,7 +351,7 @@ describe('usePlayerAudio', () => {
         isPlaying: false,
         currentTrack: { id: 'track-1' } as unknown,
       } as PlayerState);
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
 
       const otherErr = new Error('Other Error');
       const playMock = vi.fn().mockRejectedValue(otherErr);
@@ -382,7 +383,7 @@ describe('usePlayerAudio', () => {
 
   describe('loaded metadata', () => {
     it('handles loaded metadata when timeToRestoreRef is null', () => {
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       const audioEl = { duration: 120 } as HTMLAudioElement;
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
       result.current.handleLoadedMetadata();
@@ -396,7 +397,7 @@ describe('usePlayerAudio', () => {
         return vi.fn();
       });
 
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
       const playMock = vi.fn().mockRejectedValue(new Error('Test playback err'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -434,7 +435,7 @@ describe('usePlayerAudio', () => {
         return vi.fn();
       });
 
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
       const err = new Error('AbortError');
       err.name = 'AbortError';
       const playMock = vi.fn().mockRejectedValue(err);
@@ -468,7 +469,7 @@ describe('usePlayerAudio', () => {
     });
 
     it('does nothing if audioRef.current is null', () => {
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = null;
       result.current.handleLoadedMetadata();
       expect(setDuration).not.toHaveBeenCalled();
@@ -486,7 +487,7 @@ describe('usePlayerAudio', () => {
         isPlaying: false,
       } as PlayerState);
 
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       const playMock = vi.fn();
       const audioEl = {
         currentTime: 35,
@@ -517,7 +518,7 @@ describe('usePlayerAudio', () => {
         return vi.fn();
       });
 
-      const { result, rerender } = renderHook(() => usePlayerAudio());
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
       const audioEl = {
         currentTime: 35,
         duration: 120,
@@ -551,7 +552,7 @@ describe('usePlayerAudio', () => {
         return vi.fn();
       });
 
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       const audioEl = { currentTime: 35 } as unknown as HTMLAudioElement;
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
@@ -573,7 +574,7 @@ describe('usePlayerAudio', () => {
         return vi.fn();
       });
 
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       const audioEl = { currentTime: 35 } as unknown as HTMLAudioElement;
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
@@ -595,7 +596,7 @@ describe('usePlayerAudio', () => {
         return vi.fn();
       });
 
-      const { result } = renderHook(() => usePlayerAudio());
+      const { result } = customRenderHook(() => usePlayerAudio());
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = null;
 
       if (subscribeCb) {

@@ -1,5 +1,6 @@
 import { CreateLibraryArtistRequest, CreateLibraryArtistRequestSchema } from '@repo/contracts';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -24,7 +25,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('renders correctly', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     expect(screen.getByLabelText(/Artist Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Description/i)).toBeInTheDocument();
@@ -34,7 +35,7 @@ describe('CreateArtistForm', () => {
 
   it('shows validation error when name is empty and touched', async () => {
     const user = userEvent.setup();
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     const nameInput = screen.getByLabelText(/Artist Name/i);
     await user.type(nameInput, 'a');
@@ -46,7 +47,7 @@ describe('CreateArtistForm', () => {
 
   it('calls onSubmit with form data when values are valid', async () => {
     const user = userEvent.setup();
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     const nameInput = screen.getByLabelText(/Artist Name/i);
     const descInput = screen.getByLabelText(/Description/i);
@@ -67,7 +68,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('shows loading state on submit button', () => {
-    render(<CreateArtistForm {...defaultProps} isLoading={true} />);
+    customRender(<CreateArtistForm {...defaultProps} isLoading={true} />);
 
     expect(screen.getByText(/Creating.../i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Creating.../i })).toBeDisabled();
@@ -77,7 +78,7 @@ describe('CreateArtistForm', () => {
     const serverErrors: Partial<Record<keyof CreateLibraryArtistRequest, string>> = {
       name: 'Server error name',
     };
-    render(<CreateArtistForm {...defaultProps} serverErrors={serverErrors} />);
+    customRender(<CreateArtistForm {...defaultProps} serverErrors={serverErrors} />);
 
     expect(screen.getByText('Server error name')).toBeInTheDocument();
   });
@@ -91,7 +92,7 @@ describe('CreateArtistForm', () => {
       ]),
     } as ReturnType<typeof CreateLibraryArtistRequestSchema.safeParse>);
 
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
     fireEvent.change(nameInput, { target: { value: 'trigger' } });
     fireEvent.blur(nameInput);
@@ -104,7 +105,7 @@ describe('CreateArtistForm', () => {
   it('displays form-level errors for description when touched', async () => {
     const user = userEvent.setup();
     // Re-render with server errors to cover that branch
-    render(
+    customRender(
       <CreateArtistForm
         {...defaultProps}
         serverErrors={{ description: 'Server description error' }}
@@ -121,7 +122,7 @@ describe('CreateArtistForm', () => {
 
   it('shows field-level validation error for long description', async () => {
     const user = userEvent.setup();
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const descInput = screen.getByLabelText(/Description/i);
 
     // Using fireEvent for long text is faster in tests
@@ -134,7 +135,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('does not show error when value is valid and blurred', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
     fireEvent.change(nameInput, { target: { value: 'Valid Name' } });
     fireEvent.blur(nameInput);
@@ -142,7 +143,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('handles null/undefined value in description validator', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const descInput = screen.getByLabelText(/Description/i);
     // Directly fire change with null to trigger the ?? 0 fallback
     fireEvent.change(descInput, { target: { value: null } });
@@ -150,14 +151,14 @@ describe('CreateArtistForm', () => {
   });
 
   it('does not show error when not touched', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
     fireEvent.change(nameInput, { target: { value: '' } });
     expect(screen.queryByText('Artist name is required')).not.toBeInTheDocument();
   });
 
   it('triggers file input click when avatar is clicked', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const avatarContainer = screen.getByText(/Upload Photo/i).closest('div');
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(fileInput, 'click');
@@ -171,7 +172,7 @@ describe('CreateArtistForm', () => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
     const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL');
 
-    const { unmount } = render(<CreateArtistForm {...defaultProps} />);
+    const { unmount } = customRender(<CreateArtistForm {...defaultProps} />);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
 
     const file = new File(['(⌐□_□)'], 'chucknorris.png', { type: 'image/png' });
@@ -189,7 +190,7 @@ describe('CreateArtistForm', () => {
     const user = userEvent.setup();
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
 
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const submitButton = screen.getByRole('button', { name: /Create Artist/i });
@@ -206,7 +207,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('handles file change with no files selected', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
 
     fireEvent.change(fileInput, { target: { files: [] } });
@@ -214,7 +215,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('shows drag overlay when dragging files over window', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const dataTransfer = { items: [{}], files: [] };
 
     fireEvent.dragEnter(window, { dataTransfer });
@@ -222,7 +223,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('hides drag overlay when dragging leaves window', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const dataTransfer = { items: [{}], files: [] };
 
     fireEvent.dragEnter(window, { dataTransfer });
@@ -233,7 +234,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('keeps drag overlay visible during nested drag events', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     const dataTransfer = { items: [{}], files: [] };
 
     fireEvent.dragEnter(window, { dataTransfer });
@@ -249,7 +250,7 @@ describe('CreateArtistForm', () => {
 
   it('updates preview when dropping single valid image file', () => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const filesDescriptor = Object.getOwnPropertyDescriptor(
@@ -273,7 +274,7 @@ describe('CreateArtistForm', () => {
 
   it('hides drag overlay when drop occurs', () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
 
@@ -297,7 +298,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('shows Too Many Files dialog when dropping multiple files', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     const file1 = new File(['x'], 'a.png', { type: 'image/png' });
     const file2 = new File(['y'], 'b.png', { type: 'image/png' });
@@ -312,7 +313,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('shows Invalid File Format dialog when dropping non-image file', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     const file = new File(['x'], 'document.pdf', { type: 'application/pdf' });
     const dataTransfer = { files: [file] };
@@ -325,7 +326,7 @@ describe('CreateArtistForm', () => {
 
   it('closes Too Many Files dialog when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     const file1 = new File(['x'], 'a.png', { type: 'image/png' });
     const file2 = new File(['y'], 'b.png', { type: 'image/png' });
@@ -338,7 +339,7 @@ describe('CreateArtistForm', () => {
 
   it('closes Invalid File Format dialog when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
 
     const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
     fireEvent.drop(window, { dataTransfer: { files: [file] } });
@@ -349,19 +350,19 @@ describe('CreateArtistForm', () => {
   });
 
   it('does not set dragging when dragenter has no items', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [], files: [] } });
     expect(screen.queryByText(/Drop avatar image here/i)).not.toBeInTheDocument();
   });
 
   it('handles dragover event', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     fireEvent.dragOver(window, { dataTransfer: { items: [] } });
     expect(screen.getByLabelText(/Artist Name/i)).toBeInTheDocument();
   });
 
   it('handles drop with no files', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     expect(screen.getByText(/Drop avatar image here/i)).toBeInTheDocument();
 
@@ -371,7 +372,7 @@ describe('CreateArtistForm', () => {
   });
 
   it('handles drop with undefined dataTransfer', () => {
-    render(<CreateArtistForm {...defaultProps} />);
+    customRender(<CreateArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     fireEvent.drop(window, { dataTransfer: undefined } as unknown as DragEvent);
 
@@ -380,7 +381,7 @@ describe('CreateArtistForm', () => {
 
   it('handles drop when file input ref is null', () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('dropped-url');
-    render(<CreateArtistForm {...defaultProps} _testHideFileInput />);
+    customRender(<CreateArtistForm {...defaultProps} _testHideFileInput />);
 
     const file = new File(['x'], 'dropped.png', { type: 'image/png' });
     fireEvent.drop(window, { dataTransfer: { files: [file] } });

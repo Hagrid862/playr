@@ -1,4 +1,5 @@
-import { act, renderHook } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing';
+import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIsMobile } from './use-mobile';
 
@@ -30,13 +31,13 @@ describe('useIsMobile', () => {
   describe('viewport width', () => {
     it('returns false by default on desktop', () => {
       window.innerWidth = 1024;
-      const { result } = renderHook(() => useIsMobile());
+      const { result } = customRenderHook(() => useIsMobile());
       expect(result.current).toBe(false);
     });
 
     it('returns true on mobile width', () => {
       window.innerWidth = 500;
-      const { result } = renderHook(() => useIsMobile());
+      const { result } = customRenderHook(() => useIsMobile());
       expect(result.current).toBe(true);
     });
   });
@@ -59,7 +60,7 @@ describe('useIsMobile', () => {
       })) as typeof window.matchMedia;
 
       window.innerWidth = 1024;
-      const { result } = renderHook(() => useIsMobile());
+      const { result } = customRenderHook(() => useIsMobile());
       expect(result.current).toBe(false);
 
       act(() => {

@@ -1,5 +1,5 @@
-import { trackBuilder } from '@repo/testing';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender, trackBuilder } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkTrackCard } from './BulkTrackCard';
@@ -18,7 +18,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       expect(screen.getByText('track1.mp3')).toBeInTheDocument();
       expect(screen.getByDisplayValue(track.title)).toBeInTheDocument();
@@ -38,7 +38,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       fireEvent.change(screen.getByLabelText('Track Title'), { target: { value: 'New Title' } });
 
@@ -50,7 +50,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder({ diskNumber: 1 }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       fireEvent.change(screen.getByLabelText('Disk No.'), { target: { value: '2' } });
 
@@ -63,7 +63,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       const diskInput = screen.getByLabelText('Disk No.');
       await user.clear(diskInput);
@@ -77,7 +77,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder({ trackNumber: 1 }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       fireEvent.change(screen.getByLabelText('Track No.'), { target: { value: '3' } });
 
@@ -90,7 +90,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       const trackInput = screen.getByLabelText('Track No.');
       await user.clear(trackInput);
@@ -105,7 +105,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       const checkbox = screen.getByRole('checkbox', { name: 'Explicit Content' });
       await user.click(checkbox);
@@ -120,7 +120,7 @@ describe('BulkTrackCard', () => {
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
         explicit: true,
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       await user.click(screen.getByRole('checkbox', { name: 'Explicit Content' }));
 
@@ -135,7 +135,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       await user.click(screen.getByRole('button', { name: 'Remove track' }));
 
@@ -149,7 +149,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       fireEvent.blur(screen.getByLabelText('Track Title'));
       fireEvent.blur(screen.getByLabelText('Disk No.'));

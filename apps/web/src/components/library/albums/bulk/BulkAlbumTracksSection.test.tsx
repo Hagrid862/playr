@@ -1,6 +1,6 @@
 import type { BulkTrackItem } from '@/lib/types/library';
-import { trackBuilder } from '@repo/testing';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender, trackBuilder } from '@repo/testing';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkAlbumTracksSection } from './BulkAlbumTracksSection';
 
@@ -59,12 +59,12 @@ describe('BulkAlbumTracksSection', () => {
 
   describe('track list', () => {
     it('renders track count with singular when one track', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} />);
       expect(screen.getByText('1 track ready')).toBeInTheDocument();
     });
 
     it('renders track count with plural when multiple tracks', () => {
-      render(
+      customRender(
         <BulkAlbumTracksSection
           {...defaultProps}
           tracks={[
@@ -87,7 +87,7 @@ describe('BulkAlbumTracksSection', () => {
           file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }),
         },
       ];
-      render(<BulkAlbumTracksSection {...defaultProps} tracks={tracks} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} tracks={tracks} />);
 
       expect(screen.getByTestId(`track-card-${tracks[0].id}`)).toBeInTheDocument();
       expect(screen.getByTestId(`track-card-${tracks[1].id}`)).toBeInTheDocument();
@@ -96,13 +96,13 @@ describe('BulkAlbumTracksSection', () => {
     });
 
     it('calls onClearAll when Clear all is clicked', async () => {
-      render(<BulkAlbumTracksSection {...defaultProps} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} />);
       fireEvent.click(screen.getByRole('button', { name: /Clear all/i }));
       expect(mockOnClearAll).toHaveBeenCalled();
     });
 
     it('calls onUpdateTrack when track card triggers update', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} />);
       fireEvent.click(screen.getByTestId(`update-${defaultProps.tracks[0].id}`));
       expect(mockOnUpdateTrack).toHaveBeenCalledWith(defaultProps.tracks[0].id, {
         title: 'Updated',
@@ -110,7 +110,7 @@ describe('BulkAlbumTracksSection', () => {
     });
 
     it('calls onRemoveTrack when track card triggers remove', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} />);
       fireEvent.click(screen.getByTestId(`remove-${defaultProps.tracks[0].id}`));
       expect(mockOnRemoveTrack).toHaveBeenCalledWith(defaultProps.tracks[0].id);
     });
@@ -118,30 +118,30 @@ describe('BulkAlbumTracksSection', () => {
 
   describe('errors and actions', () => {
     it('displays submitError when present', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} submitError="Something went wrong" />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} submitError="Something went wrong" />);
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     });
 
     it('does not display submitError when null', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} />);
       expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument();
     });
 
     it('renders Cancel link', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} />);
       const cancelLink = screen.getByRole('link', { name: /Cancel/i });
       expect(cancelLink).toHaveAttribute('href', '/app/library/albums/create');
     });
 
     it('submit button shows track count when not submitting', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} />);
       expect(
         screen.getByRole('button', { name: /Create album & upload 1 track/i }),
       ).toBeInTheDocument();
     });
 
     it('submit button shows tracks plural when multiple', () => {
-      render(
+      customRender(
         <BulkAlbumTracksSection
           {...defaultProps}
           tracks={[
@@ -156,22 +156,22 @@ describe('BulkAlbumTracksSection', () => {
     });
 
     it('submit button is disabled when form is invalid', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} isFormValid={false} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} isFormValid={false} />);
       expect(screen.getByRole('button', { name: /Create album & upload 1 track/i })).toBeDisabled();
     });
 
     it('submit button is disabled when submitting', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} isSubmitting={true} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} isSubmitting={true} />);
       expect(screen.getByRole('button', { name: /Creating.../i })).toBeDisabled();
     });
 
     it('submit button is disabled when loading artists', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} isLoadingArtists={true} />);
+      customRender(<BulkAlbumTracksSection {...defaultProps} isLoadingArtists={true} />);
       expect(screen.getByRole('button', { name: /Create album & upload 1 track/i })).toBeDisabled();
     });
 
     it('shows progressStep when submitting', () => {
-      render(
+      customRender(
         <BulkAlbumTracksSection
           {...defaultProps}
           isSubmitting={true}
@@ -182,7 +182,9 @@ describe('BulkAlbumTracksSection', () => {
     });
 
     it('shows Creating... when submitting with null progressStep', () => {
-      render(<BulkAlbumTracksSection {...defaultProps} isSubmitting={true} progressStep={null} />);
+      customRender(
+        <BulkAlbumTracksSection {...defaultProps} isSubmitting={true} progressStep={null} />,
+      );
       expect(screen.getByText('Creating...')).toBeInTheDocument();
     });
   });
