@@ -4,11 +4,11 @@ import type { LibraryState } from '@/stores/library.store';
 import { useLibraryStore } from '@/stores/library.store';
 import type { ZodArtist } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
+import { artistBuilder } from '@repo/testing';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockArtist } from '../__tests__/fixtures';
 import { BulkAlbumUploadForm } from './BulkAlbumUploadForm';
 
 type UseBulkAlbumUploadFormReturn = ReturnType<typeof useBulkAlbumUploadForm>;
@@ -89,7 +89,7 @@ function createMockLibraryState(overrides: Partial<LibraryState> = {}): LibraryS
   return {
     libraryId: 'lib-1',
     privateAccountId: null,
-    privateArtists: [mockArtist],
+    privateArtists: [artistBuilder()],
     privateAlbums: [],
     setLibraryId: vi.fn(),
     setPrivateAccountId: vi.fn(),

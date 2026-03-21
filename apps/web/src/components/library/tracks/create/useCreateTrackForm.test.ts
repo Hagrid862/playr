@@ -1,7 +1,7 @@
 import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
+import { albumBuilder, artistBuilder } from '@repo/testing';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockAlbum } from '../__tests__/fixtures';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateTrackForm } from './useCreateTrackForm';
 
 vi.mock('@/lib/audio-metadata', () => ({
@@ -14,6 +14,11 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+const originalCreateObjectURL = global.URL.createObjectURL;
+const originalRevokeObjectURL = global.URL.revokeObjectURL;
+
+const mockAlbum = { ...albumBuilder(), artists: [artistBuilder()] };
+
 describe('useCreateTrackForm', () => {
   const mockOnSubmit = vi.fn().mockResolvedValue(undefined);
 
@@ -21,6 +26,11 @@ describe('useCreateTrackForm', () => {
     vi.clearAllMocks();
     global.URL.createObjectURL = vi.fn(() => 'blob:test-url');
     global.URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    global.URL.createObjectURL = originalCreateObjectURL;
+    global.URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
   it('initializes with default values', () => {

@@ -1,7 +1,7 @@
+import { trackBuilder } from '@repo/testing';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMockBulkTrack } from '../__tests__/fixtures';
 import { BulkTrackCard } from './BulkTrackCard';
 
 describe('BulkTrackCard', () => {
@@ -9,113 +9,151 @@ describe('BulkTrackCard', () => {
   const mockOnRemove = vi.fn();
 
   beforeEach(() => {
-    mockOnUpdate.mockClear();
-    mockOnRemove.mockClear();
+    vi.clearAllMocks();
   });
 
-  it('renders track info', () => {
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+  describe('rendering', () => {
+    it('renders track info', () => {
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
-    expect(screen.getByText('track1.mp3')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Track 1')).toBeInTheDocument();
-    expect(screen.getByLabelText('Disk No.')).toHaveValue(1);
-    expect(screen.getByLabelText('Track No.')).toHaveValue(1);
-    expect(screen.getByLabelText('Explicit Content')).toBeInTheDocument();
+      expect(screen.getByText('track1.mp3')).toBeInTheDocument();
+      expect(screen.getByDisplayValue(track.title)).toBeInTheDocument();
+      expect(screen.getByLabelText('Disk No.')).toHaveValue(track.diskNumber);
+      expect(screen.getByLabelText('Track No.')).toHaveValue(track.trackNumber);
+      if (track.explicit) {
+        expect(screen.getByRole('checkbox', { name: 'Explicit Content' })).toBeChecked();
+      } else {
+        expect(screen.getByRole('checkbox', { name: 'Explicit Content' })).not.toBeChecked();
+      }
+    });
   });
 
-  it('calls onUpdate when track title changes', () => {
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+  describe('onUpdate', () => {
+    it('updates title', () => {
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
-    const titleInput = screen.getByLabelText('Track Title');
-    fireEvent.change(titleInput, { target: { value: 'New Title' } });
+      fireEvent.change(screen.getByLabelText('Track Title'), { target: { value: 'New Title' } });
 
-    expect(mockOnUpdate).toHaveBeenCalledWith({ title: 'New Title' });
+      expect(mockOnUpdate).toHaveBeenCalledWith({ title: 'New Title' });
+    });
+
+    it('updates disk number', () => {
+      const track = {
+        ...trackBuilder({ diskNumber: 1 }),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+
+      fireEvent.change(screen.getByLabelText('Disk No.'), { target: { value: '2' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ diskNumber: 2 });
+    });
+
+    it('uses disk number 1 when cleared', async () => {
+      const user = userEvent.setup();
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+
+      const diskInput = screen.getByLabelText('Disk No.');
+      await user.clear(diskInput);
+      fireEvent.change(diskInput, { target: { value: '' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ diskNumber: 1 });
+    });
+
+    it('updates track number', () => {
+      const track = {
+        ...trackBuilder({ trackNumber: 1 }),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+
+      fireEvent.change(screen.getByLabelText('Track No.'), { target: { value: '3' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ trackNumber: 3 });
+    });
+
+    it('uses track number 1 when invalid', async () => {
+      const user = userEvent.setup();
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+
+      const trackInput = screen.getByLabelText('Track No.');
+      await user.clear(trackInput);
+      fireEvent.change(trackInput, { target: { value: '0' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ trackNumber: 1 });
+    });
+
+    it('toggles explicit checkbox', async () => {
+      const user = userEvent.setup();
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+
+      const checkbox = screen.getByRole('checkbox', { name: 'Explicit Content' });
+      await user.click(checkbox);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: !track.explicit });
+    });
+
+    it('sets explicit false when unchecking', async () => {
+      const user = userEvent.setup();
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+        explicit: true,
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+
+      await user.click(screen.getByRole('checkbox', { name: 'Explicit Content' }));
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: false });
+    });
   });
 
-  it('calls onUpdate when disk number changes', () => {
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+  describe('onRemove', () => {
+    it('calls onRemove when remove button is clicked', async () => {
+      const user = userEvent.setup();
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
-    const diskInput = screen.getByLabelText('Disk No.');
-    fireEvent.change(diskInput, { target: { value: '2' } });
+      await user.click(screen.getByRole('button', { name: 'Remove track' }));
 
-    expect(mockOnUpdate).toHaveBeenCalledWith({ diskNumber: 2 });
+      expect(mockOnRemove).toHaveBeenCalled();
+    });
   });
 
-  it('calls onUpdate with 1 when disk number is invalid', async () => {
-    const user = userEvent.setup();
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+  describe('blur', () => {
+    it('handles blur on text fields without error', () => {
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
-    const diskInput = screen.getByLabelText('Disk No.');
-    await user.clear(diskInput);
-    fireEvent.change(diskInput, { target: { value: '' } });
-
-    expect(mockOnUpdate).toHaveBeenCalledWith({ diskNumber: 1 });
-  });
-
-  it('calls onUpdate when track number changes', () => {
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
-
-    const trackInput = screen.getByLabelText('Track No.');
-    fireEvent.change(trackInput, { target: { value: '3' } });
-
-    expect(mockOnUpdate).toHaveBeenCalledWith({ trackNumber: 3 });
-  });
-
-  it('calls onUpdate with 1 when track number is invalid', async () => {
-    const user = userEvent.setup();
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
-
-    const trackInput = screen.getByLabelText('Track No.');
-    await user.clear(trackInput);
-    fireEvent.change(trackInput, { target: { value: '0' } });
-
-    expect(mockOnUpdate).toHaveBeenCalledWith({ trackNumber: 1 });
-  });
-
-  it('calls onUpdate when explicit checkbox is toggled', async () => {
-    const user = userEvent.setup();
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
-
-    const checkbox = screen.getByRole('checkbox', { name: 'Explicit Content' });
-    await user.click(checkbox);
-
-    expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: true });
-  });
-
-  it('calls onUpdate with explicit false when unchecking', async () => {
-    const user = userEvent.setup();
-    const track = createMockBulkTrack({ explicit: true });
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
-
-    const checkbox = screen.getByRole('checkbox', { name: 'Explicit Content' });
-    await user.click(checkbox);
-
-    expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: false });
-  });
-
-  it('calls onRemove when remove button is clicked', async () => {
-    const user = userEvent.setup();
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
-
-    await user.click(screen.getByRole('button', { name: 'Remove track' }));
-
-    expect(mockOnRemove).toHaveBeenCalled();
-  });
-
-  it('handles blur on text fields without error', () => {
-    const track = createMockBulkTrack();
-    render(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
-
-    fireEvent.blur(screen.getByLabelText('Track Title'));
-    fireEvent.blur(screen.getByLabelText('Disk No.'));
-    fireEvent.blur(screen.getByLabelText('Track No.'));
+      fireEvent.blur(screen.getByLabelText('Track Title'));
+      fireEvent.blur(screen.getByLabelText('Disk No.'));
+      fireEvent.blur(screen.getByLabelText('Track No.'));
+    });
   });
 });

@@ -1,8 +1,8 @@
 import type { ZodAlbum } from '@repo/contracts';
+import { albumBuilder } from '@repo/testing';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockAlbum } from '../__tests__/fixtures';
 import { EditAlbumForm } from './EditAlbumForm';
 import type { useEditAlbumForm } from './useEditAlbumForm';
 
@@ -59,7 +59,7 @@ describe('EditAlbumForm', () => {
   const mockOnCancel = vi.fn();
 
   const defaultProps = {
-    album: mockAlbum,
+    album: { ...albumBuilder(), cover: null },
     isLoading: false,
     onSubmit: mockOnSubmit,
     onCancel: mockOnCancel,

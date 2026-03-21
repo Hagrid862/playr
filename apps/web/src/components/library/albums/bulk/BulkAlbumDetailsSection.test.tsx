@@ -105,7 +105,7 @@ describe('BulkAlbumDetailsSection', () => {
   ];
 
   beforeEach(() => {
-    mockOnUpdate.mockClear();
+    vi.clearAllMocks();
   });
 
   it('renders with provided formData', () => {

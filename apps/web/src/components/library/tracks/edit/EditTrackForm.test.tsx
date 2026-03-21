@@ -55,199 +55,204 @@ describe('EditTrackForm', () => {
   const albumId = 'album-123';
 
   beforeEach(() => {
-    onSubmit.mockClear();
-    vi.mocked(useNavigate).mockClear();
+    vi.clearAllMocks();
   });
 
-  it('renders correctly with initial values', () => {
-    render(
-      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
-    );
+  describe('rendering', () => {
+    it('renders correctly with initial values', () => {
+      render(
+        <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+      );
 
-    expect(screen.getByLabelText(/track title/i)).toHaveValue('Existing Song');
-    expect(screen.getByLabelText(/track no/i)).toHaveValue(1);
-    expect(screen.getByLabelText(/disk no/i)).toHaveValue(1);
-    expect(screen.getByLabelText(/explicit content/i)).not.toBeChecked();
-    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
-  });
+      expect(screen.getByLabelText(/track title/i)).toHaveValue('Existing Song');
+      expect(screen.getByLabelText(/track no/i)).toHaveValue(1);
+      expect(screen.getByLabelText(/disk no/i)).toHaveValue(1);
+      expect(screen.getByLabelText(/explicit content/i)).not.toBeChecked();
+      expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
+    });
 
-  it('validates required fields', async () => {
-    const user = userEvent.setup();
-    render(
-      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
-    );
+    it('disables submit button when loading', () => {
+      render(
+        <EditTrackForm track={mockTrack} albumId={albumId} isLoading={true} onSubmit={onSubmit} />,
+      );
+      expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
+    });
 
-    const titleInput = screen.getByLabelText(/track title/i);
-    await user.clear(titleInput);
-    await user.tab();
+    it('handles track without artists safely', () => {
+      const trackWithoutArtists = { ...mockTrack, artists: undefined };
+      render(
+        <EditTrackForm
+          track={trackWithoutArtists}
+          albumId={albumId}
+          isLoading={false}
+          onSubmit={onSubmit}
+        />,
+      );
 
-    expect(await screen.findByText(/track title cannot be empty/i)).toBeInTheDocument();
-    expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  it('submits form with updated data', async () => {
-    const user = userEvent.setup();
-    const navigate = vi.fn();
-    vi.mocked(useNavigate).mockReturnValue(navigate);
-
-    render(
-      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
-    );
-
-    await user.clear(screen.getByLabelText(/track title/i));
-    await user.type(screen.getByLabelText(/track title/i), 'Updated Song');
-
-    await user.clear(screen.getByLabelText(/disk no/i));
-    await user.type(screen.getByLabelText(/disk no/i), '2');
-
-    await user.clear(screen.getByLabelText(/track no/i));
-    await user.type(screen.getByLabelText(/track no/i), '5');
-
-    await user.click(screen.getByLabelText(/explicit content/i));
-
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
-
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith({
-        title: 'Updated Song',
-        trackNumber: 5,
-        diskNumber: 2,
-        explicit: true,
-        artistIds: ['artist-123'],
-      });
-      expect(navigate).toHaveBeenCalledWith({
-        to: '/app/library/albums/$id',
-        params: { id: albumId },
-      });
+      expect(screen.getByLabelText(/track title/i)).toHaveValue('Existing Song');
     });
   });
 
-  it('disables submit button when loading', () => {
-    render(
-      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={true} onSubmit={onSubmit} />,
-    );
-    expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
-  });
+  describe('submission', () => {
+    it('submits form with updated data', async () => {
+      const user = userEvent.setup();
+      const navigate = vi.fn();
+      vi.mocked(useNavigate).mockReturnValue(navigate);
 
-  it('displays server errors when provided', () => {
-    const serverErrors = {
-      title: 'Title already exists',
-    };
+      render(
+        <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+      );
 
-    render(
-      <EditTrackForm
-        track={mockTrack}
-        albumId={albumId}
-        isLoading={false}
-        onSubmit={onSubmit}
-        serverErrors={serverErrors}
-      />,
-    );
+      await user.clear(screen.getByLabelText(/track title/i));
+      await user.type(screen.getByLabelText(/track title/i), 'Updated Song');
 
-    expect(screen.getByText(/title already exists/i)).toBeInTheDocument();
-  });
+      await user.clear(screen.getByLabelText(/disk no/i));
+      await user.type(screen.getByLabelText(/disk no/i), '2');
 
-  it('handles submission error gracefully', async () => {
-    const user = userEvent.setup();
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const error = new Error('Submission failed');
-    onSubmit.mockRejectedValue(error);
+      await user.clear(screen.getByLabelText(/track no/i));
+      await user.type(screen.getByLabelText(/track no/i), '5');
 
-    render(
-      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
-    );
+      await user.click(screen.getByLabelText(/explicit content/i));
 
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
 
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', error);
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledWith({
+          title: 'Updated Song',
+          trackNumber: 5,
+          diskNumber: 2,
+          explicit: true,
+          artistIds: ['artist-123'],
+        });
+        expect(navigate).toHaveBeenCalledWith({
+          to: '/app/library/albums/$id',
+          params: { id: albumId },
+        });
+      });
     });
 
-    consoleSpy.mockRestore();
+    it('handles submission error gracefully', async () => {
+      const user = userEvent.setup();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const error = new Error('Submission failed');
+      onSubmit.mockRejectedValue(error);
+
+      render(
+        <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalled();
+        expect(consoleSpy).toHaveBeenCalledWith('Submission failed:', error);
+      });
+
+      consoleSpy.mockRestore();
+    });
   });
 
-  it('handles track without artists safely', () => {
-    const trackWithoutArtists = { ...mockTrack, artists: undefined };
-    render(
-      <EditTrackForm
-        track={trackWithoutArtists}
-        albumId={albumId}
-        isLoading={false}
-        onSubmit={onSubmit}
-      />,
-    );
+  describe('validation', () => {
+    it('validates required fields', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+      );
 
-    expect(screen.getByLabelText(/track title/i)).toHaveValue('Existing Song');
-  });
+      const titleInput = screen.getByLabelText(/track title/i);
+      await user.clear(titleInput);
+      await user.tab();
 
-  it('handles root validation errors', async () => {
-    const user = userEvent.setup();
+      expect(await screen.findByText(/track title cannot be empty/i)).toBeInTheDocument();
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
 
-    const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
-    const error = new ZodError([
-      {
-        path: [],
-        message: 'Root error occurred',
-        code: 'custom',
-      },
-    ]) as ZodError<UpdateLibraryTrackRequest>;
-    safeParseSpy.mockReturnValueOnce({ success: false, error });
+    it('displays server errors when provided', () => {
+      const serverErrors = {
+        title: 'Title already exists',
+      };
 
-    render(
-      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
-    );
+      render(
+        <EditTrackForm
+          track={mockTrack}
+          albumId={albumId}
+          isLoading={false}
+          onSubmit={onSubmit}
+          serverErrors={serverErrors}
+        />,
+      );
 
-    const titleInput = screen.getByLabelText(/track title/i);
-    await user.click(titleInput);
-    await user.tab();
+      expect(screen.getByText(/title already exists/i)).toBeInTheDocument();
+    });
 
-    expect(await screen.findByText(/root error occurred/i)).toBeInTheDocument();
-    safeParseSpy.mockRestore();
-  });
+    it('handles root validation errors', async () => {
+      const user = userEvent.setup();
 
-  it('handles multiple validation errors for the same field', async () => {
-    const user = userEvent.setup();
+      const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
+      const error = new ZodError([
+        {
+          path: [],
+          message: 'Root error occurred',
+          code: 'custom',
+        },
+      ]) as ZodError<UpdateLibraryTrackRequest>;
+      safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-    const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
-    const error = new ZodError([
-      { path: ['title'], message: 'First error', code: 'custom' },
-      { path: ['title'], message: 'Second error', code: 'custom' },
-    ]) as ZodError<UpdateLibraryTrackRequest>;
-    safeParseSpy.mockReturnValueOnce({ success: false, error });
+      render(
+        <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+      );
 
-    render(
-      <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
-    );
+      const titleInput = screen.getByLabelText(/track title/i);
+      await user.click(titleInput);
+      await user.tab();
 
-    const titleInput = screen.getByLabelText(/track title/i);
-    await user.click(titleInput);
-    await user.tab();
+      expect(await screen.findByText(/root error occurred/i)).toBeInTheDocument();
+      safeParseSpy.mockRestore();
+    });
 
-    expect(await screen.findByText(/first error/i)).toBeInTheDocument();
-    safeParseSpy.mockRestore();
-  });
+    it('handles multiple validation errors for the same field', async () => {
+      const user = userEvent.setup();
 
-  it('handles undefined/nullish values in track prop', () => {
-    const partialTrack = {
-      ...mockTrack,
-      title: undefined,
-      trackNumber: undefined,
-      diskNumber: undefined,
-    };
+      const safeParseSpy = vi.spyOn(UpdateLibraryTrackRequestSchema, 'safeParse');
+      const error = new ZodError([
+        { path: ['title'], message: 'First error', code: 'custom' },
+        { path: ['title'], message: 'Second error', code: 'custom' },
+      ]) as ZodError<UpdateLibraryTrackRequest>;
+      safeParseSpy.mockReturnValueOnce({ success: false, error });
 
-    render(
-      <EditTrackForm
-        // @ts-expect-error Testing runtime behavior with partial data
-        track={partialTrack}
-        albumId={albumId}
-        isLoading={false}
-        onSubmit={onSubmit}
-      />,
-    );
+      render(
+        <EditTrackForm track={mockTrack} albumId={albumId} isLoading={false} onSubmit={onSubmit} />,
+      );
 
-    expect(screen.getByLabelText(/track title/i)).toHaveValue('');
-    expect(screen.getByLabelText(/track no/i)).toHaveValue(null);
-    expect(screen.getByLabelText(/disk no/i)).toHaveValue(null);
+      const titleInput = screen.getByLabelText(/track title/i);
+      await user.click(titleInput);
+      await user.tab();
+
+      expect(await screen.findByText(/first error/i)).toBeInTheDocument();
+      safeParseSpy.mockRestore();
+    });
+
+    it('handles undefined/nullish values in track prop', () => {
+      const partialTrack = {
+        ...mockTrack,
+        title: undefined,
+        trackNumber: undefined,
+        diskNumber: undefined,
+      };
+
+      render(
+        <EditTrackForm
+          // @ts-expect-error Testing runtime behavior with partial data
+          track={partialTrack}
+          albumId={albumId}
+          isLoading={false}
+          onSubmit={onSubmit}
+        />,
+      );
+
+      expect(screen.getByLabelText(/track title/i)).toHaveValue('');
+      expect(screen.getByLabelText(/track no/i)).toHaveValue(null);
+      expect(screen.getByLabelText(/disk no/i)).toHaveValue(null);
+    });
   });
 });
