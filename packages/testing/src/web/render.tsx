@@ -1,23 +1,23 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-    createMemoryHistory,
-    createRootRoute,
-    createRoute,
-    createRouter,
-    Outlet,
-    RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
 } from "@tanstack/react-router";
 import {
-    render,
-    renderHook,
-    type RenderHookOptions,
-    type RenderOptions,
+  render,
+  renderHook,
+  type RenderHookOptions,
+  type RenderOptions,
 } from "@testing-library/react";
 import {
-    useMemo,
-    type ComponentType,
-    type ReactElement,
-    type ReactNode,
+  useMemo,
+  type ComponentType,
+  type ReactElement,
+  type ReactNode,
 } from "react";
 
 function createTestQueryClient() {
