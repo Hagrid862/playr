@@ -1,13 +1,13 @@
 import type { QueueItem } from '@/stores/player.store';
-import { customRender } from '@repo/testing';
+import {
+  albumBuilder,
+  artistBuilder,
+  customRender,
+  imageBuilder,
+  trackBuilder,
+} from '@repo/testing';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import {
-    createQueueItemFixture,
-    testAlbumNoCover,
-    testAlbumWithCover,
-    testArtist,
-} from '../test-utils/player-test-utils';
 import { QueueNowPlaying } from './QueueNowPlaying';
 
 describe('QueueNowPlaying', () => {
@@ -20,10 +20,14 @@ describe('QueueNowPlaying', () => {
 
   describe('with track', () => {
     it('renders track details when currentTrack is provided', () => {
-      const artistA = testArtist({ name: 'Artist A' });
-      const album = testAlbumWithCover('http://example.com/cover.jpg');
+      const artistA = artistBuilder({ name: 'Artist A' });
+      const album = {
+        ...albumBuilder({ name: 'Album A' }),
+        cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+      };
       const track: QueueItem = {
-        ...createQueueItemFixture({ uniqueId: '1', title: 'Test Song' }),
+        uniqueId: '1',
+        ...trackBuilder({ title: 'Test Song' }),
         artists: [artistA],
         album,
       };
@@ -40,9 +44,10 @@ describe('QueueNowPlaying', () => {
 
     it('renders fallback icon when no cover is provided', () => {
       const track: QueueItem = {
-        ...createQueueItemFixture({ uniqueId: '2', title: 'Test Song 2' }),
-        artists: [testArtist({ name: 'Artist B' })],
-        album: testAlbumNoCover(),
+        uniqueId: '2',
+        ...trackBuilder({ title: 'Test Song 2' }),
+        artists: [artistBuilder({ name: 'Artist B' })],
+        album: { ...albumBuilder({ name: 'Album B' }), cover: null },
       };
 
       customRender(<QueueNowPlaying currentTrack={track} />);
