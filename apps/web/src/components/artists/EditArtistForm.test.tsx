@@ -1,8 +1,8 @@
 import {
-    UpdateLibraryArtistRequest,
-    UpdateLibraryArtistRequestSchema,
-    ZodArtist,
-    ZodImage,
+  UpdateLibraryArtistRequest,
+  UpdateLibraryArtistRequestSchema,
+  ZodArtist,
+  ZodImage,
 } from '@repo/contracts';
 import { customRender } from '@repo/testing';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
