@@ -1,5 +1,6 @@
 import type { BulkTrackItem } from '@/lib/types/library';
-import { customRender, trackBuilder } from '@repo/testing';
+import { trackBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

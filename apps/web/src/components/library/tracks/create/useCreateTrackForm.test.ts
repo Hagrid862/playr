@@ -1,5 +1,6 @@
 import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
-import { albumBuilder, artistBuilder, customRenderHook } from '@repo/testing';
+import { albumBuilder, artistBuilder } from '@repo/testing/builders';
+import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateTrackForm } from './useCreateTrackForm';

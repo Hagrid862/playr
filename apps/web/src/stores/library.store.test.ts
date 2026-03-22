@@ -1,5 +1,5 @@
 import type { ZodAlbum, ZodArtist } from '@repo/contracts';
-import { albumBuilder, artistBuilder } from '@repo/testing';
+import { albumBuilder, artistBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useLibraryStore } from './library.store';
 

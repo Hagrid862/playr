@@ -1,5 +1,5 @@
 import * as contracts from '@repo/contracts';
-import { customRenderHook } from '@repo/testing';
+import { customRenderHook } from '@repo/testing/web';
 import { act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';

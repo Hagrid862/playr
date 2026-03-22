@@ -1,6 +1,6 @@
 import { PlayerState, QueueItem, usePlayerStore } from '@/stores/player.store';
 import type { DragEndEvent } from '@dnd-kit/core';
-import { customRender } from '@repo/testing';
+import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

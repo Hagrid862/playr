@@ -1,11 +1,6 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
-import {
-  albumBuilder,
-  artistBuilder,
-  customRender,
-  imageBuilder,
-  trackBuilder,
-} from '@repo/testing';
+import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueueItem, QueueItemOverlay } from './QueueItem';

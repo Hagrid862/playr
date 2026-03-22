@@ -1,5 +1,6 @@
 import type { ZodAlbum } from '@repo/contracts';
-import { albumBuilder, customRender } from '@repo/testing';
+import { albumBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

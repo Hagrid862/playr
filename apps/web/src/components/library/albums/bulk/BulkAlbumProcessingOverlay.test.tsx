@@ -1,4 +1,4 @@
-import { customRender } from '@repo/testing';
+import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BulkAlbumProcessingOverlay } from './BulkAlbumProcessingOverlay';

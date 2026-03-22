@@ -1,5 +1,5 @@
 import type { ZodUser } from '@repo/contracts';
-import { userBuilder } from '@repo/testing';
+import { userBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from './auth.store';
 

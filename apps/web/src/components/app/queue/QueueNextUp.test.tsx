@@ -1,6 +1,7 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
-import { customRender, trackBuilder } from '@repo/testing';
+import { trackBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
 import { act, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueueNextUp } from './QueueNextUp';
