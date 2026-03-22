@@ -8,5 +8,7 @@ export default defineConfig({
     "nestjs/index": "src/nestjs/index.ts",
     "web/index": "src/web/index.ts",
     "requests/index": "src/requests/index.ts",
+    "builders/index": "src/builders/index.ts",
+    "mocks/index": "src/mocks/index.ts",
   },
 });
