@@ -1,8 +1,8 @@
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { libraryBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { libraryBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryQuery } from '../impl/get-library.query';
 import { GetLibraryHandler } from './get-library.handler';

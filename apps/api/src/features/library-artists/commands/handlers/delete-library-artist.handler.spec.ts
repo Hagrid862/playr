@@ -1,9 +1,9 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { artistBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Visibility } from '@repo/db';
+import { artistBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryArtistCommand } from '../impl/delete-library-artist.command';
 import { DeleteLibraryArtistHandler } from './delete-library-artist.handler';

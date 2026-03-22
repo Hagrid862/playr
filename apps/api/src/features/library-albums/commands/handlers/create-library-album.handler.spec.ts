@@ -2,8 +2,6 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { albumBuilder, libraryBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import {
   ConflictException,
   InternalServerErrorException,
@@ -12,6 +10,8 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
 import { AlbumType, Visibility } from '@repo/db';
+import { albumBuilder, libraryBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryAlbumCommand } from '../impl/create-library-album.command';
 import { CreateLibraryAlbumHandler } from './create-library-album.handler';

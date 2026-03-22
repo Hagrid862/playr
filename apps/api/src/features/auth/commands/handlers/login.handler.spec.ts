@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LoginHandler } from './login.handler';
-import { LoginCommand } from '../impl/login.command';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { userBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { Gender } from '@repo/db';
 import { UserSchema } from '@repo/contracts';
+import { Gender } from '@repo/db';
+import { userBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TokenService } from '../../services/token.service';
+import { LoginCommand } from '../impl/login.command';
+import { LoginHandler } from './login.handler';
 
 describe('LoginHandler', () => {
   let handler: LoginHandler;

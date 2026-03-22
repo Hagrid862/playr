@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { emailAddressBuilder, userBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailAddress, EmailType, Gender, PrismaClient, User, UserCreateInput } from '@repo/db';
+import { emailAddressBuilder, userBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { UserRepository } from './user.repository';

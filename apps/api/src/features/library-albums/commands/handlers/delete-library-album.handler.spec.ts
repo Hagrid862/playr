@@ -1,9 +1,9 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { albumBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumType, Visibility } from '@repo/db';
+import { albumBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryAlbumCommand } from '../impl/delete-library-album.command';
 import { DeleteLibraryAlbumHandler } from './delete-library-album.handler';

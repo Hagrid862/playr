@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket } from '@repo/db';
-import { artistBuilder } from '@repo/testing';
+import { artistBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UploadLibraryArtistAvatarCommand } from '../impl/upload-library-artist-avatar.command';

@@ -1,5 +1,5 @@
-import { trackWithAccessBuilder } from '@repo/testing';
 import { AccessRole } from '@repo/db';
+import { trackWithAccessBuilder } from '@repo/testing/builders';
 import { describe, expect, it } from 'vitest';
 import { canUserUpdateTrackDuration } from './audio-processing.utils';
 

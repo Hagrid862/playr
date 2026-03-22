@@ -8,10 +8,10 @@ import { AudioFileSchema } from '@repo/contracts';
 import { AccessRole, AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
 import {
   audioFileBuilder,
-  createMockFile,
   trackWithAccessBuilder,
   type TrackWithAccessAndAlbumId,
-} from '@repo/testing';
+} from '@repo/testing/builders';
+import { createMockFile } from '@repo/testing/mocks';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Queue } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
