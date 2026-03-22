@@ -1,7 +1,7 @@
-import { userBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { userBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionRepository } from '../../../../shared/repositories/session.repository';
 import { UserRepository } from '../../../../shared/repositories/user.repository';

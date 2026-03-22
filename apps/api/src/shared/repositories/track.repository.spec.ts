@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { trackBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, Visibility } from '@repo/db';
+import { trackBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { TrackRepository } from './track.repository';

@@ -11,7 +11,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { ImageSchema } from '@repo/contracts';
 import { FileBucket, ImageUploadStatus } from '@repo/db';
-import { albumBuilder, imageBuilder } from '@repo/testing';
+import { albumBuilder, imageBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UploadLibraryAlbumCoverCommand } from '../impl/upload-library-album-cover.command';

@@ -1,7 +1,7 @@
 import { ExecutionContext } from '@nestjs/common';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { User } from '@repo/db';
-import { userBuilder } from '@repo/testing';
+import { userBuilder } from '@repo/testing/builders';
 import { describe, expect, it } from 'vitest';
 import { AuthenticatedUser } from '../types/auth.types';
 import { CurrentUser } from './current-user.decorator';

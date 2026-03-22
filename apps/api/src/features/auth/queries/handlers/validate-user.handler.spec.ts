@@ -1,13 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ValidateUserHandler } from './validate-user.handler';
-import { ValidateUserQuery } from '../impl/validate-user.query';
 import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
-import { EmailStatus, Gender } from '@repo/db';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { userBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { UnauthorizedException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { EmailStatus, Gender } from '@repo/db';
+import { userBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ValidateUserQuery } from '../impl/validate-user.query';
+import { ValidateUserHandler } from './validate-user.handler';
 
 describe('ValidateUserHandler', () => {
   let handler: ValidateUserHandler;

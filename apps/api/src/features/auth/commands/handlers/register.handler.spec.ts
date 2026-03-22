@@ -1,18 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { RegisterHandler } from './register.handler';
-import { RegisterCommand } from '../impl/register.command';
 import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
-import { ConflictException } from '@nestjs/common';
-import { EmailStatus, Gender } from '@repo/db';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { RegisterRequestDto } from '../../dto/register.request.dto';
-import { emailAddressBuilder, userBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { PrismaClient } from '@repo/db';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
+import { ConflictException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { UserSchema } from '@repo/contracts';
+import { EmailStatus, Gender, PrismaClient } from '@repo/db';
+import { emailAddressBuilder, userBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RegisterRequestDto } from '../../dto/register.request.dto';
+import { RegisterCommand } from '../impl/register.command';
+import { RegisterHandler } from './register.handler';
 
 describe('RegisterHandler', () => {
   let handler: RegisterHandler;

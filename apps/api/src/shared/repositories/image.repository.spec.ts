@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { imageBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileBucket, ImageUploadStatus, PrismaClient } from '@repo/db';
+import { imageBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { ImageRepository } from './image.repository';

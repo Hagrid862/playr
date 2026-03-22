@@ -1,9 +1,9 @@
 import { PrismaService } from '@/shared/services/prisma.service';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StreamAudioQuality } from '@repo/contracts';
 import { AudioFormat, AudioQuality } from '@repo/db';
-import { audioFileBuilder } from '@repo/testing';
+import { audioFileBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { GetTrackStreamQualitiesQuery } from '../impl/get-track-stream-qualities.query';
 import { GetTrackStreamQualitiesHandler } from './get-track-stream-qualities.handler';
 

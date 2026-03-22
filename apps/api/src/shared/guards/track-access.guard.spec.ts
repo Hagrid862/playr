@@ -3,7 +3,7 @@ import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Visibility } from '@repo/db';
-import { trackBuilder } from '@repo/testing';
+import { trackBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrackRepository } from '../repositories/track.repository';

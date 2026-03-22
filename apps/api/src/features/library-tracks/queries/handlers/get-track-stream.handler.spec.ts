@@ -1,11 +1,11 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { StorageService } from '@/shared/services/storage.service';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StreamAudioQuality } from '@repo/contracts';
 import { AudioFormat, AudioQuality, FileBucket } from '@repo/db';
-import { audioFileBuilder } from '@repo/testing';
+import { audioFileBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetTrackStreamQuery } from '../impl/get-track-stream.query';
 import { GetTrackStreamHandler } from './get-track-stream.handler';

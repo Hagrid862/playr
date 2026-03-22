@@ -1,9 +1,9 @@
 import { TrackRepository } from '@/shared/repositories/track.repository';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Track } from '@repo/db';
-import { trackBuilder } from '@repo/testing';
+import { trackBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryTrackQuery } from '../impl/get-library-track.query';
 import { GetLibraryTrackHandler } from './get-library-track.handler';

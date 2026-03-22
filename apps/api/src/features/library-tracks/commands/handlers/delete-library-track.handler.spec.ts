@@ -3,11 +3,11 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { type Track, AudioFormat, FileBucket, ProcessingStatus, Visibility } from '@repo/db';
-import { audioFileBuilder, trackBuilder } from '@repo/testing';
+import { audioFileBuilder, trackBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
 import { DeleteLibraryTrackHandler } from './delete-library-track.handler';
