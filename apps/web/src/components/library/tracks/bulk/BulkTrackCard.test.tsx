@@ -15,7 +15,7 @@ describe('BulkTrackCard', () => {
   describe('rendering', () => {
     it('renders track info', () => {
       const track = {
-        ...trackBuilder(),
+        ...trackBuilder({ explicit: false }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
       customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
@@ -24,11 +24,7 @@ describe('BulkTrackCard', () => {
       expect(screen.getByDisplayValue(track.title)).toBeInTheDocument();
       expect(screen.getByLabelText('Disk No.')).toHaveValue(track.diskNumber);
       expect(screen.getByLabelText('Track No.')).toHaveValue(track.trackNumber);
-      if (track.explicit) {
-        expect(screen.getByRole('checkbox', { name: 'Explicit Content' })).toBeChecked();
-      } else {
-        expect(screen.getByRole('checkbox', { name: 'Explicit Content' })).not.toBeChecked();
-      }
+      expect(screen.getByRole('checkbox', { name: 'Explicit Content' })).not.toBeChecked();
     });
   });
 
