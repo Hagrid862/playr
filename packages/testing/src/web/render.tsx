@@ -68,8 +68,8 @@ export interface CustomRenderWithRouterOptions<
   routerContext?: TRouterContext;
 }
 
-export type CustomRenderHookOptions<TResult> = Omit<
-  RenderHookOptions<TResult>,
+export type CustomRenderHookOptions<TProps> = Omit<
+  RenderHookOptions<TProps>,
   "wrapper"
 > &
   WebTestProviderOptions & {
@@ -77,13 +77,13 @@ export type CustomRenderHookOptions<TResult> = Omit<
      * Renders inside QueryClientProvider (after that provider).
      * Use for extra context (e.g. a form or theme provider).
      */
-    wrapper?: RenderHookOptions<TResult>["wrapper"];
+    wrapper?: RenderHookOptions<TProps>["wrapper"];
   };
 
 export type CustomRenderHookWithRouterOptions<
-  TResult,
+  TProps,
   TRouterContext extends Record<string, unknown> = Record<string, unknown>,
-> = CustomRenderHookOptions<TResult> & {
+> = CustomRenderHookOptions<TProps> & {
   initialLocation?: string;
   routerContext?: TRouterContext;
 };
@@ -189,9 +189,9 @@ export function customRenderWithRouter<
 /**
  * Runs a hook with QueryClientProvider (same defaults as {@link customRender}).
  */
-export function customRenderHook<TResult>(
-  callback: () => TResult,
-  options: CustomRenderHookOptions<TResult> = {},
+export function customRenderHook<TResult, TProps>(
+  callback: (props: TProps) => TResult,
+  options: CustomRenderHookOptions<TProps> = {},
 ) {
   const {
     queryClient = createTestQueryClient(),
@@ -220,10 +220,11 @@ export function customRenderHook<TResult>(
  */
 export function customRenderHookWithRouter<
   TResult,
+  TProps,
   TRouterContext extends Record<string, unknown> = Record<string, unknown>,
 >(
-  callback: () => TResult,
-  options: CustomRenderHookWithRouterOptions<TResult, TRouterContext> = {},
+  callback: (props: TProps) => TResult,
+  options: CustomRenderHookWithRouterOptions<TProps, TRouterContext> = {},
 ) {
   const {
     queryClient = createTestQueryClient(),
