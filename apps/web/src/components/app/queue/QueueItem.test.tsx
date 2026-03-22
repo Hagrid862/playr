@@ -75,7 +75,7 @@ describe('QueueItem', () => {
       };
 
       customRender(<QueueItem track={noCoverTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
-      expect(screen.queryByAltText('Test Title')).not.toBeInTheDocument();
+      expect(screen.queryByAltText('Test Title 2')).not.toBeInTheDocument();
     });
 
     it('joins multiple artist names correctly', () => {
@@ -190,7 +190,7 @@ describe('QueueItemOverlay', () => {
 
       customRender(<QueueItemOverlay track={noCoverTrack} />);
       expect(screen.getByText('Test Title 2')).toBeInTheDocument();
-      expect(screen.queryByAltText('Test Title')).not.toBeInTheDocument();
+      expect(screen.queryByAltText('Test Title 2')).not.toBeInTheDocument();
     });
 
     it('joins multiple artist names correctly', () => {
