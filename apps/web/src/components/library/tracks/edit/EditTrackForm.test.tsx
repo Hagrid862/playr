@@ -3,7 +3,7 @@ import {
   UpdateLibraryTrackRequestSchema,
   ZodTrack,
 } from '@repo/contracts';
-import { customRender } from '@repo/testing';
+import { customRender } from '@repo/testing/web';
 import { useNavigate } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

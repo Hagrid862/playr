@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/stores/auth.store';
 import type { ZodUser } from '@repo/contracts';
-import { userBuilder } from '@repo/testing';
+import { userBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { api, apiClient } from './api-client';

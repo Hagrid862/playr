@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { customRenderHook } from '@repo/testing';
+import { customRenderHook } from '@repo/testing/web';
 import { waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerAudio } from './use-player-audio';

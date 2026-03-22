@@ -1,4 +1,4 @@
-import { customRenderHook } from '@repo/testing';
+import { customRenderHook } from '@repo/testing/web';
 import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIsMobile } from './use-mobile';

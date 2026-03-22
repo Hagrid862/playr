@@ -1,6 +1,7 @@
 import type { UpdateLibraryAlbumRequest, ZodAlbum } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
-import { albumBuilder, customRenderHook, imageBuilder } from '@repo/testing';
+import { albumBuilder, imageBuilder } from '@repo/testing/builders';
+import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditAlbumForm, validateWithZod } from './useEditAlbumForm';

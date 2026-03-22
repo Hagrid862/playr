@@ -1,6 +1,6 @@
 import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/clean-audio-filename';
-import { customRenderHook } from '@repo/testing';
+import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBulkAlbumUploadForm } from './useBulkAlbumUploadForm';

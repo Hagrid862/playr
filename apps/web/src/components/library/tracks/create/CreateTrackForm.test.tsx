@@ -4,7 +4,8 @@ import {
   CreateLibraryTrackRequestSchema,
   ZodAlbumInfer,
 } from '@repo/contracts';
-import { albumBuilder, artistBuilder, customRender } from '@repo/testing';
+import { albumBuilder, artistBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
 import { useNavigate } from '@tanstack/react-router';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

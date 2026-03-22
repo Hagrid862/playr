@@ -1,4 +1,4 @@
-import { customRender } from '@repo/testing';
+import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SongCard } from './SongCard';

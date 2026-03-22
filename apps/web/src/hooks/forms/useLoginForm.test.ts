@@ -1,4 +1,4 @@
-import { customRenderHook } from '@repo/testing';
+import { customRenderHook } from '@repo/testing/web';
 import { act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useLoginForm } from './useLoginForm';

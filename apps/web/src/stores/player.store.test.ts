@@ -1,5 +1,5 @@
 import { StreamAudioQuality, ZodTrack } from '@repo/contracts';
-import { trackBuilder } from '@repo/testing';
+import { trackBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePlayerStore } from './player.store';
 

@@ -1,4 +1,4 @@
-import { customRender } from '@repo/testing';
+import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import useMeasure from 'react-use-measure';
