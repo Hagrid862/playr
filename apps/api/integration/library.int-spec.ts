@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { ArtistGetPayload, Library, LibraryArtistGetPayload } from '@repo/db';
-import { artistBuilder, libraryArtistBuilder, libraryBuilder } from '@repo/testing';
+import { artistBuilder, libraryArtistBuilder, libraryBuilder } from '@repo/testing/builders';
 import { PrismaServiceMock } from '@repo/testing/nestjs';
 import request from 'supertest';
 import { createIntegrationApp } from './test-utils';
