@@ -25,7 +25,7 @@ import {
   trackAccessBuilder,
   trackBuilder,
   userBuilder,
-} from '@repo/testing';
+} from '@repo/testing/builders';
 import { PrismaServiceMock } from '@repo/testing/nestjs';
 import request from 'supertest';
 import { ImageService } from '../src/shared/services/image.service';
