@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { usePlayerStore } from './player.store';
 
 const createTrack = (id: string, title = 'Test Track'): ZodTrack =>
-  trackBuilder({ id, title }) as ZodTrack;
+  trackBuilder({ id, title, visibility: 'public', albumId: 'test-album' });
 
 describe('player.store', () => {
   beforeEach(() => {
