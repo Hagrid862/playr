@@ -113,15 +113,14 @@ describe('BulkTrackCard', () => {
     it('sets explicit false when unchecking', async () => {
       const user = userEvent.setup();
       const track = {
-        ...trackBuilder(),
+        ...trackBuilder({ explicit: true }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
-        explicit: true,
       };
       customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
 
       await user.click(screen.getByRole('checkbox', { name: 'Explicit Content' }));
 
-      expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: false });
+      expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: false });  
     });
   });
 
