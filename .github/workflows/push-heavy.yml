@@ -54,7 +54,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -91,7 +91,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -135,7 +135,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -170,7 +170,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -205,7 +205,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -240,7 +240,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -280,7 +280,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -361,7 +361,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
