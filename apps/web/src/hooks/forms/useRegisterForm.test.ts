@@ -1,7 +1,7 @@
 import { RegisterRequest, RegisterRequestSchema } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
 import { act } from '@testing-library/react';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { useRegisterForm } from './useRegisterForm';
 
@@ -330,6 +330,19 @@ describe('useRegisterForm', () => {
   });
 
   describe('handleSubmit', () => {
+    let safeParseSpy: any;
+    let consoleSpy: any;
+
+    beforeEach(() => {
+      safeParseSpy = vi.spyOn(RegisterRequestSchema, 'safeParse');
+      consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      safeParseSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+
     it('fails if form is invalid', () => {
       const { result } = customRenderHook(() => useRegisterForm());
       let submitResult: RegisterRequest | null = null;
@@ -398,35 +411,27 @@ describe('useRegisterForm', () => {
         result.current.handleChange('gender', 'male');
       });
 
-      const safeParseSpy = vi
-        .spyOn(RegisterRequestSchema, 'safeParse')
-        .mockImplementation((data: unknown) => {
-          const input = data as RegisterRequest;
-          if (input.password) {
-            return {
-              success: false,
-              error: new z.ZodError([]),
-            } as z.ZodSafeParseResult<RegisterRequest>;
-          }
+      safeParseSpy.mockImplementation((data: unknown) => {
+        const input = data as RegisterRequest;
+        if (input.password) {
           return {
-            success: true,
-            data: input,
+            success: false,
+            error: new z.ZodError([]),
           } as z.ZodSafeParseResult<RegisterRequest>;
-        });
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        }
+        return {
+          success: true,
+          data: input,
+        } as z.ZodSafeParseResult<RegisterRequest>;
+      });
 
-      try {
-        let submitResult;
-        act(() => {
-          submitResult = result.current.handleSubmit();
-        });
+      let submitResult: RegisterRequest | null = null;
+      act(() => {
+        submitResult = result.current.handleSubmit();
+      });
 
-        expect(submitResult).toBeNull();
-        expect(consoleSpy).toHaveBeenCalledWith('Validation failed:', expect.anything());
-      } finally {
-        safeParseSpy.mockRestore();
-        consoleSpy.mockRestore();
-      }
+      expect(submitResult).toBeNull();
+      expect(consoleSpy).toHaveBeenCalledWith('Validation failed:', expect.anything());
     });
   });
 });
