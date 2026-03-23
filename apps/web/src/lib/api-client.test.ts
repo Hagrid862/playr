@@ -204,9 +204,9 @@ describe('api-client', () => {
 
   it('does not add Authorization header when no token exists', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ success: true }));
-  
+
     await api.request('public');
-  
+
     const headersInit = mockFetch.mock.calls[0]![1]!.headers as HeadersInit;
     expect(getHeader(headersInit, 'Authorization')).toBeUndefined();
   });
