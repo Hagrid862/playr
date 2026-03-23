@@ -11,11 +11,14 @@ concurrency:
 env:
   NODE_VERSION: "24"
   PNPM_VERSION: "10.32.1"
+  NODE_MODULES_CACHE_KEY: ${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
 
 jobs:
   install:
     name: Install Dependencies
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://playr:playr@localhost:5432/playr?schema=public"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,20 +55,24 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
+      - name: Build @repo/db (Prisma generate + tsup)
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: pnpm run prisma:generate
+        run: pnpm exec turbo run build --filter=@repo/db
 
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: install
+    env:
+      DATABASE_URL: "postgresql://playr:playr@localhost:5432/playr?schema=public"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,7 +96,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -133,7 +142,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -168,7 +179,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -203,7 +216,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -238,7 +253,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -273,7 +290,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -308,7 +327,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -343,7 +364,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -382,7 +405,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -424,7 +449,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -464,7 +491,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -509,7 +538,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -638,7 +669,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -757,7 +790,9 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
