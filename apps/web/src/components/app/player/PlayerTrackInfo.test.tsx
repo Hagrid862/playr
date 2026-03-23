@@ -113,6 +113,7 @@ describe('PlayerTrackInfo', () => {
 
       renderTrackInfo();
       expect(screen.getByText('Lossless Song')).toBeInTheDocument();
+      expect(screen.getByLabelText('Lossless quality')).toBeInTheDocument();
     });
 
     it('renders correctly when duration is zero', () => {
