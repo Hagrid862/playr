@@ -292,6 +292,7 @@ describe('useRegisterForm', () => {
       });
 
       expect(result.current.isFormValid).toBe(false);
+      expect(result.current.errors.gender).toBeDefined();
 
       let submitResult: RegisterRequest | null = null;
       act(() => {
@@ -299,6 +300,8 @@ describe('useRegisterForm', () => {
       });
 
       expect(submitResult).toBeNull();
+      expect(result.current.touched.gender).toBe(true);
+      expect(result.current.errors.gender).toBeDefined();
     });
   });
 
