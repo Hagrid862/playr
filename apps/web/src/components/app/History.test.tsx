@@ -117,8 +117,11 @@ describe('History', () => {
 
     it('calls toggleQueue when close button is clicked', () => {
       customRender(<History isVisible={true} onBack={mockOnBack} />);
-      const buttons = screen.getAllByRole('button');
-      fireEvent.click(buttons[1]);
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: /close/i,
+        }),
+      );
       expect(mockToggleQueue).toHaveBeenCalled();
     });
   });
