@@ -40,6 +40,34 @@ function jsonResponse(
   } as Response;
 }
 
+function getHeader(headers: HeadersInit | undefined, name: string): string | undefined {
+  if (headers === undefined) return undefined;
+  const key = name.toLowerCase();
+
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    const value = headers.get(name);
+    return value === null ? undefined : value;
+  }
+
+  if (Array.isArray(headers)) {
+    for (const pair of headers) {
+      if (!pair || pair.length < 2) continue;
+      const [headerName, headerValue] = pair;
+      if (typeof headerName === 'string' && headerName.toLowerCase() === key) {
+        return String(headerValue);
+      }
+    }
+    return undefined;
+  }
+
+  for (const [headerName, headerValue] of Object.entries(headers)) {
+    if (headerName.toLowerCase() === key) {
+      return headerValue === undefined ? undefined : String(headerValue);
+    }
+  }
+  return undefined;
+}
+
 describe('api-client', () => {
   beforeEach(() => {
     mockFetch.mockReset();
@@ -294,8 +322,8 @@ describe('api-client', () => {
         }),
       );
 
-      const callHeaders = mockFetch.mock.calls[0]![1]!.headers as Record<string, string>;
-      expect(callHeaders['Content-Type']).toBeUndefined();
+      const headersInit = mockFetch.mock.calls[0]![1]!.headers as HeadersInit;
+      expect(getHeader(headersInit, 'Content-Type')).toBeUndefined();
       expect(result).toEqual({ success: true });
     });
 
@@ -308,9 +336,9 @@ describe('api-client', () => {
         headers: { 'X-Custom': 'value' },
       });
 
-      const callHeaders = mockFetch.mock.calls[0]![1]!.headers as Record<string, string>;
-      expect(callHeaders['Content-Type']).toBeUndefined();
-      expect(callHeaders['X-Custom']).toBe('value');
+      const headersInit = mockFetch.mock.calls[0]![1]!.headers as HeadersInit;
+      expect(getHeader(headersInit, 'Content-Type')).toBeUndefined();
+      expect(getHeader(headersInit, 'X-Custom')).toBe('value');
     });
   });
 
