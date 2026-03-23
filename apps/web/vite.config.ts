@@ -26,12 +26,6 @@ export default defineConfig({
       '@repo/db': fileURLToPath(
         new URL('../../packages/db/src/generated/prisma/browser.ts', import.meta.url),
       ),
-      '@repo/testing': fileURLToPath(
-        new URL('../../packages/testing/src/index.ts', import.meta.url),
-      ),
-      '@repo/testing/web': fileURLToPath(
-        new URL('../../packages/testing/src/web/index.ts', import.meta.url),
-      ),
     },
   },
   test: {
