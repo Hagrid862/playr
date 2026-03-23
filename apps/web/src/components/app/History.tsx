@@ -49,6 +49,7 @@ export function History({ isVisible, onBack }: HistoryProps) {
             size="icon"
             className="text-white/50 hover:text-white md:hidden"
             onClick={toggleQueue}
+            aria-label="Close"
           >
             <XIcon size={20} />
           </Button>
