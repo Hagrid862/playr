@@ -44,6 +44,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "catalog:",
     "jsdom": "^27.4.0",
     "prettier": "catalog:",
     "typescript": "catalog:",
