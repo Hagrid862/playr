@@ -13,11 +13,7 @@ import {
   type RenderHookOptions,
   type RenderOptions,
 } from "@testing-library/react";
-import {
-  type ComponentType,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { type ComponentType, type ReactElement, type ReactNode } from "react";
 
 function createTestQueryClient() {
   return new QueryClient({
