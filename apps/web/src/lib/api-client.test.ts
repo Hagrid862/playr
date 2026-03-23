@@ -151,8 +151,11 @@ describe('api-client', () => {
         }),
       );
 
-      await expect(api.request('unknown')).rejects.toThrow(ApiError);
-      await expect(api.request('unknown')).rejects.toThrow('Not Found');
+      await expect(api.request('unknown')).rejects.toSatisfy((error) => {  
+        expect(error).toBeInstanceOf(ApiError);  
+        expect(error).toHaveProperty('message', 'Not Found');  
+        return true;  
+      });  
     });
 
     it('handles empty 204 response', async () => {
