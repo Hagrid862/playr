@@ -13,9 +13,9 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "prisma generate && tsup",
     "check-types": "tsc --noEmit",
-    "prisma:generate": "prisma generate && pnpm build",
+    "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"
