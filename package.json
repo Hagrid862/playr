@@ -24,6 +24,7 @@
     "license-checker": "^25.0.1",
     "madge": "^8.0.0",
     "prettier": "catalog:",
+    "prettier-plugin-packagejson": "^3.0.0",
     "turbo": "^2.7.6",
     "typescript": "catalog:"
   },
