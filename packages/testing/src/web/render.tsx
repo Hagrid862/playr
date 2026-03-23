@@ -14,7 +14,6 @@ import {
   type RenderOptions,
 } from "@testing-library/react";
 import {
-  useMemo,
   type ComponentType,
   type ReactElement,
   type ReactNode,
@@ -109,10 +108,7 @@ function createRouterTestWrapper<
   const { queryClient, initialLocation, routerContext } = options;
 
   return function RouterTestWrapper({ children }: { children: ReactNode }) {
-    const router = useMemo(
-      () => createTestRouter(children, initialLocation),
-      [children, initialLocation],
-    );
+    const router = createTestRouter(children, initialLocation);
     return (
       <QueryClientProvider client={queryClient}>
         <RouterProvider
