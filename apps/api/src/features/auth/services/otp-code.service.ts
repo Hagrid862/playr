@@ -12,7 +12,7 @@ export class OtpCodeService {
 
   async GenerateOTPCode(
     email: string,
-    otpType: 'emailVerification' | 'passwordReset'
+    otpType: 'emailVerification' | 'passwordReset',
   ): Promise<string> {
     const otp = crypto.randomInt(10000000, 99999999).toString();
     const hashedOtp = await this.hashingService.hash(otp);
@@ -27,7 +27,7 @@ export class OtpCodeService {
   async VerifyOTPCode(
     email: string,
     otp: string,
-    otpType: 'emailVerification' | 'passwordReset'
+    otpType: 'emailVerification' | 'passwordReset',
   ): Promise<boolean> {
     const key = `otp:${otpType}:${email}`;
 
@@ -44,5 +44,16 @@ export class OtpCodeService {
     }
 
     return isMatch;
+  }
+
+  async CheckIfOTPCodeExist(
+    email: string,
+    otpType: 'emailVerification' | 'passwordReset',
+  ): Promise<boolean> {
+    const key = `otp:${otpType}:${email}`;
+
+    const storedOtp = await this.redis.get(key);
+
+    return !!storedOtp;
   }
 }
