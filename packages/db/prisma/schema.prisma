@@ -539,7 +539,6 @@ model ArtistFollow {
 model ListenHistory {
   id         String   @id @default(cuid())
   listenedAt DateTime @default(now())
-  completed  Boolean  @default(false)
 
   userId String
   user   User   @relation("UserListenHistory", fields: [userId], references: [id], onDelete: Cascade)
