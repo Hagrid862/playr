@@ -250,12 +250,21 @@ import {
   customRenderWithRouter,
   customRenderHookWithRouter,
 } from "@repo/testing/web";
+import { screen, waitFor } from "@testing-library/react";
+import { useParams } from "@tanstack/react-router";
 
 customRenderWithRouter(<MyPage />, { initialLocation: "/albums/123" });
 customRenderWithRouter(<MyPage />, { routerContext: { auth: mockAuth } });
 
-customRenderHookWithRouter(() => useParams(), {
+// Route content can mount asynchronously; prefer `findBy*` / `waitFor`.
+await screen.findByText(/album title/i);
+
+const { result } = customRenderHookWithRouter(() => useParams(), {
   initialLocation: "/albums/123",
+});
+
+await waitFor(() => {
+  expect(result.current.albumId).toBe("123");
 });
 ```
 
