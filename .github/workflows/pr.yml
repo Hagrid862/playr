@@ -11,7 +11,6 @@ concurrency:
 env:
   NODE_VERSION: "24"
   PNPM_VERSION: "10.32.1"
-  NODE_MODULES_CACHE_KEY: ${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
 
 jobs:
   install:
@@ -55,7 +54,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -96,7 +95,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -142,7 +141,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -179,7 +178,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -216,7 +215,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -253,7 +252,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -290,7 +289,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -327,7 +326,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -364,7 +363,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -405,7 +404,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -449,7 +448,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -491,7 +490,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -538,7 +537,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -669,7 +668,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
@@ -790,7 +789,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ env.NODE_MODULES_CACHE_KEY }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma/migrations/**', 'packages/db/prisma.config.ts') }}
           restore-keys: |
             node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-
 
