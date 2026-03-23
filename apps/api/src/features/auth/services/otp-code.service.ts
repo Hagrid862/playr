@@ -10,7 +10,7 @@ export class OtpCodeService {
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
 
-  async GenerateOTPCode(
+  async generateOTPCode(
     email: string,
     otpType: 'emailVerification' | 'passwordReset',
   ): Promise<string> {
@@ -24,7 +24,7 @@ export class OtpCodeService {
     return otp;
   }
 
-  async VerifyOTPCode(
+  async verifyOTPCode(
     email: string,
     otp: string,
     otpType: 'emailVerification' | 'passwordReset',
@@ -46,7 +46,7 @@ export class OtpCodeService {
     return isMatch;
   }
 
-  async CheckIfOTPCodeExist(
+  async checkIfOTPCodeExist(
     email: string,
     otpType: 'emailVerification' | 'passwordReset',
   ): Promise<boolean> {

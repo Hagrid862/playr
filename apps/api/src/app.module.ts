@@ -10,6 +10,9 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { FeaturesModule } from './features/features.module';
 import { SharedModule } from './shared/shared.module';
 import { RedisModule } from './common/redis/redis.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -33,6 +36,34 @@ import { RedisModule } from './common/redis/redis.module';
           port: configService.get('REDIS_PORT', { infer: true }),
         },
       }),
+    }),
+    MailerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<Env>) => {
+        const port = configService.get('MAIL_PORT', { infer: true });
+
+        return {
+          transport: {
+            host: configService.get('MAIL_HOST', { infer: true }),
+            port: port,
+            auth: {
+              user: configService.get('MAIL_USER', { infer: true }),
+              pass: configService.get('MAIL_PASS', { infer: true }),
+            },
+            secure: port === 465,
+          },
+          defaults: {
+            from: configService.get('MAIL_FROM', { infer: true }),
+          },
+          template: {
+            dir: join(__dirname, 'shared/mail/templates'),
+            adapter: new HandlebarsAdapter(),
+            options: {
+              strict: true,
+            },
+          },
+        };
+      },
     }),
     RedisModule,
     FeaturesModule,
