@@ -539,7 +539,6 @@ model ArtistFollow {
 model ListenHistory {
   id         String   @id @default(cuid())
   listenedAt DateTime @default(now())
-  durationMs Int      @default(0)
   completed  Boolean  @default(false)
 
   userId String
