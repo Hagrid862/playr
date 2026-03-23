@@ -120,7 +120,7 @@ describe('BulkTrackCard', () => {
 
       await user.click(screen.getByRole('checkbox', { name: 'Explicit Content' }));
 
-      expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: false });  
+      expect(mockOnUpdate).toHaveBeenCalledWith({ explicit: false });
     });
   });
 

@@ -1,4 +1,4 @@
-import { QueueItem, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, QueueItem, usePlayerStore } from '@/stores/player.store';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,16 +13,16 @@ describe('History', () => {
   const mockPlayTrack = vi.fn();
   const mockToggleQueue = vi.fn();
   const mockOnBack = vi.fn();
-
+  const buildState = (overrides: Partial<PlayerState> = {}) =>
+    createPlayerStateMock({
+      history: [],
+      playTrack: mockPlayTrack,
+      toggleQueue: mockToggleQueue,
+      ...overrides,
+    });
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(usePlayerStore).mockReturnValue(
-      createPlayerStateMock({
-        history: [],
-        playTrack: mockPlayTrack,
-        toggleQueue: mockToggleQueue,
-      }),
-    );
+    vi.mocked(usePlayerStore).mockReturnValue(buildState());
   });
 
   describe('empty state', () => {
