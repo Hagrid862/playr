@@ -1,7 +1,7 @@
 import { RegisterRequest, RegisterRequestSchema } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
 import { act } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 import { z } from 'zod';
 import { useRegisterForm } from './useRegisterForm';
 
@@ -330,8 +330,8 @@ describe('useRegisterForm', () => {
   });
 
   describe('handleSubmit', () => {
-    let safeParseSpy: any;
-    let consoleSpy: any;
+    let safeParseSpy: MockInstance;
+    let consoleSpy: MockInstance;
 
     beforeEach(() => {
       safeParseSpy = vi.spyOn(RegisterRequestSchema, 'safeParse');
