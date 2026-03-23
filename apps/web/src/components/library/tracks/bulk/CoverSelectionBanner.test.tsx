@@ -1,7 +1,7 @@
 import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CoverSelectionBanner } from './CoverSelectionBanner';
 
 const defaultTracksWithCovers = [
@@ -24,10 +24,6 @@ function getOnSelectCover() {
 }
 
 describe('CoverSelectionBanner', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('copy', () => {
     it('renders when album has no cover', () => {
       const onSelectCover = getOnSelectCover();
