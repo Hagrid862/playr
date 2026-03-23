@@ -1,7 +1,17 @@
 import { RegisterRequest, RegisterRequestSchema } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
 import { act } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest';
 import { z } from 'zod';
 import { useRegisterForm } from './useRegisterForm';
 
