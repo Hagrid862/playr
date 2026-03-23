@@ -53,7 +53,10 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
               <TooltipProvider>
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="shrink-0 flex items-center justify-center text-emerald-500 cursor-default">
+                    <div
+                      className="shrink-0 flex items-center justify-center text-emerald-500 cursor-default"
+                      aria-label="Lossless quality"
+                    >
                       <SparkleIcon weight="fill" size={14} />
                     </div>
                   </TooltipTrigger>
