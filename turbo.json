@@ -67,7 +67,8 @@
       "persistent": true
     },
     "prisma:generate": {
-      "cache": true
+      "cache": true,
+      "outputs": ["src/generated/**"]
     },
     "prisma:migrate": {
       "cache": false
