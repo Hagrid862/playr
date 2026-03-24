@@ -24,11 +24,11 @@ export class PlaybackGateway implements OnGatewayConnection {
   server!: Server;
 
   async handleConnection(client: Socket) {
-    if (!client.user) {
+    if (!client.data.user) {
       client.disconnect(true);
       return;
     }
-    await client.join(`user:${client.user.user.id}`);
+    await client.join(`user:${client.data.user.user.id}`);
   }
 
   @SubscribeMessage('command:play')
