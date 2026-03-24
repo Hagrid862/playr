@@ -11,7 +11,6 @@ import { Server, Socket } from 'socket.io';
 import { getCorsOrigin } from '../../common/config/cors-config';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 
-@UseGuards(WsJwtGuard)
 @WebSocketGateway({
   namespace: 'playback',
   cors: {
@@ -31,6 +30,7 @@ export class PlaybackGateway implements OnGatewayConnection {
     await client.join(`user:${client.data.user.user.id}`);
   }
 
+  @UseGuards(WsJwtGuard)
   @SubscribeMessage('command:play')
   handlePlay(@ConnectedSocket() client: Socket) {
     if (!client.data.user) {
