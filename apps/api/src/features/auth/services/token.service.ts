@@ -120,6 +120,14 @@ export class TokenService {
   }
 
   async toAuthenticatedUser(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const session = await this.sessionRepository.getById(payload.sessionId);
+    if (!session || session.deletedAt) {
+      throw new UnauthorizedException('Invalid token');
+    }
+    if (session.revokedAt) {
+      throw new UnauthorizedException('Session revoked');
+    }
+
     const user = await this.userRepository.getById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('User not found');
