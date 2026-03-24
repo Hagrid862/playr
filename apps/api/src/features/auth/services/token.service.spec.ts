@@ -147,9 +147,6 @@ describe('TokenService', () => {
       // Assert
       await expect(promise).rejects.toThrow(UnauthorizedException);
       await expect(promise).rejects.toThrow('Invalid token');
-      // Assert
-      await expect(promise).rejects.toThrow(UnauthorizedException);
-      await expect(promise).rejects.toThrow('Invalid token');
     });
 
     it('should throw UnauthorizedException if token is not found in database', async () => {
@@ -158,8 +155,9 @@ describe('TokenService', () => {
       refreshTokenRepository.getByToken.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow(UnauthorizedException);
-      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow('Invalid token');
+      const promise = service.verifyRefreshToken(mockToken);
+      await expect(promise).rejects.toThrow(UnauthorizedException);
+      await expect(promise).rejects.toThrow('Invalid token');
     });
 
     it('should return isRevoked: true if token is revoked in database', async () => {
