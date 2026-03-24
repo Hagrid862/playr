@@ -6,12 +6,12 @@ import { userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Request } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserRepository } from '../../../shared/repositories/user.repository';
+import { TokenService } from '../services/token.service';
 import { extractTokenFromQuery, JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
-  let userRepository: DeepMocked<UserRepository>;
+  let tokenService: DeepMocked<TokenService>;
   let configService: DeepMocked<ConfigService>;
 
   const mockUser = userBuilder({
@@ -25,15 +25,15 @@ describe('JwtStrategy', () => {
   });
 
   beforeEach(async () => {
-    userRepository = createMock<UserRepository>();
+    tokenService = createMock<TokenService>();
     configService = createMock<ConfigService>();
 
-    configService.get.mockReturnValue('secret');
+    configService.getOrThrow.mockReturnValue('secret');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JwtStrategy,
-        { provide: UserRepository, useValue: userRepository },
+        { provide: TokenService, useValue: tokenService },
         { provide: ConfigService, useValue: configService },
       ],
     }).compile();
@@ -59,13 +59,16 @@ describe('JwtStrategy', () => {
         iat: Date.now(),
         exp: Date.now() + 3600,
       };
-      userRepository.getById.mockResolvedValue(mockUser);
+      tokenService.toAuthenticatedUser.mockResolvedValue({
+        user: mockUser,
+        sessionId: 'session-456',
+      });
 
       // Act
       const result = await strategy.validate(payload);
 
       // Assert
-      expect(userRepository.getById).toHaveBeenCalledWith(mockUser.id);
+      expect(tokenService.toAuthenticatedUser).toHaveBeenCalledWith(payload);
       expect(result).toEqual({ user: mockUser, sessionId: 'session-456' });
     });
 
@@ -78,7 +81,7 @@ describe('JwtStrategy', () => {
         iat: Date.now(),
         exp: Date.now() + 3600,
       };
-      userRepository.getById.mockResolvedValue(null);
+      tokenService.toAuthenticatedUser.mockRejectedValue(new UnauthorizedException());
 
       // Act & Assert
       await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
