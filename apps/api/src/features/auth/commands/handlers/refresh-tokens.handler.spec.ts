@@ -89,8 +89,9 @@ describe('RefreshTokensHandler', () => {
       const command = new RefreshTokensCommand(mockRefreshToken);
 
       // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(UnauthorizedException);
-      await expect(handler.execute(command)).rejects.toThrow('Invalid token');
+      await expect(handler.execute(command)).rejects.toThrow(
+        new UnauthorizedException('Invalid token'),
+      );
     });
 
     it('should throw if token is already revoked (no session revoke)', async () => {
