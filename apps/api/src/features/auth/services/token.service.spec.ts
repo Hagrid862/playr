@@ -1,3 +1,4 @@
+import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -6,6 +7,7 @@ import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RefreshTokenRepository } from '../../../shared/repositories/refresh-token.repository';
 import { SessionRepository } from '../../../shared/repositories/session.repository';
+import { UserRepository } from '../../../shared/repositories/user.repository';
 import { PrismaService } from '../../../shared/services/prisma.service';
 import { UnitOfWorkService } from '../../../shared/services/unit-of-work.service';
 import { TokenService } from './token.service';
@@ -16,6 +18,7 @@ describe('TokenService', () => {
   let configService: DeepMocked<ConfigService>;
   let sessionRepository: DeepMocked<SessionRepository>;
   let refreshTokenRepository: DeepMocked<RefreshTokenRepository>;
+  let userRepository: DeepMocked<UserRepository>;
   let unitOfWork: DeepMocked<UnitOfWorkService>;
 
   beforeEach(async () => {
@@ -23,16 +26,25 @@ describe('TokenService', () => {
     configService = createMock<ConfigService>();
     sessionRepository = createMock<SessionRepository>();
     refreshTokenRepository = createMock<RefreshTokenRepository>();
+    userRepository = createMock<UserRepository>();
     unitOfWork = createMock<UnitOfWorkService>();
 
     // Mock unit of work transaction
     unitOfWork.runInTransaction.mockImplementation((work) => work());
 
     // Mock config
-    configService.get.mockImplementation((key: string) => {
+    const configSecret = (key: string) => {
       if (key.includes('SECRET')) return 'secret';
       if (key.includes('EXPIRES_IN')) return '1h';
       return null;
+    };
+    configService.get.mockImplementation(configSecret);
+    configService.getOrThrow.mockImplementation((key: string) => {
+      const v = configSecret(key);
+      if (v === null || v === undefined) {
+        throw new Error(`Missing config: ${key}`);
+      }
+      return v;
     });
 
     const module: TestingModule = await Test.createTestingModule({
@@ -42,6 +54,7 @@ describe('TokenService', () => {
         { provide: ConfigService, useValue: configService },
         { provide: SessionRepository, useValue: sessionRepository },
         { provide: RefreshTokenRepository, useValue: refreshTokenRepository },
+        { provide: UserRepository, useValue: userRepository },
         { provide: UnitOfWorkService, useValue: unitOfWork },
         { provide: PrismaService, useValue: {} },
       ],
@@ -124,27 +137,23 @@ describe('TokenService', () => {
       });
     });
 
-    it('should return null if JWT verification fails', async () => {
+    it('should throw UnauthorizedException if JWT verification fails', async () => {
       // Arrange
       jwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
 
-      // Act
-      const result = await service.verifyRefreshToken(mockToken);
-
-      // Assert
-      expect(result).toBeNull();
+      // Act & Assert
+      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow(UnauthorizedException);
+      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow('Invalid token');
     });
 
-    it('should return null if token is not found in database', async () => {
+    it('should throw UnauthorizedException if token is not found in database', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
       refreshTokenRepository.getByToken.mockResolvedValue(null);
 
-      // Act
-      const result = await service.verifyRefreshToken(mockToken);
-
-      // Assert
-      expect(result).toBeNull();
+      // Act & Assert
+      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow(UnauthorizedException);
+      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow('Invalid token');
     });
 
     it('should return isRevoked: true if token is revoked in database', async () => {
@@ -178,17 +187,15 @@ describe('TokenService', () => {
       expect(result?.isRevoked).toBe(true);
     });
 
-    it('should return null if session is deleted', async () => {
+    it('should throw UnauthorizedException if session is deleted', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
       refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
       sessionRepository.getById.mockResolvedValue(null);
 
-      // Act
-      const result = await service.verifyRefreshToken(mockToken);
-
-      // Assert
-      expect(result).toBeNull();
+      // Act & Assert
+      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow(UnauthorizedException);
+      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow('Invalid token');
     });
   });
 });
