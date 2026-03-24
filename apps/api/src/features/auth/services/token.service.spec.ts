@@ -123,7 +123,11 @@ describe('TokenService', () => {
         refreshTokenBuilder({ revokedAt: null, deletedAt: null }),
       );
       sessionRepository.getById.mockResolvedValue(
-        sessionBuilder({ revokedAt: null, deletedAt: null }),
+        sessionBuilder({
+          userId: mockPayload.sub,
+          revokedAt: null,
+          deletedAt: null,
+        }),
       );
 
       // Act
@@ -182,7 +186,9 @@ describe('TokenService', () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
       refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
-      sessionRepository.getById.mockResolvedValue(sessionBuilder({ revokedAt: new Date() }));
+      sessionRepository.getById.mockResolvedValue(
+        sessionBuilder({ userId: mockPayload.sub, revokedAt: new Date() }),
+      );
 
       // Act
       const result = await service.verifyRefreshToken(mockToken);
@@ -198,8 +204,9 @@ describe('TokenService', () => {
       sessionRepository.getById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow(UnauthorizedException);
-      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow('Invalid token');
+      const promise = service.verifyRefreshToken(mockToken);
+      await expect(promise).rejects.toThrow(UnauthorizedException);
+      await expect(promise).rejects.toThrow('Invalid token');
     });
   });
 });
