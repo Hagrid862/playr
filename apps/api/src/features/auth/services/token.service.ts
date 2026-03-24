@@ -85,7 +85,7 @@ export class TokenService {
 
       const session = await this.sessionRepository.getById(payload.sessionId);
 
-      if (!session || session.deletedAt) {
+      if (!session || session.deletedAt || session.userId !== payload.sub) {
         throw new UnauthorizedException('Invalid token');
       }
 
@@ -131,7 +131,7 @@ export class TokenService {
 
   async toAuthenticatedUser(payload: JwtPayload): Promise<AuthenticatedUser> {
     const session = await this.sessionRepository.getById(payload.sessionId);
-    if (!session || session.deletedAt || session.revokedAt) {
+    if (!session || session.deletedAt || session.revokedAt || session.userId !== payload.sub) {
       throw new UnauthorizedException('Invalid token');
     }
 
@@ -144,16 +144,6 @@ export class TokenService {
 
   async authenticateWithAccessToken(token: string): Promise<AuthenticatedUser> {
     const payload = await this.verifyAccessToken(token);
-    const session = await this.sessionRepository.getById(payload.sessionId);
-    if (!session || session.deletedAt || session.revokedAt) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    const user = await this.userRepository.getById(payload.sub);
-    if (!user) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
     return this.toAuthenticatedUser(payload);
   }
 }
