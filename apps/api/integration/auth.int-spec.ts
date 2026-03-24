@@ -11,6 +11,7 @@ import {
 import { PrismaServiceMock } from '@repo/testing/nestjs';
 import request from 'supertest';
 import { vi } from 'vitest';
+import { setupJwtAuthPrismaMocks } from './jwt-auth-prisma-setup';
 import { createIntegrationApp } from './test-utils';
 
 vi.mock('argon2', async (importOriginal) => {
@@ -34,6 +35,7 @@ describe('AuthController (Integration)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setupJwtAuthPrismaMocks(prismaMock);
   });
 
   afterAll(async () => {
@@ -348,7 +350,7 @@ describe('AuthController (Integration)', () => {
       const signedToken = await jwtService.signAsync(
         { sub: userId, username: 'testuser', sessionId },
         {
-          secret: config.get('JWT_REFRESH_SECRET'),
+          secret: config.getOrThrow<string>('JWT_REFRESH_SECRET'),
           expiresIn: '7d',
         },
       );
@@ -417,7 +419,7 @@ describe('AuthController (Integration)', () => {
       const accessToken = await jwtService.signAsync(
         { sub: userId, username: 'testuser', sessionId },
         {
-          secret: config.get('JWT_ACCESS_SECRET'),
+          secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
           expiresIn: '15m',
         },
       );

@@ -22,6 +22,7 @@ import request from 'supertest';
 import { ImageService } from '../src/shared/services/image.service';
 import { StorageService } from '../src/shared/services/storage.service';
 import './setup-env';
+import { setupJwtAuthPrismaMocks } from './jwt-auth-prisma-setup';
 import { createIntegrationApp } from './test-utils';
 
 // Helper type for Artist with relations matching repository include
@@ -68,6 +69,7 @@ describe('LibraryArtistsController (Integration)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setupJwtAuthPrismaMocks(prismaMock);
   });
 
   afterAll(async () => {
@@ -78,7 +80,7 @@ describe('LibraryArtistsController (Integration)', () => {
     const token = await jwtService.signAsync(
       { sub: userId, username: 'testuser', sessionId: 'session-123' },
       {
-        secret: config.get('JWT_ACCESS_SECRET'),
+        secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
         expiresIn: '15m',
       },
     );
