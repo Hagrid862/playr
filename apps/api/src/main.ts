@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { cleanupOpenApiDoc, ZodValidationPipe } from 'nestjs-zod';
 import 'reflect-metadata';
 import { AppModule } from './app.module';
+import { getCorsOrigin, isProductionNodeEnv } from './common/config/cors-config';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
@@ -29,34 +30,25 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, cleanupOpenApiDoc(document));
 
-  const env = process.env.NODE_ENV || 'development';
-  const isProduction = env === 'production' || env === 'prod';
-
-  if (!isProduction) {
-    app.enableCors({
-      origin: true, // Reflect origin to allow credentials
-      credentials: true,
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-      preflightContinue: false,
-      optionsSuccessStatus: 204,
-      exposedHeaders: [
-        'Content-Range',
-        'Accept-Ranges',
-        'Content-Length',
-        'X-Content-Quality',
-        'X-Content-Format',
-      ],
-    });
-  } else {
-    const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || [];
-    app.enableCors({
-      origin: allowedOrigins,
-      credentials: true,
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-      preflightContinue: false,
-      optionsSuccessStatus: 204,
-    });
-  }
+  const corsOrigin = getCorsOrigin();
+  app.enableCors({
+    origin: corsOrigin,
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    ...(isProductionNodeEnv()
+      ? {}
+      : {
+          exposedHeaders: [
+            'Content-Range',
+            'Accept-Ranges',
+            'Content-Length',
+            'X-Content-Quality',
+            'X-Content-Format',
+          ],
+        }),
+  });
 
   await app.listen(process.env.PORT ? parseInt(process.env.PORT, 10) : 8000);
 }

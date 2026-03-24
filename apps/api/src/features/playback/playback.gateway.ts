@@ -7,13 +7,15 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { getCorsOrigin } from '../../common/config/cors-config';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 
 @UseGuards(WsJwtGuard)
 @WebSocketGateway({
   namespace: 'playback',
   cors: {
-    origin: '*', // TODO: restrict origin
+    origin: getCorsOrigin(),
+    credentials: true,
   },
 })
 export class PlaybackGateway implements OnGatewayConnection {
