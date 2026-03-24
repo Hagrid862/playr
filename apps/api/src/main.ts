@@ -39,17 +39,13 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,
-    ...(isProductionNodeEnv()
-      ? {}
-      : {
-          exposedHeaders: [
-            'Content-Range',
-            'Accept-Ranges',
-            'Content-Length',
-            'X-Content-Quality',
-            'X-Content-Format',
-          ],
-        }),
+    exposedHeaders: [
+      'Content-Range',
+      'Accept-Ranges',
+      'Content-Length',
+      'X-Content-Quality',
+      'X-Content-Format',
+    ],
   });
 
   await app.listen(process.env.PORT ? parseInt(process.env.PORT, 10) : 8000);
