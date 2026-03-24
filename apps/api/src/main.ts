@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import { cleanupOpenApiDoc, ZodValidationPipe } from 'nestjs-zod';
 import 'reflect-metadata';
 import { AppModule } from './app.module';
-import { getCorsOrigin, isProductionNodeEnv } from './common/config/cors-config';
+import { getCorsOrigin } from './common/config/cors-config';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
