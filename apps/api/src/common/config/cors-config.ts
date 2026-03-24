@@ -12,7 +12,9 @@ export function getCorsOrigin(): true | string[] {
     .map((o) => o.trim())
     .filter(Boolean);
   if (!origins || origins.length === 0) {
-    console.warn('No CORS origins configured, allowing all origins');
+    console.warn(
+      'No CORS origins configured in production. All cross-origin requests will be blocked.',
+    );
     return [];
   }
   return origins;
