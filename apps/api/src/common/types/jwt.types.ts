@@ -4,4 +4,8 @@ export interface JwtPayload {
   sessionId: string;
   iat: number;
   exp: number;
+  iss?: string;
+  aud?: string | string[];
+  jti?: string;
+  nbf?: number;
 }
