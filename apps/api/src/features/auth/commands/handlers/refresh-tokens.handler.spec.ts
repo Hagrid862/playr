@@ -83,7 +83,7 @@ describe('RefreshTokensHandler', () => {
       });
     });
 
-    it('should throw UnauthorizedException if token is invalid', async () => {
+    it('should propagate UnauthorizedException from tokenService.verifyRefreshToken', async () => {
       // Arrange
       tokenService.verifyRefreshToken.mockRejectedValue(new UnauthorizedException('Invalid token'));
       const command = new RefreshTokensCommand(mockRefreshToken);
@@ -124,16 +124,6 @@ describe('RefreshTokensHandler', () => {
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow(UnauthorizedException);
       await expect(handler.execute(command)).rejects.toThrow('User not found');
-    });
-
-    it('should throw UnauthorizedException if session is null (expired or missing)', async () => {
-      // Arrange
-      tokenService.verifyRefreshToken.mockRejectedValue(new UnauthorizedException('Invalid token'));
-      const command = new RefreshTokensCommand(mockRefreshToken);
-
-      // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(UnauthorizedException);
-      await expect(handler.execute(command)).rejects.toThrow('Invalid token');
     });
   });
 });
