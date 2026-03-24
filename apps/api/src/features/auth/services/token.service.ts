@@ -124,6 +124,7 @@ export class TokenService {
     if (!session || session.deletedAt) {
       throw new UnauthorizedException('Invalid token');
     }
+
     if (session.revokedAt) {
       throw new UnauthorizedException('Session revoked');
     }
