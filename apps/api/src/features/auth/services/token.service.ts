@@ -116,6 +116,10 @@ export class TokenService {
         secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
       });
 
+      if (!payload.sub || !payload.sessionId) {
+        throw new UnauthorizedException('Invalid token');
+      }
+
       return payload;
     } catch {
       throw new UnauthorizedException('Invalid token');
@@ -124,17 +128,13 @@ export class TokenService {
 
   async toAuthenticatedUser(payload: JwtPayload): Promise<AuthenticatedUser> {
     const session = await this.sessionRepository.getById(payload.sessionId);
-    if (!session || session.deletedAt) {
+    if (!session || session.deletedAt || session.revokedAt) {
       throw new UnauthorizedException('Invalid token');
-    }
-
-    if (session.revokedAt) {
-      throw new UnauthorizedException('Session revoked');
     }
 
     const user = await this.userRepository.getById(payload.sub);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Invalid token');
     }
     return { user, sessionId: payload.sessionId };
   }
