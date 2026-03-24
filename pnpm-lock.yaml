@@ -253,7 +253,7 @@ importers:
         specifier: ^4.18.1
         version: 4.18.1
       music-metadata:
-        specifier: ^11.12.1
+        specifier: ^11.12.3
         version: 11.12.3
       nestjs-zod:
         specifier: ^5.1.1
