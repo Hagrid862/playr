@@ -301,6 +301,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.7
+      '@types/passport':
+        specifier: ^1.0.17
+        version: 1.0.17
       '@types/passport-local':
         specifier: ^1.0.38
         version: 1.0.38
