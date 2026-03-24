@@ -1,6 +1,6 @@
 import { createApiResponseSchema } from "../../api/response.schema";
 import { UserSchema } from "../../schemas/user.schema";
-import { z } from "zod";
+import { boolean, z } from "zod";
 
 export const RegisterResponseSchema = createApiResponseSchema(
   z.object({

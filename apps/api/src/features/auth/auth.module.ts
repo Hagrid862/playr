@@ -11,6 +11,7 @@ import { TokenService } from './services/token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { OtpCodeService } from './services/otp-code.service';
+import { EmailAuthService } from './services/email-auth.service';
 
 @Module({
   imports: [CqrsModule, PassportModule],
@@ -25,6 +26,7 @@ import { OtpCodeService } from './services/otp-code.service';
     JwtStrategy,
     ValidateUserHandler,
     OtpCodeService,
+    EmailAuthService,
   ],
   exports: [TokenService],
 })

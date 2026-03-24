@@ -3,10 +3,13 @@ import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { ConflictException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserSchema, ZodUser } from '@repo/contracts';
-import { EmailStatus } from '@repo/db';
+import {RegisterResponse, UserSchema } from '@repo/contracts';
+import { EmailStatus, EmailType } from '@repo/db';
 import { RegisterCommand } from '../impl/register.command';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
+import {EmailAuthService} from "@/features/auth/services/email-auth.service";
+
+type RegisterData = RegisterResponse['data'];
 
 @CommandHandler(RegisterCommand)
 export class RegisterHandler implements ICommandHandler<RegisterCommand> {
@@ -15,9 +18,10 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     private readonly hashingService: HashingService,
     private readonly prisma: PrismaService,
     private readonly unitOfWork: UnitOfWorkService,
+    private readonly emailAuthService: EmailAuthService,
   ) {}
 
-  async execute(command: RegisterCommand): Promise<ZodUser> {
+  async execute(command: RegisterCommand): Promise<RegisterData> {
     const { payload } = command;
     // Note: username and email are already normalized (lowercase, trimmed) by Zod transforms
     const { username, email, password, firstName, lastName, birthDate, gender } = payload;
@@ -78,6 +82,21 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
       return createdUser;
     });
 
-    return UserSchema.parse(user);
+    const sanitizedUser = UserSchema.parse(user);
+    const primaryEmailObject = sanitizedUser.emailAddresses?.find((e) => e.type === EmailType.primary);
+
+    if (!primaryEmailObject) {
+      throw new Error('User has no primary email address');
+    }
+
+    const isEmailSent = await this.emailAuthService.beginEmailVerification(
+      primaryEmailObject.email,
+      primaryEmailObject.id,
+    );
+
+    return {
+      user: sanitizedUser,
+      isEmailSent,
+    };
   }
 }
