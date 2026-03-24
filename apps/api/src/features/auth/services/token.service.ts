@@ -102,7 +102,10 @@ export class TokenService {
         sessionId: payload.sessionId,
         isRevoked: false,
       };
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid token');
     }
   }
