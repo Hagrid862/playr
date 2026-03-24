@@ -5,6 +5,7 @@ import { AlbumsModule } from './library-albums/library-albums.module';
 import { LibraryArtistsModule } from './library-artists/library-artists.module';
 import { LibraryTracksModule } from './library-tracks/library-tracks.module';
 import { LibraryModule } from './library/library.module';
+import { PlaybackModule } from './playback/playback.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { LibraryModule } from './library/library.module';
     AlbumsModule,
     LibraryTracksModule,
     AudioProcessingModule,
+    PlaybackModule,
   ],
   controllers: [],
   providers: [],
