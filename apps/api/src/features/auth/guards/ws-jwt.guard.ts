@@ -28,12 +28,16 @@ export class WsJwtGuard implements CanActivate {
 
   private extractToken(client: Socket): string | undefined {
     // Check Socket.io 'auth' object (Best practice)
-    if (client.handshake.auth?.token) return client.handshake.auth.token;
+    const authToken = client.handshake.auth?.token;
+    if (typeof authToken === 'string' && authToken) return authToken;
 
     // Check query params (Matches your JwtStrategy's extractTokenFromQuery)
     if (typeof client.handshake.query?.token === 'string') return client.handshake.query.token;
 
     // Check headers
-    return client.handshake.headers?.authorization?.split(' ')[1];
+    const authHeader = client.handshake.headers?.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.slice(7);
+
+    return undefined;
   }
 }
