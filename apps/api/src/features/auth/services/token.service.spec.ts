@@ -141,9 +141,15 @@ describe('TokenService', () => {
       // Arrange
       jwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
 
-      // Act & Assert
-      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow(UnauthorizedException);
-      await expect(service.verifyRefreshToken(mockToken)).rejects.toThrow('Invalid token');
+      // Act
+      const promise = service.verifyRefreshToken(mockToken);
+
+      // Assert
+      await expect(promise).rejects.toThrow(UnauthorizedException);
+      await expect(promise).rejects.toThrow('Invalid token');
+      // Assert
+      await expect(promise).rejects.toThrow(UnauthorizedException);
+      await expect(promise).rejects.toThrow('Invalid token');
     });
 
     it('should throw UnauthorizedException if token is not found in database', async () => {

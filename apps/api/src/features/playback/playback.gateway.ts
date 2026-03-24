@@ -33,7 +33,7 @@ export class PlaybackGateway implements OnGatewayConnection {
 
   @SubscribeMessage('command:play')
   handlePlay(@ConnectedSocket() client: Socket) {
-    if (!client.user) {
+    if (!client.data.user) {
       throw new WsException('Unauthorized: Invalid token');
     }
 
