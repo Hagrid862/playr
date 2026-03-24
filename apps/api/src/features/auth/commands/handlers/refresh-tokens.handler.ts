@@ -18,10 +18,6 @@ export class RefreshTokensHandler implements ICommandHandler<RefreshTokensComman
 
     const decoded = await this.tokenService.verifyRefreshToken(refreshToken);
 
-    if (!decoded) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
     const { userId, sessionId, isRevoked } = decoded;
 
     if (isRevoked) {
