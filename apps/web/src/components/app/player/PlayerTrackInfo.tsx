@@ -26,12 +26,12 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
   return (
     <div
       className={cn(
-        'flex-1 max-w-[600px] border border-white/8 bg-stone-900 flex items-stretch relative overflow-hidden shadow-xl h-14',
+        'flex-1 max-w-[600px] border border-white/8 bg-stone-900 flex items-stretch relative shadow-xl h-14',
       )}
       style={{ borderRadius: '0.5rem' }}
     >
       {/* Floating Rounded Square Artwork */}
-      <div className="p-1.5 shrink-0">
+      <div className="p-1.5 shrink-0 max-w-14">
         <div className="h-full aspect-square bg-stone-800 rounded flex items-center justify-center overflow-hidden shadow-inner">
           {coverUrl ? (
             <img src={coverUrl} alt="" className="size-full object-cover" />
