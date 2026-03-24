@@ -19,7 +19,7 @@ export class WsJwtGuard implements CanActivate {
     }
 
     try {
-      client.user = await this.tokenService.authenticateWithAccessToken(token);
+      client.data.user = await this.tokenService.authenticateWithAccessToken(token);
       return true;
     } catch {
       throw new WsException('Unauthorized: Invalid token');
@@ -32,7 +32,9 @@ export class WsJwtGuard implements CanActivate {
     if (typeof authToken === 'string' && authToken) return authToken;
 
     // Check query params (Matches your JwtStrategy's extractTokenFromQuery)
-    if (typeof client.handshake.query?.token === 'string') return client.handshake.query.token;
+    const queryToken = client.handshake.query?.token;
+    if (typeof queryToken === 'string' && queryToken) return queryToken;
+    if (Array.isArray(queryToken) && queryToken.length > 0) return queryToken[0];
 
     // Check headers
     const authHeader = client.handshake.headers?.authorization;
