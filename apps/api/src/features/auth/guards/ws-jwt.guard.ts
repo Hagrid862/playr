@@ -33,7 +33,7 @@ export class WsJwtGuard implements CanActivate {
 
     // Check query params (Matches your JwtStrategy's extractTokenFromQuery)
     const queryToken = client.handshake.query?.token;
-    if (typeof queryToken === 'string' && queryToken) return queryToken;
+    if (typeof queryToken === 'string' && queryToken && queryToken.length > 0) return queryToken;
     if (Array.isArray(queryToken) && queryToken.length > 0 && queryToken[0]) {
       return queryToken[0];
     }
