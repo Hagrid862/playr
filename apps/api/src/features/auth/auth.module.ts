@@ -12,6 +12,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { OtpCodeService } from './services/otp-code.service';
 import { EmailAuthService } from './services/email-auth.service';
+import {VerifyEmailHandler} from "@/features/auth/commands/handlers/verify-email.handler";
 
 @Module({
   imports: [CqrsModule, PassportModule],
@@ -27,6 +28,7 @@ import { EmailAuthService } from './services/email-auth.service';
     ValidateUserHandler,
     OtpCodeService,
     EmailAuthService,
+    VerifyEmailHandler,
   ],
   exports: [TokenService],
 })

@@ -32,6 +32,9 @@ import { RegisterRequestDto } from './dto/register.request.dto';
 import { RegisterResponseDto } from './dto/register.response.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshTokenInterceptor } from './interceptors/refresh-token.interceptor';
+import { VerifyEmailResponseDto } from '@/features/auth/dto/verify-email.response.dto';
+import { VerifyEmailCommand } from '@/features/auth/commands/impl/verify-email.command';
+import { VerifyEmailRequestDto } from '@/features/auth/dto/verify-email.request.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -124,5 +127,27 @@ export class AuthController {
     }
 
     return this.commandBus.execute(new RefreshTokensCommand(refreshToken));
+  }
+
+  @Post('verify-email')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'verify email address'})
+  @ApiResponse({
+    status: 200,
+    description: 'Email address verified successfully',
+    type: VerifyEmailResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired OTP code',
+    type: ApiErrorResponseDto
+  })
+  async verifyEmail(@Body() body: VerifyEmailRequestDto) {
+    return this.commandBus.execute(new VerifyEmailCommand(body));
   }
 }

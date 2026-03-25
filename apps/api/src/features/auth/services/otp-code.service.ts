@@ -68,22 +68,4 @@ export class OtpCodeService {
       throw new InternalServerErrorException('Failed to verify OTP code');
     }
   }
-
-  async checkIfOTPCodeExist(
-    email: string,
-    otpType: 'emailVerification' | 'passwordReset',
-  ): Promise<boolean> {
-    const key = `otp:${otpType}:${email}`;
-
-    try{
-      const storedOtp = await this.redis.get(key);
-
-      return !!storedOtp;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      this.logger.error(`Error checking OTP existence for ${email} and type ${otpType}: ${errorMessage}`);
-      throw new InternalServerErrorException('Failed to check OTP code existence');
-    }
-  }
 }
