@@ -6,3 +6,5 @@ export const VerifyEmailResponseSchema = createApiResponseSchema(
     success: z.boolean,
   }),
 );
+
+export type VerifyEmailResponse = z.infer<typeof VerifyEmailResponseSchema>;
