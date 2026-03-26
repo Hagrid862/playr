@@ -12,6 +12,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
+import { PlaybackState } from '@repo/contracts';
 import { Server, Socket } from 'socket.io';
 import { getCorsOrigin } from '../../common/config/cors-config';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
@@ -99,10 +100,12 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     const userId = auth.user.id;
     const sessionId = auth.sessionId;
 
-    const result = await this.commandBus.execute(
+    const result: PlaybackState = await this.commandBus.execute(
       new SetPlaybackStateCommand(userId, sessionId, data),
     );
-    console.log('result', result);
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+
     return result;
   }
 }
