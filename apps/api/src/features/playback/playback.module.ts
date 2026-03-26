@@ -4,13 +4,20 @@ import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { AuthModule } from '../auth/auth.module';
 import { PlaybackGateway } from './playback.gateway';
+import { CqrsModule } from '@nestjs/cqrs';
+import { GetPlaybackStateHandler } from './queries/handlers/get-playback-state.handler';
+import { PLAYBACK_REDIS } from './utils/playback-redis.constrants';
+import { SetPlaybackStateHandler } from './commands/handlers/set-playback-state.handler';
 
-export const PLAYBACK_REDIS = Symbol('PLAYBACK_REDIS');
+export const QueryHandlers = [GetPlaybackStateHandler];
+export const CommandHandlers = [SetPlaybackStateHandler];
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, CqrsModule],
   controllers: [],
   providers: [
+    ...QueryHandlers,
+    ...CommandHandlers,
     PlaybackGateway,
     {
       provide: PLAYBACK_REDIS,
