@@ -3,7 +3,13 @@ import { PlaybackStateSchema } from "../../schemas/playback.schema";
 
 export const SetPlaybackStateRequestSchema = z
   .object({
-    state: PlaybackStateSchema.omit({ sessionId: true, userId: true }).strict(),
+    state: PlaybackStateSchema.omit({
+      sessionId: true,
+      userId: true,
+      version: true,
+      updatedAt: true,
+    }).strict(),
+    expectedVersion: z.number().int().min(0).default(0),
   })
   .strict();
 
