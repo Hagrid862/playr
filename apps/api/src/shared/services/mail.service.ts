@@ -14,10 +14,10 @@ export class MailService {
       await this.mailerService.sendMail({
         to: email,
         subject: 'Playr email verification',
-        template: 'email-verification', //TODO finish the handlebars schemas
+        template: 'email-verification',
         context: {
           code: otpCode,
-          HtmlTitle: 'Verify your email',
+          HtmlTitle: 'Verify your email - Playr',
         },
       });
 
