@@ -3,7 +3,7 @@ import { LoginResponse, UserSchema } from '@repo/contracts';
 import { LoginCommand } from '../impl/login.command';
 import { TokenService } from '../../services/token.service';
 import { EmailAuthService } from '@/features/auth/services/email-auth.service';
-import { EmailType } from '@repo/db';
+import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 
 
 type LoginData = LoginResponse['data'];
@@ -13,7 +13,8 @@ type LoginData = LoginResponse['data'];
 export class LoginHandler implements ICommandHandler<LoginCommand> {
   constructor(
     private readonly tokenService: TokenService,
-    private readonly emailAuthService: EmailAuthService
+    private readonly emailAuthService: EmailAuthService,
+    private readonly emailAddressRepository: EmailAddressRepository,
   ) {}
 
   async execute(command: LoginCommand): Promise<LoginData & { refreshToken?: string }> {
@@ -22,7 +23,7 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
     const sanitizedUser = UserSchema.parse(user);
 
     if (!isEmailVerified) {
-      const primaryEmailObject = sanitizedUser.emailAddresses?.find(e => e.type === EmailType.primary);
+      const primaryEmailObject = await this.emailAddressRepository.getPrimaryByUserId(user.id);
 
       if (!primaryEmailObject) {
         throw new Error('User has no primary email address');
