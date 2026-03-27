@@ -13,4 +13,3 @@ export * from "./request/set-volume-level-state.request";
 // Responses
 export * from "./response/get-playback-state.response";
 export * from "./response/set-playback-state.response";
-
