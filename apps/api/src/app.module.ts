@@ -46,20 +46,28 @@ import { join } from 'path';
           transport: {
             host: configService.get('MAIL_HOST', { infer: true }),
             port: port,
-            auth: {
+            auth: configService.get('MAIL_USER', { infer: true }) ? {
               user: configService.get('MAIL_USER', { infer: true }),
               pass: configService.get('MAIL_PASS', { infer: true }),
-            },
+            } : undefined,
             secure: port === 465,
           },
           defaults: {
-            from: configService.get('MAIL_FROM', { infer: true }),
+            from: `"Playr" <${configService.get('MAIL_FROM', { infer: true })}>`,
           },
           template: {
             dir: join(__dirname, 'shared/mail/templates'),
             adapter: new HandlebarsAdapter(),
             options: {
               strict: true,
+            },
+          },
+          options: {
+            partials: {
+              dir: join(__dirname, 'shared/mail/templates/partials'),
+              options: {
+                strict: true,
+              },
             },
           },
         };

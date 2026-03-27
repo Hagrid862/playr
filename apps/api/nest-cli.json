@@ -4,7 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "assets": [
-      { "include": "shared/mail/templates/**/*", "outDir": "dist/shared/mail/templates"}
+      { "include": "shared/mail/templates/**/*", "watchAssets": true }
     ],
     "watchAssets": true,
     "deleteOutDir": true,
