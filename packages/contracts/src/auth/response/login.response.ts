@@ -1,4 +1,4 @@
-import { boolean, z } from "zod";
+import { z } from "zod";
 import { createApiResponseSchema } from "../../api/response.schema";
 import { UserSchema } from "../../schemas";
 
@@ -12,7 +12,7 @@ export const AuthenticatedLoginResponseSchema = z.object({
 export const UnauthenticatedEmailLoginResponseSchema = z.object({
   outcome: z.literal("unauthenticated"),
   user: UserSchema,
-  isEmailSent: boolean,
+  isEmailSent: z.boolean(),
 });
 
 export const LoginResponseSchema = createApiResponseSchema(

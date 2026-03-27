@@ -1,11 +1,11 @@
 import { createApiResponseSchema } from "../../api/response.schema";
 import { UserSchema } from "../../schemas/user.schema";
-import { boolean, z } from "zod";
+import { z } from "zod";
 
 export const RegisterResponseSchema = createApiResponseSchema(
   z.object({
     user: UserSchema,
-    isEmailSent: boolean,
+    isEmailSent: z.boolean(),
   }),
 );
 
