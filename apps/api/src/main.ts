@@ -24,6 +24,7 @@ async function bootstrap() {
     .setTitle('Playr API')
     .setDescription('The Playr Backend API description')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

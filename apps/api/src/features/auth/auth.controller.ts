@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiErrorResponseDto } from '../../common/dto/api-error.response.dto';
@@ -25,6 +25,7 @@ import {
   REFRESH_TOKEN_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_OPTIONS,
 } from './constants/cookie.constants';
+import { LoginRequestDto } from './dto/login.request.dto';
 import { LoginResponseDto } from './dto/login.response.dto';
 import { LogoutResponseDto } from './dto/logout.response.dto';
 import { RefreshResponseDto } from './dto/refresh.response.dto';
@@ -70,6 +71,7 @@ export class AuthController {
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'Login a user' })
+  @ApiBody({ type: LoginRequestDto })
   @ApiResponse({
     status: 200,
     description: 'User logged in successfully',
@@ -85,9 +87,9 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @HttpCode(204)
-  @ApiOperation({ summary: 'Logout a user' })
+  @ApiOperation({ summary: 'Log out the user' })
   @ApiResponse({
     status: 204,
     description: 'User logged out successfully',
