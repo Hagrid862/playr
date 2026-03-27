@@ -1,5 +1,5 @@
 import { ICommand } from '@nestjs/cqrs';
-import { SetPlaybackStateRequest } from './../../../../../../../packages/contracts/src/playback/request/set-playback-state.reqeust';
+import { SetPlaybackStateRequest } from '@repo/contracts';
 
 export class SetPlaybackStateCommand implements ICommand {
   constructor(
