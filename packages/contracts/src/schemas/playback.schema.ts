@@ -29,6 +29,14 @@ export const PlaybackStateSchema = z.object({
   shuffle: z.boolean(),
   favorited: z.enum(["favorited", "disliked", "not-set"]),
   inLibrary: z.boolean(),
+  version: z.number().int().min(0),
+  updatedAt: z.iso.datetime(),
 });
 
+export const PlaybackStatePayloadSchema = PlaybackStateSchema.omit({
+  version: true,
+  updatedAt: true,
+}).strict();
+
 export type PlaybackState = z.infer<typeof PlaybackStateSchema>;
+export type PlaybackStatePayload = z.infer<typeof PlaybackStatePayloadSchema>;
