@@ -17,8 +17,24 @@ import { Server, Socket } from 'socket.io';
 import { getCorsOrigin } from '../../common/config/cors-config';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 import { TokenService } from '../auth/services/token.service';
+import { SetCurrentTimeStateCommand } from './commands/impl/set-current-time-state.command';
+import { SetFavoriteStateCommand } from './commands/impl/set-favorite-state.command';
+import { SetLibraryStateCommand } from './commands/impl/set-library-state.command';
 import { SetPlaybackStateCommand } from './commands/impl/set-playback-state.command';
+import { SetPlayingStateCommand } from './commands/impl/set-playing-state.command';
+import { SetRepeatStateCommand } from './commands/impl/set-repeat-state.command';
+import { SetShuffleStateCommand } from './commands/impl/set-shuffle-state.command';
+import { SetTrackStateCommand } from './commands/impl/set-track-state.command';
+import { SetVolumeLevelStateCommand } from './commands/impl/set-volume-level-state.command';
+import { SetCurrentTimeStateRequestDto } from './dto/request/set-current-time-state.request.dto';
+import { SetFavoriteStateRequestDto } from './dto/request/set-favorite-state.request.dto';
+import { SetLibraryStateRequestDto } from './dto/request/set-library-state.request.dto';
 import { SetPlaybackStateRequestDto } from './dto/request/set-playback-state.request.dto';
+import { SetPlayingStateRequestDto } from './dto/request/set-playing-state.request.dto';
+import { SetRepeatStateRequestDto } from './dto/request/set-repeat-state.request.dto';
+import { SetShuffleStateRequestDto } from './dto/request/set-shuffle-state.request.dto';
+import { SetTrackStateRequestDto } from './dto/request/set-track-state.request.dto';
+import { SetVolumeLevelStateRequestDto } from './dto/request/set-volume-level-state.request.dto';
 import { GetPlaybackStateResponseDto } from './dto/response/get-playback-state.response.dto';
 import { SetPlaybackStateResponseDto } from './dto/response/set-playback-state.response.dto';
 import { GetPlaybackStateQuery } from './queries/impl/get-playback-state.query';
@@ -65,18 +81,6 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   }
 
   @UseGuards(WsJwtGuard)
-  @SubscribeMessage('command:play')
-  async handlePlay(@ConnectedSocket() client: Socket) {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    return { ok: true, userId, sessionId };
-  }
-
-  @UseGuards(WsJwtGuard)
   @SubscribeMessage('query:get-state')
   async handleGetPlayback(@ConnectedSocket() client: Socket): Promise<GetPlaybackStateResponseDto> {
     const auth = client.data.user;
@@ -105,7 +109,166 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     );
 
     this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
 
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-current-time-state')
+  async handleSetCurrentTimeState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetCurrentTimeStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetCurrentTimeStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-favorite-state')
+  async handleSetFavoriteState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetFavoriteStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetFavoriteStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-library-state')
+  async handleSetLibraryState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetLibraryStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetLibraryStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-playing-state')
+  async handleSetPlayingState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetPlayingStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetPlayingStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-repeat-state')
+  async handleSetRepeatState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetRepeatStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetRepeatStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-track-state')
+  async handleSetTrackState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetTrackStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetTrackStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-shuffle-state')
+  async handleSetShuffleState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetShuffleStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetShuffleStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-volume-level-state')
+  async handleSetVolumeLevelState(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetVolumeLevelStateRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    const auth = client.data.user;
+    if (!auth) throw new WsException('Unauthorized: Invalid token');
+
+    const userId = auth.user.id;
+    const sessionId = auth.sessionId;
+
+    const result: PlaybackState = await this.commandBus.execute(
+      new SetVolumeLevelStateCommand(userId, sessionId, data),
+    );
+
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
     return result;
   }
 }
