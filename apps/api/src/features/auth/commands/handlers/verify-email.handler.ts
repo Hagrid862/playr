@@ -4,6 +4,8 @@ import { OtpCodeService } from '@/features/auth/services/otp-code.service';
 import { VerifyEmailResponse } from '@repo/contracts';
 import { BadRequestException, Logger, UnauthorizedException } from '@nestjs/common';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
+import { TokenService } from '@/features/auth/services/token.service';
+import { UserRepository } from '@/shared/repositories/user.repository';
 
 type VerifyEmailData = VerifyEmailResponse['data'];
 
@@ -14,6 +16,8 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
   constructor(
     private readonly otpCodeService: OtpCodeService,
     private readonly emailAddressRepository: EmailAddressRepository,
+    private readonly tokenService: TokenService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async execute(command: VerifyEmailCommand): Promise<VerifyEmailData> {
@@ -35,8 +39,17 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
 
     this.logger.log(`Successfully verified email address ${email}`);
 
+    const userObject = await this.userRepository.getByEmail(email);
+
+    if(!userObject){
+      throw new BadRequestException('User not found for the provided email address');
+    }
+
+    const tokens = await this.tokenService.generateAuthTokens(userObject.id, userObject.username);
+
     return {
-      success: true,
+      ...tokens,
+      user: userObject,
     };
   }
 }

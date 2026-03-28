@@ -144,7 +144,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid request',
+    description: 'Email address not found or User not found for that email address',
     type: ApiErrorResponseDto,
   })
   @ApiResponse({
