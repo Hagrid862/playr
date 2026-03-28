@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const SetCurrentTimeStateRequestSchema = z
   .object({
-    currentTime: z.number().min(0).int(),
-    expectedVersion: z.number().min(0).int(),
+    currentTime: z.number().int().min(0),
+    expectedVersion: z.number().int().min(1),
   })
   .strict();
 
