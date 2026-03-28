@@ -7,9 +7,8 @@ export function extractAccessTokenFromSocket(client: Socket): string | undefined
   const authToken = client.handshake.auth?.token;
   if (typeof authToken === 'string' && authToken) return authToken;
 
-  const queryToken = client.handshake.query?.token;
-  if (typeof queryToken === 'string' && queryToken) return queryToken;
-  if (Array.isArray(queryToken) && queryToken.length > 0 && queryToken[0]) return queryToken[0];
+  // we do not accept token as query params since that can lead to leaking the token in the URL
+  // if you need to pass the token in the URL, you can use the Authorization header or handshake.auth instead
 
   const authHeader = client.handshake.headers?.authorization;
   if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
