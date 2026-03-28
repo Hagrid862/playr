@@ -3,8 +3,8 @@ import { PlaybackTrackSchema } from "../../schemas";
 
 export const SetTrackStateRequestSchema = z
   .object({
-    track: PlaybackTrackSchema.strict().required(),
-    expectedVersion: z.number().int().min(0).default(0),
+    track: PlaybackTrackSchema.strict(),
+    expectedVersion: z.number().int().min(0),
   })
   .strict();
 
