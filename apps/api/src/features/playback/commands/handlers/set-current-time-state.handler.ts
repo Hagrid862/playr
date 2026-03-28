@@ -21,10 +21,7 @@ export class SetCurrentTimeStateHandler implements ICommandHandler<SetCurrentTim
       if (currentTime > current.trackData.duration) {
         throw new BadRequestException('currentTime cannot be greater than the track duration.');
       }
-      return {
-        ...current,
-        currentTime,
-      };
+      return { ...current, currentTime };
     });
   }
 }
