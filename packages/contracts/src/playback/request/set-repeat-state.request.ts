@@ -3,7 +3,7 @@ import { z } from "zod";
 export const SetRepeatStateRequestSchema = z
   .object({
     repeatMode: z.enum(["off", "all", "one"]),
-    expectedVersion: z.number().int().min(0).default(0),
+    expectedVersion: z.number().int().min(0),
   })
   .strict();
 
