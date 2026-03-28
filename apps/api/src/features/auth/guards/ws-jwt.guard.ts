@@ -30,7 +30,7 @@ export class WsJwtGuard implements CanActivate {
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw new WsException(error.message);
+        throw new WsException(`Unauthorized: ${error.message}`);
       }
       const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error(`WsJwtGuard: unexpected error — ${err.message}`, err.stack);
