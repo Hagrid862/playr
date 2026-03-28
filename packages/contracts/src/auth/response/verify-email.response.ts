@@ -1,9 +1,11 @@
 import { createApiResponseSchema } from "../../api";
 import { z } from "zod";
+import { UserSchema } from "../../schemas";
 
 export const VerifyEmailResponseSchema = createApiResponseSchema(
   z.object({
-    success: z.boolean(),
+    accessToken: z.string(),
+    user: UserSchema,
   }),
 );
 
