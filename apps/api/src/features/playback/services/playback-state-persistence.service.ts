@@ -72,36 +72,41 @@ export class PlaybackStatePersistenceService {
 
     const key = `state:${userId}`;
     for (let attempt = 0; attempt < ATOMIC_SET_MAX_ATTEMPTS; attempt++) {
+      const conn = await this.redis.duplicate();
       try {
-        await this.redis.watch(key);
-      } catch (error) {
-        this.logger.error(`Redis WATCH failed: ${String(error)}`);
-        throw new InternalServerErrorException('Failed to create playback state.');
-      }
+        try {
+          await conn.watch(key);
+        } catch (error) {
+          this.logger.error(`Redis WATCH failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to create playback state.');
+        }
 
-      const raw = await this.redis.get(key);
-      if (raw) {
-        await this.redis.unwatch();
-        throw new ConflictException('Playback state already exists for this user.');
-      }
+        const raw = await conn.get(key);
+        if (raw) {
+          await conn.unwatch();
+          throw new ConflictException('Playback state already exists for this user.');
+        }
 
-      let execResult: [error: Error | null, result: unknown][] | null;
-      try {
-        execResult = await this.redis.multi().set(key, JSON.stringify(firstState)).exec();
-      } catch (error) {
-        await this.redis.unwatch();
-        this.logger.error(`Redis MULTI/EXEC failed: ${String(error)}`);
-        throw new InternalServerErrorException('Failed to create playback state.');
-      }
+        let execResult: [error: Error | null, result: unknown][] | null;
+        try {
+          execResult = await conn.multi().set(key, JSON.stringify(firstState)).exec();
+        } catch (error) {
+          await conn.unwatch();
+          this.logger.error(`Redis MULTI/EXEC failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to create playback state.');
+        }
 
-      if (execResult === null) {
-        const base = Math.min(10 * 2 ** attempt, 1000);
-        const jitter = Math.floor(Math.random() * Math.min(base, 50));
-        await sleep(base + jitter);
-        continue;
-      }
+        if (execResult === null) {
+          const base = Math.min(10 * 2 ** attempt, 1000);
+          const jitter = Math.floor(Math.random() * Math.min(base, 50));
+          await sleep(base + jitter);
+          continue;
+        }
 
-      return firstState;
+        return firstState;
+      } finally {
+        await conn.quit();
+      }
     }
 
     throw new ServiceUnavailableException(
@@ -119,68 +124,73 @@ export class PlaybackStatePersistenceService {
   ): Promise<PlaybackState> {
     const key = `state:${userId}`;
     for (let attempt = 0; attempt < ATOMIC_SET_MAX_ATTEMPTS; attempt++) {
+      const conn = await this.redis.duplicate();
       try {
-        await this.redis.watch(key);
-      } catch (error) {
-        await this.redis.unwatch();
-        this.logger.error(`Redis WATCH failed: ${String(error)}`);
-        throw new InternalServerErrorException('Failed to update playback state.');
+        try {
+          await conn.watch(key);
+        } catch (error) {
+          await conn.unwatch();
+          this.logger.error(`Redis WATCH failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        const raw = await conn.get(key);
+        if (!raw) {
+          await conn.unwatch();
+          this.logger.error(`Playback state not found for user ${userId}`);
+          throw new NotFoundException('Playback state not found for user ' + userId);
+        }
+
+        let parsed: PlaybackState;
+        try {
+          parsed = PlaybackStateSchema.parse(JSON.parse(raw));
+        } catch {
+          await conn.unwatch();
+          this.logger.error('Failed to parse playback state.');
+          throw new InternalServerErrorException('Failed to parse playback state.');
+        }
+
+        if (parsed.version !== expectedVersion) {
+          await conn.unwatch();
+          this.logger.error('Expected version mismatch.');
+          throw new ConflictException('Expected version mismatch.');
+        }
+
+        let merged: Omit<PlaybackState, 'version' | 'updatedAt'> | PlaybackState;
+        try {
+          merged = merge(parsed);
+        } catch (error) {
+          await conn.unwatch();
+          throw error;
+        }
+
+        const next: PlaybackState = {
+          ...parsed,
+          ...merged,
+          version: parsed.version + 1,
+          updatedAt: new Date().toISOString(),
+        };
+
+        let execResult: [error: Error | null, result: unknown][] | null;
+        try {
+          execResult = await conn.multi().set(key, JSON.stringify(next)).exec();
+        } catch (error) {
+          await conn.unwatch();
+          this.logger.error(`Redis MULTI/EXEC failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        if (execResult === null) {
+          const base = Math.min(10 * 2 ** attempt, 1000);
+          const jitter = Math.floor(Math.random() * Math.min(base, 50));
+          await sleep(base + jitter);
+          continue;
+        }
+
+        return next;
+      } finally {
+        await conn.quit();
       }
-
-      const raw = await this.redis.get(key);
-      if (!raw) {
-        await this.redis.unwatch();
-        this.logger.error(`Playback state not found for user ${userId}`);
-        throw new NotFoundException('Playback state not found for user ' + userId);
-      }
-
-      let parsed: PlaybackState;
-      try {
-        parsed = PlaybackStateSchema.parse(JSON.parse(raw));
-      } catch {
-        await this.redis.unwatch();
-        this.logger.error('Failed to parse playback state.');
-        throw new InternalServerErrorException('Failed to parse playback state.');
-      }
-
-      if (parsed.version !== expectedVersion) {
-        await this.redis.unwatch();
-        this.logger.error('Expected version mismatch.');
-        throw new ConflictException('Expected version mismatch.');
-      }
-
-      let merged: Omit<PlaybackState, 'version' | 'updatedAt'> | PlaybackState;
-      try {
-        merged = merge(parsed);
-      } catch (error) {
-        await this.redis.unwatch();
-        throw error;
-      }
-
-      const next: PlaybackState = {
-        ...parsed,
-        ...merged,
-        version: parsed.version + 1,
-        updatedAt: new Date().toISOString(),
-      };
-
-      let execResult: [error: Error | null, result: unknown][] | null;
-      try {
-        execResult = await this.redis.multi().set(key, JSON.stringify(next)).exec();
-      } catch (error) {
-        await this.redis.unwatch();
-        this.logger.error(`Redis MULTI/EXEC failed: ${String(error)}`);
-        throw new InternalServerErrorException('Failed to update playback state.');
-      }
-
-      if (execResult === null) {
-        const base = Math.min(10 * 2 ** attempt, 1000);
-        const jitter = Math.floor(Math.random() * Math.min(base, 50));
-        await sleep(base + jitter);
-        continue;
-      }
-
-      return next;
     }
 
     throw new ServiceUnavailableException(
