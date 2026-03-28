@@ -14,7 +14,7 @@ import {
   PlaybackStateSchema,
 } from '@repo/contracts';
 import { Redis } from 'ioredis';
-import { PLAYBACK_REDIS } from '../utils/playback-redis.constrants';
+import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
 
 const ATOMIC_SET_MAX_ATTEMPTS = 8;
 
@@ -40,6 +40,8 @@ const PLAYBACK_STATE_DEFAULT: Pick<
   favorited: 'not-set',
   inLibrary: false,
 };
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class PlaybackStatePersistenceService {
@@ -73,7 +75,6 @@ export class PlaybackStatePersistenceService {
       try {
         await this.redis.watch(key);
       } catch (error) {
-        await this.redis.unwatch();
         this.logger.error(`Redis WATCH failed: ${String(error)}`);
         throw new InternalServerErrorException('Failed to create playback state.');
       }
@@ -94,6 +95,9 @@ export class PlaybackStatePersistenceService {
       }
 
       if (execResult === null) {
+        const base = Math.min(10 * 2 ** attempt, 1000);
+        const jitter = Math.floor(Math.random() * Math.min(base, 50));
+        await sleep(base + jitter);
         continue;
       }
 
@@ -145,7 +149,14 @@ export class PlaybackStatePersistenceService {
         throw new ConflictException('Expected version mismatch.');
       }
 
-      const merged = merge(parsed);
+      let merged: Omit<PlaybackState, 'version' | 'updatedAt'> | PlaybackState;
+      try {
+        merged = merge(parsed);
+      } catch (error) {
+        await this.redis.unwatch();
+        throw error;
+      }
+
       const next: PlaybackState = {
         ...parsed,
         ...merged,
@@ -163,6 +174,9 @@ export class PlaybackStatePersistenceService {
       }
 
       if (execResult === null) {
+        const base = Math.min(10 * 2 ** attempt, 1000);
+        const jitter = Math.floor(Math.random() * Math.min(base, 50));
+        await sleep(base + jitter);
         continue;
       }
 
