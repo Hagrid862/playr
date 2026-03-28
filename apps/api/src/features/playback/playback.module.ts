@@ -1,8 +1,5 @@
-import { Env } from '@/common/config/env.schema';
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
-import Redis from 'ioredis';
 import { AuthModule } from '../auth/auth.module';
 import { SetCurrentTimeStateHandler } from './commands/handlers/set-current-time-state.handler';
 import { SetFavoriteStateHandler } from './commands/handlers/set-favorite-state.handler';
@@ -16,7 +13,8 @@ import { SetVolumeLevelStateHandler } from './commands/handlers/set-volume-level
 import { PlaybackGateway } from './playback.gateway';
 import { GetPlaybackStateHandler } from './queries/handlers/get-playback-state.handler';
 import { PlaybackStatePersistenceService } from './services/playback-state-persistence.service';
-import { PLAYBACK_REDIS } from './utils/playback-redis.constrants';
+import { PLAYBACK_REDIS } from './utils/playback-redis.constants';
+import { RedisProvider } from './utils/redis.provider';
 
 export const QueryHandlers = [GetPlaybackStateHandler];
 export const CommandHandlers = [
@@ -41,13 +39,8 @@ export const CommandHandlers = [
     PlaybackGateway,
     {
       provide: PLAYBACK_REDIS,
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService<Env>) =>
-        new Redis({
-          host: configService.getOrThrow('REDIS_HOST'),
-          port: configService.getOrThrow('REDIS_PORT'),
-          keyPrefix: 'playr:playback:',
-        }),
+      useFactory: (redisProvider: RedisProvider) => redisProvider.client,
+      inject: [RedisProvider],
     },
   ],
   exports: [PLAYBACK_REDIS],
