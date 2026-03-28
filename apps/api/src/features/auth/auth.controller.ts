@@ -36,6 +36,9 @@ import { RefreshTokenInterceptor } from './interceptors/refresh-token.intercepto
 import { VerifyEmailResponseDto } from '@/features/auth/dto/verify-email.response.dto';
 import { VerifyEmailCommand } from '@/features/auth/commands/impl/verify-email.command';
 import { VerifyEmailRequestDto } from '@/features/auth/dto/verify-email.request.dto';
+import { ResendEmailVerificationCodeResponseDto } from '@/features/auth/dto/resend-email-verification-code.response.dto';
+import { ResendEmailVerificationCodeRequestDto } from '@/features/auth/dto/resend-email-verification-code.request.dto';
+import { ResendEmailVerificationCodeCommand } from '@/features/auth/commands/impl/resend-email-verification-code.command';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -133,7 +136,7 @@ export class AuthController {
 
   @Post('verify-email')
   @HttpCode(200)
-  @ApiOperation({ summary: 'verify email address'})
+  @ApiOperation({ summary: 'verify email address' })
   @ApiResponse({
     status: 200,
     description: 'Email address verified successfully',
@@ -147,9 +150,31 @@ export class AuthController {
   @ApiResponse({
     status: 401,
     description: 'Invalid or expired OTP code',
-    type: ApiErrorResponseDto
+    type: ApiErrorResponseDto,
   })
   async verifyEmail(@Body() body: VerifyEmailRequestDto) {
     return this.commandBus.execute(new VerifyEmailCommand(body));
+  }
+
+  @Post('resend-email-verification')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Resend email verification code' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verification code resented successfully',
+    type: ResendEmailVerificationCodeResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email not found or already verified',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Failed to send verification email',
+    type: ApiErrorResponseDto,
+  })
+  async resendEmailVerification(@Body() body: ResendEmailVerificationCodeRequestDto) {
+    return this.commandBus.execute(new ResendEmailVerificationCodeCommand(body));
   }
 }
