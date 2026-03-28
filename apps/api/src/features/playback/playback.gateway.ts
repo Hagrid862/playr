@@ -1,7 +1,7 @@
 import { PlaybackWsExceptionFilter } from '@/common/filters/ws-exception.filter';
 import { extractAccessTokenFromSocket } from '@/common/utils/ws.util';
-import { UseFilters, UseGuards } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { Logger, UnauthorizedException, UseFilters, UseGuards } from '@nestjs/common';
+import { Command, CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ConnectedSocket,
   MessageBody,
@@ -51,6 +51,8 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   @WebSocketServer()
   server!: Server;
 
+  private readonly logger = new Logger(PlaybackGateway.name);
+
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
@@ -66,8 +68,16 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
         }
         socket.data.user = await this.tokenService.authenticateWithAccessToken(token);
         next();
-      } catch {
-        next(new Error('Unauthorized: Invalid token'));
+      } catch (error) {
+        if (error instanceof UnauthorizedException) {
+          return next(new Error(error.message));
+        }
+        const err = error instanceof Error ? error : new Error(String(error));
+        this.logger.error(
+          `Playback WebSocket handshake: unexpected error — ${err.message}`,
+          err.stack,
+        );
+        return next(new Error('Internal server error'));
       }
     });
   }
@@ -83,10 +93,8 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('query:get-state')
   async handleGetPlayback(@ConnectedSocket() client: Socket): Promise<GetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
+    const user = await this.authenticate(client);
+    const userId = user.userId;
 
     const result = await this.queryBus.execute(new GetPlaybackStateQuery(userId));
     return result;
@@ -98,18 +106,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetPlaybackStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetPlaybackStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetPlaybackStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -118,18 +118,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetCurrentTimeStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetCurrentTimeStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetCurrentTimeStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -138,18 +130,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetFavoriteStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetFavoriteStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetFavoriteStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -158,18 +142,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetLibraryStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetLibraryStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetLibraryStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -178,18 +154,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetPlayingStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetPlayingStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetPlayingStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -198,18 +166,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetRepeatStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetRepeatStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetRepeatStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -218,18 +178,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetTrackStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetTrackStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetTrackStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -238,18 +190,10 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetShuffleStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetShuffleStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetShuffleStateCommand(userId, sessionId, data),
     );
-
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
-    return result;
   }
 
   @UseGuards(WsJwtGuard)
@@ -258,17 +202,29 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SetVolumeLevelStateRequestDto,
   ): Promise<SetPlaybackStateResponseDto> {
-    const auth = client.data.user;
-    if (!auth) throw new WsException('Unauthorized: Invalid token');
-
-    const userId = auth.user.id;
-    const sessionId = auth.sessionId;
-
-    const result: PlaybackState = await this.commandBus.execute(
-      new SetVolumeLevelStateCommand(userId, sessionId, data),
+    return this.runPlaybackMutation(
+      client,
+      (userId, sessionId) => new SetVolumeLevelStateCommand(userId, sessionId, data),
     );
+  }
 
-    this.server.to(`user:${userId}`).emit('event:playback-state-updated', result);
+  private async authenticate(socket: Socket): Promise<{ userId: string; sessionId: string }> {
+    const user = socket.data.user;
+    if (!user || !user.sessionId || !user.user.id) {
+      throw new WsException('Unauthorized: Invalid token');
+    }
+    return { userId: user.user.id, sessionId: user.sessionId };
+  }
+
+  private async runPlaybackMutation(
+    client: Socket,
+    createCommand: (userId: string, sessionId: string) => unknown,
+  ): Promise<PlaybackState> {
+    const { userId, sessionId } = await this.authenticate(client);
+    const result = (await this.commandBus.execute(
+      createCommand(userId, sessionId) as Command<PlaybackState>,
+    )) as PlaybackState;
+    client.to(`user:${userId}`).emit('event:playback-state-updated', result);
     return result;
   }
 }
