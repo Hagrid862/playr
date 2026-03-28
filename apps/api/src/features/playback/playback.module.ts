@@ -42,6 +42,7 @@ export const CommandHandlers = [
       useFactory: (redisProvider: RedisProvider) => redisProvider.client,
       inject: [RedisProvider],
     },
+    RedisProvider,
   ],
   exports: [PLAYBACK_REDIS],
 })
