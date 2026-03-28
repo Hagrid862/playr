@@ -13,7 +13,7 @@ export class SetShuffleStateHandler implements ICommandHandler<SetShuffleStateCo
 
     if (expectedVersion === 0) {
       throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-playback-state to create state first one.',
+        'expectedVersion must be the current server version; use set-playback-state to create state first.',
       );
     }
 

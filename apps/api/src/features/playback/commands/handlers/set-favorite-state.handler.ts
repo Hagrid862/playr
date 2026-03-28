@@ -17,10 +17,6 @@ export class SetFavoriteStateHandler implements ICommandHandler<SetFavoriteState
       );
     }
 
-    if (favorite !== 'favorited' && favorite !== 'disliked' && favorite !== 'not-set') {
-      throw new BadRequestException('favorite must be one of: favorited, disliked, not-set');
-    }
-
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       return {
         ...current,

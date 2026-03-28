@@ -1,9 +1,9 @@
-import { PLAYBACK_REDIS } from '@/features/playback/utils/playback-redis.constrants';
-import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { GetPlaybackStateQuery } from '../impl/get-playback-state.query';
+import { PLAYBACK_REDIS } from '@/features/playback/utils/playback-redis.constants';
 import { Inject, InternalServerErrorException, Logger } from '@nestjs/common';
-import Redis from 'ioredis';
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { type PlaybackState, PlaybackStateSchema } from '@repo/contracts';
+import Redis from 'ioredis';
+import { GetPlaybackStateQuery } from '../impl/get-playback-state.query';
 
 @QueryHandler(GetPlaybackStateQuery)
 export class GetPlaybackStateHandler implements IQueryHandler<GetPlaybackStateQuery> {
@@ -15,7 +15,7 @@ export class GetPlaybackStateHandler implements IQueryHandler<GetPlaybackStateQu
     const key = `state:${query.userId}`;
     const raw = await this.redis.get(key);
 
-    if (!raw) return null;
+    if (raw === null) return null;
     let parsedJson: unknown;
     try {
       parsedJson = JSON.parse(raw);

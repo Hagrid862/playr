@@ -17,7 +17,7 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       userId: command.userId,
     };
 
-    const expectedVersion = command.request.expectedVersion || 0;
+    const expectedVersion = command.request.expectedVersion ?? 0;
 
     const serialized = PlaybackStatePayloadSchema.safeParse(state);
     if (!serialized.success) {
