@@ -23,11 +23,14 @@ export class ResendEmailVerificationCodeHandler implements ICommandHandler<Resen
     const emailObject = await this.emailAddressRepository.getByEmail(email);
 
     if (!emailObject) {
-      throw new BadRequestException('Email not found');
+      throw new BadRequestException('Email not found or already verified');
     }
-    
+
+    //NOTE both of these bad request exceptions are the same because we don't want to give away whether an email
+    // is registered or not, or if it's already verified or not. This is a security measure.
+
     if(emailObject.status === 'verified'){
-      throw new BadRequestException('Email is already verified');
+      throw new BadRequestException('Email not found or already verified');
     }
     
     const isEmailSent = await this.emailAuthService.beginEmailVerification(emailObject.email, emailObject.id);

@@ -156,7 +156,7 @@ export class AuthController {
     return this.commandBus.execute(new VerifyEmailCommand(body));
   }
 
-  @Post('resend-email-verification')
+  @Post('resend-email-verification-code')
   @HttpCode(200)
   @ApiOperation({ summary: 'Resend email verification code' })
   @ApiResponse({

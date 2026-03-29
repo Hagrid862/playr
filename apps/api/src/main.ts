@@ -10,6 +10,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
 
   app.use(cookieParser());
   app.useGlobalFilters(new GlobalExceptionFilter(app.get(ConfigService)));

@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyEmailCommand } from '@/features/auth/commands/impl/verify-email.command';
 import { OtpCodeService } from '@/features/auth/services/otp-code.service';
-import { VerifyEmailResponse } from '@repo/contracts';
+import {UserSchema, VerifyEmailResponse} from '@repo/contracts';
 import { BadRequestException, Logger, UnauthorizedException } from '@nestjs/common';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 import { TokenService } from '@/features/auth/services/token.service';
@@ -45,11 +45,13 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
       throw new BadRequestException('User not found for the provided email address');
     }
 
+    const sanitizedUser = UserSchema.parse(userObject);
+
     const tokens = await this.tokenService.generateAuthTokens(userObject.id, userObject.username);
 
     return {
       ...tokens,
-      user: userObject,
+      user: sanitizedUser,
     };
   }
 }
