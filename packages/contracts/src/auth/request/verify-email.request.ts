@@ -7,8 +7,9 @@ export const VerifyEmailRequestSchema = z.object({
     .transform((val) => val.toLowerCase().trim()),
   otpCode: z
     .string()
-    .length(8)
-    .transform((val) => val.toLowerCase().trim()),
+    .regex(/^[0-9]+$/, "OTP code must contain only digits")
+    .length(8, "OTP code must be exactly 8 digits")
+    .transform((val) => val.trim()),
 });
 
 export type VerifyEmailRequest = z.infer<typeof VerifyEmailRequestSchema>;
