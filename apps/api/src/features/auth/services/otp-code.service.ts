@@ -8,6 +8,20 @@ import type { EmailAddress } from "@repo/db";
 export class OtpCodeService {
   private readonly logger = new Logger(OtpCodeService.name);
 
+  private async releaseClaimLock(claimKey: string, claimToken: string): Promise<void> {
+    try {
+      await this.redis.eval(
+        'if redis.call("GET", KEYS[1]) == ARGV[1] then return redis.call("DEL", KEYS[1]) else return 0 end',
+        1,
+        claimKey,
+        claimToken,
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`Failed to release OTP claim lock for key ${claimKey}: ${errorMessage}`);
+    }
+  }
+
   constructor(
     private readonly hashingService: HashingService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
@@ -43,8 +57,20 @@ export class OtpCodeService {
     otpType: 'emailVerification' | 'passwordReset',
   ): Promise<boolean> {
     const key = `otp:${otpType}:${emailObj.email}`;
+    const claimKey = `${key}:claim`;
+    const claimToken = crypto.randomUUID();
+    const claimTtlMs = 5000;
 
     try {
+      const claimResult = await this.redis.set(claimKey, claimToken, 'PX', claimTtlMs, 'NX');
+
+      if (claimResult !== 'OK') {
+        this.logger.warn(
+          `OTP verification already in progress for email id ${emailObj.id} and type ${otpType}`,
+        );
+        return false;
+      }
+
       const storedOtp = await this.redis.get(key);
 
       if (!storedOtp) {
@@ -67,6 +93,8 @@ export class OtpCodeService {
 
       this.logger.error(`Error verifying OTP for email id ${emailObj.id} and type ${otpType}: ${errorMessage}`);
       throw new InternalServerErrorException('Failed to verify OTP code');
+    } finally {
+      await this.releaseClaimLock(claimKey, claimToken);
     }
   }
 }

@@ -22,13 +22,13 @@ export class MailService {
         },
       });
 
-      this.logger.log(`Email verification code successfully sent to ${email.id}`);
+      this.logger.log(`Email verification code successfully sent to email id ${email.id}`);
 
       return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      this.logger.error(`Failed to sent OTP code for email verification email to ${email.id}: ${errorMessage}`);
+      this.logger.error(`Failed to sent OTP code for email verification to email id ${email.id}: ${errorMessage}`);
 
       return false;
     }
