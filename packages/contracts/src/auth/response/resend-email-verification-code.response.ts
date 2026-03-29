@@ -1,10 +1,13 @@
 import z from "zod";
 import { createApiResponseSchema } from "../../api";
 
-export const ResendEmailVerificationCodeResponseSchema = createApiResponseSchema(
-  z.object({
-    isEmailSent: z.boolean(),
-  }),
-);
+export const ResendEmailVerificationCodeResponseSchema =
+  createApiResponseSchema(
+    z.object({
+      isEmailSent: z.boolean(),
+    }),
+  );
 
-export type ResendEmailVerificationCodeResponse = z.infer<typeof ResendEmailVerificationCodeResponseSchema>;
+export type ResendEmailVerificationCodeResponse = z.infer<
+  typeof ResendEmailVerificationCodeResponseSchema
+>;

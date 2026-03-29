@@ -7,4 +7,6 @@ export const ResendEmailVerificationCodeRequestSchema = z.object({
     .transform((val) => val.toLowerCase().trim()),
 });
 
-export type ResendEmailVerificationCodeRequest = z.infer<typeof ResendEmailVerificationCodeRequestSchema>;
+export type ResendEmailVerificationCodeRequest = z.infer<
+  typeof ResendEmailVerificationCodeRequestSchema
+>;
