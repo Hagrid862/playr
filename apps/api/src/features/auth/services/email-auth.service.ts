@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OtpCodeService } from '@/features/auth/services/otp-code.service';
 import { MailService } from '@/shared/services/mail.service';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
+import type { EmailAddress } from "@repo/db";
 
 @Injectable()
 export class EmailAuthService {
@@ -13,13 +14,13 @@ export class EmailAuthService {
     private readonly emailAddressRepository: EmailAddressRepository
   ) {}
 
-  async beginEmailVerification(email: string, emailId: string): Promise<boolean> {
+  async beginEmailVerification(email: EmailAddress): Promise<boolean> {
     try {
       const otpCode = await this.otpCodeService.generateOTPCode(email, 'emailVerification');
       const emailSent = await this.mailService.sendEmailVerificationCode(email, otpCode);
 
       if (emailSent) {
-        await this.emailAddressRepository.edit(emailId, { status: 'pending' });
+        await this.emailAddressRepository.edit(email.id, { status: 'pending' });
       }
 
       return emailSent;

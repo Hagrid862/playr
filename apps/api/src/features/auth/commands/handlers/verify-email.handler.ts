@@ -29,7 +29,7 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
       throw new BadRequestException('Email address not found');
     }
 
-    const isCodeValid = await this.otpCodeService.verifyOTPCode(email, otpCode, 'emailVerification');
+    const isCodeValid = await this.otpCodeService.verifyOTPCode(emailObject, otpCode, 'emailVerification');
 
     if (!isCodeValid) {
       throw new UnauthorizedException('Invalid or expired OTP code');
@@ -37,7 +37,7 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
 
     await this.emailAddressRepository.edit(emailObject.id, { status: 'verified' });
 
-    this.logger.log(`Successfully verified email address ${email}`);
+    this.logger.log(`Successfully verified email address email id ${emailObject.id}`);
 
     const userObject = await this.userRepository.getByEmail(email);
 

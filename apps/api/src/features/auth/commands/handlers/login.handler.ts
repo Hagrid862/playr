@@ -29,10 +29,7 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
         throw new Error('User has no primary email address');
       }
 
-      const isEmailSent = await this.emailAuthService.beginEmailVerification(
-        primaryEmailObject.email,
-        primaryEmailObject.id,
-      );
+      const isEmailSent = await this.emailAuthService.beginEmailVerification(primaryEmailObject);
 
       return {
         outcome: 'unauthenticated',
