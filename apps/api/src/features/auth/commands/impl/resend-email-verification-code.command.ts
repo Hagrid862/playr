@@ -3,4 +3,3 @@ import { ResendEmailVerificationCodeRequestDto } from '@/features/auth/dto/resen
 export class ResendEmailVerificationCodeCommand {
   constructor(public readonly payload: ResendEmailVerificationCodeRequestDto) {}
 }
-

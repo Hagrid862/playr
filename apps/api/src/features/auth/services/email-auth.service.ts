@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OtpCodeService } from '@/features/auth/services/otp-code.service';
 import { MailService } from '@/shared/services/mail.service';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
-import type { EmailAddress } from "@repo/db";
+import type { EmailAddress } from '@repo/db';
 
 @Injectable()
 export class EmailAuthService {
@@ -11,7 +11,7 @@ export class EmailAuthService {
   constructor(
     private readonly otpCodeService: OtpCodeService,
     private readonly mailService: MailService,
-    private readonly emailAddressRepository: EmailAddressRepository
+    private readonly emailAddressRepository: EmailAddressRepository,
   ) {}
 
   async beginEmailVerification(email: EmailAddress): Promise<boolean> {
@@ -25,7 +25,7 @@ export class EmailAuthService {
 
       return emailSent;
     } catch (error) {
-      const details = error instanceof Error ? error.stack ?? error.message : String(error);
+      const details = error instanceof Error ? (error.stack ?? error.message) : String(error);
       this.logger.error('Failed to begin email verification flow', details);
       return false;
     }

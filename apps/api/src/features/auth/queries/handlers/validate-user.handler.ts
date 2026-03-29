@@ -6,7 +6,6 @@ import { EmailStatus, User } from '@repo/db';
 import { ValidateUserQuery } from '../impl/validate-user.query';
 import type { AuthenticatedUser } from '@/common/types/auth.types';
 
-
 @QueryHandler(ValidateUserQuery)
 export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {
   constructor(

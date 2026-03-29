@@ -5,9 +5,7 @@ import { TokenService } from '../../services/token.service';
 import { EmailAuthService } from '@/features/auth/services/email-auth.service';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 
-
 type LoginData = LoginResponse['data'];
-
 
 @CommandHandler(LoginCommand)
 export class LoginHandler implements ICommandHandler<LoginCommand> {

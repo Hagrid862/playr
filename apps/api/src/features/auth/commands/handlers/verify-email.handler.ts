@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyEmailCommand } from '@/features/auth/commands/impl/verify-email.command';
 import { OtpCodeService } from '@/features/auth/services/otp-code.service';
-import {UserSchema, VerifyEmailResponse} from '@repo/contracts';
+import { UserSchema, VerifyEmailResponse } from '@repo/contracts';
 import { BadRequestException, Logger, UnauthorizedException } from '@nestjs/common';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 import { TokenService } from '@/features/auth/services/token.service';
@@ -10,7 +10,7 @@ import { UserRepository } from '@/shared/repositories/user.repository';
 type VerifyEmailData = VerifyEmailResponse['data'];
 
 @CommandHandler(VerifyEmailCommand)
-export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
+export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand> {
   private readonly logger = new Logger(VerifyEmailHandler.name);
 
   constructor(
@@ -29,7 +29,11 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
       throw new BadRequestException('Email address not found');
     }
 
-    const isCodeValid = await this.otpCodeService.verifyOTPCode(emailObject, otpCode, 'emailVerification');
+    const isCodeValid = await this.otpCodeService.verifyOTPCode(
+      emailObject,
+      otpCode,
+      'emailVerification',
+    );
 
     if (!isCodeValid) {
       throw new UnauthorizedException('Invalid or expired OTP code');
@@ -41,7 +45,7 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand>{
 
     const userObject = await this.userRepository.getByEmail(email);
 
-    if(!userObject){
+    if (!userObject) {
       throw new BadRequestException('User not found for the provided email address');
     }
 

@@ -47,8 +47,6 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
 
     // Use transaction to ensure atomicity - if email creation fails, user is rolled back
     const user = await this.unitOfWork.runInTransaction(async () => {
-
-
       return this.prisma.client.user.create({
         data: {
           username,
@@ -72,7 +70,9 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     });
 
     const sanitizedUser = UserSchema.parse(user);
-    const primaryEmailObject = sanitizedUser.emailAddresses?.find((e) => e.type === EmailType.primary);
+    const primaryEmailObject = sanitizedUser.emailAddresses?.find(
+      (e) => e.type === EmailType.primary,
+    );
 
     if (!primaryEmailObject) {
       throw new Error('User has no primary email address');

@@ -46,10 +46,12 @@ import { join } from 'path';
           transport: {
             host: configService.get('MAIL_HOST', { infer: true }),
             port: port,
-            auth: configService.get('MAIL_USER', { infer: true }) ? {
-              user: configService.get('MAIL_USER', { infer: true }),
-              pass: configService.get('MAIL_PASS', { infer: true }),
-            } : undefined,
+            auth: configService.get('MAIL_USER', { infer: true })
+              ? {
+                  user: configService.get('MAIL_USER', { infer: true }),
+                  pass: configService.get('MAIL_PASS', { infer: true }),
+                }
+              : undefined,
             secure: port === 465,
           },
           defaults: {

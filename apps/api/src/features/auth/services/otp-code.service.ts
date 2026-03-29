@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger, InternalServerErrorException } from '@nestj
 import { HashingService } from '@/shared/services/hashing.service';
 import { Redis } from 'ioredis';
 import * as crypto from 'crypto';
-import type { EmailAddress } from "@repo/db";
+import type { EmailAddress } from '@repo/db';
 
 @Injectable()
 export class OtpCodeService {
@@ -42,11 +42,12 @@ export class OtpCodeService {
       await this.redis.set(key, hashedOtp, 'EX', expirationTime * 60);
 
       return otp;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      this.logger.error(`Error generating OTP for email id ${emailObj.id} and type ${otpType}: ${errorMessage}`);
+      this.logger.error(
+        `Error generating OTP for email id ${emailObj.id} and type ${otpType}: ${errorMessage}`,
+      );
       throw new InternalServerErrorException('Failed to generate OTP code');
     }
   }
@@ -81,7 +82,9 @@ export class OtpCodeService {
       const isMatch = await this.hashingService.compare(otp, storedOtp);
 
       if (isMatch) {
-        this.logger.log(`OTP for email id ${emailObj.id} and type ${otpType} verified successfully`);
+        this.logger.log(
+          `OTP for email id ${emailObj.id} and type ${otpType} verified successfully`,
+        );
         await this.redis.del(key);
       } else {
         this.logger.warn(`OTP for email id ${emailObj.id} and type ${otpType} verification failed`);
@@ -91,7 +94,9 @@ export class OtpCodeService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      this.logger.error(`Error verifying OTP for email id ${emailObj.id} and type ${otpType}: ${errorMessage}`);
+      this.logger.error(
+        `Error verifying OTP for email id ${emailObj.id} and type ${otpType}: ${errorMessage}`,
+      );
       throw new InternalServerErrorException('Failed to verify OTP code');
     } finally {
       await this.releaseClaimLock(claimKey, claimToken);
