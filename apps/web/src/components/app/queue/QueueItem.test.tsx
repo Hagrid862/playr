@@ -1,5 +1,5 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
-import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
+import { albumBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -39,7 +39,8 @@ describe('QueueItem', () => {
   const mockTrack: PlayrQueueItem = {
     uniqueId: '1',
     ...trackBuilder({ title: 'Test Title' }),
-    artists: [artistBuilder({ name: 'Test Artist' })],
+    artists: ['Test Artist'],
+    albumArt: 'http://example.com/cover.jpg',
     album: {
       ...albumBuilder({ name: 'Test Album' }),
       cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
@@ -65,7 +66,8 @@ describe('QueueItem', () => {
       const noCoverTrack: PlayrQueueItem = {
         uniqueId: '2',
         ...trackBuilder({ title: 'Test Title 2' }),
-        artists: [artistBuilder({ name: 'Test Artist' })],
+        artists: ['Test Artist'],
+        albumArt: '',
         album: { ...albumBuilder({ name: 'Test Album' }), cover: null },
       };
 
@@ -77,7 +79,8 @@ describe('QueueItem', () => {
       const multiArtistTrack: PlayrQueueItem = {
         uniqueId: '3',
         ...trackBuilder({ title: 'Test Title 3' }),
-        artists: [artistBuilder({ name: 'Artist A' }), artistBuilder({ name: 'Artist B' })],
+        artists: ['Artist A', 'Artist B'],
+        albumArt: 'http://example.com/cover.jpg',
         album: {
           ...albumBuilder({ name: 'Test Album' }),
           cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
@@ -157,7 +160,8 @@ describe('QueueItemOverlay', () => {
   const mockTrack: PlayrQueueItem = {
     uniqueId: '1',
     ...trackBuilder({ title: 'Test Title' }),
-    artists: [artistBuilder({ name: 'Test Artist' })],
+    artists: ['Test Artist'],
+    albumArt: 'http://example.com/cover.jpg',
     album: {
       ...albumBuilder({ name: 'Test Album' }),
       cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
@@ -179,7 +183,8 @@ describe('QueueItemOverlay', () => {
       const noCoverTrack: PlayrQueueItem = {
         uniqueId: '2',
         ...trackBuilder({ title: 'Test Title 2' }),
-        artists: [artistBuilder({ name: 'Test Artist' })],
+        artists: ['Test Artist'],
+        albumArt: '',
         album: { ...albumBuilder({ name: 'Test Album' }), cover: null },
       };
 
@@ -192,7 +197,8 @@ describe('QueueItemOverlay', () => {
       const multiArtistTrack: PlayrQueueItem = {
         uniqueId: '3',
         ...trackBuilder({ title: 'Test Title 3' }),
-        artists: [artistBuilder({ name: 'Artist A' }), artistBuilder({ name: 'Artist B' })],
+        artists: ['Artist A', 'Artist B'],
+        albumArt: 'http://example.com/cover.jpg',
         album: {
           ...albumBuilder({ name: 'Test Album' }),
           cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),

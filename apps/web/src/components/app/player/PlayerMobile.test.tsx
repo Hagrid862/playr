@@ -38,7 +38,8 @@ describe('PlayerMobile', () => {
           currentTrack: {
             uniqueId: '1',
             title: 'Test Song',
-            artists: [{ name: 'Artist A' }],
+            artists: ['Artist A'],
+            albumArt: 'http://example.com/cover.jpg',
             album: { cover: { url: 'http://example.com/cover.jpg' } },
           } as PlayerState['currentTrack'],
         }),
