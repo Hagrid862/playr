@@ -1,4 +1,5 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlaybackTrack } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,11 +38,16 @@ describe('PlayerMobile', () => {
         buildState({
           currentTrack: {
             uniqueId: '1',
+            id: '1',
+            trackId: '1',
             title: 'Test Song',
             artists: ['Artist A'],
             albumArt: 'http://example.com/cover.jpg',
-            album: { cover: { url: 'http://example.com/cover.jpg' } },
-          } as PlayerState['currentTrack'],
+            albumName: 'Test Album',
+            albumId: '1',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
         }),
       );
 

@@ -1,31 +1,31 @@
-import React from 'react';
-import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
-import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import {
   DndContext,
+  DragEndEvent,
+  DragOverEvent,
   DragOverlay,
+  DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverEvent,
-  pointerWithin,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { cn } from '@/lib/utils';
-import { QueueItem, QueueItemOverlay } from './QueueItem';
+import type { QueueItem } from '@repo/contracts';
+import { AnimatePresence, motion } from 'framer-motion';
+import React from 'react';
+import { QueueItem as QueueItemComponent, QueueItemOverlay } from './QueueItem';
 
 interface QueueNextUpProps {
-  nextUp: PlayrQueueItem[];
+  nextUp: QueueItem[];
   isShuffled: boolean;
   onDragEnd: (event: DragEndEvent) => void;
-  onPlayTrack: (track: PlayrQueueItem) => void;
+  onPlayTrack: (track: QueueItem) => void;
   onRemoveTrack: (uniqueId: string, event: React.MouseEvent) => void;
 }
 
@@ -57,8 +57,8 @@ export function QueueNextUp({
     const { active, over } = event;
     if (over) {
       setOverId(String(over.id));
-      const activeIndex = nextUp.findIndex((t) => t.uniqueId === active.id);
-      const overIndex = nextUp.findIndex((t) => t.uniqueId === over.id);
+      const activeIndex = nextUp.findIndex((t) => t.queueId === active.id);
+      const overIndex = nextUp.findIndex((t) => t.queueId === over.id);
       if (activeIndex > overIndex) {
         setDropLinePosition('top');
       } else {
@@ -77,7 +77,7 @@ export function QueueNextUp({
     onDragEnd(event);
   };
 
-  const activeTrack = activeId ? nextUp.find((t) => t.uniqueId === activeId) : null;
+  const activeTrack = activeId ? nextUp.find((t) => t.queueId === activeId) : null;
 
   const dropLineClassNames = (visible: boolean) =>
     cn(
@@ -127,21 +127,21 @@ export function QueueNextUp({
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={nextUp.map((t) => t.uniqueId)}
+                items={nextUp.map((t) => t.queueId)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-0.5">
                   <AnimatePresence mode="popLayout">
                     {nextUp.map((track) => (
-                      <div key={track.uniqueId}>
+                      <div key={track.queueId}>
                         <div
                           className={dropLineClassNames(
-                            overId === track.uniqueId &&
+                            overId === track.queueId &&
                               dropLinePosition === 'top' &&
                               overId !== activeId,
                           )}
                         />
-                        <QueueItem
+                        <QueueItemComponent
                           track={track}
                           onPlay={onPlayTrack}
                           onRemove={onRemoveTrack}
@@ -149,7 +149,7 @@ export function QueueNextUp({
                         />
                         <div
                           className={dropLineClassNames(
-                            overId === track.uniqueId &&
+                            overId === track.queueId &&
                               dropLinePosition === 'bottom' &&
                               overId !== activeId,
                           )}
