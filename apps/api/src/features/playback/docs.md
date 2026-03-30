@@ -18,11 +18,12 @@ Playback state is synchronized over **Socket.IO** using the Nest gateway in [`pl
 
 ## Authentication (handshake)
 
-The access JWT must be available on the Socket.IO handshake (see [`ws.util.ts`](../../common/utils/ws.util.ts)):
+Only these sources are supported (enforced by [`extractAccessTokenFromSocket`](../../common/utils/ws.util.ts) and [`WsJwtGuard`](../auth/guards/ws-jwt.guard.ts)):
 
-1. `socket.handshake.auth.token` (string), or
-2. Query parameter `token`, or
-3. Header `Authorization: Bearer <access_jwt>`
+1. **`socket.handshake.auth.token`** (string), or
+2. **HTTP header** `Authorization: Bearer <access_jwt>`
+
+Query parameters (for example `?token=...`) are intentionally **not** read: putting a JWT in the URL risks leaking it via server logs, proxies, referrer headers, and browser history.
 
 If the token is missing or invalid, the connection is rejected. After a successful connection, the socket joins the room `user:<userId>` (see `handleConnection` in the gateway).
 
