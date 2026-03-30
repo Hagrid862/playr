@@ -1,6 +1,5 @@
-import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
-import { trackBuilder } from '@repo/testing/builders';
+import type { QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { act, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -34,25 +33,53 @@ vi.mock('./QueueItem', () => ({
     onPlay,
     onRemove,
   }: {
-    track: PlayrQueueItem;
-    onPlay: (track: PlayrQueueItem) => void;
+    track: QueueItem;
+    onPlay: (track: QueueItem) => void;
     onRemove: (id: string, e: React.MouseEvent<HTMLButtonElement>) => void;
   }) => (
-    <div data-testid={`queue-item-${track.uniqueId}`}>
-      {track.title}
+    <div data-testid={`queue-item-${track.queueId}`}>
+      {track.track.title}
       <button onClick={() => onPlay(track)}>Play</button>
-      <button onClick={(e) => onRemove(track.uniqueId, e)}>Remove</button>
+      <button onClick={(e) => onRemove(track.queueId, e)}>Remove</button>
     </div>
   ),
-  QueueItemOverlay: ({ track }: { track: PlayrQueueItem }) => (
-    <div data-testid="queue-item-overlay">{track.title}</div>
+  QueueItemOverlay: ({ track }: { track: QueueItem }) => (
+    <div data-testid="queue-item-overlay">{track.track.title}</div>
   ),
 }));
 
 describe('QueueNextUp', () => {
   const mockNextUp = [
-    { ...trackBuilder({ title: 'Track 1' }), uniqueId: '1' },
-    { ...trackBuilder({ title: 'Track 2' }), uniqueId: '2' },
+    {
+      queueId: '1',
+      track: {
+        id: '1',
+        title: 'Track 1',
+        trackId: '1',
+        artists: ['Artist 1'],
+        albumName: 'Album 1',
+        albumId: '1',
+        albumArt: 'http://example.com/cover.jpg',
+        duration: 100,
+        explicit: false,
+      },
+      position: 0,
+    } as QueueItem,
+    {
+      queueId: '2',
+      track: {
+        id: '2',
+        title: 'Track 2',
+        trackId: '2',
+        artists: ['Artist 2'],
+        albumName: 'Album 2',
+        albumId: '2',
+        albumArt: 'http://example.com/cover.jpg',
+        duration: 100,
+        explicit: false,
+      },
+      position: 1,
+    } as QueueItem,
   ];
 
   const defaultProps = {
@@ -64,7 +91,7 @@ describe('QueueNextUp', () => {
 
   describe('rendering', () => {
     it('renders correctly with tracks', () => {
-      customRender(<QueueNextUp nextUp={mockNextUp} {...defaultProps} />);
+      customRender(<QueueNextUp nextUp={mockNextUp as QueueItem[]} {...defaultProps} />);
       expect(screen.getByText('Next Up')).toBeInTheDocument();
       expect(screen.getByTestId('queue-item-1')).toBeInTheDocument();
       expect(screen.getByTestId('queue-item-2')).toBeInTheDocument();

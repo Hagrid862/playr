@@ -1,12 +1,12 @@
-import { PlayerState, QueueItem, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import type { DragEndEvent } from '@dnd-kit/core';
+import type { PlaybackTrack, QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Queue } from './Queue';
 import { createPlayerStateMock } from './test-utils/player-test-utils';
-
 vi.mock('@/stores/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
@@ -47,7 +47,16 @@ vi.mock('./queue/QueueNextUp', () => ({
     onDragEnd: (e: DragEndEvent) => void;
   }) => (
     <div data-testid="queue-next-up">
-      <button type="button" onClick={() => onPlayTrack({ uniqueId: '2' } as QueueItem)}>
+      <button
+        type="button"
+        onClick={() =>
+          onPlayTrack({
+            queueId: '2',
+            track: { id: '2', title: 'Track 2' } as PlaybackTrack,
+            position: 0,
+          } as unknown as QueueItem)
+        }
+      >
         Play Next
       </button>
       <button type="button" onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}>
@@ -106,11 +115,63 @@ describe('Queue', () => {
   const defaultQueueState = (): PlayerState =>
     createPlayerStateMock({
       queue: [
-        { uniqueId: '1', title: 'Track 1' } as QueueItem,
-        { uniqueId: '2', title: 'Track 2' } as QueueItem,
-        { uniqueId: '3', title: 'Track 3' } as QueueItem,
+        {
+          queueId: '1',
+          track: {
+            id: '1',
+            title: 'Track 1',
+            trackId: '1',
+            artists: ['Artist 1'],
+            albumName: 'Album 1',
+            albumId: '1',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+        {
+          queueId: '2',
+          track: {
+            id: '2',
+            title: 'Track 2',
+            trackId: '2',
+            artists: ['Artist 2'],
+            albumName: 'Album 2',
+            albumId: '2',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+        {
+          queueId: '3',
+          track: {
+            id: '3',
+            title: 'Track 3',
+            trackId: '3',
+            artists: ['Artist 3'],
+            albumName: 'Album 3',
+            albumId: '3',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
       ],
-      currentTrack: { uniqueId: '1', title: 'Track 1' } as QueueItem,
+      currentTrack: {
+        id: '1',
+        title: 'Track 1',
+        trackId: '1',
+        artists: ['Artist 1'],
+        albumName: 'Album 1',
+        albumId: '1',
+        albumArt: 'cover.jpg',
+        duration: 100,
+        explicit: false,
+      } as PlaybackTrack,
       playTrack: mockPlayTrack,
       removeFromQueue: mockRemoveFromQueue,
       toggleQueue: mockToggleQueue,
@@ -137,8 +198,36 @@ describe('Queue', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
           queue: [
-            { uniqueId: '1', title: 'Track 1' } as QueueItem,
-            { uniqueId: '2', title: 'Track 2' } as QueueItem,
+            {
+              queueId: '1',
+              track: {
+                id: '1',
+                title: 'Track 1',
+                trackId: '1',
+                artists: ['Artist 1'],
+                albumName: 'Album 1',
+                albumId: '1',
+                albumArt: 'cover.jpg',
+                duration: 100,
+                explicit: false,
+              } as PlaybackTrack,
+              position: 0,
+            } as QueueItem,
+            {
+              queueId: '2',
+              track: {
+                id: '2',
+                title: 'Track 2',
+                trackId: '2',
+                artists: ['Artist 2'],
+                albumName: 'Album 2',
+                albumId: '2',
+                albumArt: 'cover.jpg',
+                duration: 100,
+                explicit: false,
+              } as PlaybackTrack,
+              position: 0,
+            } as QueueItem,
           ],
           currentTrack: null,
           playTrack: mockPlayTrack,

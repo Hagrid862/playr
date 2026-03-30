@@ -1,9 +1,9 @@
-import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { MusicNotesIcon } from '@phosphor-icons/react';
+import type { QueueItem } from '@repo/contracts';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface QueueNowPlayingProps {
-  currentTrack: PlayrQueueItem | null;
+  currentTrack: QueueItem | null;
 }
 
 export function QueueNowPlaying({ currentTrack }: QueueNowPlayingProps) {
@@ -14,7 +14,7 @@ export function QueueNowPlaying({ currentTrack }: QueueNowPlayingProps) {
       <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider">Now Playing</h3>
       <AnimatePresence mode="popLayout">
         <motion.div
-          key={currentTrack.uniqueId}
+          key={currentTrack.queueId}
           initial={{ opacity: 0, scale: 0.9, filter: 'blur(8px)' }}
           animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           exit={{
@@ -27,10 +27,10 @@ export function QueueNowPlaying({ currentTrack }: QueueNowPlayingProps) {
           className="group flex items-center gap-3 p-2 rounded-md bg-white/5 border border-white/5 transition-colors hover:bg-white/10"
         >
           <div className="relative h-12 w-12 shrink-0 rounded overflow-hidden bg-stone-800">
-            {currentTrack.albumArt ? (
+            {currentTrack.track?.albumArt ? (
               <img
-                src={currentTrack.albumArt}
-                alt={currentTrack.title}
+                src={currentTrack.track?.albumArt}
+                alt={currentTrack.track?.title}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -47,9 +47,11 @@ export function QueueNowPlaying({ currentTrack }: QueueNowPlayingProps) {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-green-500 truncate">{currentTrack.title}</div>
+            <div className="text-sm font-medium text-green-500 truncate">
+              {currentTrack.track?.title}
+            </div>
             <div className="text-xs text-white/50 truncate">
-              {currentTrack.artists?.join(', ') || 'Unknown Artist'}
+              {currentTrack.track?.artists?.join(', ') || 'Unknown Artist'}
             </div>
           </div>
         </motion.div>

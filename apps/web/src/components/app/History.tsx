@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { usePlayerStore, type QueueItem } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player.store';
 import { ArrowLeftIcon, MusicNotesIcon, PlayIcon, XIcon } from '@phosphor-icons/react';
+import type { QueueItem } from '@repo/contracts';
 import React from 'react';
 
 interface HistoryProps {
@@ -14,7 +15,7 @@ export function History({ isVisible, onBack }: HistoryProps) {
   const [historyLimit, setHistoryLimit] = React.useState(20);
 
   const handlePlayTrack = (track: QueueItem) => {
-    playTrack(track);
+    playTrack(track.track);
   };
 
   const handleLoadHistory = () => {
@@ -63,15 +64,15 @@ export function History({ isVisible, onBack }: HistoryProps) {
           <div className="space-y-0.5">
             {history.slice(0, historyLimit).map((track, i) => (
               <div
-                key={`${track.uniqueId}-${i}`}
+                key={`${track.queueId}-${i}`}
                 className="group flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors cursor-pointer"
                 onClick={() => handlePlayTrack(track)}
               >
                 <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
-                  {track.albumArt ? (
+                  {track.track?.albumArt ? (
                     <img
-                      src={track.albumArt}
-                      alt={track.title}
+                      src={track.track?.albumArt}
+                      alt={track.track?.title}
                       className="h-full w-full object-cover group-hover:opacity-40 transition-opacity"
                     />
                   ) : (
@@ -85,9 +86,11 @@ export function History({ isVisible, onBack }: HistoryProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-white/90 truncate group-hover:text-white">
-                    {track.title}
+                    {track.track?.title}
                   </div>
-                  <div className="text-xs text-white/50 truncate">{track.artists?.join(', ')}</div>
+                  <div className="text-xs text-white/50 truncate">
+                    {track.track?.artists?.join(', ')}
+                  </div>
                 </div>
                 <div className="text-xs text-white/30 tabular-nums">
                   {/* Could show played time here if we tracked it, but keeping simple for now */}

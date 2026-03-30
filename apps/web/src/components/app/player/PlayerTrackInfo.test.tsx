@@ -1,6 +1,5 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
-import { StreamAudioQuality } from '@repo/contracts';
-import { albumBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
+import { PlaybackTrack, StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -68,14 +67,16 @@ describe('PlayerTrackInfo', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         buildState({
           currentTrack: {
-            uniqueId: '1',
-            ...trackBuilder({ title: 'Test Song' }),
+            id: '1',
+            trackId: '1',
+            title: 'Test Song',
             artists: ['Artist A'],
-            album: {
-              ...albumBuilder({ name: 'Album A' }),
-              cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
-            },
-          },
+            albumName: 'Album A',
+            albumId: '1',
+            albumArt: 'http://example.com/cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
         }),
       );
 
@@ -100,14 +101,16 @@ describe('PlayerTrackInfo', () => {
         buildState({
           quality: StreamAudioQuality.lossless,
           currentTrack: {
-            uniqueId: '1',
-            ...trackBuilder({ title: 'Lossless Song' }),
+            id: '1',
+            title: 'Lossless Song',
+            trackId: '1',
             artists: ['Artist A'],
-            album: {
-              ...albumBuilder({ name: 'Album A' }),
-              cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
-            },
-          },
+            albumName: 'Album A',
+            albumId: '1',
+            albumArt: 'http://example.com/cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
         }),
       );
 
@@ -121,14 +124,16 @@ describe('PlayerTrackInfo', () => {
         buildState({
           duration: 0,
           currentTrack: {
-            uniqueId: '2',
-            ...trackBuilder({ title: 'Zero Duration Song' }),
+            id: '2',
+            title: 'Zero Duration Song',
+            trackId: '2',
             artists: ['Artist A'],
-            album: {
-              ...albumBuilder({ name: 'Album A' }),
-              cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
-            },
-          },
+            albumName: 'Album A',
+            albumId: '1',
+            albumArt: 'http://example.com/cover.jpg',
+            duration: 0,
+            explicit: false,
+          } as PlaybackTrack,
         }),
       );
 

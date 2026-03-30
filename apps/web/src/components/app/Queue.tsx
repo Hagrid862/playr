@@ -1,7 +1,9 @@
+import { playbackTrackToQueueItem } from '@/lib/playback-mappers';
 import { cn } from '@/lib/utils';
-import { usePlayerStore, type QueueItem as PlayrQueueItem } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player.store';
 import { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import type { QueueItem } from '@repo/contracts';
 import React from 'react';
 import { History as QueueHistory } from './History';
 import { QueueHeader } from './queue/QueueHeader';
@@ -27,16 +29,23 @@ export function Queue() {
     }
   }, [isQueueOpen]);
 
+  const nowPlayingItem = React.useMemo((): QueueItem | null => {
+    if (!currentTrack) return null;
+    return (
+      queue.find((t) => t.track.id === currentTrack.id) ?? playbackTrackToQueueItem(currentTrack)
+    );
+  }, [currentTrack, queue]);
+
   const handleRemoveTrack = (uniqueId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     removeFromQueue(uniqueId);
   };
 
-  const handlePlayTrack = (track: PlayrQueueItem) => {
-    playTrack(track);
+  const handlePlayTrack = (track: QueueItem) => {
+    playTrack(track.track);
   };
 
-  const currentIndex = currentTrack ? queue.findIndex((t) => t.id === currentTrack.id) : -1;
+  const currentIndex = currentTrack ? queue.findIndex((t) => t.track.id === currentTrack.id) : -1;
 
   const nextUp = queue.slice(currentIndex + 1);
 
@@ -44,8 +53,8 @@ export function Queue() {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = queue.findIndex((t) => t.uniqueId === active.id);
-      const newIndex = queue.findIndex((t) => t.uniqueId === over.id);
+      const oldIndex = queue.findIndex((t) => t.queueId === active.id);
+      const newIndex = queue.findIndex((t) => t.queueId === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newQueue = arrayMove(queue, oldIndex, newIndex);
@@ -68,7 +77,7 @@ export function Queue() {
         <QueueHeader onShowHistory={() => setView('history')} onToggleQueue={toggleQueue} />
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <QueueNowPlaying currentTrack={currentTrack as PlayrQueueItem} />
+          <QueueNowPlaying currentTrack={nowPlayingItem} />
           <QueueNextUp
             nextUp={nextUp}
             isShuffled={isShuffled}
