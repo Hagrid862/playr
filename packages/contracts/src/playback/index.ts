@@ -10,6 +10,15 @@ export * from "./request/set-shuffle-state.request";
 export * from "./request/set-track-state.request";
 export * from "./request/set-volume-level-state.request";
 
+// Queue Requests
+export * from "./request/queue";
+
 // Responses
 export * from "./response/get-playback-state.response";
+export * from "./response/get-queue-state.response";
 export * from "./response/set-playback-state.response";
+
+// Schemas
+export * from "./schemas/playback-track.schema";
+export * from "./schemas/playback.schema";
+

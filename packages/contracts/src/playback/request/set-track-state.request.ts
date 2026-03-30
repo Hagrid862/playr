@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PlaybackTrackSchema } from "../../schemas";
+import { PlaybackTrackSchema } from "../schemas/playback-track.schema";
 
 export const SetTrackStateRequestSchema = z
   .object({

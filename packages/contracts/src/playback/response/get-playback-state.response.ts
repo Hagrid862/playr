@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PlaybackStateSchema } from "../../schemas/playback.schema";
+import { PlaybackStateSchema } from "../schemas/playback.schema";
 
 export const GetPlaybackStateResponseSchema = PlaybackStateSchema.nullable();
 
