@@ -1,3 +1,4 @@
+import { PlaybackSync } from '@/components/app/PlaybackSync';
 import { SidebarLayout } from '@/components/layout/sidebar-layout';
 import { Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
@@ -28,6 +29,7 @@ function AppLayout() {
 
   return (
     <SidebarLayout>
+      <PlaybackSync />
       <Outlet />
     </SidebarLayout>
   );
