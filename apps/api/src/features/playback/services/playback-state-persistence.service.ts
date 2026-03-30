@@ -64,15 +64,16 @@ export class PlaybackStatePersistenceService {
       userId,
     });
 
-    const firstState: PlaybackState = {
-      ...mergedPayload,
-      version: 1,
-      updatedAt: new Date().toISOString(),
-    };
-
     const key = `state:${userId}`;
     for (let attempt = 0; attempt < ATOMIC_SET_MAX_ATTEMPTS; attempt++) {
       const conn = await this.redis.duplicate();
+
+      const firstState: PlaybackState = {
+        ...mergedPayload,
+        version: 1,
+        updatedAt: new Date().toISOString(),
+      };
+
       try {
         try {
           await conn.watch(key);
