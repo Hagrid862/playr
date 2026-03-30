@@ -28,6 +28,11 @@ export class AlbumRepository {
               trackNumber: 'asc' as const,
             },
             include: {
+              album: {
+                include: {
+                  cover: true,
+                },
+              },
               artists: true,
               audioFiles: true,
             },
