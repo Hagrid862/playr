@@ -20,6 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
+import { zodTrackToPlaybackTrack } from '@/lib/playback-mappers';
 import { usePlayerStore } from '@/stores/player.store';
 import {
   DiscIcon,
@@ -185,7 +186,11 @@ function RouteComponent() {
                 )
                 .map((t) => ({ ...t, album }));
               const firstPlayable = allTracks[0];
-              if (firstPlayable) playTrack(firstPlayable, allTracks);
+              if (firstPlayable)
+                playTrack(
+                  zodTrackToPlaybackTrack(firstPlayable),
+                  allTracks.map((t) => zodTrackToPlaybackTrack(t)),
+                );
             }}
           >
             <PlayIcon weight="fill" size={20} /> Play
@@ -306,8 +311,8 @@ function RouteComponent() {
                               isFailed={isFailed}
                               onClick={() =>
                                 playTrack(
-                                  { ...track, album },
-                                  discTracks.map((t) => ({ ...t, album })),
+                                  zodTrackToPlaybackTrack(track),
+                                  discTracks.map((t) => zodTrackToPlaybackTrack(t)),
                                 )
                               }
                               onEdit={(songId) =>
@@ -317,8 +322,8 @@ function RouteComponent() {
                                 })
                               }
                               onDelete={(trackInfo) => setTrackToDelete(trackInfo)}
-                              onAddToQueue={() => addToQueue({ ...track, album })}
-                              onPlayNext={() => playNext({ ...track, album })}
+                              onAddToQueue={() => addToQueue(zodTrackToPlaybackTrack(track))}
+                              onPlayNext={() => playNext(zodTrackToPlaybackTrack(track))}
                             />
                           );
                         })}
