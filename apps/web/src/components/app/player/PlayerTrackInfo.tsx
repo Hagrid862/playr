@@ -20,8 +20,8 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
   const isLossless = quality === StreamAudioQuality.lossless;
 
   const trackTitle = currentTrack?.title || 'No track selected';
-  const trackArtist = currentTrack?.artists?.map((a) => a.name).join(', ') || 'Unknown Artist';
-  const coverUrl = currentTrack?.album?.cover?.url;
+  const trackArtist = currentTrack?.artists?.join(', ') || 'Unknown Artist';
+  const coverUrl = currentTrack?.albumArt;
 
   return (
     <div

@@ -6,8 +6,8 @@ export function PlayerMobile() {
   const { currentTrack, isPlaying, togglePlay } = usePlayerStore();
 
   const trackTitle = currentTrack?.title || 'No track selected';
-  const trackArtist = currentTrack?.artists?.map((a) => a.name).join(', ') || 'Unknown Artist';
-  const coverUrl = currentTrack?.album?.cover?.url;
+  const trackArtist = currentTrack?.artists?.join(', ') || 'Unknown Artist';
+  const coverUrl = currentTrack?.albumArt;
 
   return (
     <div className="w-full h-full flex items-center justify-between px-2">

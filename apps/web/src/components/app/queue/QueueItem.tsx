@@ -1,11 +1,11 @@
-import React from 'react';
-import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { DotsSixVerticalIcon, MusicNotesIcon, PlayIcon, TrashIcon } from '@phosphor-icons/react';
+import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { DotsSixVerticalIcon, MusicNotesIcon, PlayIcon, TrashIcon } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 export interface QueueItemProps {
   track: PlayrQueueItem;
@@ -24,9 +24,9 @@ export function QueueItemOverlay({ track }: { track: PlayrQueueItem }) {
         style={{ transform: 'scale(0.85)', transformOrigin: 'center center' }}
       >
         <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
-          {track.album?.cover?.url ? (
+          {track.albumArt ? (
             <img
-              src={track.album.cover.url}
+              src={track.albumArt}
               alt={track.title}
               className="h-full w-full object-cover opacity-80"
             />
@@ -39,7 +39,7 @@ export function QueueItemOverlay({ track }: { track: PlayrQueueItem }) {
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-white/60 truncate">{track.title}</div>
           <div className="text-xs text-white/40 truncate">
-            {track.artists?.map((a: { name: string }) => a.name).join(', ')}
+            {track.artists?.join(', ') || 'Unknown Artist'}
           </div>
         </div>
       </div>
@@ -88,9 +88,9 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
       </div>
 
       <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
-        {track.album?.cover?.url ? (
+        {track.albumArt ? (
           <img
-            src={track.album.cover.url}
+            src={track.albumArt}
             alt={track.title}
             className={cn(
               'h-full w-full object-cover transition-opacity',
@@ -126,7 +126,7 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
           {track.title}
         </div>
         <div className="text-xs text-white/50 truncate">
-          {track.artists?.map((a: { name: string }) => a.name).join(', ')}
+          {track.artists?.join(', ') || 'Unknown Artist'}
         </div>
       </div>
       <Button

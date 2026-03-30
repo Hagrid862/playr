@@ -1,6 +1,6 @@
 import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MusicNotesIcon } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface QueueNowPlayingProps {
   currentTrack: PlayrQueueItem | null;
@@ -27,9 +27,9 @@ export function QueueNowPlaying({ currentTrack }: QueueNowPlayingProps) {
           className="group flex items-center gap-3 p-2 rounded-md bg-white/5 border border-white/5 transition-colors hover:bg-white/10"
         >
           <div className="relative h-12 w-12 shrink-0 rounded overflow-hidden bg-stone-800">
-            {currentTrack.album?.cover?.url ? (
+            {currentTrack.albumArt ? (
               <img
-                src={currentTrack.album.cover.url}
+                src={currentTrack.albumArt}
                 alt={currentTrack.title}
                 className="h-full w-full object-cover"
               />
@@ -49,7 +49,7 @@ export function QueueNowPlaying({ currentTrack }: QueueNowPlayingProps) {
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium text-green-500 truncate">{currentTrack.title}</div>
             <div className="text-xs text-white/50 truncate">
-              {currentTrack.artists?.map((a: { name: string }) => a.name).join(', ')}
+              {currentTrack.artists?.join(', ') || 'Unknown Artist'}
             </div>
           </div>
         </motion.div>
