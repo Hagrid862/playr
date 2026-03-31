@@ -407,6 +407,40 @@ describe('usePlayerAudio', () => {
       expect(pauseMock).toHaveBeenCalled();
     });
 
+    it('pauses audio if another device becomes active', async () => {
+      vi.mocked(isPlaybackSyncConnected).mockReturnValue(true);
+      const storeState = {
+        ...defaultStore,
+        isPlaying: true,
+        currentTrack: { id: 'track-1' } as any,
+        activeDeviceId: 'this-device',
+        localPlaybackDeviceId: 'this-device',
+      };
+      vi.mocked(usePlayerStore).mockReturnValue(storeState as PlayerState);
+
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
+      const pauseMock = vi.fn();
+      const audioEl = {
+        pause: pauseMock,
+        src: 'test',
+        readyState: 1,
+        play: vi.fn().mockResolvedValue(undefined),
+      } as any;
+      (result.current.audioRef as any).current = audioEl;
+
+      // First trigger play
+      rerender();
+
+      // Now switch device
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...storeState,
+        activeDeviceId: 'other-device',
+      } as PlayerState);
+
+      rerender();
+      expect(pauseMock).toHaveBeenCalled();
+    });
+
     it('handles play promise rejection (AbortError)', async () => {
       vi.mocked(usePlayerStore).mockReturnValue({
         ...defaultStore,
