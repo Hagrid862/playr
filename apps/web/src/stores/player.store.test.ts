@@ -1,9 +1,22 @@
 import { StreamAudioQuality, type PlaybackTrack, type ZodTrack } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerStore } from './player.store';
 
 import { zodTrackToPlaybackTrack } from '../lib/playback-mappers';
+import * as queueSync from '../lib/playback-queue-sync';
+
+vi.mock('../lib/playback-queue-sync', () => ({
+  emitQueueCommand: vi.fn(),
+  isPlaybackSyncConnected: vi.fn(() => false),
+}));
+
+vi.mock('../lib/playback-sync', () => ({
+  afterLocalPlaybackMutation: vi.fn(),
+  afterLocalPlaybackMutationWithClaim: vi.fn(),
+}));
+
+const getState = () => usePlayerStore.getState();
 
 const createTrack = (id: string, title = 'Test Track'): PlaybackTrack =>
   zodTrackToPlaybackTrack(
@@ -31,7 +44,57 @@ describe('player.store', () => {
     });
   });
 
-  const getState = () => usePlayerStore.getState();
+  describe('Server State Sync', () => {
+    it('applies playback state from server', () => {
+      const stateFromServer: any = {
+        version: 10,
+        favorited: 'favorited',
+        inLibrary: true,
+        activeDeviceId: 'device-1',
+        trackData: {
+          id: 't1',
+          title: 'Title',
+          trackId: 't1',
+          duration: 100,
+          explicit: false,
+          artists: ['Artist'],
+          albumArt: 'art.png',
+          albumName: 'Album',
+          albumId: 'a1',
+        },
+        isPlaying: true,
+        currentTime: 50,
+        volume: 0.8,
+        repeatMode: 'all',
+        shuffle: true,
+        queue: [
+          { queueId: 'q1', track: { id: 't1' }, position: 1 },
+          { queueId: 'q2', track: { id: 't2' }, position: 0 },
+        ],
+      };
+
+      getState().applyPlaybackStateFromServer(stateFromServer);
+
+      const state = getState();
+      expect(state.playbackVersion).toBe(10);
+      expect(state.playbackFavorited).toBe('favorited');
+      expect(state.isPlaying).toBe(true);
+      expect(state.currentTime).toBe(50);
+      expect(state.volume).toBe(0.8);
+      expect(state.repeatMode).toBe('all');
+      expect(state.isShuffled).toBe(true);
+      expect(state.queue[0]?.queueId).toBe('q2'); // Sorted by position
+      expect(state.queue[1]?.queueId).toBe('q1');
+    });
+
+    it('sets local device metadata', () => {
+      getState().setLocalPlaybackDeviceId('my-device');
+      expect(getState().localPlaybackDeviceId).toBe('my-device');
+
+      getState().setPlaybackDevices([{ id: 'd1', name: 'D1' } as any]);
+      expect(getState().playbackDevices).toEqual([{ id: 'd1', name: 'D1' }]);
+    });
+  });
 
   describe('Basic Setters & Simple Actions', () => {
     it('sets volume', () => {
@@ -496,6 +559,190 @@ describe('player.store', () => {
       getState().playTrack(createTrack('1'), [createTrack('1'), createTrack('2')]);
       getState().previousTrack(); // nothing happens
       expect(getState().currentTrack?.id).toBe('1');
+    });
+  });
+
+  describe('Synced Playback Actions', () => {
+    beforeEach(() => {
+      vi.mocked(queueSync.isPlaybackSyncConnected).mockReturnValue(true);
+    });
+
+    it('emits state on playTrack', () => {
+      const track = createTrack('1');
+      getState().playTrack(track);
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:set-state',
+        expect.any(Object),
+      );
+    });
+
+    it('emits queue on setQueue', () => {
+      const tracks = [createTrack('1')];
+      getState().setQueue(tracks);
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:set-queue',
+        expect.any(Object),
+      );
+    });
+
+    it('emits shuffle on toggleShuffle', () => {
+      getState().toggleShuffle();
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:shuffle-queue',
+        expect.any(Object),
+      );
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:set-shuffle-state',
+        expect.any(Object),
+      );
+    });
+
+    it('emits state if already shuffled in toggleShuffle', () => {
+      usePlayerStore.setState({ isShuffled: true });
+      getState().toggleShuffle();
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:set-shuffle-state',
+        expect.any(Object),
+      );
+    });
+
+    it('emits add-queue-item on addToQueue', () => {
+      getState().addToQueue(createTrack('1'));
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:add-queue-item',
+        expect.any(Object),
+      );
+    });
+
+    it('emits remove-queue-item on removeFromQueue', () => {
+      getState().removeFromQueue('uid1');
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:remove-queue-item',
+        expect.any(Object),
+      );
+    });
+
+    it('emits reorder-queue-items on reorderQueue', () => {
+      getState().reorderQueue([]);
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:reorder-queue-items',
+        expect.any(Object),
+      );
+    });
+
+    it('emits add-queue-item on playNext when active', () => {
+      usePlayerStore.setState({
+        currentTrack: createTrack('1'),
+        queue: [{ queueId: 'q1', track: createTrack('1'), position: 0 }],
+      });
+      getState().playNext(createTrack('2'));
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:add-queue-item',
+        expect.objectContaining({ position: 1 }),
+      );
+    });
+
+    it('handles toggleShuffle branch when already shuffled', () => {
+      usePlayerStore.setState({ isShuffled: true, playbackVersion: 1 });
+      getState().toggleShuffle();
+      expect(queueSync.emitQueueCommand).toHaveBeenCalledWith(
+        'command:set-shuffle-state',
+        expect.objectContaining({ shuffle: false }),
+      );
+    });
+
+    it('handles null artists in applyPlaybackStateFromServer branch', () => {
+      getState().applyPlaybackStateFromServer({
+        trackData: { id: '1', title: 'T', artists: null, duration: 100 },
+        version: 1,
+        queue: [],
+      } as any);
+      expect(getState().currentTrack?.artists).toEqual([]);
+    });
+
+    it('playNext appends to originalQueue when NOT shuffled and track not in queue', () => {
+      usePlayerStore.setState({ isShuffled: false, originalQueue: [] });
+      getState().playNext(createTrack('3'));
+      // Line 430: originalQueue should NOT be updated if NOT shuffled and track not found
+      expect(getState().originalQueue).toEqual([]);
+    });
+    it('adds to both reshuffled and original queue if currentTrack is not in queue', () => {
+      vi.mocked(queueSync.isPlaybackSyncConnected).mockReturnValue(false);
+
+      const { playNext } = usePlayerStore.getState();
+      const track1 = {
+        id: 't1',
+        title: 'T1',
+        trackId: 'tr1',
+        artists: ['A1'],
+        albumName: 'AL1',
+        albumId: 'aid1',
+        albumArt: null,
+        duration: 100,
+        explicit: false,
+      };
+      const track2 = {
+        id: 't2',
+        title: 'T2',
+        trackId: 'tr2',
+        artists: ['A2'],
+        albumName: 'AL2',
+        albumId: 'aid2',
+        albumArt: null,
+        duration: 100,
+        explicit: false,
+      };
+
+      usePlayerStore.setState({
+        currentTrack: track1 as any,
+        queue: [],
+        originalQueue: [],
+        isShuffled: true,
+      });
+
+      playNext(track2 as any);
+
+      const state = usePlayerStore.getState();
+      expect(state.queue).toHaveLength(1);
+      expect(state.originalQueue).toHaveLength(1);
+    });
+
+    it('playNext with shuffle false and currentTrack not in queue', () => {
+      vi.mocked(queueSync.isPlaybackSyncConnected).mockReturnValue(false);
+      const track1 = {
+        id: 't1',
+        title: 'T1',
+        trackId: 'tr1',
+        artists: ['A1'],
+        albumName: 'AL1',
+        albumId: 'aid1',
+        albumArt: null,
+        duration: 100,
+        explicit: false,
+      };
+      const track2 = {
+        id: 't2',
+        title: 'T2',
+        trackId: 'tr2',
+        artists: ['A2'],
+        albumName: 'AL2',
+        albumId: 'aid2',
+        albumArt: null,
+        duration: 100,
+        explicit: false,
+      };
+
+      usePlayerStore.setState({
+        currentTrack: track1 as any,
+        queue: [],
+        originalQueue: [],
+        isShuffled: false,
+      });
+
+      getState().playNext(track2 as any);
+
+      expect(getState().queue).toHaveLength(1);
+      expect(getState().originalQueue).toHaveLength(0);
     });
   });
 });
