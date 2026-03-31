@@ -30,7 +30,11 @@ describe('playback-queue-sync', () => {
 
       await emitQueueCommand('test', { expectedVersion: 1 });
 
-      expect(socket.emit).toHaveBeenCalledWith('test', { expectedVersion: 1 }, expect.any(Function));
+      expect(socket.emit).toHaveBeenCalledWith(
+        'test',
+        { expectedVersion: 1 },
+        expect.any(Function),
+      );
       expect(applyStateFromServer).toHaveBeenCalledWith({ version: 2 });
     });
 
@@ -66,7 +70,11 @@ describe('playback-queue-sync', () => {
 
       await expect(emitQueueCommand('test', { expectedVersion: 1 })).rejects.toThrow('some error');
 
-      expect(socket.emit).not.toHaveBeenCalledWith('query:get-state', expect.any(Object), expect.any(Function));
+      expect(socket.emit).not.toHaveBeenCalledWith(
+        'query:get-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('handles null payload on conflict resync', async () => {

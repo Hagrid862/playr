@@ -127,7 +127,9 @@ describe('QueueItem', () => {
         position: 0,
       };
 
-      customRender(<QueueItemComponent track={noArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
+      customRender(
+        <QueueItemComponent track={noArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />,
+      );
       expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
     });
 

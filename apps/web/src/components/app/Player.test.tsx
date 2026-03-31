@@ -147,7 +147,10 @@ describe('AppPlayer', () => {
     });
 
     it('does not emit sync on seek commit when playbackVersion is 0', () => {
-      vi.mocked(usePlayerStore).mockReturnValue({ currentTrack: { id: 't1' }, playbackVersion: 0 } as any);
+      vi.mocked(usePlayerStore).mockReturnValue({
+        currentTrack: { id: 't1' },
+        playbackVersion: 0,
+      } as any);
       vi.mocked(useIsMobile).mockReturnValue(false);
       customRender(<AppPlayer />);
       fireEvent.click(screen.getByText('Commit Seek'));
