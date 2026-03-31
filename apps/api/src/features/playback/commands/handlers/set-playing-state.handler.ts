@@ -21,6 +21,9 @@ export class SetPlayingStateHandler implements ICommandHandler<SetPlayingStateCo
       return {
         ...current,
         isPlaying,
+        activeDeviceId: isPlaying ? command.playbackDeviceId : current.activeDeviceId,
+        deviceName: isPlaying ? command.playbackDeviceName : current.deviceName,
+        deviceIcon: isPlaying ? command.playbackDeviceIcon : current.deviceIcon,
       };
     });
   }
