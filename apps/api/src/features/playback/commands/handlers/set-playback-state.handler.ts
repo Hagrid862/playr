@@ -18,7 +18,7 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       userId: command.userId,
     };
 
-    const expectedVersion = command.request.expectedVersion ?? 0;
+    const { expectedVersion = 0, claimActiveDevice = true } = command.request;
 
     const serialized = PlaybackStatePayloadSchema.safeParse(state);
     if (!serialized.success) {
@@ -30,7 +30,7 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
     }
 
     if (expectedVersion === 0) {
-      const firstState = command.request.claimActiveDevice
+      const firstState = claimActiveDevice
         ? {
             ...serialized.data,
             activeDeviceId: command.playbackDeviceId,
@@ -43,15 +43,9 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       return this.persistence.applyMutation(command.userId, expectedVersion, (current) => ({
         ...current,
         ...serialized.data,
-        activeDeviceId: command.request.claimActiveDevice
-          ? command.playbackDeviceId
-          : current.activeDeviceId,
-        deviceName: command.request.claimActiveDevice
-          ? command.playbackDeviceName
-          : current.deviceName,
-        deviceIcon: command.request.claimActiveDevice
-          ? command.playbackDeviceIcon
-          : current.deviceIcon,
+        activeDeviceId: claimActiveDevice ? command.playbackDeviceId : current.activeDeviceId,
+        deviceName: claimActiveDevice ? command.playbackDeviceName : current.deviceName,
+        deviceIcon: claimActiveDevice ? command.playbackDeviceIcon : current.deviceIcon,
       }));
     }
   }
