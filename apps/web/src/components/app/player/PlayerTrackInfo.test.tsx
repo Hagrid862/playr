@@ -20,7 +20,10 @@ vi.mock('@/components/ui/slider', () => ({
       onMouseLeave={onMouseLeave}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
-      onClick={() => onChange(50)}
+      onClick={() => {
+        onChange(50);
+        onPointerUp?.();
+      }}
     >
       slider value: {value}
     </button>
@@ -32,6 +35,7 @@ describe('PlayerTrackInfo', () => {
   const formatTime = vi.fn((t) => `time:${t}`);
   const formatTimeLeft = vi.fn((t, d) => `left:${d - t}`);
   const onSeek = vi.fn();
+  const onSeekCommit = vi.fn();
 
   const buildState = (overrides: Partial<PlayerState> = {}): PlayerState =>
     createPlayerStateMock({
@@ -50,7 +54,12 @@ describe('PlayerTrackInfo', () => {
 
   const renderTrackInfo = () =>
     customRender(
-      <PlayerTrackInfo formatTime={formatTime} formatTimeLeft={formatTimeLeft} onSeek={onSeek} />,
+      <PlayerTrackInfo
+        formatTime={formatTime}
+        formatTimeLeft={formatTimeLeft}
+        onSeek={onSeek}
+        onSeekCommit={onSeekCommit}
+      />,
     );
 
   describe('empty state', () => {
@@ -87,12 +96,12 @@ describe('PlayerTrackInfo', () => {
       expect(screen.getByText('Artist A')).toBeInTheDocument();
 
       fireEvent.pointerDown(slider);
-      fireEvent.pointerUp(slider);
       fireEvent.mouseEnter(slider);
       fireEvent.mouseLeave(slider);
 
       fireEvent.click(slider);
       expect(onSeek).toHaveBeenCalledWith(50);
+      expect(onSeekCommit).toHaveBeenCalledWith(50);
       expect(setCurrentTime).toHaveBeenCalledWith(50);
     });
 

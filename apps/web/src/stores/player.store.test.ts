@@ -1,10 +1,14 @@
-import { StreamAudioQuality, ZodTrack } from '@repo/contracts';
+import { StreamAudioQuality, type PlaybackTrack, type ZodTrack } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePlayerStore } from './player.store';
 
-const createTrack = (id: string, title = 'Test Track'): ZodTrack =>
-  trackBuilder({ id, title, visibility: 'public', albumId: 'test-album' });
+import { zodTrackToPlaybackTrack } from '../lib/playback-mappers';
+
+const createTrack = (id: string, title = 'Test Track'): PlaybackTrack =>
+  zodTrackToPlaybackTrack(
+    trackBuilder({ id, title, visibility: 'public', albumId: 'test-album' }) as ZodTrack,
+  );
 
 describe('player.store', () => {
   beforeEach(() => {
@@ -145,7 +149,7 @@ describe('player.store', () => {
       getState().playTrack(secondTrack);
 
       expect(getState().history.length).toBe(1);
-      expect(getState().history[0]?.id).toBe('first');
+      expect(getState().history[0]?.track.id).toBe('first');
     });
   });
 
@@ -200,7 +204,7 @@ describe('player.store', () => {
       getState().addToQueue(createTrack('2'));
       const state = getState();
       expect(state.queue.length).toBe(2);
-      expect(state.queue[1]?.id).toBe('2');
+      expect(state.queue[1]?.track.id).toBe('2');
     });
 
     it('removes from queue', () => {
@@ -209,7 +213,7 @@ describe('player.store', () => {
 
       getState().removeFromQueue(uniqueIdToRemove!);
       expect(getState().queue.length).toBe(1);
-      expect(getState().queue[0]?.id).toBe('1');
+      expect(getState().queue[0]?.track.id).toBe('1');
     });
 
     it('reorders queue', () => {
@@ -236,9 +240,9 @@ describe('player.store', () => {
 
       const q = getState().queue;
       expect(q.length).toBe(3);
-      expect(q[0]?.id).toBe('1');
-      expect(q[1]?.id).toBe('2'); // inserted Next
-      expect(q[2]?.id).toBe('3');
+      expect(q[0]?.track.id).toBe('1');
+      expect(q[1]?.track.id).toBe('2'); // inserted Next
+      expect(q[2]?.track.id).toBe('3');
     });
 
     it('appends it if current track is not found in queue (weird state)', () => {
@@ -406,7 +410,7 @@ describe('player.store', () => {
 
       // Artificially remove current track from queue but keep it as currentTrack
       usePlayerStore.setState((state) => ({
-        queue: state.queue.filter((t) => t.id !== '1'),
+        queue: state.queue.filter((t) => t.track.id !== '1'),
       }));
 
       getState().playNext(track3); // Should hit line 229

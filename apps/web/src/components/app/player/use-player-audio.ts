@@ -1,8 +1,10 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player.store';
-import { isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { StreamAudioQuality } from '@repo/contracts';
 import { useEffect, useRef } from 'react';
+
+const PLAYBACK_TIME_SYNC_INTERVAL_MS = 1500;
 
 /**
  * Hook to manage audio element synchronization with player store
@@ -10,6 +12,8 @@ import { useEffect, useRef } from 'react';
 export function usePlayerAudio() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const timeToRestoreRef = useRef<number | null>(null);
+  const lastTimeSyncAtRef = useRef<number>(0);
+  const lastSyncedSecondRef = useRef<number | null>(null);
   const {
     currentTrack,
     isPlaying,
@@ -25,6 +29,7 @@ export function usePlayerAudio() {
     setAvailableQualities,
     activeDeviceId,
     localPlaybackDeviceId,
+    playbackVersion,
   } = usePlayerStore();
 
   const { accessToken } = useAuthStore();
@@ -126,12 +131,45 @@ export function usePlayerAudio() {
     }
   }, [currentTime]);
 
+  useEffect(() => {
+    lastSyncedSecondRef.current = null;
+    lastTimeSyncAtRef.current = 0;
+  }, [currentTrack?.id, activeDeviceId, localPlaybackDeviceId, isPlaying]);
+
   const handleTimeUpdate = () => {
+    const audio = audioRef.current;
     const shouldOutputAudio =
       !isPlaybackSyncConnected() || !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
-    if (audioRef.current && shouldOutputAudio) {
-      setCurrentTime(audioRef.current.currentTime);
+    if (!audio || !shouldOutputAudio) {
+      return;
     }
+
+    const localCurrentTime = audio.currentTime;
+    setCurrentTime(localCurrentTime);
+
+    if (
+      !isPlaybackSyncConnected() ||
+      !isPlaying ||
+      !currentTrack ||
+      !activeDeviceId ||
+      activeDeviceId !== localPlaybackDeviceId ||
+      playbackVersion === 0
+    ) {
+      return;
+    }
+
+    const currentSecond = Math.floor(localCurrentTime);
+    const now = Date.now();
+    if (
+      lastSyncedSecondRef.current === currentSecond ||
+      now - lastTimeSyncAtRef.current < PLAYBACK_TIME_SYNC_INTERVAL_MS
+    ) {
+      return;
+    }
+
+    lastSyncedSecondRef.current = currentSecond;
+    lastTimeSyncAtRef.current = now;
+    void emitCurrentTimeSync(localCurrentTime);
   };
 
   const handleLoadedMetadata = () => {

@@ -1,4 +1,6 @@
 import { useIsMobile } from '@/hooks/use-mobile';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { usePlayerStore } from '@/stores/player.store';
 import { PlayerActions } from './player/PlayerActions';
 import { PlayerControls } from './player/PlayerControls';
 import { PlayerMobile } from './player/PlayerMobile';
@@ -7,6 +9,7 @@ import { usePlayerAudio } from './player/use-player-audio';
 
 export function AppPlayer() {
   const isMobile = useIsMobile();
+  const { currentTrack, playbackVersion } = usePlayerStore();
   const {
     audioRef,
     handleTimeUpdate,
@@ -21,6 +24,14 @@ export function AppPlayer() {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
     }
+  };
+
+  const handleSeekCommit = (time: number) => {
+    if (!isPlaybackSyncConnected() || !currentTrack || playbackVersion === 0) {
+      return;
+    }
+
+    void emitCurrentTimeSync(time);
   };
 
   return (
@@ -46,6 +57,7 @@ export function AppPlayer() {
             formatTime={formatTime}
             formatTimeLeft={formatTimeLeft}
             onSeek={handleSeek}
+            onSeekCommit={handleSeekCommit}
           />
 
           {/* Island 3: Actions (Right) */}

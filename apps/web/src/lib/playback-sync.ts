@@ -6,11 +6,20 @@ import type {
   ListPlaybackDevicesResponse,
   PlaybackState,
   SetActiveDeviceRequest,
+  SetCurrentTimeStateRequest,
   SetPlaybackStateRequest,
 } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
+
+function isVersionConflict(errorMessage: string, code?: string): boolean {
+  return code === 'CONFLICT' || errorMessage.includes('version mismatch');
+}
+
+function clampCurrentTime(currentTime: number, duration: number): number {
+  return Math.min(Math.max(0, Math.floor(currentTime)), duration);
+}
 
 function buildSetStateBody(
   trackData: ReturnType<typeof zodTrackToPlaybackTrack>,
@@ -145,6 +154,41 @@ export function listPlaybackDevices(): Promise<void> {
       usePlayerStore.getState().setPlaybackDevices(result.devices);
       resolve();
     });
+  });
+}
+
+export function emitCurrentTimeSync(currentTime: number): Promise<void> {
+  if (!isPlaybackSocketConnected()) return Promise.resolve();
+
+  const { currentTrack, playbackVersion } = usePlayerStore.getState();
+  if (!currentTrack || playbackVersion === 0) return Promise.resolve();
+
+  const payload: SetCurrentTimeStateRequest = {
+    currentTime: clampCurrentTime(currentTime, currentTrack.duration),
+    expectedVersion: playbackVersion,
+  };
+
+  return new Promise((resolve) => {
+    socket!.emit(
+      'command:set-current-time-state',
+      payload,
+      (result: PlaybackState | { error?: string; code?: string }) => {
+        if (result && typeof result === 'object' && 'error' in result && result.error) {
+          if (isVersionConflict(result.error, result.code)) {
+            socket!.emit('query:get-state', {}, (state: PlaybackState | null) => {
+              if (state) applyStateFromServer(state);
+            });
+          }
+          resolve();
+          return;
+        }
+
+        if (result) {
+          applyStateFromServer(result as PlaybackState);
+        }
+        resolve();
+      },
+    );
   });
 }
 
