@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { PlaybackState } from '@repo/contracts';
+import type { PlaybackState, QueueItem } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
@@ -41,7 +41,13 @@ describe('SetQueueHandler', () => {
   it('updates the queue items', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetQueueHandler(persistence);
-    const newQueue = [{ track: initialState.trackData, position: 0 }];
+    const newQueue: QueueItem[] = [
+      {
+        queueId: '018f0914-6ac3-7faa-8000-000000000001',
+        track: initialState.trackData,
+        position: 0,
+      },
+    ];
     const command = new SetQueueCommand(userId, sessionId, {
       items: newQueue,
       expectedVersion: 1,
