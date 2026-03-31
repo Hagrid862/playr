@@ -110,6 +110,31 @@ describe('History', () => {
       expect(mockPlayTrack).toHaveBeenCalledWith(track.track);
     });
 
+    it('renders placeholder when albumArt is missing', () => {
+      const track = {
+        queueId: '1',
+        track: {
+          id: '1',
+          title: 'No Art Track',
+          artists: ['Artist'],
+          albumArt: null,
+        },
+      } as any;
+      vi.mocked(usePlayerStore).mockReturnValue(
+        createPlayerStateMock({
+          history: [track],
+          playTrack: mockPlayTrack,
+          toggleQueue: mockToggleQueue,
+        }),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+      expect(screen.getByText('No Art Track')).toBeInTheDocument();
+      // Should find the placeholder icon container
+      const icon = document.querySelector('svg');
+      expect(icon).toBeInTheDocument();
+    });
+
     it('handles load more functionality', () => {
       const history = Array.from({ length: 25 }).map((_, i) => ({
         queueId: String(i),

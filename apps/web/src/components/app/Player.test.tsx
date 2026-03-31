@@ -5,9 +5,20 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppPlayer } from './Player';
 import { usePlayerAudio } from './player/use-player-audio';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { usePlayerStore } from '@/stores/player.store';
 
 vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: vi.fn(),
+}));
+
+vi.mock('@/lib/playback-sync', () => ({
+  emitCurrentTimeSync: vi.fn(),
+  isPlaybackSyncConnected: vi.fn(),
+}));
+
+vi.mock('@/stores/player.store', () => ({
+  usePlayerStore: vi.fn(),
 }));
 
 vi.mock('./player/use-player-audio', () => ({
@@ -24,10 +35,19 @@ vi.mock('./player/PlayerMobile', () => ({
   PlayerMobile: () => <div data-testid="player-mobile" />,
 }));
 vi.mock('./player/PlayerTrackInfo', () => ({
-  PlayerTrackInfo: ({ onSeek }: { onSeek: (time: number) => void }) => (
+  PlayerTrackInfo: ({
+    onSeek,
+    onSeekCommit,
+  }: {
+    onSeek: (time: number) => void;
+    onSeekCommit: (time: number) => void;
+  }) => (
     <div data-testid="player-track-info">
       <button type="button" onClick={() => onSeek(42)}>
         Seek
+      </button>
+      <button type="button" onClick={() => onSeekCommit(42)}>
+        Commit Seek
       </button>
     </div>
   ),
@@ -49,6 +69,11 @@ describe('AppPlayer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(usePlayerAudio).mockReturnValue(mockUsePlayerAudio);
+    vi.mocked(usePlayerStore).mockReturnValue({
+      currentTrack: { id: 'track-1' },
+      playbackVersion: 1,
+    } as any);
+    vi.mocked(isPlaybackSyncConnected).mockReturnValue(true);
   });
 
   describe('layout', () => {
@@ -96,6 +121,37 @@ describe('AppPlayer', () => {
       expect(() => {
         fireEvent.click(screen.getByText('Seek'));
       }).not.toThrow();
+    });
+
+    it('emits sync on seek commit when connected', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      customRender(<AppPlayer />);
+      fireEvent.click(screen.getByText('Commit Seek'));
+      expect(emitCurrentTimeSync).toHaveBeenCalledWith(42);
+    });
+
+    it('does not emit sync on seek commit when disconnected', () => {
+      vi.mocked(isPlaybackSyncConnected).mockReturnValue(false);
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      customRender(<AppPlayer />);
+      fireEvent.click(screen.getByText('Commit Seek'));
+      expect(emitCurrentTimeSync).not.toHaveBeenCalled();
+    });
+
+    it('does not emit sync on seek commit when missing currentTrack', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({ currentTrack: null, playbackVersion: 1 } as any);
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      customRender(<AppPlayer />);
+      fireEvent.click(screen.getByText('Commit Seek'));
+      expect(emitCurrentTimeSync).not.toHaveBeenCalled();
+    });
+
+    it('does not emit sync on seek commit when playbackVersion is 0', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({ currentTrack: { id: 't1' }, playbackVersion: 0 } as any);
+      vi.mocked(useIsMobile).mockReturnValue(false);
+      customRender(<AppPlayer />);
+      fireEvent.click(screen.getByText('Commit Seek'));
+      expect(emitCurrentTimeSync).not.toHaveBeenCalled();
     });
   });
 

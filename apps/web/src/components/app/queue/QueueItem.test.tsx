@@ -110,6 +110,27 @@ describe('QueueItem', () => {
       expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
     });
 
+    it('renders "Unknown Artist" when artists is missing', () => {
+      const noArtistTrack: QueueItem = {
+        queueId: '4',
+        track: {
+          id: '4',
+          trackId: '4',
+          title: 'No Artist Song',
+          artists: [],
+          albumArt: '',
+          albumName: 'Test Album',
+          albumId: '1',
+          duration: 100,
+          explicit: false,
+        },
+        position: 0,
+      };
+
+      customRender(<QueueItemComponent track={noArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
+      expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
+    });
+
     it('disables hover styles when isDragActive is true', () => {
       const { container } = customRender(
         <QueueItemComponent
@@ -249,6 +270,27 @@ describe('QueueItemOverlay', () => {
 
       customRender(<QueueItemOverlay track={multiArtistTrack as QueueItem} />);
       expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
+    });
+
+    it('renders "Unknown Artist" when artists is missing', () => {
+      const noArtistTrack: QueueItem = {
+        queueId: '4',
+        track: {
+          id: '4',
+          trackId: '4',
+          title: 'No Artist Song',
+          artists: [],
+          albumArt: '',
+          albumName: 'Test Album',
+          albumId: '1',
+          duration: 100,
+          explicit: false,
+        },
+        position: 0,
+      };
+
+      customRender(<QueueItemOverlay track={noArtistTrack as QueueItem} />);
+      expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
     });
   });
 });
