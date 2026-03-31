@@ -220,7 +220,13 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (context) => new SetCurrentTimeStateCommand(context.userId, context.sessionId, data),
+      (context) =>
+        new SetCurrentTimeStateCommand(
+          context.userId,
+          context.sessionId,
+          context.playbackDeviceId,
+          data,
+        ),
     );
   }
 
