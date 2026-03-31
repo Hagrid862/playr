@@ -1,8 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from '@/common/types/jwt.types';
 import { Test, TestingModule } from '@nestjs/testing';
-import { refreshTokenBuilder, sessionBuilder } from '@repo/testing/builders';
+import { refreshTokenBuilder, sessionBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RefreshTokenRepository } from '../../../shared/repositories/refresh-token.repository';
@@ -207,6 +208,134 @@ describe('TokenService', () => {
       const promise = service.verifyRefreshToken(mockToken);
       await expect(promise).rejects.toThrow(UnauthorizedException);
       await expect(promise).rejects.toThrow('Invalid token');
+    });
+
+    it("should throw UnauthorizedException if session user doesn't match payload userUID", async () => {
+      // Arrange
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+      refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
+      sessionRepository.getById.mockResolvedValue(sessionBuilder({ userId: 'other-user' }));
+
+      // Act & Assert
+      const promise = service.verifyRefreshToken(mockToken);
+      await expect(promise).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('verifyAccessToken', () => {
+    const mockToken = 'access-token';
+    const mockPayload: JwtPayload = {
+      sub: 'user-123',
+      sessionId: 'session-123',
+      username: 'john',
+      iat: 1,
+      exp: 2,
+    };
+
+    it('should return payload for a valid access token', async () => {
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+
+      const result = await service.verifyAccessToken(mockToken);
+
+      expect(result).toEqual(mockPayload);
+      expect(configService.getOrThrow).toHaveBeenCalledWith('JWT_ACCESS_SECRET');
+    });
+
+    it('should throw UnauthorizedException if sub is missing in payload', async () => {
+      jwtService.verifyAsync.mockResolvedValue({
+        sessionId: 'session-123',
+        username: 'john',
+        iat: 1,
+        exp: 2,
+      });
+
+      await expect(service.verifyAccessToken(mockToken)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if sessionId is missing in payload', async () => {
+      jwtService.verifyAsync.mockResolvedValue({
+        sub: 'user-123',
+        username: 'john',
+        iat: 1,
+        exp: 2,
+      });
+
+      await expect(service.verifyAccessToken(mockToken)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if verification fails', async () => {
+      jwtService.verifyAsync.mockRejectedValue(new Error('Invalid signature'));
+
+      await expect(service.verifyAccessToken(mockToken)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should rethrow UnauthorizedException', async () => {
+      jwtService.verifyAsync.mockRejectedValue(new UnauthorizedException('Specific reason'));
+
+      await expect(service.verifyAccessToken(mockToken)).rejects.toThrow('Specific reason');
+    });
+  });
+
+  describe('toAuthenticatedUser', () => {
+    const mockPayload: JwtPayload = {
+      sub: 'user-123',
+      sessionId: 'session-123',
+      username: 'john',
+      iat: 1,
+      exp: 2,
+    };
+    const mockUser = userBuilder({ id: 'user-123' });
+    const mockSession = sessionBuilder({ id: 'session-123', userId: 'user-123' });
+
+    it('should return authenticated user for valid payload', async () => {
+      sessionRepository.getById.mockResolvedValue(mockSession);
+      userRepository.getById.mockResolvedValue(mockUser);
+
+      const result = await service.toAuthenticatedUser(mockPayload);
+
+      expect(result).toEqual({ user: mockUser, sessionId: 'session-123' });
+    });
+
+    it('should throw UnauthorizedException if session is missing', async () => {
+      sessionRepository.getById.mockResolvedValue(null);
+
+      await expect(service.toAuthenticatedUser(mockPayload)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if session belongs to another user', async () => {
+      sessionRepository.getById.mockResolvedValue(sessionBuilder({ userId: 'another-user' }));
+
+      await expect(service.toAuthenticatedUser(mockPayload)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if user is missing', async () => {
+      sessionRepository.getById.mockResolvedValue(mockSession);
+      userRepository.getById.mockResolvedValue(null);
+
+      await expect(service.toAuthenticatedUser(mockPayload)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('authenticateWithAccessToken', () => {
+    const mockToken = 'access-token';
+    const mockPayload: JwtPayload = {
+      sub: 'user-123',
+      sessionId: 'session-123',
+      username: 'john',
+      iat: 1,
+      exp: 2,
+    };
+    const mockUser = userBuilder({ id: 'user-123' });
+    const mockSession = sessionBuilder({ id: 'session-123', userId: 'user-123' });
+
+    it('should authenticate user with valid access token', async () => {
+      jwtService.verifyAsync.mockResolvedValue(mockPayload);
+      sessionRepository.getById.mockResolvedValue(mockSession);
+      userRepository.getById.mockResolvedValue(mockUser);
+
+      const result = await service.authenticateWithAccessToken(mockToken);
+
+      expect(result).toEqual({ user: mockUser, sessionId: 'session-123' });
     });
   });
 });

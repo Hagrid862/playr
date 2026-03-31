@@ -107,7 +107,7 @@ describe('History', () => {
 
       customRender(<History isVisible={true} onBack={mockOnBack} />);
       fireEvent.click(screen.getByText('Track 1'));
-      expect(mockPlayTrack).toHaveBeenCalledWith(track);
+      expect(mockPlayTrack).toHaveBeenCalledWith(track.track);
     });
 
     it('handles load more functionality', () => {
