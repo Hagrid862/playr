@@ -31,6 +31,7 @@ describe('usePlayerAudio', () => {
   const setCurrentTime = vi.fn();
   const setDuration = vi.fn();
   const nextTrack = vi.fn();
+  const pause = vi.fn();
 
   const defaultStore: Partial<PlayerState> = {
     currentTrack: null,
@@ -41,8 +42,10 @@ describe('usePlayerAudio', () => {
     setCurrentTime,
     setDuration,
     nextTrack,
+    pause,
     repeatMode: 'off',
     setAvailableQualities,
+    queue: [],
   };
 
   const defaultAuthStore = { accessToken: 'test-token' };
@@ -177,10 +180,43 @@ describe('usePlayerAudio', () => {
   });
 
   describe('handleTrackEnd', () => {
-    it('calls nextTrack on track end when not repeat one', () => {
+    it('calls nextTrack on track end when repeat is off and track has a next item', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        repeatMode: 'off',
+        currentTrack: { id: 'track-1' } as unknown,
+        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+      } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
       expect(nextTrack).toHaveBeenCalled();
+      expect(pause).not.toHaveBeenCalled();
+    });
+
+    it('pauses on track end when repeat is off and current track is the last item', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        repeatMode: 'off',
+        currentTrack: { id: 'track-2' } as unknown,
+        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+      } as PlayerState);
+      const { result } = customRenderHook(() => usePlayerAudio());
+      result.current.handleTrackEnd();
+      expect(pause).toHaveBeenCalled();
+      expect(nextTrack).not.toHaveBeenCalled();
+    });
+
+    it('calls nextTrack on track end when repeat is all and current track is last', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        repeatMode: 'all',
+        currentTrack: { id: 'track-2' } as unknown,
+        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+      } as PlayerState);
+      const { result } = customRenderHook(() => usePlayerAudio());
+      result.current.handleTrackEnd();
+      expect(nextTrack).toHaveBeenCalled();
+      expect(pause).not.toHaveBeenCalled();
     });
 
     it('handles track end when repeatMode is one', () => {
