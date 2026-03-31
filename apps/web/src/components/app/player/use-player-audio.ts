@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player.store';
+import { isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { StreamAudioQuality } from '@repo/contracts';
 import { useEffect, useRef } from 'react';
 
@@ -22,6 +23,8 @@ export function usePlayerAudio() {
     pause,
     repeatMode,
     setAvailableQualities,
+    activeDeviceId,
+    localPlaybackDeviceId,
   } = usePlayerStore();
 
   const { accessToken } = useAuthStore();
@@ -77,9 +80,11 @@ export function usePlayerAudio() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    const shouldOutputAudio =
+      !isPlaybackSyncConnected() || !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
 
     // If not playing, always try to pause (even if src is not loaded yet)
-    if (!isPlaying) {
+    if (!isPlaying || !shouldOutputAudio) {
       audio.pause();
       return;
     }
@@ -105,7 +110,7 @@ export function usePlayerAudio() {
     };
 
     playPromise();
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId]);
 
   // Sync volume
   useEffect(() => {
@@ -122,7 +127,9 @@ export function usePlayerAudio() {
   }, [currentTime]);
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
+    const shouldOutputAudio =
+      !isPlaybackSyncConnected() || !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
+    if (audioRef.current && shouldOutputAudio) {
       setCurrentTime(audioRef.current.currentTime);
     }
   };

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { listPlaybackDevices, setActivePlaybackDevice } from '@/lib/playback-sync';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
@@ -19,12 +20,15 @@ import {
   DotsThreeIcon,
   QueueIcon,
   QuotesIcon,
+  CheckIcon,
   SpeakerHighIcon,
   StarIcon,
   SparkleIcon,
 } from '@phosphor-icons/react';
+import { useState } from 'react';
 
 export function PlayerActions() {
+  const [isDevicePopoverOpen, setIsDevicePopoverOpen] = useState(false);
   const {
     volume,
     setVolume,
@@ -35,6 +39,8 @@ export function PlayerActions() {
     quality,
     setQuality,
     availableQualities,
+    playbackDevices,
+    activeDeviceId,
   } = usePlayerStore();
 
   const hasLossless = availableQualities.includes(StreamAudioQuality.lossless);
@@ -168,7 +174,15 @@ export function PlayerActions() {
         <QueueIcon size={20} />
       </Button>
 
-      <Popover>
+      <Popover
+        open={isDevicePopoverOpen}
+        onOpenChange={(open) => {
+          setIsDevicePopoverOpen(open);
+          if (open) {
+            void listPlaybackDevices();
+          }
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             size="icon"
@@ -182,9 +196,36 @@ export function PlayerActions() {
         <PopoverContent
           side="top"
           align="end"
-          className="w-40 bg-stone-900/95 backdrop-blur-xl border-white/10 p-3 mb-2 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+          className="w-72 bg-stone-900/95 backdrop-blur-xl border-white/10 p-3 mb-2 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
           sideOffset={16}
         >
+          <div className="mb-2">
+            <div className="text-xs font-medium text-white/70 mb-2">Play on</div>
+            <div className="space-y-1">
+              {playbackDevices.length === 0 ? (
+                <div className="text-xs text-white/40 px-2 py-1">No devices connected</div>
+              ) : (
+                playbackDevices.map((device) => (
+                  <button
+                    key={device.deviceId}
+                    type="button"
+                    className={cn(
+                      'w-full flex items-center justify-between rounded px-2 py-1.5 text-sm transition-colors',
+                      device.deviceId === activeDeviceId
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/70 hover:text-white hover:bg-white/5',
+                    )}
+                    onClick={() => void setActivePlaybackDevice(device.deviceId)}
+                  >
+                    <span className="truncate">{device.deviceName}</span>
+                    {device.deviceId === activeDeviceId ? <CheckIcon size={14} /> : null}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="h-px bg-white/10 my-2" />
+          <div className="text-xs font-medium text-white/70 mb-2">Volume</div>
           <Slider
             value={volume * 100}
             min={0}
