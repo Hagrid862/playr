@@ -3,6 +3,7 @@ import { PlaybackTrackSchema, QueueItemSchema } from "./playback-track.schema";
 
 export const PlaybackStateSchema = z.object({
   sessionId: z.string().nonempty(),
+  activeDeviceId: z.string().default(""),
   userId: z.string().nonempty(),
   deviceName: z.string(),
   deviceIcon: z.enum([
