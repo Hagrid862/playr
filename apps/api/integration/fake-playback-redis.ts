@@ -38,14 +38,14 @@ class FakePlaybackRedisDup {
   multi(): {
     set: (key: string, value: string) => { exec: () => Promise<[null, string][] | null> };
   } {
-    this.pendingMultiSets = [];
-    const dup = this;
-    const pending = this.pendingMultiSets;
+    // Capture a stable reference so `exec()` always runs against the queued mutations.
+    const pendingSets: PendingSet[] = [];
+    this.pendingMultiSets = pendingSets;
     return {
-      set(key: string, value: string) {
-        pending!.push({ key: prefixedKey(key), value });
+      set: (key: string, value: string) => {
+        pendingSets.push({ key: prefixedKey(key), value });
         return {
-          exec: () => dup.execMulti(pending!),
+          exec: () => this.execMulti(pendingSets),
         };
       },
     };
@@ -112,7 +112,10 @@ export class FakePlaybackRedis {
     return 1;
   }
 
-  async expire(_key: string, _seconds: number): Promise<number> {
+  async expire(key: string, seconds: number): Promise<number> {
+    // The fake doesn't implement TTLs; we just acknowledge the call.
+    void key;
+    void seconds;
     return 1;
   }
 
