@@ -1,6 +1,6 @@
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player.store';
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { StreamAudioQuality } from '@repo/contracts';
 import { useEffect, useRef } from 'react';
 

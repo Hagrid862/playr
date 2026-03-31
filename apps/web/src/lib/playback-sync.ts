@@ -78,6 +78,14 @@ export function connectPlaybackSync(accessToken: string) {
     applyStateFromServer(state);
   });
 
+  socket.on('event:current-time-updated', (payload: { currentTime: number; version: number }) => {
+    // Time-only update: avoid reapplying the full server snapshot on every tick.
+    usePlayerStore.setState({
+      playbackVersion: payload.version,
+      currentTime: payload.currentTime,
+    });
+  });
+
   socket.on('connect_error', (err: Error) => {
     console.error('[playback] connect_error', err.message);
   });
@@ -184,7 +192,13 @@ export function emitCurrentTimeSync(currentTime: number): Promise<void> {
         }
 
         if (result) {
-          applyStateFromServer(result as PlaybackState);
+          // Ack for `command:set-current-time-state` only mutates `currentTime`;
+          // avoid reapplying the full snapshot on every time tick.
+          const state = result as PlaybackState;
+          usePlayerStore.setState({
+            playbackVersion: state.version,
+            currentTime: state.currentTime,
+          });
         }
         resolve();
       },
