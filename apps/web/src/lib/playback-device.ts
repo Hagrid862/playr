@@ -2,9 +2,23 @@ import type { PlaybackState } from '@repo/contracts';
 
 const DEVICE_ID_KEY = 'playr_playback_device_id';
 
+/** Exported for unit tests. Desktop only; call after ruling out mobile. */
+export function detectDesktopBrowserFromUserAgent(ua: string): string {
+  if (ua.includes('Edg/')) return 'Edge';
+  if (ua.includes('Brave/')) return 'Brave';
+  if (ua.includes('Firefox/')) return 'Firefox';
+  if (ua.includes('Chrome/') || ua.includes('Chromium/')) return 'Chrome';
+  if (ua.includes('Safari/') && !ua.includes('Chrome') && !ua.includes('Chromium')) {
+    return 'Safari';
+  }
+  return 'Web Player (unknown)';
+}
+
 function getDeviceName(): string {
-  if (typeof navigator === 'undefined') return 'Web Player';
-  return navigator.userAgent.includes('Mobile') ? 'Web Player (Mobile)' : 'Web Player';
+  if (typeof navigator === 'undefined') return 'Web Player (unknown)';
+  const ua = navigator.userAgent;
+  if (ua.includes('Mobile')) return 'Web Player (Mobile)';
+  return detectDesktopBrowserFromUserAgent(ua);
 }
 
 function getDeviceIcon(): PlaybackState['deviceIcon'] {

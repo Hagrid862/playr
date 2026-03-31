@@ -1,30 +1,30 @@
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { listPlaybackDevices, setActivePlaybackDevice } from '@/lib/playback-sync';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
-import { StreamAudioQuality } from '@repo/contracts';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuPortal,
-} from '@/components/ui/dropdown-menu';
-import {
+  CheckIcon,
   DotsThreeIcon,
   QueueIcon,
   QuotesIcon,
-  CheckIcon,
+  SparkleIcon,
   SpeakerHighIcon,
   StarIcon,
-  SparkleIcon,
 } from '@phosphor-icons/react';
+import { StreamAudioQuality } from '@repo/contracts';
 import { useState } from 'react';
 
 export function PlayerActions() {
@@ -217,7 +217,9 @@ export function PlayerActions() {
                     )}
                     onClick={() => void setActivePlaybackDevice(device.deviceId)}
                   >
-                    <span className="truncate">{device.deviceName}</span>
+                    <span className="truncate">
+                      {device.isCurrentDevice ? 'Web player (this device)' : device.deviceName}
+                    </span>
                     {device.deviceId === activeDeviceId ? <CheckIcon size={14} /> : null}
                   </button>
                 ))
