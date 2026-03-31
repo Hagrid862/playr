@@ -1,6 +1,9 @@
 import { playbackTrackToQueueItem } from '@/lib/playback-mappers';
 import { emitQueueCommand, isPlaybackSyncConnected } from '@/lib/playback-queue-sync';
-import { afterLocalPlaybackMutation, afterLocalPlaybackMutationWithClaim } from '@/lib/playback-sync';
+import {
+  afterLocalPlaybackMutation,
+  afterLocalPlaybackMutationWithClaim,
+} from '@/lib/playback-sync';
 import type { PlaybackDevice, QueueItem } from '@repo/contracts';
 import {
   PlaybackTrack,
@@ -75,6 +78,16 @@ function shuffleArray<T>(array: T[]): T[] {
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
   return newArray;
+}
+
+function shouldClaimActiveDevice(activeDeviceId: string, localPlaybackDeviceId: string) {
+  // Only claim output ownership when:
+  // - no active output is set yet, or
+  // - this session is already the active output.
+  //
+  // This prevents one session from "stealing" audio output ownership just by
+  // resuming/playing after another session paused it.
+  return !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -180,6 +193,10 @@ export const usePlayerStore = create<PlayerState>()(
         if (isPlaybackSyncConnected()) {
           // Use command:set-state for a full play operation
           const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
           const payload: SetPlaybackStateRequest = {
             state: {
               deviceName: 'Web',
@@ -195,11 +212,16 @@ export const usePlayerStore = create<PlayerState>()(
               inLibrary: state.playbackInLibrary,
             },
             expectedVersion: playbackVersion,
-            claimActiveDevice: true,
+            claimActiveDevice,
           };
           emitQueueCommand('command:set-state', payload);
         } else {
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
         }
       },
 
@@ -210,14 +232,24 @@ export const usePlayerStore = create<PlayerState>()(
       resume: () => {
         set({ isPlaying: get().currentTrack !== null });
         if (get().currentTrack) {
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
         }
       },
       togglePlay: () => {
         const nextIsPlaying = !get().isPlaying && !!get().currentTrack;
         set({ isPlaying: nextIsPlaying });
         if (nextIsPlaying) {
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
           return;
         }
         afterLocalPlaybackMutation();
@@ -381,7 +413,12 @@ export const usePlayerStore = create<PlayerState>()(
             originalQueue: isShuffled ? [newItem] : [],
             isPlaying: true,
           });
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
           return;
         }
 
@@ -424,13 +461,23 @@ export const usePlayerStore = create<PlayerState>()(
           addToHistory(toQueueItem(currentTrack));
           const next = queue[currentIndex + 1];
           set({ currentTrack: next.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
         } else if (repeatMode === 'all') {
           // Loop back to the start
           addToHistory(toQueueItem(currentTrack));
           const next = queue[0];
           set({ currentTrack: next.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
         }
       },
 
@@ -449,13 +496,23 @@ export const usePlayerStore = create<PlayerState>()(
           addToHistory(toQueueItem(currentTrack));
           const prev = queue[currentIndex - 1];
           set({ currentTrack: prev.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
         } else if (repeatMode === 'all') {
           // Loop back to the end
           addToHistory(toQueueItem(currentTrack));
           const prev = queue[queue.length - 1];
           set({ currentTrack: prev.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutationWithClaim(true);
+          const state = get();
+          const claimActiveDevice = shouldClaimActiveDevice(
+            state.activeDeviceId,
+            state.localPlaybackDeviceId,
+          );
+          afterLocalPlaybackMutationWithClaim(claimActiveDevice);
         }
       },
     }),
