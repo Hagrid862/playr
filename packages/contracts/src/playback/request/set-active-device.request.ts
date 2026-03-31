@@ -7,4 +7,6 @@ export const SetActiveDeviceRequestSchema = z
   })
   .strict();
 
-export type SetActiveDeviceRequest = z.infer<typeof SetActiveDeviceRequestSchema>;
+export type SetActiveDeviceRequest = z.infer<
+  typeof SetActiveDeviceRequestSchema
+>;
