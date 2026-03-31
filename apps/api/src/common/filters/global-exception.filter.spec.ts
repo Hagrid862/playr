@@ -226,4 +226,39 @@ describe('GlobalExceptionFilter', () => {
       }),
     );
   });
+
+  it('should clear refresh token cookies on UNAUTHORIZED for /auth/refresh route', () => {
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      clearCookie: vi.fn().mockReturnThis(),
+    });
+
+    const mockRequest = createMock<Request>({
+      path: '/auth/refresh',
+      id: 'test-id',
+      startTime: Date.now(),
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    const exception = new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
+    expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ path: '/' }),
+    );
+    expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ path: '/auth/refresh' }),
+    );
+  });
 });

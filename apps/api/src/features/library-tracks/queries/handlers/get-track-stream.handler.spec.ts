@@ -499,6 +499,21 @@ describe('GetTrackStreamHandler', () => {
         expect(res.metadata.mimeType).toBe('audio/mpeg');
       });
 
+      it('should fallback to audio/mpeg when mimeType is missing and format is mp3', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.standard,
+            size: 1000,
+            mimeType: null as any,
+          }),
+        ]);
+        const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
+        const res = await handler.execute(query);
+        expect(res.metadata.mimeType).toBe('audio/mpeg');
+      });
+
       it('should fallback to audio/unknown when mimeType is missing and format is not mp3', async () => {
         audioFileRepository.findMany.mockResolvedValue([
           audioFileBuilder({
@@ -512,6 +527,15 @@ describe('GetTrackStreamHandler', () => {
         const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
         const res = await handler.execute(query);
         expect(res.metadata.mimeType).toBe('audio/unknown');
+      });
+
+      it('should throw if suffix range has negative value', async () => {
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          'bytes=--500',
+        );
+        await expect(handler.execute(query)).rejects.toThrow('Requested range not satisfiable');
       });
 
       it('should set isPartial when range is provided', async () => {

@@ -52,7 +52,17 @@ vi.mock('./queue/QueueNextUp', () => ({
         onClick={() =>
           onPlayTrack({
             queueId: '2',
-            track: { id: '2', title: 'Track 2' } as PlaybackTrack,
+            track: {
+              id: '2',
+              title: 'Track 2',
+              trackId: '2',
+              artists: ['Artist 2'],
+              albumName: 'Album 2',
+              albumId: '2',
+              albumArt: 'cover.jpg',
+              duration: 100,
+              explicit: false,
+            } as PlaybackTrack,
             position: 0,
           } as unknown as QueueItem)
         }
@@ -289,7 +299,17 @@ describe('Queue', () => {
     it('handles play track', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Play Next'));
-      expect(mockPlayTrack).toHaveBeenCalledWith({ uniqueId: '2' });
+      expect(mockPlayTrack).toHaveBeenCalledWith({
+        id: '2',
+        title: 'Track 2',
+        trackId: '2',
+        artists: ['Artist 2'],
+        albumName: 'Album 2',
+        albumId: '2',
+        albumArt: 'cover.jpg',
+        duration: 100,
+        explicit: false,
+      });
     });
 
     it('handles toggle queue', () => {
@@ -304,11 +324,55 @@ describe('Queue', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag End'));
 
-      expect(mockReorderQueue).toHaveBeenCalledWith([
-        { uniqueId: '1', title: 'Track 1' },
-        { uniqueId: '3', title: 'Track 3' },
-        { uniqueId: '2', title: 'Track 2' },
-      ]);
+      const expectedQueue: QueueItem[] = [
+        {
+          queueId: '1',
+          track: {
+            id: '1',
+            title: 'Track 1',
+            trackId: '1',
+            artists: ['Artist 1'],
+            albumName: 'Album 1',
+            albumId: '1',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+        {
+          queueId: '3',
+          track: {
+            id: '3',
+            title: 'Track 3',
+            trackId: '3',
+            artists: ['Artist 3'],
+            albumName: 'Album 3',
+            albumId: '3',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+        {
+          queueId: '2',
+          track: {
+            id: '2',
+            title: 'Track 2',
+            trackId: '2',
+            artists: ['Artist 2'],
+            albumName: 'Album 2',
+            albumId: '2',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+      ];
+
+      expect(mockReorderQueue).toHaveBeenCalledWith(expectedQueue);
     });
 
     it('does not reorder if active and over are the same', () => {

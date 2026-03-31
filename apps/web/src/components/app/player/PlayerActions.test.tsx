@@ -1,3 +1,4 @@
+import * as playbackSync from '@/lib/playback-sync';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -6,7 +7,6 @@ import { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerActions } from './PlayerActions';
-import * as playbackSync from '@/lib/playback-sync';
 
 vi.mock('@/stores/player.store', () => ({
   usePlayerStore: vi.fn(),
@@ -145,7 +145,7 @@ describe('PlayerActions', () => {
           playbackDevices: [
             {
               deviceId: 'device-1',
-              deviceName: 'Web Player',
+              deviceName: 'Chrome',
               deviceIcon: 'desktop',
               isActive: false,
               isCurrentDevice: false,
@@ -153,7 +153,7 @@ describe('PlayerActions', () => {
             },
             {
               deviceId: 'device-2',
-              deviceName: 'MacBook',
+              deviceName: 'Firefox',
               deviceIcon: 'desktop',
               isActive: true,
               isCurrentDevice: true,
@@ -168,7 +168,7 @@ describe('PlayerActions', () => {
       fireEvent.click(volumeBtn);
 
       expect(playbackSync.listPlaybackDevices).toHaveBeenCalled();
-      fireEvent.click(screen.getByRole('button', { name: /Web Player/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Chrome/i }));
       expect(playbackSync.setActivePlaybackDevice).toHaveBeenCalledWith('device-1');
     });
   });
