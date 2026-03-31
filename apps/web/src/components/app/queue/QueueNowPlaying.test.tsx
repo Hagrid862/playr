@@ -62,5 +62,26 @@ describe('QueueNowPlaying', () => {
       expect(screen.getByText('Test Song 2')).toBeInTheDocument();
       expect(screen.queryByAltText('Test Song 2')).not.toBeInTheDocument();
     });
+
+    it('renders "Unknown Artist" when artists is missing', () => {
+      const track: QueueItem = {
+        queueId: '3',
+        track: {
+          id: '3',
+          trackId: '3',
+          title: 'No Artist Song',
+          artists: [],
+          albumArt: '',
+          albumName: 'Album A',
+          albumId: '1',
+          duration: 100,
+          explicit: false,
+        },
+        position: 0,
+      };
+
+      customRender(<QueueNowPlaying currentTrack={track} />);
+      expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
+    });
   });
 });

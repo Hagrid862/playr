@@ -31,8 +31,8 @@ vi.mock('./queue/QueueHeader', () => ({
 }));
 
 vi.mock('./queue/QueueNowPlaying', () => ({
-  QueueNowPlaying: ({ currentTrack }: { currentTrack?: { title: string } }) => (
-    <div data-testid="queue-now-playing">{currentTrack?.title}</div>
+  QueueNowPlaying: ({ currentTrack }: { currentTrack?: QueueItem }) => (
+    <div data-testid="queue-now-playing">{currentTrack?.track?.title}</div>
   ),
 }));
 
@@ -207,50 +207,26 @@ describe('Queue', () => {
     it('calculates nextUp correctly when currentTrack is null', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
-          queue: [
-            {
-              queueId: '1',
-              track: {
-                id: '1',
-                title: 'Track 1',
-                trackId: '1',
-                artists: ['Artist 1'],
-                albumName: 'Album 1',
-                albumId: '1',
-                albumArt: 'cover.jpg',
-                duration: 100,
-                explicit: false,
-              } as PlaybackTrack,
-              position: 0,
-            } as QueueItem,
-            {
-              queueId: '2',
-              track: {
-                id: '2',
-                title: 'Track 2',
-                trackId: '2',
-                artists: ['Artist 2'],
-                albumName: 'Album 2',
-                albumId: '2',
-                albumArt: 'cover.jpg',
-                duration: 100,
-                explicit: false,
-              } as PlaybackTrack,
-              position: 0,
-            } as QueueItem,
-          ],
+          queue: [{ queueId: '1', track: { id: '1' } } as any],
           currentTrack: null,
-          playTrack: mockPlayTrack,
-          removeFromQueue: mockRemoveFromQueue,
-          toggleQueue: mockToggleQueue,
-          reorderQueue: mockReorderQueue,
-          isQueueOpen: true,
-          isShuffled: false,
         }),
       );
 
       customRender(<Queue />);
       expect(screen.getByTestId('queue-header')).toBeInTheDocument();
+    });
+
+    it('handles currentTrack not in queue', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        createPlayerStateMock({
+          queue: [{ queueId: '1', track: { id: '1' } } as any],
+          currentTrack: { id: 'track-outer', title: 'Outer Track' } as any,
+          isQueueOpen: true,
+        }),
+      );
+
+      customRender(<Queue />);
+      expect(screen.getByTestId('queue-now-playing')).toHaveTextContent('Outer Track');
     });
   });
 

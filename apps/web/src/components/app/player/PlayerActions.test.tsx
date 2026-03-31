@@ -4,6 +4,7 @@ import { StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { PropsWithChildren } from 'react';
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerActions } from './PlayerActions';
@@ -47,6 +48,34 @@ vi.mock('@/components/ui/slider', () => ({
       Slider
     </button>
   ),
+}));
+
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({
+    children,
+    onOpenChange,
+  }: PropsWithChildren<{ open?: boolean; onOpenChange?: (v: boolean) => void }>) => {
+    const trigger = React.Children.toArray(children).find(
+      (c: any) => c.type?.displayName === 'PopoverTrigger' || c.props?.asChild,
+    );
+    const content = React.Children.toArray(children).find(
+      (c: any) => c.type?.displayName === 'PopoverContent' || !c.props?.asChild,
+    );
+    return (
+      <div data-testid="mock-popover">
+        <div onClick={() => onOpenChange?.(true)}>{trigger}</div>
+        <div onClick={() => onOpenChange?.(false)}>{content}</div>
+        <button type="button" onClick={() => onOpenChange?.(true)}>
+          Open Popover
+        </button>
+        <button type="button" onClick={() => onOpenChange?.(false)}>
+          Close Popover
+        </button>
+      </div>
+    );
+  },
+  PopoverTrigger: ({ children }: PropsWithChildren) => <>{children}</>,
+  PopoverContent: ({ children }: PropsWithChildren) => <div>{children}</div>,
 }));
 
 describe('PlayerActions', () => {
@@ -170,6 +199,26 @@ describe('PlayerActions', () => {
       expect(playbackSync.listPlaybackDevices).toHaveBeenCalled();
       fireEvent.click(screen.getByRole('button', { name: /Chrome/i }));
       expect(playbackSync.setActivePlaybackDevice).toHaveBeenCalledWith('device-1');
+    });
+
+    it('does not list devices when popover closes', () => {
+      customRender(<PlayerActions />);
+      const openBtn = screen.getByText('Open Popover');
+      const closeBtn = screen.getByText('Close Popover');
+
+      // Open
+      fireEvent.click(openBtn);
+      expect(playbackSync.listPlaybackDevices).toHaveBeenCalledTimes(1);
+
+      // Close
+      fireEvent.click(closeBtn);
+      expect(playbackSync.listPlaybackDevices).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders empty devices state', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ playbackDevices: [] }));
+      customRender(<PlayerActions />);
+      expect(screen.getByText('No devices connected')).toBeInTheDocument();
     });
   });
 

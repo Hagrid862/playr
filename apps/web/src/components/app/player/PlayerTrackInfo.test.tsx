@@ -13,20 +13,25 @@ vi.mock('@/stores/player.store', () => ({
 vi.mock('@/components/ui/slider', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Slider: ({ value, onChange, onMouseEnter, onMouseLeave, onPointerDown, onPointerUp }: any) => (
-    <button
-      type="button"
-      data-testid="mock-slider"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onClick={() => {
-        onChange(50);
-        onPointerUp?.();
-      }}
-    >
-      slider value: {value}
-    </button>
+    <div data-testid="mock-slider-container">
+      <button
+        type="button"
+        data-testid="mock-slider"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onClick={() => {
+          onChange(50);
+          onPointerUp?.();
+        }}
+      >
+        slider value: {value}
+      </button>
+      <button type="button" data-testid="mock-slider-up" onClick={() => onPointerUp?.()}>
+        Just Up
+      </button>
+    </div>
   ),
 }));
 
@@ -148,6 +153,13 @@ describe('PlayerTrackInfo', () => {
 
       renderTrackInfo();
       expect(screen.getByText('Zero Duration Song')).toBeInTheDocument();
+    });
+
+    it('handles pointer up without change', () => {
+      renderTrackInfo();
+      const upBtn = screen.getByTestId('mock-slider-up');
+      fireEvent.click(upBtn);
+      expect(onSeekCommit).toHaveBeenCalledWith(10); // current time is 10
     });
   });
 });
