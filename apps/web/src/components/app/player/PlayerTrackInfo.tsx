@@ -4,18 +4,25 @@ import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
 import { MusicNotesIcon, SparkleIcon } from '@phosphor-icons/react';
 import { StreamAudioQuality } from '@repo/contracts';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface PlayerTrackInfoProps {
   formatTime: (time: number) => string;
   formatTimeLeft: (time: number, total: number) => string;
   onSeek: (time: number) => void;
+  onSeekCommit: (time: number) => void;
 }
 
-export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTrackInfoProps) {
+export function PlayerTrackInfo({
+  formatTime,
+  formatTimeLeft,
+  onSeek,
+  onSeekCommit,
+}: PlayerTrackInfoProps) {
   const { currentTrack, currentTime, duration, setCurrentTime, quality } = usePlayerStore();
   const [isHoveringSlider, setIsHoveringSlider] = useState(false);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+  const latestSeekTimeRef = useRef<number | null>(null);
 
   const isLossless = quality === StreamAudioQuality.lossless;
 
@@ -105,8 +112,14 @@ export function PlayerTrackInfo({ formatTime, formatTimeLeft, onSeek }: PlayerTr
           onMouseEnter={() => setIsHoveringSlider(true)}
           onMouseLeave={() => setIsHoveringSlider(false)}
           onPointerDown={() => setIsDraggingSlider(true)}
-          onPointerUp={() => setIsDraggingSlider(false)}
+          onPointerUp={() => {
+            setIsDraggingSlider(false);
+            const committedTime = latestSeekTimeRef.current ?? currentTime;
+            onSeekCommit(committedTime);
+            latestSeekTimeRef.current = null;
+          }}
           onChange={(newTime) => {
+            latestSeekTimeRef.current = newTime;
             onSeek(newTime);
             setCurrentTime(newTime);
           }}
