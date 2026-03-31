@@ -14,10 +14,12 @@ export function usePlayerAudio() {
     isPlaying,
     volume,
     currentTime,
+    queue,
     quality,
     setCurrentTime,
     setDuration,
     nextTrack,
+    pause,
     repeatMode,
     setAvailableQualities,
   } = usePlayerStore();
@@ -149,9 +151,19 @@ export function usePlayerAudio() {
         audioRef.current.currentTime = 0;
         audioRef.current.play();
       }
-    } else {
-      nextTrack();
+      return;
     }
+
+    const currentIndex = queue.findIndex((t) => t.track.id === currentTrack?.id);
+    const hasNext = currentIndex > -1 && currentIndex < queue.length - 1;
+
+    // If the queue ended and repeat is off, stop playback.
+    if (repeatMode === 'off' && !hasNext) {
+      pause();
+      return;
+    }
+
+    nextTrack();
   };
 
   const getAudioUrl = () => {
