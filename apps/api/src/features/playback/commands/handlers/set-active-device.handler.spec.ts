@@ -49,10 +49,10 @@ describe('SetActiveDeviceHandler', () => {
     });
 
     registry.getDevice.mockResolvedValue({
+      deviceId: 'device-2',
       deviceName: 'Mobile App',
       deviceIcon: 'mobile',
-      userId,
-      lastSeen: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
