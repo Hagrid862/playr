@@ -116,6 +116,38 @@ vi.mock('./History', () => ({
   ),
 }));
 
+function queueItemStub(queueId: string, trackId: string): QueueItem {
+  return {
+    queueId,
+    position: 0,
+    track: {
+      id: trackId,
+      title: `Track ${trackId}`,
+      trackId,
+      artists: [],
+      albumName: 'Album',
+      albumId: 'album-1',
+      albumArt: null,
+      duration: 0,
+      explicit: false,
+    },
+  };
+}
+
+function playbackTrackOuter(): PlaybackTrack {
+  return {
+    id: 'track-outer',
+    title: 'Outer Track',
+    trackId: 'track-outer',
+    artists: [],
+    albumName: 'Album',
+    albumId: 'album-1',
+    albumArt: null,
+    duration: 0,
+    explicit: false,
+  };
+}
+
 describe('Queue', () => {
   const mockPlayTrack = vi.fn();
   const mockRemoveFromQueue = vi.fn();
@@ -207,7 +239,7 @@ describe('Queue', () => {
     it('calculates nextUp correctly when currentTrack is null', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
-          queue: [{ queueId: '1', track: { id: '1' } } as any],
+          queue: [queueItemStub('1', '1')],
           currentTrack: null,
         }),
       );
@@ -219,8 +251,8 @@ describe('Queue', () => {
     it('handles currentTrack not in queue', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
-          queue: [{ queueId: '1', track: { id: '1' } } as any],
-          currentTrack: { id: 'track-outer', title: 'Outer Track' } as any,
+          queue: [queueItemStub('1', '1')],
+          currentTrack: playbackTrackOuter(),
           isQueueOpen: true,
         }),
       );

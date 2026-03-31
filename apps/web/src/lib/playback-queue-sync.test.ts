@@ -1,6 +1,14 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { PlaybackState } from '@repo/contracts';
+import type { Socket } from 'socket.io-client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { emitQueueCommand, isPlaybackSyncConnected } from './playback-queue-sync';
-import { getPlaybackSocket, applyStateFromServer } from './playback-sync';
+import { applyStateFromServer, getPlaybackSocket } from './playback-sync';
+
+type QueueEmitAck = PlaybackState | { error: string; code?: string } | null;
+
+function asPlaybackSocket(mock: unknown): Socket {
+  return mock as Socket;
+}
 
 vi.mock('./playback-sync', () => ({
   getPlaybackSocket: vi.fn(),
@@ -14,7 +22,7 @@ describe('playback-queue-sync', () => {
 
   describe('emitQueueCommand', () => {
     it('returns early if socket is not connected', async () => {
-      vi.mocked(getPlaybackSocket).mockReturnValue({ connected: false } as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket({ connected: false }));
       const result = await emitQueueCommand('test', { expectedVersion: 1 });
       expect(result).toBeUndefined();
     });
@@ -22,11 +30,11 @@ describe('playback-queue-sync', () => {
     it('emits event and resolves on success', async () => {
       const socket = {
         connected: true,
-        emit: vi.fn((_event, _data, callback) => {
-          callback({ version: 2 });
+        emit: vi.fn((_event: string, _data: unknown, callback: (r: QueueEmitAck) => void) => {
+          callback({ version: 2 } as PlaybackState);
         }),
       };
-      vi.mocked(getPlaybackSocket).mockReturnValue(socket as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket(socket));
 
       await emitQueueCommand('test', { expectedVersion: 1 });
 
@@ -41,15 +49,19 @@ describe('playback-queue-sync', () => {
     it('rejects on error and handles conflict', async () => {
       const socket = {
         connected: true,
-        emit: vi.fn().mockImplementation((event: string, _data: any, callback: any) => {
-          if (event === 'test') {
-            callback({ error: 'version mismatch', code: 'CONFLICT' });
-          } else if (event === 'query:get-state') {
-            callback({ version: 5 });
-          }
-        }),
+        emit: vi
+          .fn()
+          .mockImplementation(
+            (event: string, _data: unknown, callback: (r: QueueEmitAck) => void) => {
+              if (event === 'test') {
+                callback({ error: 'version mismatch', code: 'CONFLICT' });
+              } else if (event === 'query:get-state') {
+                callback({ version: 5 } as PlaybackState);
+              }
+            },
+          ),
       };
-      vi.mocked(getPlaybackSocket).mockReturnValue(socket as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket(socket));
 
       await expect(emitQueueCommand('test', { expectedVersion: 1 })).rejects.toThrow(
         'version mismatch',
@@ -62,11 +74,11 @@ describe('playback-queue-sync', () => {
     it('rejects on normal error without sync', async () => {
       const socket = {
         connected: true,
-        emit: vi.fn((_event, _data, callback) => {
+        emit: vi.fn((_event: string, _data: unknown, callback: (r: QueueEmitAck) => void) => {
           callback({ error: 'some error' });
         }),
       };
-      vi.mocked(getPlaybackSocket).mockReturnValue(socket as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket(socket));
 
       await expect(emitQueueCommand('test', { expectedVersion: 1 })).rejects.toThrow('some error');
 
@@ -80,15 +92,19 @@ describe('playback-queue-sync', () => {
     it('handles null payload on conflict resync', async () => {
       const socket = {
         connected: true,
-        emit: vi.fn().mockImplementation((event: string, _data: any, callback: any) => {
-          if (event === 'test') {
-            callback({ error: 'conflict', code: 'CONFLICT' });
-          } else if (event === 'query:get-state') {
-            callback(null);
-          }
-        }),
+        emit: vi
+          .fn()
+          .mockImplementation(
+            (event: string, _data: unknown, callback: (r: QueueEmitAck) => void) => {
+              if (event === 'test') {
+                callback({ error: 'conflict', code: 'CONFLICT' });
+              } else if (event === 'query:get-state') {
+                callback(null);
+              }
+            },
+          ),
       };
-      vi.mocked(getPlaybackSocket).mockReturnValue(socket as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket(socket));
 
       await expect(emitQueueCommand('test', { expectedVersion: 1 })).rejects.toThrow('conflict');
       expect(applyStateFromServer).not.toHaveBeenCalled();
@@ -97,11 +113,11 @@ describe('playback-queue-sync', () => {
     it('resolves when result is null', async () => {
       const socket = {
         connected: true,
-        emit: vi.fn((_event, _data, callback) => {
+        emit: vi.fn((_event: string, _data: unknown, callback: (r: QueueEmitAck) => void) => {
           callback(null);
         }),
       };
-      vi.mocked(getPlaybackSocket).mockReturnValue(socket as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket(socket));
 
       await emitQueueCommand('test', { expectedVersion: 1 });
       expect(applyStateFromServer).not.toHaveBeenCalled();
@@ -110,12 +126,12 @@ describe('playback-queue-sync', () => {
 
   describe('isPlaybackSyncConnected', () => {
     it('returns true if connected', () => {
-      vi.mocked(getPlaybackSocket).mockReturnValue({ connected: true } as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket({ connected: true }));
       expect(isPlaybackSyncConnected()).toBe(true);
     });
 
     it('returns false if not connected', () => {
-      vi.mocked(getPlaybackSocket).mockReturnValue({ connected: false } as any);
+      vi.mocked(getPlaybackSocket).mockReturnValue(asPlaybackSocket({ connected: false }));
       expect(isPlaybackSyncConnected()).toBe(false);
     });
 

@@ -1,4 +1,10 @@
-import { StreamAudioQuality, type PlaybackTrack, type ZodTrack } from '@repo/contracts';
+import {
+  StreamAudioQuality,
+  type PlaybackDevice,
+  type PlaybackState,
+  type PlaybackTrack,
+  type ZodTrack,
+} from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerStore } from './player.store';
@@ -46,32 +52,24 @@ describe('player.store', () => {
 
   describe('Server State Sync', () => {
     it('applies playback state from server', () => {
-      const stateFromServer: any = {
+      const t1 = createTrack('t1', 'Title');
+      const t2 = createTrack('t2');
+      const stateFromServer = {
         version: 10,
-        favorited: 'favorited',
+        favorited: 'favorited' as const,
         inLibrary: true,
         activeDeviceId: 'device-1',
-        trackData: {
-          id: 't1',
-          title: 'Title',
-          trackId: 't1',
-          duration: 100,
-          explicit: false,
-          artists: ['Artist'],
-          albumArt: 'art.png',
-          albumName: 'Album',
-          albumId: 'a1',
-        },
+        trackData: t1,
         isPlaying: true,
         currentTime: 50,
         volume: 0.8,
-        repeatMode: 'all',
+        repeatMode: 'all' as const,
         shuffle: true,
         queue: [
-          { queueId: 'q1', track: { id: 't1' }, position: 1 },
-          { queueId: 'q2', track: { id: 't2' }, position: 0 },
+          { queueId: 'q1', track: t1, position: 1 },
+          { queueId: 'q2', track: t2, position: 0 },
         ],
-      };
+      } as unknown as PlaybackState;
 
       getState().applyPlaybackStateFromServer(stateFromServer);
 
@@ -91,8 +89,16 @@ describe('player.store', () => {
       getState().setLocalPlaybackDeviceId('my-device');
       expect(getState().localPlaybackDeviceId).toBe('my-device');
 
-      getState().setPlaybackDevices([{ id: 'd1', name: 'D1' } as any]);
-      expect(getState().playbackDevices).toEqual([{ id: 'd1', name: 'D1' }]);
+      const device: PlaybackDevice = {
+        deviceId: 'd1',
+        deviceName: 'D1',
+        deviceIcon: 'desktop',
+        isActive: true,
+        isCurrentDevice: true,
+        updatedAt: new Date().toISOString(),
+      };
+      getState().setPlaybackDevices([device]);
+      expect(getState().playbackDevices).toEqual([device]);
     });
   });
 
@@ -653,10 +659,15 @@ describe('player.store', () => {
 
     it('handles null artists in applyPlaybackStateFromServer branch', () => {
       getState().applyPlaybackStateFromServer({
-        trackData: { id: '1', title: 'T', artists: null, duration: 100 },
+        trackData: {
+          id: '1',
+          title: 'T',
+          artists: null,
+          duration: 100,
+        },
         version: 1,
         queue: [],
-      } as any);
+      } as unknown as PlaybackState);
       expect(getState().currentTrack?.artists).toEqual([]);
     });
 
@@ -670,7 +681,7 @@ describe('player.store', () => {
       vi.mocked(queueSync.isPlaybackSyncConnected).mockReturnValue(false);
 
       const { playNext } = usePlayerStore.getState();
-      const track1 = {
+      const track1: PlaybackTrack = {
         id: 't1',
         title: 'T1',
         trackId: 'tr1',
@@ -681,7 +692,7 @@ describe('player.store', () => {
         duration: 100,
         explicit: false,
       };
-      const track2 = {
+      const track2: PlaybackTrack = {
         id: 't2',
         title: 'T2',
         trackId: 'tr2',
@@ -694,13 +705,13 @@ describe('player.store', () => {
       };
 
       usePlayerStore.setState({
-        currentTrack: track1 as any,
+        currentTrack: track1,
         queue: [],
         originalQueue: [],
         isShuffled: true,
       });
 
-      playNext(track2 as any);
+      playNext(track2);
 
       const state = usePlayerStore.getState();
       expect(state.queue).toHaveLength(1);
@@ -709,7 +720,7 @@ describe('player.store', () => {
 
     it('playNext with shuffle false and currentTrack not in queue', () => {
       vi.mocked(queueSync.isPlaybackSyncConnected).mockReturnValue(false);
-      const track1 = {
+      const track1: PlaybackTrack = {
         id: 't1',
         title: 'T1',
         trackId: 'tr1',
@@ -720,7 +731,7 @@ describe('player.store', () => {
         duration: 100,
         explicit: false,
       };
-      const track2 = {
+      const track2: PlaybackTrack = {
         id: 't2',
         title: 'T2',
         trackId: 'tr2',
@@ -733,13 +744,13 @@ describe('player.store', () => {
       };
 
       usePlayerStore.setState({
-        currentTrack: track1 as any,
+        currentTrack: track1,
         queue: [],
         originalQueue: [],
         isShuffled: false,
       });
 
-      getState().playNext(track2 as any);
+      getState().playNext(track2);
 
       expect(getState().queue).toHaveLength(1);
       expect(getState().originalQueue).toHaveLength(0);

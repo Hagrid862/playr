@@ -1,8 +1,21 @@
+import { connectPlaybackSync, disconnectPlaybackSync } from '@/lib/playback-sync';
+import type { AuthState } from '@/stores/auth.store';
+import { useAuthStore } from '@/stores/auth.store';
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlaybackSync } from './PlaybackSync';
-import { useAuthStore } from '@/stores/auth.store';
-import { connectPlaybackSync, disconnectPlaybackSync } from '@/lib/playback-sync';
+
+function mockAuthState(partial: Pick<AuthState, 'accessToken' | '_hasHydrated'>): AuthState {
+  return {
+    accessToken: partial.accessToken,
+    user: null,
+    isAuthenticated: false,
+    _hasHydrated: partial._hasHydrated,
+    setAuth: vi.fn(),
+    updateAccessToken: vi.fn(),
+    logout: vi.fn(),
+  };
+}
 
 vi.mock('@/stores/auth.store', () => ({
   useAuthStore: vi.fn(),
@@ -19,9 +32,8 @@ describe('PlaybackSync', () => {
   });
 
   it('connects when hydrated and has token', () => {
-    vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-      const state = { accessToken: 'token', _hasHydrated: true };
-      return selector(state);
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      return selector(mockAuthState({ accessToken: 'token', _hasHydrated: true }));
     });
 
     render(<PlaybackSync />);
@@ -30,9 +42,8 @@ describe('PlaybackSync', () => {
   });
 
   it('disconnects when missing token', () => {
-    vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-      const state = { accessToken: null, _hasHydrated: true };
-      return selector(state);
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      return selector(mockAuthState({ accessToken: null, _hasHydrated: true }));
     });
 
     render(<PlaybackSync />);
@@ -42,9 +53,8 @@ describe('PlaybackSync', () => {
   });
 
   it('disconnects when not hydrated', () => {
-    vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-      const state = { accessToken: 'token', _hasHydrated: false };
-      return selector(state);
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      return selector(mockAuthState({ accessToken: 'token', _hasHydrated: false }));
     });
 
     render(<PlaybackSync />);
@@ -54,9 +64,8 @@ describe('PlaybackSync', () => {
   });
 
   it('disconnects on unmount', () => {
-    vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-      const state = { accessToken: 'token', _hasHydrated: true };
-      return selector(state);
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      return selector(mockAuthState({ accessToken: 'token', _hasHydrated: true }));
     });
 
     const { unmount } = render(<PlaybackSync />);
