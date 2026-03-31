@@ -23,8 +23,8 @@ import { ClearQueueCommand } from './commands/impl/clear-queue.command';
 import { MoveQueueItemCommand } from './commands/impl/move-queue-item.command';
 import { RemoveQueueItemCommand } from './commands/impl/remove-queue-item.command';
 import { ReorderQueueItemsCommand } from './commands/impl/reorder-queue-items.command';
-import { SetCurrentTimeStateCommand } from './commands/impl/set-current-time-state.command';
 import { SetActiveDeviceCommand } from './commands/impl/set-active-device.command';
+import { SetCurrentTimeStateCommand } from './commands/impl/set-current-time-state.command';
 import { SetFavoriteStateCommand } from './commands/impl/set-favorite-state.command';
 import { SetLibraryStateCommand } from './commands/impl/set-library-state.command';
 import { SetNextQueueItemCommand } from './commands/impl/set-next-queue-item.command';
@@ -41,8 +41,8 @@ import { ClearQueueRequestDto } from './dto/request/clear-queue.request.dto';
 import { MoveQueueItemRequestDto } from './dto/request/move-queue-item.request.dto';
 import { RemoveQueueItemRequestDto } from './dto/request/remove-queue-item.request.dto';
 import { ReorderQueueItemsRequestDto } from './dto/request/reorder-queue-items.request.dto';
-import { SetCurrentTimeStateRequestDto } from './dto/request/set-current-time-state.request.dto';
 import { SetActiveDeviceRequestDto } from './dto/request/set-active-device.request.dto';
+import { SetCurrentTimeStateRequestDto } from './dto/request/set-current-time-state.request.dto';
 import { SetFavoriteStateRequestDto } from './dto/request/set-favorite-state.request.dto';
 import { SetLibraryStateRequestDto } from './dto/request/set-library-state.request.dto';
 import { SetNextQueueItemRequestDto } from './dto/request/set-next-queue-item.request.dto';
@@ -102,7 +102,8 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
         }
         socket.data.user = await this.tokenService.authenticateWithAccessToken(token);
         const auth = socket.handshake.auth as Record<string, unknown> | undefined;
-        const playbackDeviceId = typeof auth?.playbackDeviceId === 'string' ? auth.playbackDeviceId : '';
+        const playbackDeviceId =
+          typeof auth?.playbackDeviceId === 'string' ? auth.playbackDeviceId : '';
         if (!playbackDeviceId) {
           return next(new Error('Unauthorized: Missing playback device ID'));
         }
@@ -227,6 +228,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
           context.playbackDeviceId,
           data,
         ),
+      'currentTime',
     );
   }
 
@@ -470,6 +472,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   private async runPlaybackMutation(
     client: Socket,
     createCommand: (context: PlaybackSocketContext) => unknown,
+    broadcastMode: 'full' | 'currentTime' = 'full',
   ): Promise<PlaybackState> {
     const context = await this.authenticate(client);
     await this.playbackDeviceRegistry.registerOrUpdateDevice(context.userId, {
@@ -480,7 +483,16 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     const result = (await this.commandBus.execute(
       createCommand(context) as Command<PlaybackState>,
     )) as PlaybackState;
-    client.to(`user:${context.userId}`).emit('event:playback-state-updated', result);
+
+    const room = `user:${context.userId}`;
+    if (broadcastMode === 'currentTime') {
+      client.to(room).emit('event:current-time-updated', {
+        currentTime: result.currentTime,
+        version: result.version,
+      });
+    } else {
+      client.to(room).emit('event:playback-state-updated', result);
+    }
     return result;
   }
 }
