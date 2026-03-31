@@ -1,6 +1,7 @@
-import { useAuthStore } from '@/stores/auth.store';
 import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { useAuthStore } from '@/stores/auth.store';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import type { PlaybackTrack } from '@repo/contracts';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
 import { waitFor } from '@testing-library/react';
@@ -23,6 +24,20 @@ vi.mock('@/lib/playback-sync', () => ({
 }));
 
 const originalFetch = globalThis.fetch;
+
+function playbackTrackStub(id: string): PlaybackTrack {
+  return {
+    id,
+    title: 'T',
+    trackId: id,
+    artists: [],
+    albumName: 'A',
+    albumId: 'aid',
+    albumArt: null,
+    duration: 100,
+    explicit: false,
+  };
+}
 
 function fetchJsonOk<T>(data: T) {
   return { ok: true, json: async () => data };
@@ -412,7 +427,7 @@ describe('usePlayerAudio', () => {
       const storeState = {
         ...defaultStore,
         isPlaying: true,
-        currentTrack: { id: 'track-1' } as any,
+        currentTrack: playbackTrackStub('track-1'),
         activeDeviceId: 'this-device',
         localPlaybackDeviceId: 'this-device',
       };
@@ -425,8 +440,8 @@ describe('usePlayerAudio', () => {
         src: 'test',
         readyState: 1,
         play: vi.fn().mockResolvedValue(undefined),
-      } as any;
-      (result.current.audioRef as any).current = audioEl;
+      } as unknown as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
 
       // First trigger play
       rerender();

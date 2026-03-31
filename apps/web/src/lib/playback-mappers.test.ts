@@ -1,6 +1,7 @@
+import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
+import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
 import { describe, expect, it, vi } from 'vitest';
 import { playbackTrackToQueueItem, zodTrackToPlaybackTrack } from './playback-mappers';
-import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
 
 vi.mock('uuid', () => ({
   v6: () => 'test-uuid-v6',
@@ -42,20 +43,20 @@ describe('playback-mappers', () => {
 
   describe('zodTrackToPlaybackTrack', () => {
     it('maps ZodTrack to PlaybackTrack', () => {
+      const cover = imageBuilder({ url: 'art.png' });
+      const album = { ...albumBuilder({ id: 'album-1', name: '  Album  ' }), cover };
       const track: ZodTrack = {
-        id: '1',
-        title: '  Title  ',
-        duration: 120,
-        explicit: false,
-        visibility: 'public',
-        albumId: 'album-1',
-        album: {
-          id: 'album-1',
-          name: '  Album  ',
-          cover: { url: 'art.png' },
-        },
-        artists: [{ id: 'artist-1', name: '  Artist  ' }],
-      } as any;
+        ...(trackBuilder({
+          id: '1',
+          title: '  Title  ',
+          duration: 120,
+          explicit: false,
+          albumId: 'album-1',
+          visibility: 'public',
+        }) as ZodTrack),
+        album,
+        artists: [artistBuilder({ id: 'artist-1', name: '  Artist  ' })],
+      };
 
       const result = zodTrackToPlaybackTrack(track);
 
@@ -73,12 +74,14 @@ describe('playback-mappers', () => {
     });
 
     it('handles minimal track data', () => {
-      const track: ZodTrack = {
+      const track: ZodTrack = trackBuilder({
         id: '1',
         title: '',
         duration: 120,
         explicit: false,
-      } as any;
+        visibility: 'public',
+        albumId: '',
+      }) as ZodTrack;
 
       const result = zodTrackToPlaybackTrack(track);
 
@@ -91,13 +94,16 @@ describe('playback-mappers', () => {
 
     it('handles empty album strings', () => {
       const track: ZodTrack = {
-        id: '1',
-        title: 'Title',
-        duration: 120,
-        explicit: false,
-        album: { name: ' ' },
-        albumId: '  ',
-      } as any;
+        ...(trackBuilder({
+          id: '1',
+          title: 'Title',
+          duration: 120,
+          explicit: false,
+          albumId: '  ',
+          visibility: 'public',
+        }) as ZodTrack),
+        album: { ...albumBuilder({ name: ' ' }) },
+      };
 
       const result = zodTrackToPlaybackTrack(track);
       expect(result.albumName).toBe('Unknown album');
@@ -106,12 +112,15 @@ describe('playback-mappers', () => {
 
     it('filters empty artist names', () => {
       const track: ZodTrack = {
-        id: '1',
-        title: 'Title',
-        duration: 120,
-        explicit: false,
-        artists: [{ name: '' }, { name: 'Artist' }],
-      } as any;
+        ...(trackBuilder({
+          id: '1',
+          title: 'Title',
+          duration: 120,
+          explicit: false,
+          visibility: 'public',
+        }) as ZodTrack),
+        artists: [artistBuilder({ name: '' }), artistBuilder({ name: 'Artist' })],
+      };
 
       const result = zodTrackToPlaybackTrack(track);
       expect(result.artists).toEqual(['Artist']);

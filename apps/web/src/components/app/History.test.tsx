@@ -111,15 +111,21 @@ describe('History', () => {
     });
 
     it('renders placeholder when albumArt is missing', () => {
-      const track = {
+      const track: QueueItem = {
         queueId: '1',
         track: {
           id: '1',
           title: 'No Art Track',
+          trackId: '1',
           artists: ['Artist'],
+          albumName: 'Album',
+          albumId: 'album-1',
           albumArt: null,
+          duration: 100,
+          explicit: false,
         },
-      } as any;
+        position: 0,
+      };
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
           history: [track],

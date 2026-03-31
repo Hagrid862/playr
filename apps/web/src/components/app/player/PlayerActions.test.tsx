@@ -4,10 +4,47 @@ import { StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { PropsWithChildren } from 'react';
-import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerActions } from './PlayerActions';
+
+const { findPopoverTriggerChild, findPopoverContentChild } = vi.hoisted(() => {
+  // Vitest hoists this before ESM imports; use require so React is available to the mock factory.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- hoisted block runs pre-import
+  const R = require('react') as typeof import('react');
+  function componentDisplayName(type: unknown): string | undefined {
+    if (typeof type === 'string' || typeof type === 'number') return undefined;
+    if (typeof type === 'function' && 'displayName' in type) {
+      return (type as { displayName?: string }).displayName;
+    }
+    if (type && typeof type === 'object' && 'displayName' in type) {
+      return (type as { displayName?: string }).displayName;
+    }
+    return undefined;
+  }
+  function findPopoverTriggerChildInner(
+    children: import('react').ReactNode,
+  ): import('react').ReactNode {
+    return R.Children.toArray(children).find((c) => {
+      if (!R.isValidElement<{ asChild?: boolean }>(c)) return false;
+      const name = componentDisplayName(c.type);
+      return name === 'PopoverTrigger' || Boolean(c.props.asChild);
+    });
+  }
+  function findPopoverContentChildInner(
+    children: import('react').ReactNode,
+  ): import('react').ReactNode {
+    return R.Children.toArray(children).find((c) => {
+      if (!R.isValidElement<{ asChild?: boolean }>(c)) return false;
+      const name = componentDisplayName(c.type);
+      return name === 'PopoverContent' || !c.props.asChild;
+    });
+  }
+  return {
+    findPopoverTriggerChild: findPopoverTriggerChildInner,
+    findPopoverContentChild: findPopoverContentChildInner,
+  };
+});
 
 vi.mock('@/stores/player.store', () => ({
   usePlayerStore: vi.fn(),
@@ -55,12 +92,8 @@ vi.mock('@/components/ui/popover', () => ({
     children,
     onOpenChange,
   }: PropsWithChildren<{ open?: boolean; onOpenChange?: (v: boolean) => void }>) => {
-    const trigger = React.Children.toArray(children).find(
-      (c: any) => c.type?.displayName === 'PopoverTrigger' || c.props?.asChild,
-    );
-    const content = React.Children.toArray(children).find(
-      (c: any) => c.type?.displayName === 'PopoverContent' || !c.props?.asChild,
-    );
+    const trigger = findPopoverTriggerChild(children);
+    const content = findPopoverContentChild(children);
     return (
       <div data-testid="mock-popover">
         <div onClick={() => onOpenChange?.(true)}>{trigger}</div>
