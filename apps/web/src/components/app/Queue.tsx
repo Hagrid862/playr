@@ -32,7 +32,7 @@ export function Queue() {
   const nowPlayingItem = React.useMemo((): QueueItem | null => {
     if (!currentTrack) return null;
     return (
-      queue.find((t) => t.track.id === currentTrack.id) ?? playbackTrackToQueueItem(currentTrack)
+      queue.find((t) => t.track?.id === currentTrack.id) ?? playbackTrackToQueueItem(currentTrack)
     );
   }, [currentTrack, queue]);
 
@@ -45,7 +45,7 @@ export function Queue() {
     playTrack(track.track);
   };
 
-  const currentIndex = currentTrack ? queue.findIndex((t) => t.track.id === currentTrack.id) : -1;
+  const currentIndex = currentTrack ? queue.findIndex((t) => t.track?.id === currentTrack.id) : -1;
 
   const nextUp = queue.slice(currentIndex + 1);
 
