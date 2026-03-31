@@ -25,7 +25,7 @@ export function zodTrackToPlaybackTrack(track: ZodTrack): PlaybackTrack {
   return {
     id: track.id,
     title: track.title.trim() || track.id,
-    artists: track.artists?.map((a) => a.name).filter(Boolean) ?? [],
+    artists: track.artists?.map((a) => a.name.trim()).filter(Boolean) ?? [],
     albumArt: track.album?.cover?.url ?? null,
     albumName: albumName && albumName.length > 0 ? albumName : 'Unknown album',
     albumId: albumId && albumId.length > 0 ? albumId : track.id,
