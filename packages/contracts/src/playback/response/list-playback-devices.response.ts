@@ -26,4 +26,6 @@ export const ListPlaybackDevicesResponseSchema = z
   .strict();
 
 export type PlaybackDevice = z.infer<typeof PlaybackDeviceSchema>;
-export type ListPlaybackDevicesResponse = z.infer<typeof ListPlaybackDevicesResponseSchema>;
+export type ListPlaybackDevicesResponse = z.infer<
+  typeof ListPlaybackDevicesResponseSchema
+>;

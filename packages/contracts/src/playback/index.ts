@@ -23,4 +23,3 @@ export * from "./response/set-playback-state.response";
 // Schemas
 export * from "./schemas/playback-track.schema";
 export * from "./schemas/playback.schema";
-
