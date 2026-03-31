@@ -6,6 +6,7 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
+  OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
@@ -23,6 +24,7 @@ import { MoveQueueItemCommand } from './commands/impl/move-queue-item.command';
 import { RemoveQueueItemCommand } from './commands/impl/remove-queue-item.command';
 import { ReorderQueueItemsCommand } from './commands/impl/reorder-queue-items.command';
 import { SetCurrentTimeStateCommand } from './commands/impl/set-current-time-state.command';
+import { SetActiveDeviceCommand } from './commands/impl/set-active-device.command';
 import { SetFavoriteStateCommand } from './commands/impl/set-favorite-state.command';
 import { SetLibraryStateCommand } from './commands/impl/set-library-state.command';
 import { SetNextQueueItemCommand } from './commands/impl/set-next-queue-item.command';
@@ -40,6 +42,7 @@ import { MoveQueueItemRequestDto } from './dto/request/move-queue-item.request.d
 import { RemoveQueueItemRequestDto } from './dto/request/remove-queue-item.request.dto';
 import { ReorderQueueItemsRequestDto } from './dto/request/reorder-queue-items.request.dto';
 import { SetCurrentTimeStateRequestDto } from './dto/request/set-current-time-state.request.dto';
+import { SetActiveDeviceRequestDto } from './dto/request/set-active-device.request.dto';
 import { SetFavoriteStateRequestDto } from './dto/request/set-favorite-state.request.dto';
 import { SetLibraryStateRequestDto } from './dto/request/set-library-state.request.dto';
 import { SetNextQueueItemRequestDto } from './dto/request/set-next-queue-item.request.dto';
@@ -53,9 +56,21 @@ import { SetVolumeLevelStateRequestDto } from './dto/request/set-volume-level-st
 import { ShuffleQueueRequestDto } from './dto/request/shuffle-queue.request.dto';
 import { GetPlaybackStateResponseDto } from './dto/response/get-playback-state.response.dto';
 import { GetQueueStateResponseDto } from './dto/response/get-queue-state.response.dto';
+import { ListPlaybackDevicesResponseDto } from './dto/response/list-playback-devices.response.dto';
 import { SetPlaybackStateResponseDto } from './dto/response/set-playback-state.response.dto';
 import { GetPlaybackStateQuery } from './queries/impl/get-playback-state.query';
 import { GetQueueStateQuery } from './queries/impl/get-queue-state.query';
+import { PlaybackDeviceRegistryService } from './services/playback-device-registry.service';
+
+type DeviceIcon = PlaybackState['deviceIcon'];
+
+type PlaybackSocketContext = {
+  userId: string;
+  sessionId: string;
+  playbackDeviceId: string;
+  playbackDeviceName: string;
+  playbackDeviceIcon: DeviceIcon;
+};
 
 @UseFilters(PlaybackWsExceptionFilter)
 @WebSocketGateway({
@@ -65,7 +80,7 @@ import { GetQueueStateQuery } from './queries/impl/get-queue-state.query';
     credentials: true,
   },
 })
-export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
+export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
@@ -75,6 +90,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly tokenService: TokenService,
+    private readonly playbackDeviceRegistry: PlaybackDeviceRegistryService,
   ) {}
 
   afterInit(server: Server) {
@@ -85,6 +101,19 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
           return next(new Error('Unauthorized: No token provided'));
         }
         socket.data.user = await this.tokenService.authenticateWithAccessToken(token);
+        const auth = socket.handshake.auth as Record<string, unknown> | undefined;
+        const playbackDeviceId = typeof auth?.playbackDeviceId === 'string' ? auth.playbackDeviceId : '';
+        if (!playbackDeviceId) {
+          return next(new Error('Unauthorized: Missing playback device ID'));
+        }
+        const playbackDeviceName =
+          typeof auth?.deviceName === 'string' && auth.deviceName.trim().length > 0
+            ? auth.deviceName.trim()
+            : 'Web Player';
+        const playbackDeviceIcon = this.normalizeDeviceIcon(auth?.deviceIcon);
+        socket.data.playbackDeviceId = playbackDeviceId;
+        socket.data.playbackDeviceName = playbackDeviceName;
+        socket.data.playbackDeviceIcon = playbackDeviceIcon;
         next();
       } catch (error) {
         if (error instanceof UnauthorizedException) {
@@ -101,11 +130,30 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   }
 
   async handleConnection(client: Socket) {
-    if (!client.data.user) {
+    if (
+      !client.data.user ||
+      !client.data.playbackDeviceId ||
+      !client.data.playbackDeviceName ||
+      !client.data.playbackDeviceIcon
+    ) {
       client.disconnect(true);
       return;
     }
-    await client.join(`user:${client.data.user.user.id}`);
+    const userId = client.data.user.user.id as string;
+    await client.join(`user:${userId}`);
+    await this.playbackDeviceRegistry.registerOrUpdateDevice(userId, {
+      deviceId: client.data.playbackDeviceId as string,
+      deviceName: client.data.playbackDeviceName as string,
+      deviceIcon: client.data.playbackDeviceIcon as DeviceIcon,
+    });
+  }
+
+  async handleDisconnect(client: Socket) {
+    if (!client.data?.user?.user?.id || !client.data?.playbackDeviceId) return;
+    await this.playbackDeviceRegistry.removeDevice(
+      client.data.user.user.id as string,
+      client.data.playbackDeviceId as string,
+    );
   }
 
   @UseGuards(WsJwtGuard)
@@ -130,6 +178,21 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   }
 
   @UseGuards(WsJwtGuard)
+  @SubscribeMessage('query:list-devices')
+  async handleListDevices(
+    @ConnectedSocket() client: Socket,
+  ): Promise<ListPlaybackDevicesResponseDto> {
+    const context = await this.authenticate(client);
+    const state = await this.queryBus.execute(new GetPlaybackStateQuery(context.userId));
+    const activeDeviceId = state?.activeDeviceId ?? '';
+    return this.playbackDeviceRegistry.listDevices(
+      context.userId,
+      activeDeviceId,
+      context.playbackDeviceId,
+    );
+  }
+
+  @UseGuards(WsJwtGuard)
   @SubscribeMessage('command:set-state')
   async handleSetPlayback(
     @ConnectedSocket() client: Socket,
@@ -137,7 +200,15 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetPlaybackStateCommand(userId, sessionId, data),
+      (context) =>
+        new SetPlaybackStateCommand(
+          context.userId,
+          context.sessionId,
+          context.playbackDeviceId,
+          context.playbackDeviceName,
+          context.playbackDeviceIcon,
+          data,
+        ),
     );
   }
 
@@ -149,7 +220,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetCurrentTimeStateCommand(userId, sessionId, data),
+      (context) => new SetCurrentTimeStateCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -161,7 +232,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetFavoriteStateCommand(userId, sessionId, data),
+      (context) => new SetFavoriteStateCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -173,7 +244,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetLibraryStateCommand(userId, sessionId, data),
+      (context) => new SetLibraryStateCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -185,7 +256,27 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetPlayingStateCommand(userId, sessionId, data),
+      (context) =>
+        new SetPlayingStateCommand(
+          context.userId,
+          context.sessionId,
+          context.playbackDeviceId,
+          context.playbackDeviceName,
+          context.playbackDeviceIcon,
+          data,
+        ),
+    );
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:set-active-device')
+  async handleSetActiveDevice(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: SetActiveDeviceRequestDto,
+  ): Promise<SetPlaybackStateResponseDto> {
+    return this.runPlaybackMutation(
+      client,
+      (context) => new SetActiveDeviceCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -197,7 +288,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetRepeatStateCommand(userId, sessionId, data),
+      (context) => new SetRepeatStateCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -209,7 +300,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetTrackStateCommand(userId, sessionId, data),
+      (context) => new SetTrackStateCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -221,7 +312,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetShuffleStateCommand(userId, sessionId, data),
+      (context) => new SetShuffleStateCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -233,7 +324,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetVolumeLevelStateCommand(userId, sessionId, data),
+      (context) => new SetVolumeLevelStateCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -245,7 +336,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new AddQueueItemCommand(userId, sessionId, data),
+      (context) => new AddQueueItemCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -257,7 +348,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetNextQueueItemCommand(userId, sessionId, data),
+      (context) => new SetNextQueueItemCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -269,7 +360,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new SetQueueCommand(userId, sessionId, data),
+      (context) => new SetQueueCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -281,7 +372,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new ClearQueueCommand(userId, sessionId, data),
+      (context) => new ClearQueueCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -293,7 +384,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new ShuffleQueueCommand(userId, sessionId, data),
+      (context) => new ShuffleQueueCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -305,7 +396,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new ReorderQueueItemsCommand(userId, sessionId, data),
+      (context) => new ReorderQueueItemsCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -317,7 +408,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new RemoveQueueItemCommand(userId, sessionId, data),
+      (context) => new RemoveQueueItemCommand(context.userId, context.sessionId, data),
     );
   }
 
@@ -329,27 +420,61 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<SetPlaybackStateResponseDto> {
     return this.runPlaybackMutation(
       client,
-      (userId, sessionId) => new MoveQueueItemCommand(userId, sessionId, data),
+      (context) => new MoveQueueItemCommand(context.userId, context.sessionId, data),
     );
   }
 
-  private async authenticate(socket: Socket): Promise<{ userId: string; sessionId: string }> {
+  private normalizeDeviceIcon(input: unknown): DeviceIcon {
+    const valid: DeviceIcon[] = [
+      'desktop',
+      'mobile',
+      'tablet',
+      'speaker',
+      'tv',
+      'game-console',
+      'other',
+    ];
+    if (typeof input === 'string' && valid.includes(input as DeviceIcon)) {
+      return input as DeviceIcon;
+    }
+    return 'desktop';
+  }
+
+  private async authenticate(socket: Socket): Promise<PlaybackSocketContext> {
     const user = socket.data.user;
-    if (!user || !user.sessionId || !user.user.id) {
+    if (
+      !user ||
+      !user.sessionId ||
+      !user.user.id ||
+      !socket.data.playbackDeviceId ||
+      !socket.data.playbackDeviceName ||
+      !socket.data.playbackDeviceIcon
+    ) {
       throw new WsException('Unauthorized: Invalid token');
     }
-    return { userId: user.user.id, sessionId: user.sessionId };
+    return {
+      userId: user.user.id,
+      sessionId: user.sessionId,
+      playbackDeviceId: socket.data.playbackDeviceId,
+      playbackDeviceName: socket.data.playbackDeviceName,
+      playbackDeviceIcon: socket.data.playbackDeviceIcon,
+    };
   }
 
   private async runPlaybackMutation(
     client: Socket,
-    createCommand: (userId: string, sessionId: string) => unknown,
+    createCommand: (context: PlaybackSocketContext) => unknown,
   ): Promise<PlaybackState> {
-    const { userId, sessionId } = await this.authenticate(client);
+    const context = await this.authenticate(client);
+    await this.playbackDeviceRegistry.registerOrUpdateDevice(context.userId, {
+      deviceId: context.playbackDeviceId,
+      deviceName: context.playbackDeviceName,
+      deviceIcon: context.playbackDeviceIcon,
+    });
     const result = (await this.commandBus.execute(
-      createCommand(userId, sessionId) as Command<PlaybackState>,
+      createCommand(context) as Command<PlaybackState>,
     )) as PlaybackState;
-    client.to(`user:${userId}`).emit('event:playback-state-updated', result);
+    client.to(`user:${context.userId}`).emit('event:playback-state-updated', result);
     return result;
   }
 }
