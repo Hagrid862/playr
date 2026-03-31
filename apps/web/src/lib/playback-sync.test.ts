@@ -80,8 +80,14 @@ describe('playback-sync', () => {
 
       expect(createPlaybackSocket).toHaveBeenCalled();
       expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function));
-      expect(mockSocket.on).toHaveBeenCalledWith('event:playback-state-updated', expect.any(Function));
-      expect(mockSocket.on).toHaveBeenCalledWith('event:current-time-updated', expect.any(Function));
+      expect(mockSocket.on).toHaveBeenCalledWith(
+        'event:playback-state-updated',
+        expect.any(Function),
+      );
+      expect(mockSocket.on).toHaveBeenCalledWith(
+        'event:current-time-updated',
+        expect.any(Function),
+      );
       expect(mockSocket.on).toHaveBeenCalledWith('connect_error', expect.any(Function));
       expect(mockSocket.on).toHaveBeenCalledWith('exception', expect.any(Function));
     });
@@ -158,8 +164,12 @@ describe('playback-sync', () => {
 
     it('handles connect errors and exceptions', () => {
       connectPlaybackSync('token');
-      const errorHandler = mockSocket.on.mock.calls.find((call: any) => call[0] === 'connect_error')[1];
-      const exceptionHandler = mockSocket.on.mock.calls.find((call: any) => call[0] === 'exception')[1];
+      const errorHandler = mockSocket.on.mock.calls.find(
+        (call: any) => call[0] === 'connect_error',
+      )[1];
+      const exceptionHandler = mockSocket.on.mock.calls.find(
+        (call: any) => call[0] === 'exception',
+      )[1];
 
       const spyConsole = vi.spyOn(console, 'error').mockImplementation(() => {});
       errorHandler({ message: 'fail' });
@@ -189,7 +199,9 @@ describe('playback-sync', () => {
     it('handles set-state response', () => {
       connectPlaybackSync('token');
       afterLocalPlaybackMutation();
-      const ack = mockSocket.emit.mock.calls.find((call: any) => call[0] === 'command:set-state')[2];
+      const ack = mockSocket.emit.mock.calls.find(
+        (call: any) => call[0] === 'command:set-state',
+      )[2];
 
       const newState = { version: 3 } as any;
       ack(newState);
@@ -200,9 +212,13 @@ describe('playback-sync', () => {
       connectPlaybackSync('token');
       afterLocalPlaybackMutationWithClaim(true);
 
-      const ack = mockSocket.emit.mock.calls.find((call: any) => call[0] === 'command:set-state')[2];
+      const ack = mockSocket.emit.mock.calls.find(
+        (call: any) => call[0] === 'command:set-state',
+      )[2];
       ack({ version: 10 });
-      expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalledWith({ version: 10 });
+      expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalledWith({
+        version: 10,
+      });
 
       expect(mockSocket.emit).toHaveBeenCalledWith(
         'command:set-state',
@@ -285,9 +301,13 @@ describe('playback-sync', () => {
         playbackVersion: 0,
       } as any);
       connectPlaybackSync('token');
-      
+
       await setActivePlaybackDevice('new-device');
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-active-device', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-active-device',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
   });
 
@@ -344,7 +364,11 @@ describe('playback-sync', () => {
         callback({ error: 'general error', code: 'ERROR' });
       });
       await emitCurrentTimeSync(10);
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('query:get-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'query:get-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('hydrate handles null payload', () => {
@@ -362,56 +386,98 @@ describe('playback-sync', () => {
       mockSocket.connected = false;
       const connectHandler = mockSocket.on.mock.calls.find((call: any) => call[0] === 'connect')[1];
       connectHandler();
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('query:get-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'query:get-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('afterLocalPlaybackMutation returns early if no currentTrack', () => {
-      vi.mocked(usePlayerStore.getState).mockReturnValue({ ...baseState, currentTrack: null } as any);
+      vi.mocked(usePlayerStore.getState).mockReturnValue({
+        ...baseState,
+        currentTrack: null,
+      } as any);
       connectPlaybackSync('token');
       afterLocalPlaybackMutation();
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('afterLocalPlaybackMutationWithClaim returns early if no currentTrack', () => {
-      vi.mocked(usePlayerStore.getState).mockReturnValue({ ...baseState, currentTrack: null } as any);
+      vi.mocked(usePlayerStore.getState).mockReturnValue({
+        ...baseState,
+        currentTrack: null,
+      } as any);
       connectPlaybackSync('token');
       afterLocalPlaybackMutationWithClaim(true);
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('listPlaybackDevices returns early if disconnected', async () => {
       mockSocket.connected = false;
       await listPlaybackDevices();
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('query:list-devices', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'query:list-devices',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('emitCurrentTimeSync returns early if disconnected or invalid state', async () => {
       // Disconnected - socket is null here because connectPlaybackSync not called yet
       await emitCurrentTimeSync(10);
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-current-time-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-current-time-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
 
       // Connected but invalid state
       connectPlaybackSync('token');
-      
+
       // No track
-      vi.mocked(usePlayerStore.getState).mockReturnValue({ ...baseState, currentTrack: null } as any);
+      vi.mocked(usePlayerStore.getState).mockReturnValue({
+        ...baseState,
+        currentTrack: null,
+      } as any);
       await emitCurrentTimeSync(10);
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-current-time-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-current-time-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
 
       // No version
-      vi.mocked(usePlayerStore.getState).mockReturnValue({ ...baseState, playbackVersion: 0 } as any);
+      vi.mocked(usePlayerStore.getState).mockReturnValue({
+        ...baseState,
+        playbackVersion: 0,
+      } as any);
       await emitCurrentTimeSync(10);
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-current-time-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-current-time-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('emitCurrentTimeSync handles null resync payload and non-error falsy result', async () => {
       connectPlaybackSync('token');
       // Case 1: Conflict with null state payload
-      mockSocket.emit.mockImplementationOnce((_e: string, _d: any, callback: any) => {
-        callback({ error: 'conflict', code: 'CONFLICT' });
-      }).mockImplementationOnce((_e: string, _d: any, callback: any) => {
-        callback(null); // Resync payload is null
-      });
+      mockSocket.emit
+        .mockImplementationOnce((_e: string, _d: any, callback: any) => {
+          callback({ error: 'conflict', code: 'CONFLICT' });
+        })
+        .mockImplementationOnce((_e: string, _d: any, callback: any) => {
+          callback(null); // Resync payload is null
+        });
       await emitCurrentTimeSync(10);
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).not.toHaveBeenCalled();
 
@@ -426,13 +492,21 @@ describe('playback-sync', () => {
     it('setActivePlaybackDevice returns early if disconnected', async () => {
       mockSocket.connected = false;
       await setActivePlaybackDevice('d1');
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-active-device', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-active-device',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
 
     it('afterLocalPlaybackMutationWithClaim returns early if disconnected', () => {
       mockSocket.connected = false;
       afterLocalPlaybackMutationWithClaim(true);
-      expect(mockSocket.emit).not.toHaveBeenCalledWith('command:set-state', expect.any(Object), expect.any(Function));
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:set-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
     });
   });
 });
