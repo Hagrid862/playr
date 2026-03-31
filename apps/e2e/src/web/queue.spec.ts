@@ -117,18 +117,20 @@ test.describe("Queue Management", () => {
   });
 
   test("should add tracks to queue and verify", async () => {
+    // Play Track 1 first
+    await page.locator("div").filter({ hasText: track1 }).last().click();
+    await expect(playerPage.trackTitle).toHaveText(track1);
+
     // On album page, right click Track 2 -> Add to Queue
-    // (Assuming SongCard has a context menu or "Add to Queue" button)
-    // Let's use the explicit "Add to Queue" trigger if available
     const track2Card = page.locator("div").filter({ hasText: track2 }).last();
-    // Use right-click to open context menu since there's no "More options" button in SongCard
+    // Use right-click to open context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to Queue" }).click();
 
     // Give context menu action time to process
     await page.waitForTimeout(1000);
 
-    // Open Queue using newly added aria-label for reliability
+    // Open Queue
     await page.getByRole("button", { name: "Queue" }).click();
 
     // Verify Track 2 in queue
@@ -167,5 +169,78 @@ test.describe("Queue Management", () => {
 
     // Close queue
     await page.keyboard.press("Escape");
+  });
+
+  test("should sync queue across pages", async ({ browser }) => {
+    // Ensure queue is closed first
+    const isQueueBlocking = await page
+      .locator('[data-slot="sheet-overlay"]')
+      .isVisible()
+      .catch(() => false);
+    if (isQueueBlocking) {
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(500);
+    }
+
+    // Create a new context to simulate another window
+    const newContext = await browser.newContext();
+    const newPage = await newContext.newPage();
+    const newLoginPage = new LoginPage(newPage);
+    const newQueuePage = new QueuePage(newPage);
+
+    // Login on the new page
+    await newLoginPage.goto();
+    await newLoginPage.login(testUserData.email, testUserData.password);
+    await expect(newPage).toHaveURL(/\/app/);
+
+    // Open queue on new page
+    await newPage.getByRole("button", { name: "Queue" }).click();
+
+    // Verify Track 2 is also in the synced queue
+    await newQueuePage.expectTrackInQueue(track2);
+
+    await newContext.close();
+  });
+
+  test("should sync playback state across pages", async ({ browser }) => {
+    // Ensure queue is closed first
+    const isQueueBlocking = await page
+      .locator('[data-slot="sheet-overlay"]')
+      .isVisible()
+      .catch(() => false);
+    if (isQueueBlocking) {
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(500);
+    }
+
+    // Play Track 1 on primary page
+    await page.locator("div").filter({ hasText: track1 }).last().click();
+    await expect(playerPage.trackTitle).toHaveText(track1);
+
+    // Create a new context to simulate another window
+    const newContext = await browser.newContext();
+    const newPage = await newContext.newPage();
+    const newLoginPage = new LoginPage(newPage);
+    const newPlayerPage = new PlayerPage(newPage);
+
+    // Login on the new page
+    await newLoginPage.goto();
+    await newLoginPage.login(testUserData.email, testUserData.password);
+    await expect(newPage).toHaveURL(/\/app/);
+
+    // Give time for WebSocket to connect and state to sync
+    await newPage.waitForTimeout(1000);
+
+    // Verify track 1 is synced to the new page
+    await expect(newPlayerPage.trackTitle).toHaveText(track1);
+
+    // Skip to next track on the new page
+    await newPlayerPage.skipForward();
+    await expect(newPlayerPage.trackTitle).toHaveText(track2);
+
+    // Verify track 2 syncs back to the primary page
+    await expect(playerPage.trackTitle).toHaveText(track2);
+
+    await newContext.close();
   });
 });
