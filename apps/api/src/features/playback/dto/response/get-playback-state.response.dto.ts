@@ -1,4 +1,3 @@
-import { createZodDto } from 'nestjs-zod';
-import { GetPlaybackStateResponseSchema } from '@repo/contracts';
+import { type GetPlaybackStateResponse } from '@repo/contracts';
 
-export class GetPlaybackStateResponseDto extends createZodDto(GetPlaybackStateResponseSchema) {}
+export type GetPlaybackStateResponseDto = GetPlaybackStateResponse;
