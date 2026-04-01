@@ -14,7 +14,6 @@ class FakePlaybackRedisDup {
   private readonly watchedKeys = new Set<string>();
   /** String value snapshot at watch() time (null = missing key). */
   private readonly watchSnapshots = new Map<string, string | null>();
-  private pendingMultiSets: PendingSet[] | null = null;
 
   constructor(private readonly root: FakePlaybackRedis) {}
 
@@ -40,7 +39,6 @@ class FakePlaybackRedisDup {
   } {
     // Capture a stable reference so `exec()` always runs against the queued mutations.
     const pendingSets: PendingSet[] = [];
-    this.pendingMultiSets = pendingSets;
     return {
       set: (key: string, value: string) => {
         pendingSets.push({ key: prefixedKey(key), value });
@@ -67,7 +65,6 @@ class FakePlaybackRedisDup {
 
     this.watchedKeys.clear();
     this.watchSnapshots.clear();
-    this.pendingMultiSets = null;
     return [[null, 'OK']];
   }
 

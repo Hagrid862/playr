@@ -1,16 +1,32 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PlaybackStatePersistenceService } from './playback-state-persistence.service';
-import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
-import { Redis } from 'ioredis';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   ConflictException,
   InternalServerErrorException,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PlaybackState } from '@repo/contracts';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { Redis } from 'ioredis';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
+import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
+import { PlaybackStatePersistenceService } from './playback-state-persistence.service';
+
+/** Matches ioredis `Pipeline.exec()` result shape used by `PlaybackStatePersistenceService`. */
+type ExecResult = [Error | null, unknown][] | null;
+const okExecResult: ExecResult = [[null, 'OK']];
+
+type RedisMulti = ReturnType<Redis['multi']>;
+
+type ChainableMultiMock = {
+  set: MockInstance<(key: string, value: string) => RedisMulti>;
+  exec: MockInstance<() => Promise<ExecResult>>;
+};
+
+function asRedisMulti(mock: ChainableMultiMock): RedisMulti {
+  mock.set.mockReturnValue(mock as unknown as RedisMulti);
+  return mock as unknown as RedisMulti;
+}
 
 describe('PlaybackStatePersistenceService', () => {
   let service: PlaybackStatePersistenceService;
@@ -62,11 +78,11 @@ describe('PlaybackStatePersistenceService', () => {
   describe('createIfAbsent', () => {
     it('should successfully create state if absent', async () => {
       connMock.get.mockResolvedValueOnce(null);
-      const multiMock = {
-        set: vi.fn().mockReturnThis(),
-        exec: vi.fn().mockResolvedValue([['error', 'OK']]),
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(okExecResult),
       };
-      connMock.multi.mockReturnValue(multiMock as any);
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
       const result = await service.createIfAbsent(userId, sessionId, initialState);
 
@@ -97,18 +113,14 @@ describe('PlaybackStatePersistenceService', () => {
 
     it('should retry if exec returns null (concurrent update)', async () => {
       connMock.get.mockResolvedValue(null);
-      const multiMock = {
-        set: vi.fn().mockReturnThis(),
-        exec: vi
-          .fn()
-          .mockResolvedValueOnce(null) // First attempt fails
-          .mockResolvedValueOnce([['error', 'OK']]), // Second attempt succeeds
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(okExecResult),
       };
-      connMock.multi.mockReturnValue(multiMock as any);
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
       const promise = service.createIfAbsent(userId, sessionId, initialState);
 
-      // Fast-forward through sleep
       await vi.runAllTimersAsync();
 
       const result = await promise;
@@ -118,18 +130,19 @@ describe('PlaybackStatePersistenceService', () => {
 
     it('should throw ServiceUnavailableException after max retries', async () => {
       connMock.get.mockResolvedValue(null);
-      const multiMock = {
-        set: vi.fn().mockReturnThis(),
-        exec: vi.fn().mockResolvedValue(null), // Always fails
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(null),
       };
-      connMock.multi.mockReturnValue(multiMock as any);
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
-      let caughtError: any;
-      const promise = service.createIfAbsent(userId, sessionId, initialState).catch((err) => {
-        caughtError = err;
-      });
+      let caughtError: unknown;
+      const promise = service
+        .createIfAbsent(userId, sessionId, initialState)
+        .catch((err: unknown) => {
+          caughtError = err;
+        });
 
-      // Advance timers enough to trigger all retries
       for (let i = 0; i < 8; i++) {
         await vi.advanceTimersByTimeAsync(2000);
       }
@@ -173,11 +186,11 @@ describe('PlaybackStatePersistenceService', () => {
 
     it('should successfully apply mutation', async () => {
       connMock.get.mockResolvedValueOnce(JSON.stringify(existingState));
-      const multiMock = {
-        set: vi.fn().mockReturnThis(),
-        exec: vi.fn().mockResolvedValue([['error', 'OK']]),
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(okExecResult),
       };
-      connMock.multi.mockReturnValue(multiMock as any);
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
       const result = await service.applyMutation(userId, 1, (curr) => ({
         ...curr,
@@ -244,19 +257,14 @@ describe('PlaybackStatePersistenceService', () => {
 
     it('should retry if exec returns null (concurrent update)', async () => {
       connMock.get.mockResolvedValue(JSON.stringify(existingState));
-      const multiMock = {
-        set: vi.fn().mockReturnThis(),
-        exec: vi
-          .fn()
-          .mockResolvedValueOnce(null) // First attempt fails
-          .mockResolvedValueOnce([['error', 'OK']]), // Second attempt succeeds
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(okExecResult),
       };
-      connMock.multi.mockReturnValue(multiMock as any);
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
-      // Trigger the process
       const promise = service.applyMutation(userId, 1, (curr) => ({ ...curr, isPlaying: true }));
 
-      // Advance timers to trigger retry
       await vi.runAllTimersAsync();
 
       const result = await promise;
@@ -267,16 +275,16 @@ describe('PlaybackStatePersistenceService', () => {
 
     it('should throw ServiceUnavailableException after max retries', async () => {
       connMock.get.mockResolvedValue(JSON.stringify(existingState));
-      const multiMock = {
-        set: vi.fn().mockReturnThis(),
-        exec: vi.fn().mockResolvedValue(null), // Always fails
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(null),
       };
-      connMock.multi.mockReturnValue(multiMock as any);
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
-      let caughtError: any;
+      let caughtError: unknown;
       const promise = service
         .applyMutation(userId, 1, (curr) => curr)
-        .catch((err) => {
+        .catch((err: unknown) => {
           caughtError = err;
         });
 
