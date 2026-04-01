@@ -82,7 +82,14 @@ export class PlaybackStatePersistenceService {
           throw new InternalServerErrorException('Failed to create playback state.');
         }
 
-        const raw = await conn.get(key);
+        let raw: string | null;
+        try {
+          raw = await conn.get(key);
+        } catch (error) {
+          this.logger.error(`Redis GET failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to create playback state.');
+        }
+
         if (raw) {
           await conn.unwatch();
           throw new ConflictException('Playback state already exists for this user.');
@@ -97,7 +104,13 @@ export class PlaybackStatePersistenceService {
           throw new InternalServerErrorException('Failed to create playback state.');
         }
 
-        if (execResult === null) {
+        if (execResult === null || execResult.some(([error]) => error !== null)) {
+          if (execResult !== null) {
+            const firstError = execResult.find(([error]) => error !== null)?.[0];
+            this.logger.error(`Redis command failed in transaction: ${String(firstError)}`);
+            await conn.unwatch();
+          }
+
           const base = Math.min(10 * 2 ** attempt, 1000);
           const jitter = Math.floor(Math.random() * Math.min(base, 50));
           await sleep(base + jitter);
@@ -135,11 +148,18 @@ export class PlaybackStatePersistenceService {
           throw new InternalServerErrorException('Failed to update playback state.');
         }
 
-        const raw = await conn.get(key);
+        let raw: string | null;
+        try {
+          raw = await conn.get(key);
+        } catch (error) {
+          this.logger.error(`Redis GET failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
         if (!raw) {
           await conn.unwatch();
-          this.logger.error(`Playback state not found for user ${userId}`);
-          throw new NotFoundException('Playback state not found for user ' + userId);
+          this.logger.error('Playback state not found for user');
+          throw new NotFoundException('Playback state not found');
         }
 
         let parsed: PlaybackState;
@@ -181,7 +201,13 @@ export class PlaybackStatePersistenceService {
           throw new InternalServerErrorException('Failed to update playback state.');
         }
 
-        if (execResult === null) {
+        if (execResult === null || execResult.some(([error]) => error !== null)) {
+          if (execResult !== null) {
+            const firstError = execResult.find(([error]) => error !== null)?.[0];
+            this.logger.error(`Redis command failed in transaction: ${String(firstError)}`);
+            await conn.unwatch();
+          }
+
           const base = Math.min(10 * 2 ** attempt, 1000);
           const jitter = Math.floor(Math.random() * Math.min(base, 50));
           await sleep(base + jitter);
