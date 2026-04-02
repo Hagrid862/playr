@@ -1,31 +1,22 @@
 import { z } from "zod";
+import { PlaybackDeviceSchema } from "../schemas/playback-device.schema";
 
-export const PlaybackDeviceSchema = z
-  .object({
-    deviceId: z.string().min(1),
-    deviceName: z.string().min(1),
-    deviceIcon: z.enum([
-      "desktop",
-      "mobile",
-      "tablet",
-      "speaker",
-      "tv",
-      "game-console",
-      "other",
-    ]),
-    isActive: z.boolean(),
-    isCurrentDevice: z.boolean(),
-    updatedAt: z.iso.datetime(),
-  })
-  .strict();
+/** Connected devices from the registry (includes selection flags for the current client). */
+export const ListPlaybackDeviceEntrySchema = PlaybackDeviceSchema.extend({
+  isActive: z.boolean(),
+  isCurrentDevice: z.boolean(),
+});
 
 export const ListPlaybackDevicesResponseSchema = z
   .object({
-    devices: z.array(PlaybackDeviceSchema),
+    devices: z.array(ListPlaybackDeviceEntrySchema),
   })
   .strict();
 
-export type PlaybackDevice = z.infer<typeof PlaybackDeviceSchema>;
+export type ListPlaybackDeviceEntry = z.infer<
+  typeof ListPlaybackDeviceEntrySchema
+>;
+
 export type ListPlaybackDevicesResponse = z.infer<
   typeof ListPlaybackDevicesResponseSchema
 >;

@@ -16,6 +16,8 @@ export const QueueItemSchema = z.object({
   queueId: z.uuidv6(),
   track: PlaybackTrackSchema,
   position: z.number().int().min(0),
+  type: z.enum(["queue", "playingNext"]),
+  originalPosition: z.number().int().min(0),
 });
 
 export type PlaybackTrack = z.infer<typeof PlaybackTrackSchema>;

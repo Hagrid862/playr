@@ -21,5 +21,6 @@ export * from "./response/list-playback-devices.response";
 export * from "./response/set-playback-state.response";
 
 // Schemas
+export * from "./schemas/playback-device.schema";
 export * from "./schemas/playback-track.schema";
 export * from "./schemas/playback.schema";
