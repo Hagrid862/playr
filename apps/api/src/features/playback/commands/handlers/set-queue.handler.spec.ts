@@ -3,15 +3,15 @@ import type { PlaybackState, QueueItem } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { fixtureQueueItem, playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetQueueCommand } from '../impl/set-queue.command';
 import { SetQueueHandler } from './set-queue.handler';
 
 describe('SetQueueHandler', () => {
   const userId = 'user-1';
   const sessionId = 'session-1';
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
     trackData: {
       id: 'track-1',
@@ -27,26 +27,21 @@ describe('SetQueueHandler', () => {
     queue: [],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('updates the queue items', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetQueueHandler(persistence);
     const newQueue: QueueItem[] = [
-      {
-        queueId: '018f0914-6ac3-7faa-8000-000000000001',
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000001',
         track: initialState.trackData,
         position: 0,
-      },
+        originalPosition: 0,
+        type: 'queue',
+      }),
     ];
     const command = new SetQueueCommand(userId, sessionId, {
       items: newQueue,

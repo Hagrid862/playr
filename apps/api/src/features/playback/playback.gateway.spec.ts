@@ -6,9 +6,11 @@ import { WsException } from '@nestjs/websockets';
 import { PlaybackState } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Server } from 'socket.io';
-import { beforeEach, describe, expect, it, vi, Mock } from 'vitest';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { PlaybackGateway } from './playback.gateway';
 import { PlaybackDeviceRegistryService } from './services/playback-device-registry.service';
+import { PlaybackStatePersistenceService } from './services/playback-state-persistence.service';
+import { playbackStateFixture } from './test-utils/playback-state.fixture';
 
 vi.mock('@/common/utils/ws.util', () => ({
   extractAccessTokenFromSocket: vi.fn(),
@@ -20,45 +22,28 @@ describe('PlaybackGateway', () => {
   let queryBus: DeepMocked<QueryBus>;
   let tokenService: DeepMocked<TokenService>;
   let playbackDeviceRegistry: DeepMocked<PlaybackDeviceRegistryService>;
+  let playbackPersistence: DeepMocked<PlaybackStatePersistenceService>;
   let server: DeepMocked<Server>;
 
-  const mockPlaybackState: PlaybackState = {
-    sessionId: 'session-1',
-    userId: 'user-1',
-    activeDeviceId: 'device-1',
-    deviceName: 'Web Player',
-    deviceIcon: 'desktop',
-    isPlaying: false,
-    trackData: {
-      id: 'track-1',
-      title: 'Track 1',
-      trackId: 'track-1',
-      artists: ['Artist 1'],
-      albumName: 'Album 1',
-      albumId: 'album-1',
-      albumArt: 'art.png',
-      duration: 180,
-      explicit: false,
-    },
-    queue: [],
-    currentTime: 0,
-    volume: 1,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
-    version: 1,
-    updatedAt: new Date().toISOString(),
-  };
+  const mockPlaybackState: PlaybackState = playbackStateFixture();
 
   beforeEach(() => {
     commandBus = createMock<CommandBus>();
     queryBus = createMock<QueryBus>();
     tokenService = createMock<TokenService>();
     playbackDeviceRegistry = createMock<PlaybackDeviceRegistryService>();
+    playbackPersistence = createMock<PlaybackStatePersistenceService>();
     server = createMock<Server>();
 
-    gateway = new PlaybackGateway(commandBus, queryBus, tokenService, playbackDeviceRegistry);
+    playbackPersistence.pauseAndClearActiveIfDeviceMatches.mockResolvedValue(null);
+
+    gateway = new PlaybackGateway(
+      commandBus,
+      queryBus,
+      tokenService,
+      playbackDeviceRegistry,
+      playbackPersistence,
+    );
     gateway.server = server;
   });
 
@@ -274,6 +259,30 @@ describe('PlaybackGateway', () => {
       expect(playbackDeviceRegistry.removeDevice).toHaveBeenCalledWith('u1', 'd1');
     });
 
+    it('should broadcast paused state when disconnecting active device', async () => {
+      const updated = playbackStateFixture({
+        activeDeviceId: null,
+        isPlaying: false,
+        version: 2,
+      });
+      playbackPersistence.pauseAndClearActiveIfDeviceMatches.mockResolvedValue(updated);
+      const roomEmit = vi.fn();
+      server.to.mockReturnValue({ emit: roomEmit } as any);
+
+      const mockSocket = {
+        data: { user: { user: { id: 'u1' } }, playbackDeviceId: 'd1' },
+      } as any;
+
+      await gateway.handleDisconnect(mockSocket);
+
+      expect(playbackPersistence.pauseAndClearActiveIfDeviceMatches).toHaveBeenCalledWith(
+        'u1',
+        'd1',
+      );
+      expect(server.to).toHaveBeenCalledWith('user:u1');
+      expect(roomEmit).toHaveBeenCalledWith('event:playback-state-updated', updated);
+    });
+
     it('should skip removal if data is missing', async () => {
       const mockSocket = { data: {} } as any;
 
@@ -285,8 +294,10 @@ describe('PlaybackGateway', () => {
 
   describe('Playback Events', () => {
     let mockSocket: any;
+    let roomEmit: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
+      roomEmit = vi.fn();
       mockSocket = {
         data: {
           user: { user: { id: 'u1' }, sessionId: 's1' },
@@ -294,8 +305,7 @@ describe('PlaybackGateway', () => {
           playbackDeviceName: 'Web Player',
           playbackDeviceIcon: 'desktop',
         },
-        to: vi.fn().mockReturnThis(),
-        emit: vi.fn(),
+        to: vi.fn().mockReturnValue({ emit: roomEmit }),
       };
     });
 
@@ -344,10 +354,7 @@ describe('PlaybackGateway', () => {
 
       expect(commandBus.execute).toHaveBeenCalled();
       expect(mockSocket.to).toHaveBeenCalledWith('user:u1');
-      expect(mockSocket.emit).toHaveBeenCalledWith(
-        'event:playback-state-updated',
-        mockPlaybackState,
-      );
+      expect(roomEmit).toHaveBeenCalledWith('event:playback-state-updated', mockPlaybackState);
       expect(result).toEqual(mockPlaybackState);
     });
 
@@ -357,14 +364,10 @@ describe('PlaybackGateway', () => {
       const data = { currentTime: 100 };
       const result = await gateway.handleSetCurrentTimeState(mockSocket, data as any);
 
-      expect(mockSocket.emit).toHaveBeenCalledWith('event:current-time-updated', {
+      expect(roomEmit).toHaveBeenCalledWith('event:current-time-updated', {
         currentTime: mockPlaybackState.currentTime,
         version: mockPlaybackState.version,
       });
-      expect(mockSocket.emit).not.toHaveBeenCalledWith(
-        'event:playback-state-updated',
-        expect.any(Object),
-      );
       expect(result).toEqual(mockPlaybackState);
     });
 

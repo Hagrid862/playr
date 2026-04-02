@@ -4,15 +4,15 @@ import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackDeviceRegistryService } from '../../services/playback-device-registry.service';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetActiveDeviceCommand } from '../impl/set-active-device.command';
 import { SetActiveDeviceHandler } from './set-active-device.handler';
 
 describe('SetActiveDeviceHandler', () => {
   const userId = 'user-1';
   const sessionId = 'session-1';
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
     trackData: {
       id: 'track-1',
@@ -28,16 +28,9 @@ describe('SetActiveDeviceHandler', () => {
     queue: [],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('sets the active device when device exists', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
@@ -61,8 +54,6 @@ describe('SetActiveDeviceHandler', () => {
 
     const result = await handler.execute(command);
     expect(result.activeDeviceId).toBe('device-2');
-    expect(result.deviceName).toBe('Mobile App');
-    expect(result.deviceIcon).toBe('mobile');
   });
 
   it('throws BadRequestException when device is missing in registry', async () => {

@@ -1,8 +1,9 @@
+import { BadRequestException } from '@nestjs/common';
 import { PlaybackState } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetPlayingStateCommand } from '../impl/set-playing-state.command';
 import { SetPlayingStateHandler } from './set-playing-state.handler';
 
@@ -14,12 +15,9 @@ describe('SetPlayingStateHandler', () => {
   const sessionId = 'session-1';
   const activeDeviceId = 'device-1';
 
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId,
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
     trackData: {
       id: 'track-1',
@@ -35,13 +33,8 @@ describe('SetPlayingStateHandler', () => {
     queue: [],
     currentTime: 10,
     volume: 0.7,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 3,
-    updatedAt: new Date().toISOString(),
-  };
+  });
 
   it('updates isPlaying to true and claims the device', async () => {
     persistence = createMock<PlaybackStatePersistenceService>();
@@ -66,7 +59,6 @@ describe('SetPlayingStateHandler', () => {
 
     const result = await handler.execute(command);
     expect(result.activeDeviceId).toBe('device-2');
-    expect(result.deviceName).toBe('Web Player');
     expect(result.isPlaying).toBe(true);
   });
 
@@ -93,7 +85,7 @@ describe('SetPlayingStateHandler', () => {
 
     const result = await handler.execute(command);
     expect(result.isPlaying).toBe(false);
-    expect(result.activeDeviceId).toBe('device-1'); // From initialState
+    expect(result.activeDeviceId).toBe('device-1');
   });
 
   it('throws BadRequestException when expectedVersion is 0', async () => {

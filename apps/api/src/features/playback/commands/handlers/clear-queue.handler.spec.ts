@@ -3,15 +3,19 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import {
+  fixtureQueueItem,
+  fixtureTrack,
+  playbackStateFixture,
+} from '../../test-utils/playback-state.fixture';
 import { ClearQueueCommand } from '../impl/clear-queue.command';
 import { ClearQueueHandler } from './clear-queue.handler';
 
 describe('ClearQueueHandler', () => {
   const userId = 'user-1';
   const sessionId = 'session-1';
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
     trackData: {
       id: 'track-1',
@@ -24,19 +28,20 @@ describe('ClearQueueHandler', () => {
       duration: 120,
       explicit: false,
     },
-    queue: [{ track: { id: 't2' } as any, position: 0, queueId: 'q1' }],
+    queue: [
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000001',
+        track: { ...fixtureTrack, id: 't2', trackId: 't2' },
+        position: 0,
+        originalPosition: 0,
+        type: 'queue',
+      }),
+    ],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('clears the queue', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();

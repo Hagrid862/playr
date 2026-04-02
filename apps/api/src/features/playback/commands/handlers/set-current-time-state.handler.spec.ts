@@ -3,6 +3,7 @@ import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetCurrentTimeStateCommand } from '../impl/set-current-time-state.command';
 import { SetCurrentTimeStateHandler } from './set-current-time-state.handler';
 
@@ -14,13 +15,9 @@ describe('SetCurrentTimeStateHandler', () => {
   const sessionId = 'session-1';
   const activeDeviceId = 'device-1';
 
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
-    activeDeviceId,
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
-    isPlaying: true,
+    activeDeviceId: 'device-1',
     trackData: {
       id: 'track-1',
       trackId: 't1',
@@ -35,13 +32,9 @@ describe('SetCurrentTimeStateHandler', () => {
     queue: [],
     currentTime: 10,
     volume: 0.7,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 3,
-    updatedAt: new Date().toISOString(),
-  };
+    isPlaying: true,
+  });
 
   it('updates currentTime from the active device', async () => {
     persistence = createMock<PlaybackStatePersistenceService>();

@@ -3,6 +3,7 @@ import { PlaybackState, PlaybackTrack, QueueItem } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { fixtureQueueItem, playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { AddQueueItemCommand } from '../impl/add-queue-item.command';
 import { AddQueueItemHandler } from './add-queue-item.handler';
 
@@ -25,32 +26,51 @@ describe('AddQueueItemHandler', () => {
   const track2: PlaybackTrack = { ...trackData, id: 'track-2' };
   const track3: PlaybackTrack = { ...trackData, id: 'track-3' };
 
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
-    trackData,
+    trackData: {
+      id: 'track-1',
+      trackId: 't1',
+      title: 'Track',
+      artists: ['Artist'],
+      albumArt: null,
+      albumName: 'Album',
+      albumId: 'album-1',
+      duration: 120,
+      explicit: false,
+    },
     queue: [
-      { track: track1, position: 0, queueId: 'q1' },
-      { track: track2, position: 1, queueId: 'q2' },
+      fixtureQueueItem({
+        track: track1,
+        position: 0,
+        originalPosition: 0,
+        queueId: '01900000-0000-7000-8000-000000000001',
+        type: 'queue',
+      }),
+      fixtureQueueItem({
+        track: track2,
+        position: 1,
+        originalPosition: 1,
+        queueId: '01900000-0000-7000-8000-000000000002',
+        type: 'queue',
+      }),
     ],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('appends item to the end of the queue by default', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new AddQueueItemHandler(persistence);
-    const newTrack: QueueItem = { track: track3, position: 99, queueId: 'q3' };
+    const newTrack: QueueItem = fixtureQueueItem({
+      track: track3,
+      position: 99,
+      queueId: '01900000-0000-7000-8000-000000000003',
+      type: 'queue',
+    });
     const command = new AddQueueItemCommand(userId, sessionId, {
       track: newTrack,
       position: null,
@@ -75,7 +95,12 @@ describe('AddQueueItemHandler', () => {
   it('inserts item at explicit position', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new AddQueueItemHandler(persistence);
-    const newTrack: QueueItem = { track: track3, position: 99, queueId: 'q3' };
+    const newTrack: QueueItem = fixtureQueueItem({
+      track: track3,
+      position: 99,
+      queueId: '01900000-0000-7000-8000-000000000003',
+      type: 'queue',
+    });
     const command = new AddQueueItemCommand(userId, sessionId, {
       track: newTrack,
       position: 0,
@@ -102,11 +127,11 @@ describe('AddQueueItemHandler', () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new AddQueueItemHandler(persistence);
     const command = new AddQueueItemCommand(userId, sessionId, {
-      track: {
+      track: fixtureQueueItem({
         track: trackData,
         position: 0,
-        queueId: '550e8400-e29b-41d4-a716-446655440000',
-      } as QueueItem,
+        queueId: '01900000-0000-7000-8000-000000000099',
+      }),
       position: null,
       expectedVersion: 0,
     });
