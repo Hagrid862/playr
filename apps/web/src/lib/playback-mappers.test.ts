@@ -28,6 +28,8 @@ describe('playback-mappers', () => {
         queueId: 'test-uuid-v6',
         track,
         position: 0,
+        originalPosition: 0,
+        type: 'queue',
       });
     });
 

@@ -1,6 +1,7 @@
 import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { PlaybackTrack } from '@repo/contracts';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
@@ -68,6 +69,7 @@ describe('usePlayerAudio', () => {
     nextTrack,
     pause,
     repeatMode: 'off',
+    isShuffled: false,
     setAvailableQualities,
     queue: [],
   };
@@ -209,8 +211,15 @@ describe('usePlayerAudio', () => {
       vi.mocked(usePlayerStore).mockReturnValue({
         ...defaultStore,
         repeatMode: 'off',
-        currentTrack: { id: 'track-1' } as unknown,
-        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+        currentTrack: playbackTrackStub('track-1'),
+        queue: [
+          testQueueItem({
+            queueId: '01900000-0000-7000-8000-000000000b02',
+            track: playbackTrackStub('track-2'),
+            position: 0,
+            originalPosition: 0,
+          }),
+        ],
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
@@ -222,8 +231,8 @@ describe('usePlayerAudio', () => {
       vi.mocked(usePlayerStore).mockReturnValue({
         ...defaultStore,
         repeatMode: 'off',
-        currentTrack: { id: 'track-2' } as unknown,
-        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+        currentTrack: playbackTrackStub('track-2'),
+        queue: [],
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
@@ -235,8 +244,8 @@ describe('usePlayerAudio', () => {
       vi.mocked(usePlayerStore).mockReturnValue({
         ...defaultStore,
         repeatMode: 'all',
-        currentTrack: { id: 'track-2' } as unknown,
-        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+        currentTrack: playbackTrackStub('track-2'),
+        queue: [],
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
