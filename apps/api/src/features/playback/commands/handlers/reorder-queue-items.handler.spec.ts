@@ -3,6 +3,11 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import {
+  fixtureQueueItem,
+  fixtureTrack,
+  playbackStateFixture,
+} from '../../test-utils/playback-state.fixture';
 import { ReorderQueueItemsCommand } from '../impl/reorder-queue-items.command';
 import { ReorderQueueItemsHandler } from './reorder-queue-items.handler';
 
@@ -10,37 +15,40 @@ describe('ReorderQueueItemsHandler', () => {
   const userId = 'user-1';
   const sessionId = 'session-1';
 
-  const mockTrack = { id: 't1' } as any;
+  const t1 = { ...fixtureTrack, id: 'track-1', trackId: 'track-1' };
+  const t2 = { ...fixtureTrack, id: 'track-2', trackId: 'track-2' };
 
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
-    trackData: mockTrack,
+    trackData: fixtureTrack,
     queue: [
-      { track: { id: 'track-1' } as any, position: 0, queueId: 'q1' },
-      { track: { id: 'track-2' } as any, position: 1, queueId: 'q2' },
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000001',
+        track: t1,
+        position: 0,
+        originalPosition: 0,
+      }),
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000002',
+        track: t2,
+        position: 1,
+        originalPosition: 1,
+      }),
     ],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('reorders the queue items', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new ReorderQueueItemsHandler(persistence);
     const command = new ReorderQueueItemsCommand(userId, sessionId, {
       items: [
-        { queueId: 'q2', track: initialState.queue[1].track, position: 1 },
-        { queueId: 'q1', track: initialState.queue[0].track, position: 0 },
+        { ...initialState.queue[1], position: 0, originalPosition: 0 },
+        { ...initialState.queue[0], position: 1, originalPosition: 1 },
       ],
       expectedVersion: 1,
     });
@@ -50,17 +58,19 @@ describe('ReorderQueueItemsHandler', () => {
     });
 
     const result = await handler.execute(command);
-    expect(result.queue[0].queueId).toBe('q2');
+    expect(result.queue[0].queueId).toBe(initialState.queue[1].queueId);
     expect(result.queue[0].position).toBe(0);
-    expect(result.queue[1].queueId).toBe('q1');
+    expect(result.queue[0].originalPosition).toBe(1);
+    expect(result.queue[1].queueId).toBe(initialState.queue[0].queueId);
     expect(result.queue[1].position).toBe(1);
+    expect(result.queue[1].originalPosition).toBe(0);
   });
 
   it('throws BadRequestException on mismatched queue length', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new ReorderQueueItemsHandler(persistence);
     const command = new ReorderQueueItemsCommand(userId, sessionId, {
-      items: [{ queueId: 'q2', track: initialState.queue[1].track, position: 1 }],
+      items: [{ ...initialState.queue[1], position: 0, originalPosition: 0 }],
       expectedVersion: 1,
     });
 
@@ -78,8 +88,13 @@ describe('ReorderQueueItemsHandler', () => {
     const handler = new ReorderQueueItemsHandler(persistence);
     const command = new ReorderQueueItemsCommand(userId, sessionId, {
       items: [
-        { queueId: 'q1', track: initialState.queue[0].track, position: 0 },
-        { queueId: 'q-wrong', track: mockTrack, position: 1 },
+        { ...initialState.queue[0], position: 0, originalPosition: 0 },
+        {
+          ...initialState.queue[1],
+          queueId: '01900000-0000-7000-8000-00000000dead',
+          position: 1,
+          originalPosition: 1,
+        },
       ],
       expectedVersion: 1,
     });

@@ -3,14 +3,14 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import Redis from 'ioredis';
 import { describe, expect, it } from 'vitest';
+import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { GetPlaybackStateQuery } from '../impl/get-playback-state.query';
 import { GetPlaybackStateHandler } from './get-playback-state.handler';
 
 describe('GetPlaybackStateHandler', () => {
   const userId = 'user-1';
-  const state: PlaybackState = {
+  const state: PlaybackState = playbackStateFixture({
     userId,
-    sessionId: 'session-1',
     activeDeviceId: 'device-1',
     trackData: {
       id: 'track-1',
@@ -26,16 +26,9 @@ describe('GetPlaybackStateHandler', () => {
     queue: [],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('returns playback state when it exists', async () => {
     const redis = createMock<Redis>();

@@ -3,15 +3,15 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetRepeatStateCommand } from '../impl/set-repeat-state.command';
 import { SetRepeatStateHandler } from './set-repeat-state.handler';
 
 describe('SetRepeatStateHandler', () => {
   const userId = 'user-1';
   const sessionId = 'session-1';
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
     trackData: {
       id: 'track-1',
@@ -27,16 +27,9 @@ describe('SetRepeatStateHandler', () => {
     queue: [],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('updates repeat mode', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();

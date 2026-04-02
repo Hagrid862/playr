@@ -9,6 +9,7 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Redis } from 'ioredis';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
+import { playbackStateFixture } from '../test-utils/playback-state.fixture';
 import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
 import { PlaybackStatePersistenceService } from './playback-state-persistence.service';
 
@@ -34,7 +35,6 @@ describe('PlaybackStatePersistenceService', () => {
   let connMock: DeepMocked<Redis>;
 
   const userId = 'user-1';
-  const sessionId = 'session-1';
   const initialState: Partial<PlaybackState> & Pick<PlaybackState, 'trackData'> = {
     trackData: {
       id: 'track-1',
@@ -84,7 +84,7 @@ describe('PlaybackStatePersistenceService', () => {
       };
       connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
-      const result = await service.createIfAbsent(userId, sessionId, initialState);
+      const result = await service.createIfAbsent(userId, initialState);
 
       expect(result.userId).toBe(userId);
       expect(result.version).toBe(1);
@@ -96,9 +96,7 @@ describe('PlaybackStatePersistenceService', () => {
     it('should throw ConflictException if state already exists', async () => {
       connMock.get.mockResolvedValueOnce(JSON.stringify({ version: 1 }));
 
-      await expect(service.createIfAbsent(userId, sessionId, initialState)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.createIfAbsent(userId, initialState)).rejects.toThrow(ConflictException);
 
       expect(connMock.unwatch).toHaveBeenCalled();
     });
@@ -106,7 +104,7 @@ describe('PlaybackStatePersistenceService', () => {
     it('should throw InternalServerErrorException if watch fails', async () => {
       connMock.watch.mockRejectedValueOnce(new Error('Redis down'));
 
-      await expect(service.createIfAbsent(userId, sessionId, initialState)).rejects.toThrow(
+      await expect(service.createIfAbsent(userId, initialState)).rejects.toThrow(
         InternalServerErrorException,
       );
     });
@@ -119,7 +117,7 @@ describe('PlaybackStatePersistenceService', () => {
       };
       connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
-      const promise = service.createIfAbsent(userId, sessionId, initialState);
+      const promise = service.createIfAbsent(userId, initialState);
 
       await vi.runAllTimersAsync();
 
@@ -137,11 +135,9 @@ describe('PlaybackStatePersistenceService', () => {
       connMock.multi.mockReturnValue(asRedisMulti(multiMock));
 
       let caughtError: unknown;
-      const promise = service
-        .createIfAbsent(userId, sessionId, initialState)
-        .catch((err: unknown) => {
-          caughtError = err;
-        });
+      const promise = service.createIfAbsent(userId, initialState).catch((err: unknown) => {
+        caughtError = err;
+      });
 
       for (let i = 0; i < 8; i++) {
         await vi.advanceTimersByTimeAsync(2000);
@@ -157,7 +153,7 @@ describe('PlaybackStatePersistenceService', () => {
         throw new Error('Multi failed');
       });
 
-      await expect(service.createIfAbsent(userId, sessionId, initialState)).rejects.toThrow(
+      await expect(service.createIfAbsent(userId, initialState)).rejects.toThrow(
         InternalServerErrorException,
       );
       expect(connMock.unwatch).toHaveBeenCalled();
@@ -165,24 +161,17 @@ describe('PlaybackStatePersistenceService', () => {
   });
 
   describe('applyMutation', () => {
-    const existingState: PlaybackState = {
+    const existingState: PlaybackState = playbackStateFixture({
       userId,
-      sessionId,
       activeDeviceId: 'device-1',
       trackData: initialState.trackData,
       queue: [],
       version: 1,
       updatedAt: new Date().toISOString(),
-      deviceName: 'test',
-      deviceIcon: 'mobile',
       isPlaying: false,
       currentTime: 0,
       volume: 0.8,
-      repeatMode: 'off',
-      shuffle: false,
-      favorited: 'not-set',
-      inLibrary: false,
-    };
+    });
 
     it('should successfully apply mutation', async () => {
       connMock.get.mockResolvedValueOnce(JSON.stringify(existingState));
@@ -294,6 +283,48 @@ describe('PlaybackStatePersistenceService', () => {
 
       await promise;
       expect(caughtError).toBeInstanceOf(ServiceUnavailableException);
+    });
+  });
+
+  describe('pauseAndClearActiveIfDeviceMatches', () => {
+    it('returns null when no playback state exists', async () => {
+      connMock.get.mockResolvedValueOnce(null);
+      const result = await service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1');
+      expect(result).toBeNull();
+    });
+
+    it('returns null when disconnected device is not the active device', async () => {
+      const st = playbackStateFixture({
+        userId,
+        activeDeviceId: 'other-device',
+        isPlaying: true,
+        version: 2,
+      });
+      connMock.get.mockResolvedValueOnce(JSON.stringify(st));
+
+      const result = await service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1');
+      expect(result).toBeNull();
+    });
+
+    it('clears active device and pauses when disconnected device matches', async () => {
+      const st = playbackStateFixture({
+        userId,
+        activeDeviceId: 'device-1',
+        isPlaying: true,
+        version: 3,
+      });
+      connMock.get.mockResolvedValueOnce(JSON.stringify(st));
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(okExecResult),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+      const result = await service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1');
+
+      expect(result?.activeDeviceId).toBeNull();
+      expect(result?.isPlaying).toBe(false);
+      expect(result?.version).toBe(4);
     });
   });
 });
