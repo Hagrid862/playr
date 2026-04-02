@@ -1,9 +1,10 @@
 import { createPlayerStateMock } from '@/components/app/test-utils/player-test-utils';
 import type { PlayerState } from '@/stores/player.store';
 import { usePlayerStore } from '@/stores/player.store';
+import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type {
+  ListPlaybackDeviceEntry,
   ListPlaybackDevicesResponse,
-  PlaybackDevice,
   PlaybackState,
   PlaybackTrack,
   QueueItem,
@@ -21,6 +22,7 @@ import {
   isPlaybackSyncConnected,
   listPlaybackDevices,
   setActivePlaybackDevice,
+  syncPlayingStateToServer,
 } from './playback-sync';
 
 type SocketOnCall = [event: string, handler: (...args: unknown[]) => void];
@@ -36,6 +38,10 @@ function findEmitAck(calls: unknown[], event: string): (...args: unknown[]) => v
   const row = (calls as SocketEmitCall[]).find((c) => c[0] === event);
   if (!row?.[2]) throw new Error(`emit('${event}', ..., ack) not found`);
   return row[2] as (...args: unknown[]) => void;
+}
+
+async function flushMicrotasks() {
+  await Promise.resolve();
 }
 
 function playbackTrackStub(id: string, duration = 100): PlaybackTrack {
@@ -233,9 +239,10 @@ describe('playback-sync', () => {
       expect(mockSocket.emit).not.toHaveBeenCalled();
     });
 
-    it('emits set-state if connected and track exists', () => {
+    it('emits set-state if connected and track exists', async () => {
       connectPlaybackSync('token');
       afterLocalPlaybackMutation();
+      await flushMicrotasks();
 
       expect(mockSocket.emit).toHaveBeenCalledWith(
         'command:set-state',
@@ -244,9 +251,10 @@ describe('playback-sync', () => {
       );
     });
 
-    it('handles set-state response', () => {
+    it('handles set-state response', async () => {
       connectPlaybackSync('token');
       afterLocalPlaybackMutation();
+      await flushMicrotasks();
       const ack = findEmitAck(mockSocket.emit.mock.calls, 'command:set-state');
 
       const newState = { version: 3 } as unknown as PlaybackState;
@@ -254,9 +262,10 @@ describe('playback-sync', () => {
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalledWith(newState);
     });
 
-    it('with claim: emits set-state with claimActiveDevice true and handles response', () => {
+    it('with claim: emits set-state with claimActiveDevice true and handles response', async () => {
       connectPlaybackSync('token');
       afterLocalPlaybackMutationWithClaim(true);
+      await flushMicrotasks();
 
       const ack = findEmitAck(mockSocket.emit.mock.calls, 'command:set-state');
       ack({ version: 10 } as unknown as PlaybackState);
@@ -270,18 +279,74 @@ describe('playback-sync', () => {
         expect.any(Function),
       );
     });
+
+    it('on set-state version conflict hydrates and retries with fresh snapshot', async () => {
+      connectPlaybackSync('token');
+      afterLocalPlaybackMutation();
+      await flushMicrotasks();
+
+      const setStateAck = findEmitAck(mockSocket.emit.mock.calls, 'command:set-state');
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback?: (r: EmitCallbackPayload) => void) => {
+          if (!callback) return;
+          if (event === 'query:get-state') {
+            callback({ version: 7 } as unknown as PlaybackState);
+            return;
+          }
+          if (event === 'command:set-state') {
+            callback({ version: 8 } as unknown as PlaybackState);
+          }
+        },
+      );
+
+      setStateAck({ error: 'Expected version mismatch.', code: 'CONFLICT' });
+      await flushMicrotasks();
+
+      expect(mockSocket.emit).toHaveBeenCalledWith('query:get-state', {}, expect.any(Function));
+      expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenLastCalledWith(
+        expect.objectContaining({ version: 8 }),
+      );
+    });
+  });
+
+  describe('syncPlayingStateToServer', () => {
+    it('emits set-playing-state when version > 0 and no write is queued', async () => {
+      connectPlaybackSync('token');
+      syncPlayingStateToServer(false);
+      await flushMicrotasks();
+
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'command:set-playing-state',
+        expect.objectContaining({ isPlaying: true, expectedVersion: 1 }),
+        expect.any(Function),
+      );
+    });
+
+    it('falls back to set-state when playbackVersion is 0', async () => {
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({ ...baseState, playbackVersion: 0 }),
+      );
+      connectPlaybackSync('token');
+      syncPlayingStateToServer(true);
+      await flushMicrotasks();
+
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'command:set-state',
+        expect.objectContaining({ claimActiveDevice: true }),
+        expect.any(Function),
+      );
+    });
   });
 
   describe('listPlaybackDevices', () => {
     it('emits list-devices and updates store', async () => {
       connectPlaybackSync('token');
-      const listDevice: PlaybackDevice = {
-        deviceId: 'd1',
-        deviceName: 'D1',
-        deviceIcon: 'desktop',
+      const listDevice: ListPlaybackDeviceEntry = {
+        id: 'd1',
+        name: 'D1',
+        icon: 'desktop',
         isActive: true,
         isCurrentDevice: false,
-        updatedAt: new Date().toISOString(),
       };
       mockSocket.emit.mockImplementation(
         (event: string, _data: unknown, callback: (r: ListPlaybackDevicesResponse) => void) => {
@@ -384,12 +449,11 @@ describe('playback-sync', () => {
       expect(getPlaybackSocket()).toBe(mockSocket);
     });
 
-    it('buildSetStateBody handles queue mapping', () => {
-      const queueItem: QueueItem = {
-        queueId: 'q1',
-        position: 0,
+    it('buildSetStateBody handles queue mapping', async () => {
+      const queueItem: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-0000000000a1',
         track: playbackTrackStub('track-1'),
-      };
+      });
       vi.mocked(usePlayerStore.getState).mockReturnValue(
         createPlayerStateMock({
           ...baseState,
@@ -400,11 +464,51 @@ describe('playback-sync', () => {
       );
       connectPlaybackSync('token');
       afterLocalPlaybackMutation();
+      await flushMicrotasks();
       expect(mockSocket.emit).toHaveBeenCalledWith(
         'command:set-state',
         expect.objectContaining({
           state: expect.objectContaining({
-            queue: [expect.objectContaining({ queueId: 'q1', position: 0 })],
+            queue: [
+              expect.objectContaining({
+                queueId: '01900000-0000-7000-8000-0000000000a1',
+                position: 0,
+              }),
+            ],
+            history: [],
+          }),
+        }),
+        expect.any(Function),
+      );
+    });
+
+    it('buildSetStateBody includes history from store', async () => {
+      const histItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-0000000000h1',
+        track: playbackTrackStub('prev'),
+        type: 'playingNext',
+      });
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({
+          ...baseState,
+          currentTrack: playbackTrackStub('track-1'),
+          queue: [],
+          history: [histItem],
+          playbackVersion: 1,
+        }),
+      );
+      connectPlaybackSync('token');
+      afterLocalPlaybackMutation();
+      await flushMicrotasks();
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'command:set-state',
+        expect.objectContaining({
+          state: expect.objectContaining({
+            history: [
+              expect.objectContaining({
+                queueId: '01900000-0000-7000-8000-0000000000h1',
+              }),
+            ],
           }),
         }),
         expect.any(Function),
