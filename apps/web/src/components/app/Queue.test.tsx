@@ -1,4 +1,5 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { PlaybackTrack, QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -30,12 +31,6 @@ vi.mock('./queue/QueueHeader', () => ({
   ),
 }));
 
-vi.mock('./queue/QueueNowPlaying', () => ({
-  QueueNowPlaying: ({ currentTrack }: { currentTrack?: QueueItem }) => (
-    <div data-testid="queue-now-playing">{currentTrack?.track?.title}</div>
-  ),
-}));
-
 vi.mock('./queue/QueueNextUp', () => ({
   QueueNextUp: ({
     onPlayTrack,
@@ -50,32 +45,43 @@ vi.mock('./queue/QueueNextUp', () => ({
       <button
         type="button"
         onClick={() =>
-          onPlayTrack({
-            queueId: '2',
-            track: {
-              id: '2',
-              title: 'Track 2',
-              trackId: '2',
-              artists: ['Artist 2'],
-              albumName: 'Album 2',
-              albumId: '2',
-              albumArt: 'cover.jpg',
-              duration: 100,
-              explicit: false,
-            } as PlaybackTrack,
-            position: 0,
-          } as unknown as QueueItem)
+          onPlayTrack(
+            testQueueItem({
+              queueId: '01900000-0000-7000-8000-0000000001a2',
+              position: 1,
+              originalPosition: 1,
+              track: {
+                id: '2',
+                title: 'Track 2',
+                trackId: '2',
+                artists: ['Artist 2'],
+                albumName: 'Album 2',
+                albumId: '2',
+                albumArt: 'cover.jpg',
+                duration: 100,
+                explicit: false,
+              },
+            }),
+          )
         }
       >
         Play Next
       </button>
-      <button type="button" onClick={(e) => onRemoveTrack('2', e as unknown as React.MouseEvent)}>
+      <button
+        type="button"
+        onClick={(e) =>
+          onRemoveTrack('01900000-0000-7000-8000-0000000001a2', e as unknown as React.MouseEvent)
+        }
+      >
         Remove Next
       </button>
       <button
         type="button"
         onClick={() =>
-          onDragEnd({ active: { id: '2' }, over: { id: '3' } } as unknown as DragEndEvent)
+          onDragEnd({
+            active: { id: '01900000-0000-7000-8000-0000000001a2' },
+            over: { id: '01900000-0000-7000-8000-0000000001a3' },
+          } as unknown as DragEndEvent)
         }
       >
         Drag End
@@ -83,7 +89,10 @@ vi.mock('./queue/QueueNextUp', () => ({
       <button
         type="button"
         onClick={() =>
-          onDragEnd({ active: { id: '2' }, over: { id: '2' } } as unknown as DragEndEvent)
+          onDragEnd({
+            active: { id: '01900000-0000-7000-8000-0000000001a2' },
+            over: { id: '01900000-0000-7000-8000-0000000001a2' },
+          } as unknown as DragEndEvent)
         }
       >
         Drag Same
@@ -98,7 +107,12 @@ vi.mock('./queue/QueueNextUp', () => ({
       </button>
       <button
         type="button"
-        onClick={() => onDragEnd({ active: { id: '2' }, over: null } as unknown as DragEndEvent)}
+        onClick={() =>
+          onDragEnd({
+            active: { id: '01900000-0000-7000-8000-0000000001a2' },
+            over: null,
+          } as unknown as DragEndEvent)
+        }
       >
         Drag No Over
       </button>
@@ -116,10 +130,12 @@ vi.mock('./History', () => ({
   ),
 }));
 
-function queueItemStub(queueId: string, trackId: string): QueueItem {
+function queueItemStub(queueId: string, trackId: string, position = 0): QueueItem {
   return {
     queueId,
-    position: 0,
+    position,
+    originalPosition: position,
+    type: 'queue',
     track: {
       id: trackId,
       title: `Track ${trackId}`,
@@ -134,75 +150,20 @@ function queueItemStub(queueId: string, trackId: string): QueueItem {
   };
 }
 
-function playbackTrackOuter(): PlaybackTrack {
-  return {
-    id: 'track-outer',
-    title: 'Outer Track',
-    trackId: 'track-outer',
-    artists: [],
-    albumName: 'Album',
-    albumId: 'album-1',
-    albumArt: null,
-    duration: 0,
-    explicit: false,
-  };
-}
+const Q1 = '01900000-0000-7000-8000-0000000001a1';
+const Q2 = '01900000-0000-7000-8000-0000000001a2';
+const Q3 = '01900000-0000-7000-8000-0000000001a3';
+const Q_STUB = '01900000-0000-7000-8000-000000000199';
 
 describe('Queue', () => {
-  const mockPlayTrack = vi.fn();
+  const mockPlayQueueItem = vi.fn();
   const mockRemoveFromQueue = vi.fn();
   const mockToggleQueue = vi.fn();
   const mockReorderQueue = vi.fn();
 
   const defaultQueueState = (): PlayerState =>
     createPlayerStateMock({
-      queue: [
-        {
-          queueId: '1',
-          track: {
-            id: '1',
-            title: 'Track 1',
-            trackId: '1',
-            artists: ['Artist 1'],
-            albumName: 'Album 1',
-            albumId: '1',
-            albumArt: 'cover.jpg',
-            duration: 100,
-            explicit: false,
-          } as PlaybackTrack,
-          position: 0,
-        } as QueueItem,
-        {
-          queueId: '2',
-          track: {
-            id: '2',
-            title: 'Track 2',
-            trackId: '2',
-            artists: ['Artist 2'],
-            albumName: 'Album 2',
-            albumId: '2',
-            albumArt: 'cover.jpg',
-            duration: 100,
-            explicit: false,
-          } as PlaybackTrack,
-          position: 0,
-        } as QueueItem,
-        {
-          queueId: '3',
-          track: {
-            id: '3',
-            title: 'Track 3',
-            trackId: '3',
-            artists: ['Artist 3'],
-            albumName: 'Album 3',
-            albumId: '3',
-            albumArt: 'cover.jpg',
-            duration: 100,
-            explicit: false,
-          } as PlaybackTrack,
-          position: 0,
-        } as QueueItem,
-      ],
+      queue: [queueItemStub(Q1, '1', 0), queueItemStub(Q2, '2', 1), queueItemStub(Q3, '3', 2)],
       currentTrack: {
         id: '1',
         title: 'Track 1',
@@ -214,7 +175,7 @@ describe('Queue', () => {
         duration: 100,
         explicit: false,
       } as PlaybackTrack,
-      playTrack: mockPlayTrack,
+      playQueueItem: mockPlayQueueItem,
       removeFromQueue: mockRemoveFromQueue,
       toggleQueue: mockToggleQueue,
       reorderQueue: mockReorderQueue,
@@ -231,7 +192,6 @@ describe('Queue', () => {
     it('renders correctly', () => {
       customRender(<Queue />);
       expect(screen.getByTestId('queue-header')).toBeInTheDocument();
-      expect(screen.getByTestId('queue-now-playing')).toBeInTheDocument();
       expect(screen.getByTestId('queue-next-up')).toBeInTheDocument();
       expect(screen.getByTestId('queue-history')).toHaveAttribute('data-visible', 'false');
     });
@@ -239,26 +199,13 @@ describe('Queue', () => {
     it('calculates nextUp correctly when currentTrack is null', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
-          queue: [queueItemStub('1', '1')],
+          queue: [queueItemStub(Q_STUB, '1')],
           currentTrack: null,
         }),
       );
 
       customRender(<Queue />);
       expect(screen.getByTestId('queue-header')).toBeInTheDocument();
-    });
-
-    it('handles currentTrack not in queue', () => {
-      vi.mocked(usePlayerStore).mockReturnValue(
-        createPlayerStateMock({
-          queue: [queueItemStub('1', '1')],
-          currentTrack: playbackTrackOuter(),
-          isQueueOpen: true,
-        }),
-      );
-
-      customRender(<Queue />);
-      expect(screen.getByTestId('queue-now-playing')).toHaveTextContent('Outer Track');
     });
   });
 
@@ -283,7 +230,7 @@ describe('Queue', () => {
         createPlayerStateMock({
           queue: [],
           currentTrack: null,
-          playTrack: mockPlayTrack,
+          playQueueItem: mockPlayQueueItem,
           removeFromQueue: mockRemoveFromQueue,
           toggleQueue: mockToggleQueue,
           reorderQueue: mockReorderQueue,
@@ -301,23 +248,13 @@ describe('Queue', () => {
     it('handles remove track', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Remove Next'));
-      expect(mockRemoveFromQueue).toHaveBeenCalledWith('2');
+      expect(mockRemoveFromQueue).toHaveBeenCalledWith(Q2);
     });
 
     it('handles play track', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Play Next'));
-      expect(mockPlayTrack).toHaveBeenCalledWith({
-        id: '2',
-        title: 'Track 2',
-        trackId: '2',
-        artists: ['Artist 2'],
-        albumName: 'Album 2',
-        albumId: '2',
-        albumArt: 'cover.jpg',
-        duration: 100,
-        explicit: false,
-      });
+      expect(mockPlayQueueItem).toHaveBeenCalledWith(Q2);
     });
 
     it('handles toggle queue', () => {
@@ -332,52 +269,11 @@ describe('Queue', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag End'));
 
+      // `arrayMove` reorders items but does not rewrite `position`; indices 1↔2 → order 1,3,2 with positions 0,2,1.
       const expectedQueue: QueueItem[] = [
-        {
-          queueId: '1',
-          track: {
-            id: '1',
-            title: 'Track 1',
-            trackId: '1',
-            artists: ['Artist 1'],
-            albumName: 'Album 1',
-            albumId: '1',
-            albumArt: 'cover.jpg',
-            duration: 100,
-            explicit: false,
-          } as PlaybackTrack,
-          position: 0,
-        } as QueueItem,
-        {
-          queueId: '3',
-          track: {
-            id: '3',
-            title: 'Track 3',
-            trackId: '3',
-            artists: ['Artist 3'],
-            albumName: 'Album 3',
-            albumId: '3',
-            albumArt: 'cover.jpg',
-            duration: 100,
-            explicit: false,
-          } as PlaybackTrack,
-          position: 0,
-        } as QueueItem,
-        {
-          queueId: '2',
-          track: {
-            id: '2',
-            title: 'Track 2',
-            trackId: '2',
-            artists: ['Artist 2'],
-            albumName: 'Album 2',
-            albumId: '2',
-            albumArt: 'cover.jpg',
-            duration: 100,
-            explicit: false,
-          } as PlaybackTrack,
-          position: 0,
-        } as QueueItem,
+        queueItemStub(Q1, '1', 0),
+        queueItemStub(Q3, '3', 2),
+        queueItemStub(Q2, '2', 1),
       ];
 
       expect(mockReorderQueue).toHaveBeenCalledWith(expectedQueue);

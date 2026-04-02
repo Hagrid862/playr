@@ -1,3 +1,4 @@
+import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
@@ -35,8 +36,8 @@ vi.mock('@dnd-kit/utilities', () => ({
 }));
 
 describe('QueueItem', () => {
-  const mockTrack: QueueItem = {
-    queueId: '1',
+  const mockTrack: QueueItem = testQueueItem({
+    queueId: '01900000-0000-7000-8000-000000000001',
     track: {
       id: '1',
       trackId: '1',
@@ -48,8 +49,7 @@ describe('QueueItem', () => {
       duration: 100,
       explicit: false,
     },
-    position: 0,
-  };
+  });
 
   describe('rendering', () => {
     it('renders track details correctly', () => {
@@ -67,8 +67,8 @@ describe('QueueItem', () => {
     });
 
     it('renders fallback icon without cover', () => {
-      const noCoverTrack: QueueItem = {
-        queueId: '2',
+      const noCoverTrack: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000002',
         track: {
           id: '2',
           trackId: '2',
@@ -80,16 +80,15 @@ describe('QueueItem', () => {
           duration: 100,
           explicit: false,
         },
-        position: 0,
-      };
+      });
 
       customRender(<QueueItemComponent track={noCoverTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
       expect(screen.queryByAltText('Test Title 2')).not.toBeInTheDocument();
     });
 
     it('joins multiple artist names correctly', () => {
-      const multiArtistTrack: QueueItem = {
-        queueId: '3',
+      const multiArtistTrack: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000003',
         track: {
           id: '3',
           trackId: '3',
@@ -101,8 +100,7 @@ describe('QueueItem', () => {
           duration: 100,
           explicit: false,
         },
-        position: 0,
-      };
+      });
 
       customRender(
         <QueueItemComponent track={multiArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />,
@@ -111,8 +109,8 @@ describe('QueueItem', () => {
     });
 
     it('renders "Unknown Artist" when artists is missing', () => {
-      const noArtistTrack: QueueItem = {
-        queueId: '4',
+      const noArtistTrack: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000004',
         track: {
           id: '4',
           trackId: '4',
@@ -124,8 +122,7 @@ describe('QueueItem', () => {
           duration: 100,
           explicit: false,
         },
-        position: 0,
-      };
+      });
 
       customRender(
         <QueueItemComponent track={noArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />,
@@ -167,7 +164,7 @@ describe('QueueItem', () => {
 
       const buttons = screen.getAllByRole('button');
       fireEvent.click(buttons[buttons.length - 1]);
-      expect(onRemove).toHaveBeenCalledWith('1', expect.anything());
+      expect(onRemove).toHaveBeenCalledWith(mockTrack.queueId, expect.anything());
     });
 
     it('stops propagation when clicking the drag handle', () => {
@@ -204,8 +201,8 @@ describe('QueueItem', () => {
 });
 
 describe('QueueItemOverlay', () => {
-  const mockTrack: QueueItem = {
-    queueId: '1',
+  const mockTrack: QueueItem = testQueueItem({
+    queueId: '01900000-0000-7000-8000-0000000000a1',
     track: {
       id: '1',
       trackId: '1',
@@ -217,12 +214,11 @@ describe('QueueItemOverlay', () => {
       duration: 100,
       explicit: false,
     },
-    position: 0,
-  };
+  });
 
   describe('rendering', () => {
     it('renders with album cover', () => {
-      customRender(<QueueItemOverlay track={mockTrack as QueueItem} />);
+      customRender(<QueueItemOverlay track={mockTrack} />);
       expect(screen.getByText('Test Title')).toBeInTheDocument();
       expect(screen.getByText('Test Artist')).toBeInTheDocument();
       expect(screen.getByAltText('Test Title')).toHaveAttribute(
@@ -232,8 +228,8 @@ describe('QueueItemOverlay', () => {
     });
 
     it('renders fallback icon without cover', () => {
-      const noCoverTrack: QueueItem = {
-        queueId: '2',
+      const noCoverTrack: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-0000000000a2',
         track: {
           id: '2',
           trackId: '2',
@@ -245,17 +241,16 @@ describe('QueueItemOverlay', () => {
           duration: 100,
           explicit: false,
         },
-        position: 0,
-      };
+      });
 
-      customRender(<QueueItemOverlay track={noCoverTrack as QueueItem} />);
+      customRender(<QueueItemOverlay track={noCoverTrack} />);
       expect(screen.getByText('Test Title 2')).toBeInTheDocument();
       expect(screen.queryByAltText('Test Title 2')).not.toBeInTheDocument();
     });
 
     it('joins multiple artist names correctly', () => {
-      const multiArtistTrack: QueueItem = {
-        queueId: '3',
+      const multiArtistTrack: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-0000000000a3',
         track: {
           id: '3',
           trackId: '3',
@@ -267,16 +262,15 @@ describe('QueueItemOverlay', () => {
           duration: 100,
           explicit: false,
         },
-        position: 0,
-      };
+      });
 
-      customRender(<QueueItemOverlay track={multiArtistTrack as QueueItem} />);
+      customRender(<QueueItemOverlay track={multiArtistTrack} />);
       expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
     });
 
     it('renders "Unknown Artist" when artists is missing', () => {
-      const noArtistTrack: QueueItem = {
-        queueId: '4',
+      const noArtistTrack: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-0000000000a4',
         track: {
           id: '4',
           trackId: '4',
@@ -288,10 +282,9 @@ describe('QueueItemOverlay', () => {
           duration: 100,
           explicit: false,
         },
-        position: 0,
-      };
+      });
 
-      customRender(<QueueItemOverlay track={noArtistTrack as QueueItem} />);
+      customRender(<QueueItemOverlay track={noArtistTrack} />);
       expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
     });
   });

@@ -1,5 +1,6 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
-import type { PlaybackTrack, QueueItem } from '@repo/contracts';
+import { testQueueItem } from '@/test-utils/queue-test-fixtures';
+import type { QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,8 +39,10 @@ describe('History', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
           history: [
-            {
-              queueId: '1',
+            testQueueItem({
+              queueId: '01900000-0000-7000-8000-000000000101',
+              position: 0,
+              originalPosition: 0,
               track: {
                 id: '1',
                 title: 'Track 1',
@@ -51,10 +54,11 @@ describe('History', () => {
                 duration: 100,
                 explicit: false,
               },
-              position: 0,
-            },
-            {
-              queueId: '2',
+            }),
+            testQueueItem({
+              queueId: '01900000-0000-7000-8000-000000000102',
+              position: 1,
+              originalPosition: 1,
               track: {
                 id: '2',
                 title: 'Track 2',
@@ -66,9 +70,8 @@ describe('History', () => {
                 duration: 100,
                 explicit: false,
               },
-              position: 1,
-            },
-          ] as QueueItem[],
+            }),
+          ],
           playTrack: mockPlayTrack,
           toggleQueue: mockToggleQueue,
         }),
@@ -82,8 +85,8 @@ describe('History', () => {
     });
 
     it('calls playTrack when a track is clicked', () => {
-      const track = {
-        queueId: '1',
+      const track = testQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000103',
         track: {
           id: '1',
           title: 'Track 1',
@@ -94,9 +97,8 @@ describe('History', () => {
           albumArt: 'cover.jpg',
           duration: 100,
           explicit: false,
-        } as PlaybackTrack,
-        position: 0,
-      } as QueueItem;
+        },
+      });
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
           history: [track],
@@ -111,8 +113,8 @@ describe('History', () => {
     });
 
     it('renders placeholder when albumArt is missing', () => {
-      const track: QueueItem = {
-        queueId: '1',
+      const track: QueueItem = testQueueItem({
+        queueId: '01900000-0000-7000-8000-0000000000d1',
         track: {
           id: '1',
           title: 'No Art Track',
@@ -124,8 +126,7 @@ describe('History', () => {
           duration: 100,
           explicit: false,
         },
-        position: 0,
-      };
+      });
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
           history: [track],
@@ -142,20 +143,24 @@ describe('History', () => {
     });
 
     it('handles load more functionality', () => {
-      const history = Array.from({ length: 25 }).map((_, i) => ({
-        queueId: String(i),
-        track: {
-          id: `track-${i}`,
-          title: `Track ${i}`,
-          trackId: `track-${i}`,
-          artists: ['Artist'],
-          albumName: `Album ${i}`,
-          albumId: `album-${i}`,
-          albumArt: `cover-${i}.jpg`,
-          duration: 100,
-          explicit: false,
-        },
-      })) as QueueItem[];
+      const history: QueueItem[] = Array.from({ length: 25 }).map((_, i) =>
+        testQueueItem({
+          queueId: `01900000-0000-7000-8000-${i.toString(16).padStart(12, '0')}`,
+          position: i,
+          originalPosition: i,
+          track: {
+            id: `track-${i}`,
+            title: `Track ${i}`,
+            trackId: `track-${i}`,
+            artists: ['Artist'],
+            albumName: `Album ${i}`,
+            albumId: `album-${i}`,
+            albumArt: `cover-${i}.jpg`,
+            duration: 100,
+            explicit: false,
+          },
+        }),
+      );
 
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
