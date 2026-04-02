@@ -1,6 +1,11 @@
 import { BadRequestException, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { PlaybackState, PlaybackStatePayload, PlaybackStatePayloadSchema } from '@repo/contracts';
+import {
+  PLAYBACK_HISTORY_MAX_LENGTH,
+  PlaybackState,
+  PlaybackStatePayload,
+  PlaybackStatePayloadSchema,
+} from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
 import { SetPlaybackStateCommand } from './../impl/set-playback-state.command';
 
@@ -13,8 +18,6 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
   async execute(command: SetPlaybackStateCommand): Promise<PlaybackState> {
     const state: PlaybackStatePayload = {
       ...command.request.state,
-      sessionId: command.sessionId,
-      activeDeviceId: '',
       userId: command.userId,
     };
 
@@ -29,23 +32,25 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       throw new BadRequestException('Data sent was not valid.');
     }
 
+    const payload: PlaybackStatePayload = {
+      ...serialized.data,
+      history: serialized.data.history.slice(0, PLAYBACK_HISTORY_MAX_LENGTH),
+    };
+
     if (expectedVersion === 0) {
       const firstState = claimActiveDevice
         ? {
-            ...serialized.data,
+            ...payload,
             activeDeviceId: command.playbackDeviceId,
-            deviceName: command.playbackDeviceName,
-            deviceIcon: command.playbackDeviceIcon,
           }
-        : serialized.data;
-      return this.persistence.createIfAbsent(command.userId, command.sessionId, firstState);
+        : payload;
+      return this.persistence.createIfAbsent(command.userId, firstState);
     } else {
       return this.persistence.applyMutation(command.userId, expectedVersion, (current) => ({
         ...current,
-        ...serialized.data,
+        ...payload,
+        devices: payload.devices.length > 0 ? payload.devices : current.devices,
         activeDeviceId: claimActiveDevice ? command.playbackDeviceId : current.activeDeviceId,
-        deviceName: claimActiveDevice ? command.playbackDeviceName : current.deviceName,
-        deviceIcon: claimActiveDevice ? command.playbackDeviceIcon : current.deviceIcon,
       }));
     }
   }

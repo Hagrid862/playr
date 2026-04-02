@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlaybackState, PlaybackTrackSchema } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { SetTrackStateCommand } from '../impl/set-track-state.command';
 
 @CommandHandler(SetTrackStateCommand)
@@ -11,11 +12,7 @@ export class SetTrackStateHandler implements ICommandHandler<SetTrackStateComman
   async execute(command: SetTrackStateCommand): Promise<PlaybackState> {
     const { track, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-playback-state to create state first one.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     const serialized = PlaybackTrackSchema.safeParse(track);
     if (!serialized.success) {
