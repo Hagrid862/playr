@@ -207,20 +207,20 @@ export function PlayerActions() {
               ) : (
                 playbackDevices.map((device) => (
                   <button
-                    key={device.deviceId}
+                    key={device.id}
                     type="button"
                     className={cn(
                       'w-full flex items-center justify-between rounded px-2 py-1.5 text-sm transition-colors',
-                      device.deviceId === activeDeviceId
+                      device.id === activeDeviceId
                         ? 'bg-white/10 text-white'
                         : 'text-white/70 hover:text-white hover:bg-white/5',
                     )}
-                    onClick={() => void setActivePlaybackDevice(device.deviceId)}
+                    onClick={() => void setActivePlaybackDevice(device.id)}
                   >
                     <span className="truncate">
-                      {device.isCurrentDevice ? 'Web player (this device)' : device.deviceName}
+                      {device.isCurrentDevice ? 'Web player (this device)' : device.name}
                     </span>
-                    {device.deviceId === activeDeviceId ? <CheckIcon size={14} /> : null}
+                    {device.id === activeDeviceId ? <CheckIcon size={14} /> : null}
                   </button>
                 ))
               )}
