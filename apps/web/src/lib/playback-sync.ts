@@ -1,20 +1,40 @@
 import { getLocalPlaybackDeviceMetadata } from '@/lib/playback-device';
-import { zodTrackToPlaybackTrack } from '@/lib/playback-mappers';
+import { getOrderedNextQueue } from '@/lib/playback-queue';
 import { createPlaybackSocket } from '@/lib/playback-socket';
 import { usePlayerStore } from '@/stores/player.store';
-import type {
-  ListPlaybackDevicesResponse,
-  PlaybackState,
-  SetActiveDeviceRequest,
-  SetCurrentTimeStateRequest,
-  SetPlaybackStateRequest,
+import {
+  PLAYBACK_HISTORY_MAX_LENGTH,
+  type ListPlaybackDevicesResponse,
+  type PlaybackState,
+  type PlaybackTrack,
+  type SetActiveDeviceRequest,
+  type SetCurrentTimeStateRequest,
+  type SetPlaybackStateRequest,
+  type SetPlayingStateRequest,
 } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
 
+/** True while a `command:set-state` or `command:set-playing-state` round-trip is in flight. */
+let writeInFlight = false;
+
+let pendingSetStateWrite: {
+  state: SetPlaybackStateRequest['state'];
+  claimActiveDevice: boolean;
+} | null = null;
+
+/** Lightweight play/pause sync when no full snapshot is already queued. */
+let pendingPlayingWrite: { claimActiveDevice: boolean } | null = null;
+
+let flushMicrotaskScheduled = false;
+
 function isVersionConflict(errorMessage: string, code?: string): boolean {
-  return code === 'CONFLICT' || errorMessage.includes('version mismatch');
+  return (
+    code === 'CONFLICT' ||
+    errorMessage.includes('version mismatch') ||
+    errorMessage.includes('Expected version mismatch')
+  );
 }
 
 function clampCurrentTime(currentTime: number, duration: number): number {
@@ -23,11 +43,12 @@ function clampCurrentTime(currentTime: number, duration: number): number {
 
 /** Active audio client: keep local `currentTime` from the element; still advance `playbackVersion` from server. */
 function isLocalActiveAudioSource(state: {
-  activeDeviceId: string;
+  activeDeviceId: string | null;
   localPlaybackDeviceId: string;
 }): boolean {
   return (
-    Boolean(state.activeDeviceId) &&
+    state.activeDeviceId != null &&
+    state.activeDeviceId !== '' &&
     Boolean(state.localPlaybackDeviceId) &&
     state.activeDeviceId === state.localPlaybackDeviceId
   );
@@ -51,21 +72,22 @@ function applyCurrentTimeServerUpdate(payload: { currentTime: number; version: n
   }
 }
 
-function buildSetStateBody(
-  trackData: ReturnType<typeof zodTrackToPlaybackTrack>,
-): SetPlaybackStateRequest['state'] {
+function buildSetStateBody(trackData: PlaybackTrack): SetPlaybackStateRequest['state'] {
   const s = usePlayerStore.getState();
+  const queue = getOrderedNextQueue(s.queue, s.isShuffled).map((item, index) => ({
+    ...item,
+    position: index,
+  }));
   return {
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
+    devices: s.playbackDevices.map((d) => ({ id: d.id, name: d.name, icon: d.icon })),
     isPlaying: s.isPlaying,
     trackData,
     currentTime: Math.min(Math.max(0, Math.floor(s.currentTime)), trackData.duration),
     volume: Math.min(1, Math.max(0, s.volume)),
     repeatMode: s.repeatMode,
     shuffle: s.isShuffled,
-    // Send current queue with normalized positions
-    queue: s.queue.map((item, index) => ({ ...item, position: index })),
+    queue,
+    history: s.history.slice(0, PLAYBACK_HISTORY_MAX_LENGTH),
     favorited: s.playbackFavorited,
     inLibrary: s.playbackInLibrary,
   };
@@ -126,58 +148,169 @@ export function disconnectPlaybackSync() {
   socket.removeAllListeners();
   socket.disconnect();
   socket = null;
+  writeInFlight = false;
+  pendingSetStateWrite = null;
+  pendingPlayingWrite = null;
+  flushMicrotaskScheduled = false;
 }
 
 function isPlaybackSocketConnected(): boolean {
   return Boolean(socket?.connected);
 }
 
+function scheduleFlushWriteQueue() {
+  if (flushMicrotaskScheduled) return;
+  flushMicrotaskScheduled = true;
+  queueMicrotask(() => {
+    flushMicrotaskScheduled = false;
+    flushWriteQueue();
+  });
+}
+
 /**
- * Push full snapshot to the server after local player mutations.
- * No-op if disconnected or there is no current track.
+ * Queue a full snapshot (latest store wins). Clears a pending playing-only write.
+ * @param schedule - when false, caller will call `flushWriteQueue()` immediately (e.g. after conflict hydrate).
  */
-export function afterLocalPlaybackMutation() {
+function mergeOrQueueFullSnapshot(claimActiveDevice: boolean, schedule = true) {
+  const s = usePlayerStore.getState();
+  if (!s.currentTrack) return;
+
+  pendingPlayingWrite = null;
+  const nextClaim = pendingSetStateWrite?.claimActiveDevice || claimActiveDevice;
+  pendingSetStateWrite = {
+    state: buildSetStateBody(s.currentTrack),
+    claimActiveDevice: nextClaim,
+  };
+  if (schedule) {
+    scheduleFlushWriteQueue();
+  }
+}
+
+function parseSyncAckError(result: unknown): { message: string; code?: string } | null {
+  if (!result || typeof result !== 'object') return null;
+  if (!('error' in result) || !result.error) return null;
+  const message = String(result.error);
+  const code =
+    'code' in result && typeof (result as { code?: unknown }).code === 'string'
+      ? (result as { code: string }).code
+      : undefined;
+  return { message, code };
+}
+
+function handleSyncWriteAck(
+  result: PlaybackState | { error?: string; code?: string } | undefined,
+  meta: { kind: 'set-state'; claim: boolean } | { kind: 'playing'; claim: boolean },
+) {
+  writeInFlight = false;
+
+  const err = parseSyncAckError(result);
+  if (err) {
+    if (isVersionConflict(err.message, err.code)) {
+      socket!.emit('query:get-state', {}, (state: PlaybackState | null) => {
+        if (state) applyStateFromServer(state);
+        mergeOrQueueFullSnapshot(meta.kind === 'set-state' ? meta.claim : meta.claim, false);
+        flushWriteQueue();
+      });
+      return;
+    }
+    flushWriteQueue();
+    return;
+  }
+
+  if (result) {
+    applyStateFromServer(result as PlaybackState);
+  }
+  flushWriteQueue();
+}
+
+/**
+ * Send the next queued mutation. Full `set-state` takes precedence over `set-playing-state`.
+ */
+function flushWriteQueue() {
+  if (!isPlaybackSocketConnected() || writeInFlight) return;
+
+  if (pendingSetStateWrite) {
+    const job = pendingSetStateWrite;
+    pendingSetStateWrite = null;
+
+    const { playbackVersion } = usePlayerStore.getState();
+    writeInFlight = true;
+
+    socket!.emit(
+      'command:set-state',
+      {
+        state: job.state,
+        expectedVersion: playbackVersion,
+        claimActiveDevice: job.claimActiveDevice,
+      } satisfies SetPlaybackStateRequest,
+      (ack: PlaybackState | { error?: string; code?: string }) => {
+        handleSyncWriteAck(ack, { kind: 'set-state', claim: job.claimActiveDevice });
+      },
+    );
+    return;
+  }
+
+  if (pendingPlayingWrite) {
+    const job = pendingPlayingWrite;
+    pendingPlayingWrite = null;
+
+    const s = usePlayerStore.getState();
+    if (!s.currentTrack || s.playbackVersion === 0) {
+      mergeOrQueueFullSnapshot(job.claimActiveDevice, false);
+      flushWriteQueue();
+      return;
+    }
+
+    writeInFlight = true;
+    const payload: SetPlayingStateRequest = {
+      isPlaying: s.isPlaying,
+      expectedVersion: s.playbackVersion,
+    };
+
+    socket!.emit(
+      'command:set-playing-state',
+      payload,
+      (ack: PlaybackState | { error?: string; code?: string }) => {
+        handleSyncWriteAck(ack, { kind: 'playing', claim: job.claimActiveDevice });
+      },
+    );
+  }
+}
+
+function requestSetStateWrite(claimActiveDevice: boolean) {
   if (!isPlaybackSocketConnected()) return;
 
-  const { currentTrack, playbackVersion } = usePlayerStore.getState();
+  const { currentTrack } = usePlayerStore.getState();
   if (!currentTrack) return;
 
-  const trackData = currentTrack;
-  const state = buildSetStateBody(trackData);
+  mergeOrQueueFullSnapshot(claimActiveDevice);
+}
 
-  socket!.emit(
-    'command:set-state',
-    {
-      state,
-      expectedVersion: playbackVersion,
-      claimActiveDevice: false,
-    } satisfies SetPlaybackStateRequest,
-    (result: PlaybackState) => {
-      applyStateFromServer(result);
-    },
-  );
+/**
+ * Sync play/pause with a targeted command when possible (smaller payload, fewer conflicts).
+ * Falls back to a full snapshot when version is 0 or a write is already queued/in flight.
+ */
+export function syncPlayingStateToServer(claimActiveDevice: boolean) {
+  if (!isPlaybackSocketConnected()) return;
+
+  const s = usePlayerStore.getState();
+  if (!s.currentTrack) return;
+
+  if (s.playbackVersion === 0 || writeInFlight || pendingSetStateWrite !== null) {
+    mergeOrQueueFullSnapshot(claimActiveDevice);
+    return;
+  }
+
+  pendingPlayingWrite = { claimActiveDevice };
+  scheduleFlushWriteQueue();
+}
+
+export function afterLocalPlaybackMutation() {
+  requestSetStateWrite(false);
 }
 
 export function afterLocalPlaybackMutationWithClaim(claimActiveDevice: boolean) {
-  if (!isPlaybackSocketConnected()) return;
-
-  const { currentTrack, playbackVersion } = usePlayerStore.getState();
-  if (!currentTrack) return;
-
-  const trackData = currentTrack;
-  const state = buildSetStateBody(trackData);
-
-  socket!.emit(
-    'command:set-state',
-    {
-      state,
-      expectedVersion: playbackVersion,
-      claimActiveDevice,
-    } satisfies SetPlaybackStateRequest,
-    (result: PlaybackState) => {
-      applyStateFromServer(result);
-    },
-  );
+  requestSetStateWrite(claimActiveDevice);
 }
 
 export function listPlaybackDevices(): Promise<void> {
@@ -207,8 +340,9 @@ export function emitCurrentTimeSync(currentTime: number): Promise<void> {
       'command:set-current-time-state',
       payload,
       (result: PlaybackState | { error?: string; code?: string }) => {
-        if (result && typeof result === 'object' && 'error' in result && result.error) {
-          if (isVersionConflict(result.error, result.code)) {
+        const err = parseSyncAckError(result);
+        if (err) {
+          if (isVersionConflict(err.message, err.code)) {
             socket!.emit('query:get-state', {}, (state: PlaybackState | null) => {
               if (state) applyStateFromServer(state);
             });
@@ -242,9 +376,21 @@ export function setActivePlaybackDevice(deviceId: string): Promise<void> {
         deviceId,
         expectedVersion: playbackVersion,
       } satisfies SetActiveDeviceRequest,
-      (result: PlaybackState) => {
-        applyStateFromServer(result);
-        void listPlaybackDevices();
+      (result: PlaybackState | { error?: string; code?: string }) => {
+        const err = parseSyncAckError(result);
+        if (err) {
+          if (isVersionConflict(err.message, err.code)) {
+            socket!.emit('query:get-state', {}, (state: PlaybackState | null) => {
+              if (state) applyStateFromServer(state);
+            });
+          }
+          resolve();
+          return;
+        }
+        if (result) {
+          applyStateFromServer(result as PlaybackState);
+          void listPlaybackDevices();
+        }
         resolve();
       },
     );

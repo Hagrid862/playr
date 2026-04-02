@@ -1,5 +1,5 @@
+import type { PlaybackDevice } from '@repo/contracts';
 import { io } from 'socket.io-client';
-import type { PlaybackState } from '@repo/contracts';
 
 const getApiBaseUrl = () => import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -7,7 +7,7 @@ type CreatePlaybackSocketOptions = {
   accessToken: string;
   playbackDeviceId: string;
   deviceName: string;
-  deviceIcon: PlaybackState['deviceIcon'];
+  deviceIcon: PlaybackDevice['icon'];
 };
 
 export function createPlaybackSocket({
@@ -16,7 +16,7 @@ export function createPlaybackSocket({
   deviceName,
   deviceIcon,
 }: CreatePlaybackSocketOptions) {
-  const apiBaseUrl = getApiBaseUrl().replace(/\/$/, '') + '/playback';
+  const apiBaseUrl = new URL('/playback', getApiBaseUrl()).toString();
 
   const socket = io(apiBaseUrl, {
     auth: {

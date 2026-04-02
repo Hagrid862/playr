@@ -1,7 +1,17 @@
 import type { PlaybackTrack, QueueItem, ZodTrack } from '@repo/contracts';
 import { v6 as uuidv6 } from 'uuid';
 
-export function playbackTrackToQueueItem(track: PlaybackTrack): QueueItem {
+export function playbackTrackToQueueItem(
+  track: PlaybackTrack,
+  options?: {
+    type?: 'queue' | 'playingNext';
+    position?: number;
+    originalPosition?: number;
+  },
+): QueueItem {
+  const type = options?.type ?? 'queue';
+  const position = options?.position ?? 0;
+  const originalPosition = options?.originalPosition ?? position;
   return {
     queueId: uuidv6(),
     track: {
@@ -15,7 +25,9 @@ export function playbackTrackToQueueItem(track: PlaybackTrack): QueueItem {
       duration: track.duration,
       explicit: track.explicit,
     },
-    position: 0,
+    position,
+    type,
+    originalPosition,
   };
 }
 
