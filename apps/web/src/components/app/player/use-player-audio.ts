@@ -1,3 +1,4 @@
+import { getOrderedNextQueue } from '@/lib/playback-queue';
 import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player.store';
@@ -14,12 +15,14 @@ export function usePlayerAudio() {
   const timeToRestoreRef = useRef<number | null>(null);
   const lastTimeSyncAtRef = useRef<number>(0);
   const lastSyncedSecondRef = useRef<number | null>(null);
+  const prevStoreTimeRef = useRef<number>(0);
   const {
     currentTrack,
     isPlaying,
     volume,
     currentTime,
     queue,
+    isShuffled,
     quality,
     setCurrentTime,
     setDuration,
@@ -81,20 +84,21 @@ export function usePlayerAudio() {
     fetchQualities();
   }, [currentTrack, accessToken, apiBaseUrl, setAvailableQualities]);
 
-  // Sync isPlaying with audio element
+  // Sync isPlaying with audio element (pause/play only — not queue/shuffle)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     const shouldOutputAudio =
-      !isPlaybackSyncConnected() || !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
+      !isPlaybackSyncConnected() ||
+      activeDeviceId == null ||
+      activeDeviceId === '' ||
+      activeDeviceId === localPlaybackDeviceId;
 
-    // If not playing, always try to pause (even if src is not loaded yet)
     if (!isPlaying || !shouldOutputAudio) {
       audio.pause();
       return;
     }
 
-    // If playing, we need src to be loaded
     if (!audio.src) return;
 
     const playPromise = async () => {
@@ -114,21 +118,26 @@ export function usePlayerAudio() {
       }
     };
 
-    playPromise();
+    void playPromise();
   }, [isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId]);
 
-  // Sync volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
   }, [volume]);
 
-  // Sync currentTime from store (for seeking)
+  // Seek: only apply large jumps to the element (avoids stutter from queue/reorder server echoes)
   useEffect(() => {
-    if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 1) {
-      audioRef.current.currentTime = currentTime;
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
+    const prev = prevStoreTimeRef.current;
+    prevStoreTimeRef.current = currentTime;
+    const deltaAudio = Math.abs(audio.currentTime - currentTime);
+    if (deltaAudio <= 1) return;
+    const storeDelta = Math.abs(currentTime - prev);
+    if (storeDelta < 0.75) return;
+    audio.currentTime = currentTime;
   }, [currentTime]);
 
   useEffect(() => {
@@ -139,7 +148,10 @@ export function usePlayerAudio() {
   const handleTimeUpdate = () => {
     const audio = audioRef.current;
     const shouldOutputAudio =
-      !isPlaybackSyncConnected() || !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
+      !isPlaybackSyncConnected() ||
+      activeDeviceId == null ||
+      activeDeviceId === '' ||
+      activeDeviceId === localPlaybackDeviceId;
     if (!audio || !shouldOutputAudio) {
       return;
     }
@@ -151,7 +163,8 @@ export function usePlayerAudio() {
       !isPlaybackSyncConnected() ||
       !isPlaying ||
       !currentTrack ||
-      !activeDeviceId ||
+      activeDeviceId == null ||
+      activeDeviceId === '' ||
       activeDeviceId !== localPlaybackDeviceId ||
       playbackVersion === 0
     ) {
@@ -194,15 +207,14 @@ export function usePlayerAudio() {
     if (repeatMode === 'one') {
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
-        audioRef.current.play();
+        void audioRef.current.play();
       }
       return;
     }
 
-    const currentIndex = queue.findIndex((t) => t.track.id === currentTrack?.id);
-    const hasNext = currentIndex > -1 && currentIndex < queue.length - 1;
+    const ordered = getOrderedNextQueue(queue, isShuffled);
+    const hasNext = ordered.length > 0;
 
-    // If the queue ended and repeat is off, stop playback.
     if (repeatMode === 'off' && !hasNext) {
       pause();
       return;
