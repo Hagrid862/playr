@@ -72,7 +72,7 @@ export function History({ isVisible, onBack }: HistoryProps) {
                   {track.track?.albumArt ? (
                     <img
                       src={track.track?.albumArt}
-                      alt={track.track?.title}
+                      alt={track.track?.title || 'Cover art'}
                       className="h-full w-full object-cover group-hover:opacity-40 transition-opacity"
                     />
                   ) : (
