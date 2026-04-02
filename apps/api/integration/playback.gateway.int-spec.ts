@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import type { PlaybackState } from '@repo/contracts';
+import type { PlaybackDevice, PlaybackState } from '@repo/contracts';
 import { userBuilder } from '@repo/testing/builders';
 import { PrismaServiceMock } from '@repo/testing/nestjs';
 import { TokenService } from '../src/features/auth/services/token.service';
@@ -17,7 +17,7 @@ function createPlaybackSocket(params: {
   sessionId: string;
   playbackDeviceId: string;
   playbackDeviceName?: string;
-  playbackDeviceIcon?: PlaybackState['deviceIcon'];
+  playbackDeviceIcon?: PlaybackDevice['icon'];
 }) {
   const broadcast = { emit: vi.fn() };
   return {
@@ -37,9 +37,11 @@ function createPlaybackSocket(params: {
   };
 }
 
+/** Include `devices` so persisted state matches registry entries (see `PlaybackDeviceSchema`). */
 const minimalPlaybackStateFields = {
-  deviceName: 'Web Player',
-  deviceIcon: 'desktop' as const,
+  devices: [
+    { id: 'device-a', name: 'Web Player', icon: 'desktop' as const },
+  ] satisfies PlaybackState['devices'],
   isPlaying: false,
   trackData: {
     id: 'track-1',
@@ -53,6 +55,7 @@ const minimalPlaybackStateFields = {
     explicit: false,
   },
   queue: [] as PlaybackState['queue'],
+  history: [] as PlaybackState['history'],
   currentTime: 0,
   volume: 1,
   repeatMode: 'off' as const,
@@ -188,7 +191,13 @@ describe('PlaybackGateway (Integration)', () => {
     await gateway.handleConnection(socketD2 as never);
 
     await gateway.handleSetPlayback(socketD1 as never, {
-      state: { ...minimalPlaybackStateFields },
+      state: {
+        ...minimalPlaybackStateFields,
+        devices: [
+          { id: 'device-d1', name: 'Desktop', icon: 'desktop' },
+          { id: 'device-d2', name: 'Phone', icon: 'mobile' },
+        ],
+      },
       expectedVersion: 0,
       claimActiveDevice: true,
     });
@@ -197,8 +206,8 @@ describe('PlaybackGateway (Integration)', () => {
 
     expect(list.devices).toHaveLength(2);
 
-    const desktop = list.devices.find((d) => d.deviceId === 'device-d1');
-    const phone = list.devices.find((d) => d.deviceId === 'device-d2');
+    const desktop = list.devices.find((d) => d.id === 'device-d1');
+    const phone = list.devices.find((d) => d.id === 'device-d2');
 
     expect(desktop?.isActive).toBe(true);
     expect(desktop?.isCurrentDevice).toBe(false);
