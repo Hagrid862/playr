@@ -1,7 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlaybackState } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { AddQueueItemCommand } from '../impl/add-queue-item.command';
 
 @CommandHandler(AddQueueItemCommand)
@@ -11,11 +11,7 @@ export class AddQueueItemHandler implements ICommandHandler<AddQueueItemCommand>
   async execute(command: AddQueueItemCommand): Promise<PlaybackState> {
     const { track: item, position: insertAt, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-queue-state to create state first one.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       const ordered = [...current.queue].sort((a, b) => a.position - b.position);
@@ -25,7 +21,11 @@ export class AddQueueItemHandler implements ICommandHandler<AddQueueItemCommand>
           : Math.max(0, Math.min(insertAt, ordered.length));
 
       const next = [...ordered];
-      next.splice(index, 0, { ...item });
+      const maxOriginalPos = next.reduce((max, item) => Math.max(max, item.originalPosition), -1);
+      next.splice(index, 0, {
+        ...item,
+        originalPosition: item.originalPosition ?? maxOriginalPos + 1,
+      });
       const queue = next.map((q, i) => ({ ...q, position: i }));
 
       return { ...current, queue };

@@ -1,7 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { PlaybackState } from '@repo/contracts';
+import type { PlaybackState } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { SetNextQueueItemCommand } from '../impl/set-next-queue-item.command';
 
 @CommandHandler(SetNextQueueItemCommand)
@@ -11,23 +11,30 @@ export class SetNextQueueItemHandler implements ICommandHandler<SetNextQueueItem
   async execute(command: SetNextQueueItemCommand): Promise<PlaybackState> {
     const { track, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-queue-state to create state first one.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       const ordered = [...current.queue].sort((a, b) => a.position - b.position);
-      const currentIndex = ordered.findIndex((item) => item.track.id === current.trackData.id);
+      const maxOriginalPos = ordered.reduce(
+        (max, item) => Math.max(max, item.originalPosition),
+        -1,
+      );
+      const item = {
+        ...track,
+        type: 'playingNext' as const,
+        originalPosition: track.originalPosition ?? maxOriginalPos + 1,
+      };
 
-      const next = [...ordered];
-      const insertIndex = currentIndex === -1 ? 0 : currentIndex + 1;
-      next.splice(insertIndex, 0, { ...track });
+      let combined: typeof ordered;
+      if (current.shuffle) {
+        combined = [item, ...ordered];
+      } else {
+        const manual = ordered.filter((q) => q.type === 'queue');
+        const playingNext = ordered.filter((q) => q.type === 'playingNext');
+        combined = [...manual, item, ...playingNext];
+      }
 
-      // Ensure sequential positions
-      const queue = next.map((item, idx) => ({ ...item, position: idx }));
-
+      const queue = combined.map((q, idx) => ({ ...q, position: idx }));
       return { ...current, queue };
     });
   }

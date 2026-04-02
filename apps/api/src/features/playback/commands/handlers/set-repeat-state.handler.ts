@@ -1,7 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlaybackState } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { SetRepeatStateCommand } from '../impl/set-repeat-state.command';
 
 @CommandHandler(SetRepeatStateCommand)
@@ -11,11 +11,7 @@ export class SetRepeatStateHandler implements ICommandHandler<SetRepeatStateComm
   async execute(command: SetRepeatStateCommand): Promise<PlaybackState> {
     const { repeatMode, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-playback-state to create state first one.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       return {
