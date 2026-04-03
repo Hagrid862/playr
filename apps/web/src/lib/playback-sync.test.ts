@@ -3,26 +3,26 @@ import type { PlayerState } from '@/stores/player.store';
 import { usePlayerStore } from '@/stores/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type {
-    ListPlaybackDeviceEntry,
-    ListPlaybackDevicesResponse,
-    PlaybackState,
-    PlaybackTrack,
-    QueueItem,
+  ListPlaybackDeviceEntry,
+  ListPlaybackDevicesResponse,
+  PlaybackState,
+  PlaybackTrack,
+  QueueItem,
 } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlaybackSocket } from './playback-socket';
 import {
-    afterLocalPlaybackMutation,
-    afterLocalPlaybackMutationWithClaim,
-    connectPlaybackSync,
-    disconnectPlaybackSync,
-    emitCurrentTimeSync,
-    getPlaybackSocket,
-    isPlaybackSyncConnected,
-    listPlaybackDevices,
-    setActivePlaybackDevice,
-    syncPlayingStateToServer,
+  afterLocalPlaybackMutation,
+  afterLocalPlaybackMutationWithClaim,
+  connectPlaybackSync,
+  disconnectPlaybackSync,
+  emitCurrentTimeSync,
+  getPlaybackSocket,
+  isPlaybackSyncConnected,
+  listPlaybackDevices,
+  setActivePlaybackDevice,
+  syncPlayingStateToServer,
 } from './playback-sync';
 
 type SocketOnCall = [event: string, handler: (...args: unknown[]) => void];
