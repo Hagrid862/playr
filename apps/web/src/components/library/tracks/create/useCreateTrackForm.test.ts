@@ -1,7 +1,8 @@
 import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockAlbum } from '../__tests__/fixtures';
+import { albumBuilder, artistBuilder } from '@repo/testing/builders';
+import { customRenderHook } from '@repo/testing/web';
+import { act, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateTrackForm } from './useCreateTrackForm';
 
 vi.mock('@/lib/audio-metadata', () => ({
@@ -14,6 +15,11 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+const originalCreateObjectURL = global.URL.createObjectURL;
+const originalRevokeObjectURL = global.URL.revokeObjectURL;
+
+const mockAlbum = { ...albumBuilder(), artists: [artistBuilder()] };
+
 describe('useCreateTrackForm', () => {
   const mockOnSubmit = vi.fn().mockResolvedValue(undefined);
 
@@ -23,8 +29,13 @@ describe('useCreateTrackForm', () => {
     global.URL.revokeObjectURL = vi.fn();
   });
 
+  afterEach(() => {
+    global.URL.createObjectURL = originalCreateObjectURL;
+    global.URL.revokeObjectURL = originalRevokeObjectURL;
+  });
+
   it('initializes with default values', () => {
-    const { result } = renderHook(() =>
+    const { result } = customRenderHook(() =>
       useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
     );
 
@@ -40,7 +51,7 @@ describe('useCreateTrackForm', () => {
 
   describe('handleFiles', () => {
     it('opens multiple-files modal when more than one file', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -57,7 +68,7 @@ describe('useCreateTrackForm', () => {
     });
 
     it('opens format modal for non-audio file', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -73,7 +84,7 @@ describe('useCreateTrackForm', () => {
     });
 
     it('sets audioFile for valid audio file', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -91,7 +102,7 @@ describe('useCreateTrackForm', () => {
 
   describe('submission', () => {
     it('calls onSubmit and navigates when stayOnPage is false', async () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -114,7 +125,7 @@ describe('useCreateTrackForm', () => {
     });
 
     it('resets form and increments track number when stayOnPage is true', async () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -142,7 +153,7 @@ describe('useCreateTrackForm', () => {
     });
 
     it('sets coverFile to trackCoverFile if useTrackCoverAsAlbumCover is true', async () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -183,7 +194,7 @@ describe('useCreateTrackForm', () => {
           }),
       );
 
-      const { result, unmount } = renderHook(() =>
+      const { result, unmount } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -208,7 +219,7 @@ describe('useCreateTrackForm', () => {
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(
         new File(['cover'], 'cover.jpg', { type: 'image/jpeg' }),
       );
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -239,7 +250,7 @@ describe('useCreateTrackForm', () => {
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(
         new File(['cover'], 'cover.jpg', { type: 'image/jpeg' }),
       );
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -265,7 +276,7 @@ describe('useCreateTrackForm', () => {
     it('sets submissionError on submit failure', async () => {
       mockOnSubmit.mockRejectedValueOnce(new Error('Network error'));
 
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -297,7 +308,7 @@ describe('useCreateTrackForm', () => {
         diskNo: 2,
       });
 
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 
@@ -323,7 +334,7 @@ describe('useCreateTrackForm', () => {
       const coverFile = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
 
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useCreateTrackForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
       );
 

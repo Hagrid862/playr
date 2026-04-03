@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { customRender } from '@repo/testing/web';
+import { screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkTrackActions } from './BulkTrackActions';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -9,46 +10,54 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('BulkTrackActions', () => {
-  it('renders Cancel link and Upload button', () => {
-    render(<BulkTrackActions tracksCount={1} isLoading={false} hasInvalidTracks={false} />);
-
-    expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute('href', '..');
-    expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('shows singular track label when one track', () => {
-    render(<BulkTrackActions tracksCount={1} isLoading={false} hasInvalidTracks={false} />);
+  describe('rendering', () => {
+    it('renders Cancel link and Upload button', () => {
+      customRender(<BulkTrackActions tracksCount={1} isLoading={false} hasInvalidTracks={false} />);
 
-    expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute('href', '..');
+      expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeInTheDocument();
+    });
+
+    it('shows singular label for one track', () => {
+      customRender(<BulkTrackActions tracksCount={1} isLoading={false} hasInvalidTracks={false} />);
+
+      expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeInTheDocument();
+    });
+
+    it('shows plural label for multiple tracks', () => {
+      customRender(<BulkTrackActions tracksCount={3} isLoading={false} hasInvalidTracks={false} />);
+
+      expect(screen.getByRole('button', { name: /Upload 3 tracks/i })).toBeInTheDocument();
+    });
+
+    it('shows Uploading when isLoading', () => {
+      customRender(<BulkTrackActions tracksCount={1} isLoading hasInvalidTracks={false} />);
+
+      expect(screen.getByRole('button', { name: /Uploading/i })).toBeInTheDocument();
+    });
   });
 
-  it('shows plural tracks label when multiple tracks', () => {
-    render(<BulkTrackActions tracksCount={3} isLoading={false} hasInvalidTracks={false} />);
+  describe('disabled state', () => {
+    it('disables submit when hasInvalidTracks', () => {
+      customRender(<BulkTrackActions tracksCount={1} isLoading={false} hasInvalidTracks />);
 
-    expect(screen.getByRole('button', { name: /Upload 3 tracks/i })).toBeInTheDocument();
-  });
+      expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeDisabled();
+    });
 
-  it('shows Uploading... when isLoading', () => {
-    render(<BulkTrackActions tracksCount={1} isLoading hasInvalidTracks={false} />);
+    it('disables submit when isLoading', () => {
+      customRender(<BulkTrackActions tracksCount={1} isLoading hasInvalidTracks={false} />);
 
-    expect(screen.getByRole('button', { name: /Uploading/i })).toBeInTheDocument();
-  });
+      expect(screen.getByRole('button', { name: /Uploading/i })).toBeDisabled();
+    });
 
-  it('disables submit when hasInvalidTracks', () => {
-    render(<BulkTrackActions tracksCount={1} isLoading={false} hasInvalidTracks />);
+    it('disables submit when tracksCount is 0', () => {
+      customRender(<BulkTrackActions tracksCount={0} isLoading={false} hasInvalidTracks={false} />);
 
-    expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeDisabled();
-  });
-
-  it('disables submit when isLoading', () => {
-    render(<BulkTrackActions tracksCount={1} isLoading hasInvalidTracks={false} />);
-
-    expect(screen.getByRole('button', { name: /Uploading/i })).toBeDisabled();
-  });
-
-  it('disables submit when tracksCount is 0', () => {
-    render(<BulkTrackActions tracksCount={0} isLoading={false} hasInvalidTracks={false} />);
-
-    expect(screen.getByRole('button', { name: /Upload 0 tracks/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Upload 0 tracks/i })).toBeDisabled();
+    });
   });
 });

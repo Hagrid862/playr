@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { sessionBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClient, SessionType } from '@repo/db';
+import { sessionBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { SessionRepository } from './session.repository';

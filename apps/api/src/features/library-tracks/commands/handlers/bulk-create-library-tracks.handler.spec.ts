@@ -3,12 +3,12 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackSchema } from '@repo/contracts';
 import { AlbumType, Track, Visibility } from '@repo/db';
-import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing';
+import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { BulkCreateLibraryTracksCommand } from '../impl/bulk-create-library-tracks.command';

@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { audioFileBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AudioFormat, AudioQuality, FileBucket, PrismaClient, ProcessingStatus } from '@repo/db';
+import { audioFileBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { AudioFileRepository } from './audio-file.repository';

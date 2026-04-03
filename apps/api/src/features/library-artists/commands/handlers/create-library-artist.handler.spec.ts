@@ -2,14 +2,14 @@ import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { LibraryArtistRepository } from '@/shared/repositories/library-artist.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { artistBuilder, libraryBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import {
   ConflictException,
   InternalServerErrorException,
   PreconditionFailedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { artistBuilder, libraryBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryArtistCommand } from '../impl/create-library-artist.command';
 import { CreateLibraryArtistHandler } from './create-library-artist.handler';

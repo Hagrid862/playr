@@ -1,13 +1,13 @@
-import { userBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Gender } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractTokenFromQuery, JwtStrategy } from './jwt.strategy';
+import { userBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Request } from 'express';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserRepository } from '../../../shared/repositories/user.repository';
+import { extractTokenFromQuery, JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;

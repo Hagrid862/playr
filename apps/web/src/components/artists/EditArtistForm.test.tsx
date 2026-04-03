@@ -4,7 +4,8 @@ import {
   ZodArtist,
   ZodImage,
 } from '@repo/contracts';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { customRender } from '@repo/testing/web';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -68,7 +69,7 @@ describe('EditArtistForm', () => {
       avatarId: null,
       bannerId: null,
     };
-    render(<EditArtistForm {...defaultProps} artist={artistNoImages} />);
+    customRender(<EditArtistForm {...defaultProps} artist={artistNoImages} />);
 
     const images = screen.queryAllByRole('img');
     expect(images.length).toBe(0);
@@ -82,7 +83,7 @@ describe('EditArtistForm', () => {
       avatarId: 'id-123',
       bannerId: 'id-456',
     };
-    render(<EditArtistForm {...defaultProps} artist={artistWithIdsOnly} />);
+    customRender(<EditArtistForm {...defaultProps} artist={artistWithIdsOnly} />);
 
     const images = screen.getAllByRole('img');
     expect(images[0]).toHaveAttribute('src', '/api/images/id-456'); // Banner fallback
@@ -90,7 +91,7 @@ describe('EditArtistForm', () => {
   });
 
   it('renders correctly with initial values', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
 
     expect(screen.getByLabelText(/Artist Name/i)).toHaveValue('Kurt Cobain');
     expect(screen.getByLabelText(/Description/i)).toHaveValue('Lead singer of Nirvana');
@@ -99,7 +100,7 @@ describe('EditArtistForm', () => {
 
   it('calls onCancel when cancel button is clicked', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
     await user.click(cancelBtn);
     expect(mockOnCancel).toHaveBeenCalled();
@@ -107,7 +108,7 @@ describe('EditArtistForm', () => {
 
   it('shows validation error when name is empty and touched', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
 
     const nameInput = screen.getByLabelText(/Artist Name/i);
     await user.clear(nameInput);
@@ -120,7 +121,7 @@ describe('EditArtistForm', () => {
     const serverErrors: Partial<Record<keyof UpdateLibraryArtistRequest, string>> = {
       name: 'Server error name',
     };
-    render(<EditArtistForm {...defaultProps} serverErrors={serverErrors} />);
+    customRender(<EditArtistForm {...defaultProps} serverErrors={serverErrors} />);
 
     expect(screen.getByText('Server error name')).toBeInTheDocument();
   });
@@ -134,7 +135,7 @@ describe('EditArtistForm', () => {
       ]),
     } as ReturnType<typeof UpdateLibraryArtistRequestSchema.safeParse>);
 
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
     fireEvent.change(nameInput, { target: { value: 'trigger' } });
     fireEvent.blur(nameInput);
@@ -146,7 +147,7 @@ describe('EditArtistForm', () => {
 
   it('displays form-level errors for description when touched', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <EditArtistForm
         {...defaultProps}
         serverErrors={{ description: 'Server description error' }}
@@ -162,7 +163,9 @@ describe('EditArtistForm', () => {
 
   it('handles empty value in description validator', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} artist={{ ...mockArtist, description: null }} />);
+    customRender(
+      <EditArtistForm {...defaultProps} artist={{ ...mockArtist, description: null }} />,
+    );
     const descInput = screen.getByLabelText(/Description/i);
     await user.type(descInput, 'a');
     await user.tab();
@@ -170,7 +173,7 @@ describe('EditArtistForm', () => {
   });
 
   it('handles avatar selection', async () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const file = new File(['hello'], 'hello.png', { type: 'image/png' });
     const fileInputs = document.querySelectorAll('input[type="file"]');
     const avatarInput = fileInputs[0];
@@ -187,7 +190,7 @@ describe('EditArtistForm', () => {
   it('handles banner selection', async () => {
     const user = userEvent.setup();
     const artistNoBanner: ZodArtist = { ...mockArtist, banner: null, bannerId: null };
-    render(<EditArtistForm {...defaultProps} artist={artistNoBanner} />);
+    customRender(<EditArtistForm {...defaultProps} artist={artistNoBanner} />);
 
     const file = new File(['hello'], 'banner.png', { type: 'image/png' });
     const fileInputs = document.querySelectorAll('input[type="file"]');
@@ -201,7 +204,7 @@ describe('EditArtistForm', () => {
 
   it('submits form with selected files', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
 
     const nameInput = screen.getByLabelText(/Artist Name/i);
     await user.clear(nameInput);
@@ -226,13 +229,13 @@ describe('EditArtistForm', () => {
   });
 
   it('shows loading state on save button', () => {
-    render(<EditArtistForm {...defaultProps} isLoading={true} />);
+    customRender(<EditArtistForm {...defaultProps} isLoading={true} />);
     expect(screen.getByText(/Saving.../i)).toBeInTheDocument();
   });
 
   it('triggers click on file inputs when clicking visual elements', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
 
     const avatarInput = document.querySelectorAll('input[type="file"]')[0] as HTMLInputElement;
     const bannerInput = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
@@ -255,21 +258,21 @@ describe('EditArtistForm', () => {
       avatar: null,
       banner: null,
     };
-    render(<EditArtistForm {...defaultProps} artist={artistNoMedia} />);
+    customRender(<EditArtistForm {...defaultProps} artist={artistNoMedia} />);
     const fileInputs = document.querySelectorAll('input[type="file"]');
     fireEvent.change(fileInputs[0], { target: { files: [] } });
     fireEvent.change(fileInputs[1], { target: { files: [] } });
   });
 
   it('handles cancelling file selections with initial IDs', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const fileInputs = document.querySelectorAll('input[type="file"]');
     fireEvent.change(fileInputs[0], { target: { files: [] } });
     fireEvent.change(fileInputs[1], { target: { files: [] } });
   });
 
   it('shows no error when valid name is blurred', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const nameInput = screen.getByLabelText(/Artist Name/i);
     fireEvent.change(nameInput, { target: { value: 'Valid Name' } });
     fireEvent.blur(nameInput);
@@ -278,7 +281,7 @@ describe('EditArtistForm', () => {
 
   it('handles field-level validation for long description', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const descInput = screen.getByLabelText(/Description/i);
 
     fireEvent.change(descInput, { target: { value: 'a'.repeat(2050) } });
@@ -291,7 +294,7 @@ describe('EditArtistForm', () => {
 
   it('handles null description value in validator', () => {
     const artistWithNullDesc = { ...mockArtist, description: null };
-    render(
+    customRender(
       <EditArtistForm {...defaultProps} artist={artistWithNullDesc as unknown as ZodArtist} />,
     );
     const descInput = screen.getByLabelText(/Description/i);
@@ -300,13 +303,13 @@ describe('EditArtistForm', () => {
   });
 
   it('shows drag overlay when dragging files over window', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     expect(screen.getByText(/Drop image to update Avatar/i)).toBeInTheDocument();
   });
 
   it('hides drag overlay when dragging leaves window', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     expect(screen.getByText(/Drop image to update Avatar/i)).toBeInTheDocument();
     fireEvent.dragLeave(window, { dataTransfer: {} });
@@ -314,7 +317,7 @@ describe('EditArtistForm', () => {
   });
 
   it('keeps drag overlay visible during nested drag events', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     expect(screen.getByText(/Drop image to update Avatar/i)).toBeInTheDocument();
@@ -327,7 +330,7 @@ describe('EditArtistForm', () => {
   });
 
   it('updates avatar preview when dropping single valid image file', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const avatarInput = document.querySelectorAll('input[type="file"]')[0] as HTMLInputElement;
     const filesDescriptor = Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -348,7 +351,7 @@ describe('EditArtistForm', () => {
   });
 
   it('hides drag overlay when drop occurs and syncs avatar file input', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     expect(screen.getByText(/Drop image to update Avatar/i)).toBeInTheDocument();
 
@@ -372,7 +375,7 @@ describe('EditArtistForm', () => {
   });
 
   it('shows Too Many Files dialog when dropping multiple files', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const file1 = new File(['x'], 'a.png', { type: 'image/png' });
     const file2 = new File(['y'], 'b.png', { type: 'image/png' });
     fireEvent.drop(window, { dataTransfer: { files: [file1, file2] } });
@@ -380,7 +383,7 @@ describe('EditArtistForm', () => {
   });
 
   it('shows Invalid File Format dialog when dropping non-image file', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
     fireEvent.drop(window, { dataTransfer: { files: [file] } });
     expect(screen.getByText(/Invalid File Format/i)).toBeInTheDocument();
@@ -388,7 +391,7 @@ describe('EditArtistForm', () => {
 
   it('closes Too Many Files dialog when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.drop(window, {
       dataTransfer: {
         files: [
@@ -404,7 +407,7 @@ describe('EditArtistForm', () => {
 
   it('closes Invalid File Format dialog when OK is clicked', async () => {
     const user = userEvent.setup();
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.drop(window, {
       dataTransfer: { files: [new File(['x'], 'doc.pdf', { type: 'application/pdf' })] },
     });
@@ -414,19 +417,19 @@ describe('EditArtistForm', () => {
   });
 
   it('does not set dragging when dragenter has no items', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [], files: [] } });
     expect(screen.queryByText(/Drop image to update Avatar/i)).not.toBeInTheDocument();
   });
 
   it('handles dragover event', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragOver(window, { dataTransfer: { items: [] } });
     expect(screen.getByLabelText(/Artist Name/i)).toBeInTheDocument();
   });
 
   it('handles drop with no files', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     expect(screen.getByText(/Drop image to update Avatar/i)).toBeInTheDocument();
 
@@ -436,7 +439,7 @@ describe('EditArtistForm', () => {
   });
 
   it('handles drop with undefined dataTransfer', () => {
-    render(<EditArtistForm {...defaultProps} />);
+    customRender(<EditArtistForm {...defaultProps} />);
     fireEvent.dragEnter(window, { dataTransfer: { items: [{}], files: [] } });
     fireEvent.drop(window, { dataTransfer: undefined } as unknown as DragEvent);
 
@@ -444,7 +447,7 @@ describe('EditArtistForm', () => {
   });
 
   it('handles drop when avatar input ref is null', () => {
-    render(<EditArtistForm {...defaultProps} _testHideAvatarInput />);
+    customRender(<EditArtistForm {...defaultProps} _testHideAvatarInput />);
 
     const file = new File(['x'], 'dropped.png', { type: 'image/png' });
     fireEvent.drop(window, { dataTransfer: { files: [file] } });

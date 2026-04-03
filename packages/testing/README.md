@@ -1,6 +1,6 @@
 # @repo/testing
 
-Shared testing utilities for the Playr monorepo. Provides entity builders, NestJS test helpers, and web (React) test utilities to reduce boilerplate across specs.
+Shared testing utilities for the Playr monorepo: entity builders, HTTP/API request builders, NestJS helpers, Multer mocks, and web (React) test utilities to reduce boilerplate across specs.
 
 ## Installation
 
@@ -14,27 +14,37 @@ Add as a dev dependency in your app:
 }
 ```
 
-- **Web helpers**: Also need `@testing-library/react`, `@tanstack/react-query`, `react`, and `react-dom` (plus `@tanstack/react-router` for router mocks).
+- **Nest helpers**: `@nestjs/common` (peer, optional).
+- **Web helpers**: `@testing-library/react`, `@tanstack/react-query`, `react`, and `react-dom` (peers, optional); `@tanstack/react-router` for router mocks and `customRenderWithRouter`.
+- **Multer mock** (`@repo/testing/mocks`): types come from `@types/multer` if your TS project does not already include them.
 
 ## Exports
 
-| Entry Point            | Contents                                           |
-| ---------------------- | -------------------------------------------------- |
-| `@repo/testing`        | Entity builders                                    |
-| `@repo/testing/nestjs` | NestJS mocks, `createMock`, `DeepMocked`           |
-| `@repo/testing/web`    | React render, store mocks, router mock, form mocks |
+The root entry `@repo/testing` re-exports everything below. Prefer a subpath when you only need one area (clearer imports and friendlier bundling).
+
+| Entry Point              | Contents                                                        |
+| ------------------------ | --------------------------------------------------------------- |
+| `@repo/testing`          | Barrel: builders, mocks, nestjs, web                            |
+| `@repo/testing/builders` | Entity and domain builders                                      |
+| `@repo/testing/requests` | Contract-shaped request builders for API/command tests          |
+| `@repo/testing/mocks`    | `createMockFile` (Express.Multer.File) for upload handler specs |
+| `@repo/testing/nestjs`   | Prisma mocks, `createMock`, `createMockProviders`, `DeepMocked` |
+| `@repo/testing/web`      | React render helpers, store/router/form mocks                   |
 
 ---
 
-## Entity Builders
+## Entity builders
+
+Import from `@repo/testing` or `@repo/testing/builders`.
 
 Builders create test data with sensible defaults. Override any field via the `overrides` argument.
 
-### Available Builders
+### Available builders
 
-- `userBuilder`, `trackBuilder`, `albumBuilder`, `artistBuilder`
-- `libraryBuilder`, `libraryTrackBuilder`, `libraryAlbumBuilder`, `libraryArtistBuilder`
-- `audioFileBuilder`, `sessionBuilder`, `emailAddressBuilder`, `imageBuilder`
+- **Core**: `userBuilder`, `trackBuilder`, `albumBuilder`, `artistBuilder`
+- **Library**: `libraryBuilder`, `libraryTrackBuilder`, `libraryAlbumBuilder`, `libraryArtistBuilder`
+- **Media / auth**: `audioFileBuilder`, `sessionBuilder`, `emailAddressBuilder`, `imageBuilder`, `refreshTokenBuilder`
+- **Access / composite**: `albumAccessBuilder`, `artistAccessBuilder`, `trackAccessBuilder`, `trackWithAccessBuilder`
 
 ### Usage
 
@@ -44,7 +54,7 @@ import {
   trackBuilder,
   albumBuilder,
   artistBuilder,
-} from "@repo/testing";
+} from "@repo/testing/builders";
 
 // Default entity (IDs are random via randUuid)
 const user = userBuilder();
@@ -63,7 +73,53 @@ expect(admin.id).toBe("admin-1");
 
 ---
 
-## NestJS Helpers
+## Request builders
+
+Import from `@repo/testing/requests`. These return objects aligned with `@repo/contracts` types for handler and integration tests.
+
+| Export                                  | Purpose                     |
+| --------------------------------------- | --------------------------- |
+| `loginRequestBuilder`                   | Login body                  |
+| `registerRequestBuilder`                | Registration body           |
+| `createLibraryAlbumRequestBuilder`      | Create library album        |
+| `createLibraryTrackRequestBuilder`      | Create library track        |
+| `createLibraryArtistRequestBuilder`     | Create library artist       |
+| `bulkCreateLibraryTracksRequestBuilder` | Bulk create tracks request  |
+| `bulkCreateLibraryTrackItemBuilder`     | Single item for bulk create |
+| `updateLibraryAlbumRequestBuilder`      | Update library album        |
+| `updateLibraryTrackRequestBuilder`      | Update library track        |
+| `updateLibraryArtistRequestBuilder`     | Update library artist       |
+| `deleteLibraryAlbumRequestBuilder`      | Delete library album        |
+| `deleteLibraryArtistRequestBuilder`     | Delete library artist       |
+| `getLibraryAlbumsRequestBuilder`        | List/filter library albums  |
+| `getLibraryTracksRequestBuilder`        | List/filter library tracks  |
+| `getLibraryArtistsRequestBuilder`       | List/filter library artists |
+| `bulkUploadTrackAudioRequestBuilder`    | Bulk upload track audio     |
+
+```typescript
+import { loginRequestBuilder } from "@repo/testing/requests";
+
+const body = loginRequestBuilder({ email: "user@example.com" });
+```
+
+---
+
+## Multer mock
+
+Import from `@repo/testing/mocks`.
+
+```typescript
+import { createMockFile } from "@repo/testing/mocks";
+
+const file = createMockFile({
+  originalname: "song.mp3",
+  mimetype: "audio/mpeg",
+});
+```
+
+---
+
+## NestJS helpers
 
 Import from `@repo/testing/nestjs`:
 
@@ -154,13 +210,16 @@ mockRepo.findById.mockResolvedValue(userBuilder());
 
 ---
 
-## Web Helpers
+## Web helpers
 
-Import from `@repo/testing/web`:
+Import from `@repo/testing/web` (or `@repo/testing` for the barrel):
 
 ```typescript
 import {
   customRender,
+  customRenderHook,
+  customRenderWithRouter,
+  customRenderHookWithRouter,
   createRouterMock,
   createPlayerStoreMock,
   createAuthStoreMock,
@@ -169,23 +228,44 @@ import {
 } from "@repo/testing/web";
 ```
 
-### customRender
+### customRender & hooks
 
-Renders a component with `QueryClientProvider` and `RouterProvider` for tests that need React Query and/or TanStack Router (`useNavigate`, `useParams`, `Link`, etc.):
+`customRender` wraps components with `QueryClientProvider` (React Query). `customRenderHook` does the same for hooks.
 
 ```tsx
-import { customRender } from "@repo/testing/web";
+import { customRender, customRenderHook } from "@repo/testing/web";
 
 customRender(<MyComponent />);
 
 // With custom QueryClient
 customRender(<MyComponent />, { queryClient: myQueryClient });
 
-// With initial URL for the in-memory router
-customRender(<MyComponent />, { initialLocation: "/albums/123" });
+customRenderHook(() => useMyHook(), { queryClient: myQueryClient });
+```
 
-// With router context (e.g. when your app expects auth in router context)
-customRender(<MyComponent />, { routerContext: { auth: mockAuth } });
+For TanStack Router (`useNavigate`, `useParams`, `<Link>`, etc.), use `customRenderWithRouter` or `customRenderHookWithRouter`. Route content can mount asynchronously; prefer `findBy*` / `waitFor` when needed. If the same file uses `vi.mock("@tanstack/react-router", ...)`, use a partial mock (e.g. `importOriginal`) so real `RouterProvider` / `createRouter` remain available to these helpers.
+
+```tsx
+import {
+  customRenderWithRouter,
+  customRenderHookWithRouter,
+} from "@repo/testing/web";
+import { screen, waitFor } from "@testing-library/react";
+import { useParams } from "@tanstack/react-router";
+
+customRenderWithRouter(<MyPage />, { initialLocation: "/albums/123" });
+customRenderWithRouter(<MyPage />, { routerContext: { auth: mockAuth } });
+
+// Route content can mount asynchronously; prefer `findBy*` / `waitFor`.
+await screen.findByText(/album title/i);
+
+const { result } = customRenderHookWithRouter(() => useParams(), {
+  initialLocation: "/albums/123",
+});
+
+await waitFor(() => {
+  expect(result.current.albumId).toBe("123");
+});
 ```
 
 ### createRouterMock
@@ -203,7 +283,7 @@ const mockNavigate = vi.fn();
 vi.mock("@tanstack/react-router", () => createRouterMock(vi, { mockNavigate }));
 ```
 
-### Store Mocks
+### Store mocks
 
 Create default store state for tests. Override any field via the `overrides` argument.
 
@@ -246,7 +326,7 @@ vi.mock("@/components/form", () => ({
 
 ---
 
-## $transaction Support
+## `$transaction` support
 
 Both `createPrismaMock` and `PrismaServiceMock` handle Prisma's two `$transaction` forms:
 

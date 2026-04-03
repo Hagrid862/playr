@@ -1,38 +1,10 @@
-import { ZodAlbum, ZodArtist } from '@repo/contracts';
+import type { ZodAlbum, ZodArtist } from '@repo/contracts';
+import { albumBuilder, artistBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useLibraryStore } from './library.store';
 
-const mockArtist: ZodArtist = {
-  id: 'artist-1',
-  name: 'Test Artist',
-  description: 'A test artist',
-  isCommunity: false,
-  visibility: 'public',
-  verified: true,
-  avatarId: null,
-  bannerId: null,
-  avatar: null,
-  banner: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deletedAt: null,
-};
-
-const mockAlbum: ZodAlbum = {
-  id: 'album-1',
-  name: 'Test Album',
-  description: 'A test album',
-  type: 'album',
-  totalTracks: 10,
-  totalDuration: 3600,
-  releaseDate: new Date(),
-  visibility: 'public',
-  coverId: null,
-  cover: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deletedAt: null,
-};
+const mockArtist = artistBuilder({ id: 'artist-1', name: 'Test Artist' }) as ZodArtist;
+const mockAlbum = albumBuilder({ id: 'album-1', name: 'Test Album' }) as ZodAlbum;
 
 describe('library.store', () => {
   beforeEach(() => {
@@ -91,7 +63,7 @@ describe('library.store', () => {
 
     it('updates an existing album', () => {
       useLibraryStore.getState().setPrivateAlbums([mockAlbum]);
-      const updatedAlbum = { ...mockAlbum, title: 'Updated Album' };
+      const updatedAlbum = { ...mockAlbum, name: 'Updated Album' };
       useLibraryStore.getState().updatePrivateAlbum(updatedAlbum);
       expect(useLibraryStore.getState().privateAlbums).toEqual([updatedAlbum]);
     });

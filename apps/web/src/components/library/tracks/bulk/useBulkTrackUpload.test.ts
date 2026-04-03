@@ -1,8 +1,9 @@
 import { extractCoverFromAudioFile } from '@/lib/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/clean-audio-filename.ts';
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockAlbum } from '../__tests__/fixtures';
+import { albumBuilder, artistBuilder } from '@repo/testing/builders';
+import { customRenderHook } from '@repo/testing/web';
+import { act, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBulkTrackUpload } from './useBulkTrackUpload';
 
 vi.mock('@/lib/audio-metadata', () => ({
@@ -13,6 +14,11 @@ vi.mock('@/lib/clean-audio-filename.ts', () => ({
   cleanFilenameToTitle: vi.fn((name) => name.replace('.mp3', '')),
 }));
 
+const originalCreateObjectURL = global.URL.createObjectURL;
+const originalRevokeObjectURL = global.URL.revokeObjectURL;
+
+const mockAlbum = { ...albumBuilder(), artists: [artistBuilder()] };
+
 describe('useBulkTrackUpload', () => {
   const onSubmit = vi.fn();
 
@@ -22,8 +28,13 @@ describe('useBulkTrackUpload', () => {
     global.URL.revokeObjectURL = vi.fn();
   });
 
+  afterEach(() => {
+    global.URL.createObjectURL = originalCreateObjectURL;
+    global.URL.revokeObjectURL = originalRevokeObjectURL;
+  });
+
   it('initializes with default values', () => {
-    const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+    const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
 
     expect(result.current.tracks).toEqual([]);
     expect(result.current.isScanningCovers).toBe(false);
@@ -33,7 +44,7 @@ describe('useBulkTrackUpload', () => {
 
   describe('addFiles', () => {
     it('does nothing if files are null or empty', () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       act(() => {
         result.current.addFiles(null);
       });
@@ -46,7 +57,7 @@ describe('useBulkTrackUpload', () => {
     });
 
     it('filters out non-audio files', () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const txtFile = new File([''], 'test.txt', { type: 'text/plain' });
       act(() => {
         result.current.addFiles([txtFile] as unknown as FileList);
@@ -55,7 +66,7 @@ describe('useBulkTrackUpload', () => {
     });
 
     it('adds audio files, sorts them, and assigns track numbers', async () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file2 = new File([''], 'b-track.mp3', { type: 'audio/mp3' });
       const file1 = new File([''], 'a-track.mp3', { type: 'audio/mp3' });
 
@@ -69,13 +80,13 @@ describe('useBulkTrackUpload', () => {
       expect(result.current.tracks[1].file.name).toBe('b-track.mp3');
       expect(result.current.tracks[1].trackNumber).toBe(2);
       expect(cleanFilenameToTitle).toHaveBeenCalledWith('b-track.mp3', {
-        artists: ['Artist'],
-        album: 'Test Album',
+        artists: [mockAlbum.artists[0].name],
+        album: mockAlbum.name,
       });
     });
 
     it('handles album without artists gracefully', () => {
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useBulkTrackUpload({ album: { ...mockAlbum, artists: undefined }, onSubmit }),
       );
       const file = new File([''], 'a.mp3', { type: 'audio/mp3' });
@@ -84,12 +95,12 @@ describe('useBulkTrackUpload', () => {
       });
       expect(cleanFilenameToTitle).toHaveBeenCalledWith('a.mp3', {
         artists: [],
-        album: 'Test Album',
+        album: mockAlbum.name,
       });
     });
     it('handles album with missing name gracefully', () => {
       const albumWithoutName = { ...mockAlbum, name: null } as unknown as typeof mockAlbum;
-      const { result } = renderHook(() =>
+      const { result } = customRenderHook(() =>
         useBulkTrackUpload({ album: albumWithoutName, onSubmit }),
       );
       const file = new File([''], 'a.mp3', { type: 'audio/mp3' });
@@ -97,7 +108,7 @@ describe('useBulkTrackUpload', () => {
         result.current.addFiles([file] as unknown as FileList);
       });
       expect(cleanFilenameToTitle).toHaveBeenCalledWith('a.mp3', {
-        artists: ['Artist'],
+        artists: [mockAlbum.artists[0].name],
         album: '',
       });
     });
@@ -105,7 +116,7 @@ describe('useBulkTrackUpload', () => {
 
   describe('updateTrack', () => {
     it('updates a specific track and leaves others intact', () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       const file2 = new File([''], 'b.mp3', { type: 'audio/mp3' });
       act(() => {
@@ -128,7 +139,7 @@ describe('useBulkTrackUpload', () => {
 
   describe('removeTrack', () => {
     it('removes a track and recounts track numbers', () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       const file2 = new File([''], 'b.mp3', { type: 'audio/mp3' });
       act(() => {
@@ -148,7 +159,7 @@ describe('useBulkTrackUpload', () => {
     });
 
     it('clears covers if list becomes empty', async () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
 
       act(() => {
@@ -172,7 +183,7 @@ describe('useBulkTrackUpload', () => {
 
   describe('clearAll', () => {
     it('clears all tracks and selections', async () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -200,7 +211,7 @@ describe('useBulkTrackUpload', () => {
     });
 
     it('does not throw when fileInputRef current is null', () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       // Override the current ref explicitly to null
       Object.defineProperty(result.current.fileInputRef, 'current', {
         value: null,
@@ -217,7 +228,7 @@ describe('useBulkTrackUpload', () => {
 
   describe('handleSubmit', () => {
     it('does nothing if tracks is empty', () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const event = { preventDefault: vi.fn() } as unknown as React.FormEvent;
       act(() => {
         result.current.handleSubmit(event);
@@ -230,7 +241,7 @@ describe('useBulkTrackUpload', () => {
       const coverFile = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
 
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -249,7 +260,7 @@ describe('useBulkTrackUpload', () => {
     });
 
     it('calls onSubmit with null cover if cover not found in list', async () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -265,7 +276,7 @@ describe('useBulkTrackUpload', () => {
     });
 
     it('calls onSubmit with null cover if selectedCoverTrackId is null', async () => {
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -286,7 +297,7 @@ describe('useBulkTrackUpload', () => {
       const coverFile = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
 
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -304,7 +315,7 @@ describe('useBulkTrackUpload', () => {
     it('does not push null covers', async () => {
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(null);
 
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -321,7 +332,7 @@ describe('useBulkTrackUpload', () => {
       const coverFile = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
 
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -354,7 +365,7 @@ describe('useBulkTrackUpload', () => {
       });
       vi.mocked(extractCoverFromAudioFile).mockReturnValueOnce(promise);
 
-      const { result, unmount } = renderHook(() =>
+      const { result, unmount } = customRenderHook(() =>
         useBulkTrackUpload({ album: mockAlbum, onSubmit }),
       );
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
@@ -392,7 +403,7 @@ describe('useBulkTrackUpload', () => {
         .mockReturnValueOnce(firstPromise)
         .mockReturnValueOnce(secondPromise);
 
-      const { result } = renderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
+      const { result } = customRenderHook(() => useBulkTrackUpload({ album: mockAlbum, onSubmit }));
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });
       act(() => {
         result.current.addFiles([file1] as unknown as FileList);
@@ -416,7 +427,7 @@ describe('useBulkTrackUpload', () => {
       const coverFile = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
 
-      const { result, unmount } = renderHook(() =>
+      const { result, unmount } = customRenderHook(() =>
         useBulkTrackUpload({ album: mockAlbum, onSubmit }),
       );
       const file1 = new File([''], 'a.mp3', { type: 'audio/mp3' });

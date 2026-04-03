@@ -1,5 +1,6 @@
 import { AlbumType } from '@repo/db';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing/web';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BulkAlbumDetailsSection } from './BulkAlbumDetailsSection';
@@ -105,11 +106,11 @@ describe('BulkAlbumDetailsSection', () => {
   ];
 
   beforeEach(() => {
-    mockOnUpdate.mockClear();
+    vi.clearAllMocks();
   });
 
   it('renders with provided formData', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={defaultArtists}
@@ -125,7 +126,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('shows Loading... placeholder when isLoadingArtists', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={[]}
@@ -139,7 +140,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('shows No artists yet placeholder when artists list is empty and not loading', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={[]}
@@ -153,7 +154,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('shows Create an artist link when artists list is empty and not loading', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={[]}
@@ -169,7 +170,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('does not show Create an artist link when loading artists', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={[]}
@@ -182,7 +183,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('does not show Create an artist link when artists exist', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={defaultArtists}
@@ -195,7 +196,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('calls onUpdate when album name changes', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={defaultArtists}
@@ -211,7 +212,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('calls onUpdate when artist is selected', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, artistId: '' }}
         artists={defaultArtists}
@@ -227,7 +228,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('calls onUpdate when album type changes', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={defaultArtists}
@@ -244,7 +245,7 @@ describe('BulkAlbumDetailsSection', () => {
 
   it('calls onUpdate when release date is set', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, releaseDate: null }}
         artists={defaultArtists}
@@ -260,7 +261,7 @@ describe('BulkAlbumDetailsSection', () => {
 
   it('calls onUpdate when release date is cleared', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={defaultArtists}
@@ -275,7 +276,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('calls onUpdate when description changes', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={defaultArtists}
@@ -291,7 +292,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('renders empty description as empty string', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={{ ...defaultFormData, description: '' }}
         artists={defaultArtists}
@@ -304,7 +305,7 @@ describe('BulkAlbumDetailsSection', () => {
   });
 
   it('invokes onBlur handlers without error', () => {
-    render(
+    customRender(
       <BulkAlbumDetailsSection
         formData={defaultFormData}
         artists={defaultArtists}

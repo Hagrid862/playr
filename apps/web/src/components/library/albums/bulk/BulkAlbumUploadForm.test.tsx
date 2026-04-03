@@ -4,11 +4,12 @@ import type { LibraryState } from '@/stores/library.store';
 import { useLibraryStore } from '@/stores/library.store';
 import type { ZodArtist } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { artistBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockArtist } from '../__tests__/fixtures';
 import { BulkAlbumUploadForm } from './BulkAlbumUploadForm';
 
 type UseBulkAlbumUploadFormReturn = ReturnType<typeof useBulkAlbumUploadForm>;
@@ -89,7 +90,7 @@ function createMockLibraryState(overrides: Partial<LibraryState> = {}): LibraryS
   return {
     libraryId: 'lib-1',
     privateAccountId: null,
-    privateArtists: [mockArtist],
+    privateArtists: [artistBuilder()],
     privateAlbums: [],
     setLibraryId: vi.fn(),
     setPrivateAccountId: vi.fn(),
@@ -168,7 +169,7 @@ describe('BulkAlbumUploadForm', () => {
       tracks: [],
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(
       screen.getByText('Drop audio files anywhere or click to start uploading'),
@@ -183,7 +184,7 @@ describe('BulkAlbumUploadForm', () => {
       tracks: [],
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(fileInput, 'click');
@@ -208,7 +209,7 @@ describe('BulkAlbumUploadForm', () => {
       fileInputRef: { current: null },
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     // Since we can't easily query a hidden input that has no label or label nesting,
     // we'll find it by test ID or by type="file" inside the document.
@@ -227,7 +228,7 @@ describe('BulkAlbumUploadForm', () => {
   });
 
   it('renders tracks section when tracks exist', () => {
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Album details')).toBeInTheDocument();
     expect(screen.getByText('1 track ready')).toBeInTheDocument();
@@ -240,7 +241,7 @@ describe('BulkAlbumUploadForm', () => {
       isScanningCovers: false,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Scanning metadata...')).toBeInTheDocument();
   });
@@ -252,7 +253,7 @@ describe('BulkAlbumUploadForm', () => {
       isScanningCovers: true,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Scanning tracks for cover art...')).toBeInTheDocument();
   });
@@ -264,7 +265,7 @@ describe('BulkAlbumUploadForm', () => {
       isScanningCovers: true,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Scanning metadata and cover art...')).toBeInTheDocument();
   });
@@ -275,7 +276,7 @@ describe('BulkAlbumUploadForm', () => {
       isPending: true,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Creating album...')).toBeInTheDocument();
   });
@@ -286,7 +287,7 @@ describe('BulkAlbumUploadForm', () => {
       isPending: true,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Uploading cover...')).toBeInTheDocument();
   });
@@ -297,7 +298,7 @@ describe('BulkAlbumUploadForm', () => {
       isPending: true,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Uploading 1 track...')).toBeInTheDocument();
   });
@@ -312,7 +313,7 @@ describe('BulkAlbumUploadForm', () => {
       isPending: true,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Uploading 2 tracks...')).toBeInTheDocument();
   });
@@ -322,7 +323,7 @@ describe('BulkAlbumUploadForm', () => {
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockBulkCreateTracks.mockResolvedValue({});
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     const submitButton = screen.getByRole('button', { name: /Create album & upload 1 track/i });
     await user.click(submitButton);
@@ -356,7 +357,7 @@ describe('BulkAlbumUploadForm', () => {
     mockUploadCover.mockResolvedValue({});
     mockBulkCreateTracks.mockResolvedValue({});
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 1 track/i }));
 
@@ -368,7 +369,7 @@ describe('BulkAlbumUploadForm', () => {
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockBulkCreateTracks.mockResolvedValue({});
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 1 track/i }));
 
@@ -379,7 +380,7 @@ describe('BulkAlbumUploadForm', () => {
     const user = userEvent.setup();
     mockCreateAlbum.mockRejectedValue(new Error('Network error'));
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 1 track/i }));
 
@@ -391,7 +392,7 @@ describe('BulkAlbumUploadForm', () => {
     const user = userEvent.setup();
     mockCreateAlbum.mockRejectedValue('string error');
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 1 track/i }));
 
@@ -403,7 +404,7 @@ describe('BulkAlbumUploadForm', () => {
     const user = userEvent.setup();
     mockCreateAlbum.mockResolvedValue({ data: null });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 1 track/i }));
 
@@ -416,7 +417,7 @@ describe('BulkAlbumUploadForm', () => {
       isFormValid: false,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     const submitButton = screen.getByRole('button', { name: /Create album & upload 1 track/i });
     expect(submitButton).toBeDisabled();
@@ -436,7 +437,7 @@ describe('BulkAlbumUploadForm', () => {
       return selector ? selector(state) : state;
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 1 track/i }));
 
@@ -457,7 +458,7 @@ describe('BulkAlbumUploadForm', () => {
       isScanningCovers: false,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.getByText('Cover art detected')).toBeInTheDocument();
   });
@@ -476,7 +477,7 @@ describe('BulkAlbumUploadForm', () => {
       isScanningCovers: true,
     });
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     expect(screen.queryByText('Cover art detected')).not.toBeInTheDocument();
   });
@@ -486,7 +487,7 @@ describe('BulkAlbumUploadForm', () => {
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockBulkCreateTracks.mockResolvedValue({});
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 1 track/i }));
 
@@ -507,7 +508,7 @@ describe('BulkAlbumUploadForm', () => {
     mockCreateAlbum.mockResolvedValue({ data: { id: 'album-123' } });
     mockBulkCreateTracks.mockResolvedValue({});
 
-    render(<BulkAlbumUploadForm />);
+    customRender(<BulkAlbumUploadForm />);
 
     await user.click(screen.getByRole('button', { name: /Create album & upload 2 tracks/i }));
 

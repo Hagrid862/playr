@@ -1,10 +1,10 @@
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { libraryBuilder, libraryTrackBuilder, trackBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Visibility } from '@repo/db';
+import { libraryBuilder, libraryTrackBuilder, trackBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.query';
 import { GetLibraryAlbumTracksHandler } from './get-library-album-tracks.handler';

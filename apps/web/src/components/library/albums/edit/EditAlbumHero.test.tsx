@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing/web';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -80,28 +81,28 @@ describe('EditAlbumHero', () => {
   };
 
   it('renders correctly', () => {
-    render(<EditAlbumHero {...defaultProps} />);
+    customRender(<EditAlbumHero {...defaultProps} />);
     expect(screen.getByLabelText(/Album Title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Description/i)).toBeInTheDocument();
     expect(screen.getByText(/Artwork/i)).toBeInTheDocument();
   });
 
   it('shows cover preview and remove button when currentCoverUrl is provided', () => {
-    render(<EditAlbumHero {...defaultProps} currentCoverUrl="mock-url" />);
+    customRender(<EditAlbumHero {...defaultProps} currentCoverUrl="mock-url" />);
     expect(screen.getByAltText('Test Album')).toHaveAttribute('src', 'mock-url');
     expect(screen.getByRole('button', { name: /Remove/i })).toBeInTheDocument();
   });
 
   it('calls onCoverClick when cover area is clicked', async () => {
     const user = userEvent.setup();
-    render(<EditAlbumHero {...defaultProps} />);
+    customRender(<EditAlbumHero {...defaultProps} />);
     await user.click(screen.getByText(/Upload Cover/i));
     expect(defaultProps.onCoverClick).toHaveBeenCalled();
   });
 
   it('calls onRemoveCover when remove button is clicked', async () => {
     const user = userEvent.setup();
-    render(<EditAlbumHero {...defaultProps} currentCoverUrl="mock-url" />);
+    customRender(<EditAlbumHero {...defaultProps} currentCoverUrl="mock-url" />);
     await user.click(screen.getByRole('button', { name: /Remove/i }));
     expect(defaultProps.onRemoveCover).toHaveBeenCalled();
   });
@@ -137,7 +138,7 @@ describe('EditAlbumHero', () => {
       state: { errors: [] },
     };
 
-    render(<EditAlbumHero {...defaultProps} form={mockFormWithValidator} />);
+    customRender(<EditAlbumHero {...defaultProps} form={mockFormWithValidator} />);
     expect(screen.getByText('Description must be 2048 characters or less')).toBeInTheDocument();
   });
 
@@ -172,7 +173,7 @@ describe('EditAlbumHero', () => {
       state: { errors: [] },
     };
 
-    render(<EditAlbumHero {...defaultProps} form={mockFormWithValidator} />);
+    customRender(<EditAlbumHero {...defaultProps} form={mockFormWithValidator} />);
     expect(
       screen.queryByText('Description must be 2048 characters or less'),
     ).not.toBeInTheDocument();

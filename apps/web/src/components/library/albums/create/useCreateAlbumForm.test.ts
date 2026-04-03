@@ -1,8 +1,9 @@
-import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { useCreateAlbumForm } from './useCreateAlbumForm';
 import * as contracts from '@repo/contracts';
+import { customRenderHook } from '@repo/testing/web';
+import { act } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { useCreateAlbumForm } from './useCreateAlbumForm';
 
 vi.mock('@repo/contracts', async (importOriginal) => {
   const actual = await importOriginal<typeof contracts>();
@@ -18,8 +19,12 @@ vi.mock('@repo/contracts', async (importOriginal) => {
 describe('useCreateAlbumForm', () => {
   const artistId = 'artist-123';
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should initialize with default values', () => {
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     expect(result.current.formData).toEqual({
       name: '',
@@ -36,7 +41,7 @@ describe('useCreateAlbumForm', () => {
   });
 
   it('should handle changes and updating validation', () => {
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     act(() => {
       result.current.handleChange('name', 'Nevermind');
@@ -65,7 +70,7 @@ describe('useCreateAlbumForm', () => {
   });
 
   it('should handle field blur', () => {
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     act(() => {
       result.current.handleBlur('name');
@@ -79,7 +84,7 @@ describe('useCreateAlbumForm', () => {
   });
 
   it('should show all errors and touch all fields on submit failure', () => {
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     let submitData: ReturnType<typeof result.current.handleSubmit> = null;
     act(() => {
@@ -98,7 +103,7 @@ describe('useCreateAlbumForm', () => {
   });
 
   it('should return valid data on successful submit', () => {
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     act(() => {
       result.current.handleChange('name', 'In Utero');
@@ -119,7 +124,7 @@ describe('useCreateAlbumForm', () => {
   });
 
   it('should handle Zod validation constraints', () => {
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     act(() => {
       result.current.handleChange('name', 'a'.repeat(256));
@@ -134,7 +139,7 @@ describe('useCreateAlbumForm', () => {
   });
 
   it('should update validation state when fields depend on each other (if applicable)', () => {
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     expect(result.current.isFormValid).toBe(false);
 
@@ -181,7 +186,7 @@ describe('useCreateAlbumForm', () => {
 
     mockSafeParse.mockReturnValueOnce(realResult);
 
-    const { result } = renderHook(() => useCreateAlbumForm(artistId));
+    const { result } = customRenderHook(() => useCreateAlbumForm(artistId));
 
     // The issues with invalid paths should be filtered out, only 'name' should persist.
     // Since we provided valid data for everything else, 'name' should be the only key in errors.

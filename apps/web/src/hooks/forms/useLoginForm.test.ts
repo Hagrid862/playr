@@ -1,91 +1,99 @@
-import { act, renderHook } from '@testing-library/react';
+import { customRenderHook } from '@repo/testing/web';
+import { act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useLoginForm } from './useLoginForm';
 
 describe('useLoginForm', () => {
-  it('initializes with empty form data', () => {
-    const { result } = renderHook(() => useLoginForm());
-    expect(result.current.formData).toEqual({
-      email: '',
-      password: '',
+  describe('initialization', () => {
+    it('initializes with empty form data', () => {
+      const { result } = customRenderHook(() => useLoginForm());
+      expect(result.current.formData).toEqual({
+        email: '',
+        password: '',
+      });
+      expect(result.current.isFormValid).toBe(false);
     });
-    expect(result.current.isFormValid).toBe(false);
   });
 
-  it('updates form data on change', () => {
-    const { result } = renderHook(() => useLoginForm());
+  describe('handleChange', () => {
+    it('updates form data on change', () => {
+      const { result } = customRenderHook(() => useLoginForm());
 
-    act(() => {
-      result.current.handleChange('email', 'test@example.com');
+      act(() => {
+        result.current.handleChange('email', 'test@example.com');
+      });
+
+      expect(result.current.formData.email).toBe('test@example.com');
     });
-
-    expect(result.current.formData.email).toBe('test@example.com');
   });
 
-  it('validates email format', () => {
-    const { result } = renderHook(() => useLoginForm());
+  describe('validation', () => {
+    it('validates email format', () => {
+      const { result } = customRenderHook(() => useLoginForm());
 
-    act(() => {
-      result.current.handleChange('email', 'invalid-email');
+      act(() => {
+        result.current.handleChange('email', 'invalid-email');
+      });
+
+      expect(result.current.errors.email).toBeDefined();
     });
 
-    expect(result.current.errors.email).toBeDefined();
+    it('validates required fields', () => {
+      const { result } = customRenderHook(() => useLoginForm());
+
+      let submitResult;
+      act(() => {
+        submitResult = result.current.handleSubmit();
+      });
+
+      expect(submitResult).toBeNull();
+      expect(result.current.touched.email).toBe(true);
+      expect(result.current.touched.password).toBe(true);
+    });
   });
 
-  it('validates required fields', () => {
-    const { result } = renderHook(() => useLoginForm());
+  describe('submit', () => {
+    it('submits valid data', () => {
+      const { result } = customRenderHook(() => useLoginForm());
 
-    // Attempt submit with empty fields
-    let submitResult;
-    act(() => {
-      submitResult = result.current.handleSubmit();
+      act(() => {
+        result.current.handleChange('email', 'user@example.com');
+        result.current.handleChange('password', 'Password123!');
+      });
+
+      expect(result.current.isFormValid).toBe(true);
+
+      let submitResult;
+      act(() => {
+        submitResult = result.current.handleSubmit();
+      });
+
+      expect(submitResult).toEqual(
+        expect.objectContaining({
+          email: 'user@example.com',
+          password: 'Password123!',
+        }),
+      );
     });
-
-    expect(submitResult).toBeNull();
-    expect(result.current.touched.email).toBe(true);
-    expect(result.current.touched.password).toBe(true);
   });
 
-  it('submits valid data', () => {
-    const { result } = renderHook(() => useLoginForm());
+  describe('blur and getFieldError', () => {
+    it('handles blur and shows errors correctly', () => {
+      const { result } = customRenderHook(() => useLoginForm());
 
-    act(() => {
-      result.current.handleChange('email', 'user@example.com');
-      result.current.handleChange('password', 'Password123!');
+      act(() => {
+        result.current.handleChange('email', 'invalid');
+      });
+
+      expect(result.current.errors.email).toBeDefined();
+      expect(result.current.getFieldError('email')).toBeUndefined();
+
+      act(() => {
+        result.current.handleBlur('email');
+      });
+
+      expect(result.current.touched.email).toBe(true);
+      expect(result.current.getFieldError('email')).toBeDefined();
     });
-
-    expect(result.current.isFormValid).toBe(true);
-
-    let submitResult;
-    act(() => {
-      submitResult = result.current.handleSubmit();
-    });
-
-    expect(submitResult).toEqual(
-      expect.objectContaining({
-        email: 'user@example.com',
-        password: 'Password123!',
-      }),
-    );
-  });
-
-  it('handles blur and shows errors correctly', () => {
-    const { result } = renderHook(() => useLoginForm());
-
-    act(() => {
-      result.current.handleChange('email', 'invalid');
-    });
-
-    // Error exists but field not touched, so getFieldError should be undefined
-    expect(result.current.errors.email).toBeDefined();
-    expect(result.current.getFieldError('email')).toBeUndefined();
-
-    act(() => {
-      result.current.handleBlur('email');
-    });
-
-    // Now touched, should show error
-    expect(result.current.touched.email).toBe(true);
-    expect(result.current.getFieldError('email')).toBeDefined();
   });
 });

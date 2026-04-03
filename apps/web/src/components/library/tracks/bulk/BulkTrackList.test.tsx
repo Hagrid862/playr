@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import type { BulkTrackItem } from '@/lib/types/library';
+import { trackBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BulkTrackItem } from '@/lib/types/library';
-import { createMockBulkTrack } from '../__tests__/fixtures';
 import { BulkTrackList } from './BulkTrackList';
 
 vi.mock('./BulkTrackCard', () => ({
@@ -36,96 +37,112 @@ describe('BulkTrackList', () => {
     vi.clearAllMocks();
   });
 
-  it('renders null when tracks empty', () => {
-    const { container } = render(
-      <BulkTrackList
-        tracks={[]}
-        onUpdateTrack={mockOnUpdateTrack}
-        onRemoveTrack={mockOnRemoveTrack}
-        onClearAll={mockOnClearAll}
-      />,
-    );
+  describe('empty state', () => {
+    it('renders null when tracks empty', () => {
+      const { container } = customRender(
+        <BulkTrackList
+          tracks={[]}
+          onUpdateTrack={mockOnUpdateTrack}
+          onRemoveTrack={mockOnRemoveTrack}
+          onClearAll={mockOnClearAll}
+        />,
+      );
 
-    expect(container.firstChild).toBeNull();
+      expect(container.firstChild).toBeNull();
+    });
   });
 
-  it('renders track count and Clear all button', () => {
-    render(
-      <BulkTrackList
-        tracks={[createMockBulkTrack()]}
-        onUpdateTrack={mockOnUpdateTrack}
-        onRemoveTrack={mockOnRemoveTrack}
-        onClearAll={mockOnClearAll}
-      />,
-    );
+  describe('header', () => {
+    it('renders track count and Clear all button', () => {
+      customRender(
+        <BulkTrackList
+          tracks={[
+            { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
+          ]}
+          onUpdateTrack={mockOnUpdateTrack}
+          onRemoveTrack={mockOnRemoveTrack}
+          onClearAll={mockOnClearAll}
+        />,
+      );
 
-    expect(screen.getByText('1 track ready')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Clear all' })).toBeInTheDocument();
+      expect(screen.getByText('1 track ready')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Clear all' })).toBeInTheDocument();
+    });
+
+    it('renders plural track count for multiple tracks', () => {
+      customRender(
+        <BulkTrackList
+          tracks={[
+            { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
+            { ...trackBuilder(), file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }) },
+          ]}
+          onUpdateTrack={mockOnUpdateTrack}
+          onRemoveTrack={mockOnRemoveTrack}
+          onClearAll={mockOnClearAll}
+        />,
+      );
+
+      expect(screen.getByText('2 tracks ready')).toBeInTheDocument();
+    });
   });
 
-  it('renders plural track count for multiple tracks', () => {
-    render(
-      <BulkTrackList
-        tracks={[
-          createMockBulkTrack({ id: 't1' }),
-          createMockBulkTrack({ id: 't2', file: new File(['a'], 'b.mp3', { type: 'audio/mpeg' }) }),
-        ]}
-        onUpdateTrack={mockOnUpdateTrack}
-        onRemoveTrack={mockOnRemoveTrack}
-        onClearAll={mockOnClearAll}
-      />,
-    );
+  describe('callbacks', () => {
+    it('calls onClearAll when Clear all is clicked', async () => {
+      const user = userEvent.setup();
+      customRender(
+        <BulkTrackList
+          tracks={[
+            { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
+          ]}
+          onUpdateTrack={mockOnUpdateTrack}
+          onRemoveTrack={mockOnRemoveTrack}
+          onClearAll={mockOnClearAll}
+        />,
+      );
 
-    expect(screen.getByText('2 tracks ready')).toBeInTheDocument();
-  });
+      await user.click(screen.getByRole('button', { name: 'Clear all' }));
 
-  it('calls onClearAll when Clear all is clicked', async () => {
-    const user = userEvent.setup();
-    render(
-      <BulkTrackList
-        tracks={[createMockBulkTrack()]}
-        onUpdateTrack={mockOnUpdateTrack}
-        onRemoveTrack={mockOnRemoveTrack}
-        onClearAll={mockOnClearAll}
-      />,
-    );
+      expect(mockOnClearAll).toHaveBeenCalled();
+    });
 
-    await user.click(screen.getByRole('button', { name: 'Clear all' }));
+    it('calls onUpdateTrack when card Update is clicked', async () => {
+      const user = userEvent.setup();
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      customRender(
+        <BulkTrackList
+          tracks={[track]}
+          onUpdateTrack={mockOnUpdateTrack}
+          onRemoveTrack={mockOnRemoveTrack}
+          onClearAll={mockOnClearAll}
+        />,
+      );
 
-    expect(mockOnClearAll).toHaveBeenCalled();
-  });
+      await user.click(screen.getByRole('button', { name: 'Update' }));
 
-  it('calls onUpdateTrack when card Update is clicked', async () => {
-    const user = userEvent.setup();
-    const track = createMockBulkTrack({ id: 'track-1' });
-    render(
-      <BulkTrackList
-        tracks={[track]}
-        onUpdateTrack={mockOnUpdateTrack}
-        onRemoveTrack={mockOnRemoveTrack}
-        onClearAll={mockOnClearAll}
-      />,
-    );
+      expect(mockOnUpdateTrack).toHaveBeenCalledWith(track.id, { title: 'Updated' });
+    });
 
-    await user.click(screen.getByRole('button', { name: 'Update' }));
+    it('calls onRemoveTrack when card Remove is clicked', async () => {
+      const user = userEvent.setup();
+      const track = {
+        ...trackBuilder(),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      customRender(
+        <BulkTrackList
+          tracks={[track]}
+          onUpdateTrack={mockOnUpdateTrack}
+          onRemoveTrack={mockOnRemoveTrack}
+          onClearAll={mockOnClearAll}
+        />,
+      );
 
-    expect(mockOnUpdateTrack).toHaveBeenCalledWith('track-1', { title: 'Updated' });
-  });
+      await user.click(screen.getByRole('button', { name: 'Remove' }));
 
-  it('calls onRemoveTrack when card Remove is clicked', async () => {
-    const user = userEvent.setup();
-    const track = createMockBulkTrack({ id: 'track-1' });
-    render(
-      <BulkTrackList
-        tracks={[track]}
-        onUpdateTrack={mockOnUpdateTrack}
-        onRemoveTrack={mockOnRemoveTrack}
-        onClearAll={mockOnClearAll}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Remove' }));
-
-    expect(mockOnRemoveTrack).toHaveBeenCalledWith('track-1');
+      expect(mockOnRemoveTrack).toHaveBeenCalledWith(track.id);
+    });
   });
 });

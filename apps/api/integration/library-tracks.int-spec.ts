@@ -22,7 +22,7 @@ import {
   trackAccessBuilder,
   trackBuilder,
   userBuilder,
-} from '@repo/testing';
+} from '@repo/testing/builders';
 import { PrismaServiceMock } from '@repo/testing/nestjs';
 import { Readable } from 'stream';
 import request from 'supertest';

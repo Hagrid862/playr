@@ -1,4 +1,5 @@
-import { ZodUser } from '@repo/contracts';
+import type { ZodUser } from '@repo/contracts';
+import { userBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from './auth.store';
 
@@ -10,19 +11,11 @@ vi.mock('./idb-storage', () => ({
   },
 }));
 
-const mockUser: ZodUser = {
-  id: 'user-1',
-  username: 'testuser',
-  firstName: 'Test',
-  lastName: 'User',
-  gender: 'male',
-  birthDate: '2000-01-01',
-  description: null,
-  avatarId: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deletedAt: null,
-};
+const mockUser = (() => {
+  const { password, ...user } = userBuilder({ id: 'user-1', username: 'testuser' });
+  void password; // Omitted for ZodUser
+  return user as ZodUser;
+})();
 
 describe('auth.store', () => {
   beforeEach(() => {

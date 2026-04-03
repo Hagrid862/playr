@@ -1,6 +1,8 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing/web';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerControls } from './PlayerControls';
 
 vi.mock('@/stores/player.store', () => ({
@@ -14,84 +16,85 @@ describe('PlayerControls', () => {
   const toggleRepeatMode = vi.fn();
   const toggleShuffle = vi.fn();
 
-  const defaultStore: Partial<PlayerState> = {
-    isPlaying: false,
-    togglePlay,
-    nextTrack,
-    previousTrack,
-    repeatMode: 'off',
-    toggleRepeatMode,
-    isShuffled: false,
-    toggleShuffle,
-  };
+  const buildState = (overrides: Partial<PlayerState> = {}): PlayerState =>
+    createPlayerStateMock({
+      isPlaying: false,
+      togglePlay,
+      nextTrack,
+      previousTrack,
+      repeatMode: 'off',
+      toggleRepeatMode,
+      isShuffled: false,
+      toggleShuffle,
+      ...overrides,
+    });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(usePlayerStore).mockReturnValue(defaultStore as PlayerState);
+    vi.mocked(usePlayerStore).mockReturnValue(buildState());
   });
 
-  it('renders correctly', () => {
-    render(<PlayerControls />);
-    const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(5);
+  describe('rendering', () => {
+    it('renders correctly', () => {
+      customRender(<PlayerControls />);
+      const buttons = screen.getAllByRole('button');
+      expect(buttons).toHaveLength(5);
+    });
+
+    it('shows play icon when not playing and pause icon when playing', () => {
+      const { rerender } = customRender(<PlayerControls />);
+
+      const playPauseButton = screen.getByRole('button', { name: /play|pause/i });
+      fireEvent.click(playPauseButton);
+      expect(togglePlay).toHaveBeenCalled();
+
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ isPlaying: true }));
+      rerender(<PlayerControls />);
+    });
+
+    it('handles isShuffled true', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ isShuffled: true }));
+      customRender(<PlayerControls />);
+      const shuffleButton = screen.getByRole('button', { name: /toggle shuffle/i });
+      expect(shuffleButton).toHaveClass('text-emerald-500');
+    });
   });
 
-  it('shows play icon when not playing and pause icon when playing', () => {
-    const { rerender } = render(<PlayerControls />);
+  describe('transport', () => {
+    it('triggers previousTrack', () => {
+      customRender(<PlayerControls />);
+      const previousButton = screen.getByRole('button', { name: /previous track/i });
+      fireEvent.click(previousButton);
+      expect(previousTrack).toHaveBeenCalled();
+    });
 
-    // Not playing
-    const playPauseButton = screen.getByRole('button', { name: /play|pause/i });
-    fireEvent.click(playPauseButton);
-    expect(togglePlay).toHaveBeenCalled();
+    it('triggers nextTrack', () => {
+      customRender(<PlayerControls />);
+      const nextButton = screen.getByRole('button', { name: /next track/i });
+      fireEvent.click(nextButton);
+      expect(nextTrack).toHaveBeenCalled();
+    });
 
-    // Now playing
-    vi.mocked(usePlayerStore).mockReturnValue({ ...defaultStore, isPlaying: true } as PlayerState);
-    rerender(<PlayerControls />);
-  });
+    it('triggers toggleShuffle', () => {
+      customRender(<PlayerControls />);
+      const shuffleButton = screen.getByRole('button', { name: /toggle shuffle/i });
+      fireEvent.click(shuffleButton);
+      expect(toggleShuffle).toHaveBeenCalled();
+    });
 
-  it('triggers previousTrack', () => {
-    render(<PlayerControls />);
-    const previousButton = screen.getByRole('button', { name: /previous track/i });
-    fireEvent.click(previousButton);
-    expect(previousTrack).toHaveBeenCalled();
-  });
+    it('triggers toggleRepeatMode', () => {
+      customRender(<PlayerControls />);
+      const repeatButton = screen.getByRole('button', { name: /repeat/i });
+      fireEvent.click(repeatButton);
+      expect(toggleRepeatMode).toHaveBeenCalled();
+    });
 
-  it('triggers nextTrack', () => {
-    render(<PlayerControls />);
-    const nextButton = screen.getByRole('button', { name: /next track/i });
-    fireEvent.click(nextButton);
-    expect(nextTrack).toHaveBeenCalled();
-  });
-
-  it('triggers toggleShuffle', () => {
-    render(<PlayerControls />);
-    const shuffleButton = screen.getByRole('button', { name: /toggle shuffle/i });
-    fireEvent.click(shuffleButton);
-    expect(toggleShuffle).toHaveBeenCalled();
-  });
-
-  it('triggers toggleRepeatMode', () => {
-    render(<PlayerControls />);
-    const repeatButton = screen.getByRole('button', { name: /repeat/i });
-    fireEvent.click(repeatButton);
-    expect(toggleRepeatMode).toHaveBeenCalled();
-  });
-
-  it('handles repeatMode "one"', () => {
-    vi.mocked(usePlayerStore).mockReturnValue({
-      ...defaultStore,
-      repeatMode: 'one',
-    } as PlayerState);
-    render(<PlayerControls />);
-    const repeatButton = screen.getByRole('button', { name: /repeat/i });
-    fireEvent.click(repeatButton);
-    expect(toggleRepeatMode).toHaveBeenCalled();
-  });
-
-  it('handles isShuffled true', () => {
-    vi.mocked(usePlayerStore).mockReturnValue({ ...defaultStore, isShuffled: true } as PlayerState);
-    render(<PlayerControls />);
-    const shuffleButton = screen.getByRole('button', { name: /toggle shuffle/i });
-    expect(shuffleButton).toHaveClass('text-emerald-500');
+    it('handles repeatMode "one"', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ repeatMode: 'one' }));
+      customRender(<PlayerControls />);
+      const repeatButton = screen.getByRole('button', { name: /repeat/i });
+      fireEvent.click(repeatButton);
+      expect(toggleRepeatMode).toHaveBeenCalled();
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { AlbumType } from '@repo/db';
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing/web';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateAlbumDetails } from './CreateAlbumDetails';
@@ -99,7 +100,7 @@ describe('CreateAlbumDetails', () => {
   });
 
   it('renders correctly', () => {
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     expect(screen.getByLabelText(/Album Title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Description/i)).toBeInTheDocument();
@@ -109,7 +110,7 @@ describe('CreateAlbumDetails', () => {
 
   it('handles field changes', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     const nameInput = screen.getByLabelText(/Album Title/i);
     await user.type(nameInput, 'Nevermind');
@@ -118,7 +119,7 @@ describe('CreateAlbumDetails', () => {
 
   it('handles field blur', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     const nameInput = screen.getByLabelText(/Album Title/i);
     await user.click(nameInput);
@@ -128,7 +129,7 @@ describe('CreateAlbumDetails', () => {
 
   it('handles release date changes', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     const datePickerButton = screen.getByText(/Mock Date Picker/i);
     await user.click(datePickerButton);
@@ -138,7 +139,7 @@ describe('CreateAlbumDetails', () => {
 
   it('handles release date clearing', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     const clearDateButton = screen.getByText(/Clear Date/i);
     await user.click(clearDateButton);
@@ -151,7 +152,7 @@ describe('CreateAlbumDetails', () => {
       ...defaultFormData,
       releaseDate: new Date('2023-01-01'),
     };
-    render(<CreateAlbumDetails {...defaultProps} formData={formDataWithDate} />);
+    customRender(<CreateAlbumDetails {...defaultProps} formData={formDataWithDate} />);
     expect(screen.getByLabelText(/Release Date/i)).toBeInTheDocument();
   });
 
@@ -159,13 +160,13 @@ describe('CreateAlbumDetails', () => {
     mockGetFieldError.mockImplementation((field) =>
       field === 'name' ? 'Title is required' : undefined,
     );
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
     expect(screen.getByText('Title is required')).toBeInTheDocument();
   });
 
   it('handles field changes for description', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     const descInput = screen.getByLabelText(/Description/i);
     await user.type(descInput, 'A great album');
@@ -174,7 +175,7 @@ describe('CreateAlbumDetails', () => {
 
   it('handles field blur for description', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     const descInput = screen.getByLabelText(/Description/i);
     await user.click(descInput);
@@ -184,7 +185,7 @@ describe('CreateAlbumDetails', () => {
 
   it('handles field blur for release date', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
 
     const datePickerButton = screen.getByText(/Mock Date Picker/i);
     await user.click(datePickerButton);
@@ -193,21 +194,21 @@ describe('CreateAlbumDetails', () => {
   });
 
   it('shows preview and remove button when previewUrl is provided', () => {
-    render(<CreateAlbumDetails {...defaultProps} previewUrl="mock-url" />);
+    customRender(<CreateAlbumDetails {...defaultProps} previewUrl="mock-url" />);
     expect(screen.getByAltText(/Cover Preview/i)).toHaveAttribute('src', 'mock-url');
     expect(screen.getByRole('button', { name: /Remove/i })).toBeInTheDocument();
   });
 
   it('calls onCoverClick when upload area is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} />);
+    customRender(<CreateAlbumDetails {...defaultProps} />);
     await user.click(screen.getByText(/Upload Cover/i));
     expect(mockOnCoverClick).toHaveBeenCalled();
   });
 
   it('calls onRemoveImage when remove button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumDetails {...defaultProps} previewUrl="mock-url" />);
+    customRender(<CreateAlbumDetails {...defaultProps} previewUrl="mock-url" />);
     await user.click(screen.getByRole('button', { name: /Remove/i }));
     expect(mockOnRemoveImage).toHaveBeenCalled();
   });

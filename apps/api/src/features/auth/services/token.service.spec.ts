@@ -1,14 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TokenService } from './token.service';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { SessionRepository } from '../../../shared/repositories/session.repository';
-import { RefreshTokenRepository } from '../../../shared/repositories/refresh-token.repository';
-import { UnitOfWorkService } from '../../../shared/services/unit-of-work.service';
-import { PrismaService } from '../../../shared/services/prisma.service';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { refreshTokenBuilder, sessionBuilder } from '@repo/testing';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { refreshTokenBuilder, sessionBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RefreshTokenRepository } from '../../../shared/repositories/refresh-token.repository';
+import { SessionRepository } from '../../../shared/repositories/session.repository';
+import { PrismaService } from '../../../shared/services/prisma.service';
+import { UnitOfWorkService } from '../../../shared/services/unit-of-work.service';
+import { TokenService } from './token.service';
 
 describe('TokenService', () => {
   let service: TokenService;

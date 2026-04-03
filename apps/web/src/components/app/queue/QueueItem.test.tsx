@@ -1,5 +1,7 @@
 import type { QueueItem as PlayrQueueItem } from '@/stores/player.store';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
+import { customRender } from '@repo/testing/web';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueueItem, QueueItemOverlay } from './QueueItem';
 
@@ -34,145 +36,171 @@ vi.mock('@dnd-kit/utilities', () => ({
 }));
 
 describe('QueueItem', () => {
-  const mockTrack = {
-    uniqueId: 'test-1',
-    title: 'Test Title',
-    artists: [{ name: 'Test Artist' }],
-    album: { cover: { url: 'http://example.com/cover.jpg' } },
-  } as PlayrQueueItem;
+  const mockTrack: PlayrQueueItem = {
+    uniqueId: '1',
+    ...trackBuilder({ title: 'Test Title' }),
+    artists: [artistBuilder({ name: 'Test Artist' })],
+    album: {
+      ...albumBuilder({ name: 'Test Album' }),
+      cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+    },
+  };
 
-  it('renders track details correctly', () => {
-    const onPlay = vi.fn();
-    const onRemove = vi.fn();
+  describe('rendering', () => {
+    it('renders track details correctly', () => {
+      const onPlay = vi.fn();
+      const onRemove = vi.fn();
 
-    render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
+      customRender(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
 
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test Artist')).toBeInTheDocument();
-    expect(screen.getByAltText('Test Title')).toHaveAttribute(
-      'src',
-      'http://example.com/cover.jpg',
-    );
+      expect(screen.getByText('Test Title')).toBeInTheDocument();
+      expect(screen.getByText('Test Artist')).toBeInTheDocument();
+      expect(screen.getByAltText('Test Title')).toHaveAttribute(
+        'src',
+        'http://example.com/cover.jpg',
+      );
+    });
+
+    it('renders fallback icon without cover', () => {
+      const noCoverTrack: PlayrQueueItem = {
+        uniqueId: '2',
+        ...trackBuilder({ title: 'Test Title 2' }),
+        artists: [artistBuilder({ name: 'Test Artist' })],
+        album: { ...albumBuilder({ name: 'Test Album' }), cover: null },
+      };
+
+      customRender(<QueueItem track={noCoverTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
+      expect(screen.queryByAltText('Test Title 2')).not.toBeInTheDocument();
+    });
+
+    it('joins multiple artist names correctly', () => {
+      const multiArtistTrack: PlayrQueueItem = {
+        uniqueId: '3',
+        ...trackBuilder({ title: 'Test Title 3' }),
+        artists: [artistBuilder({ name: 'Artist A' }), artistBuilder({ name: 'Artist B' })],
+        album: {
+          ...albumBuilder({ name: 'Test Album' }),
+          cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+        },
+      };
+
+      customRender(<QueueItem track={multiArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
+      expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
+    });
+
+    it('disables hover styles when isDragActive is true', () => {
+      const { container } = customRender(
+        <QueueItem track={mockTrack} onPlay={vi.fn()} onRemove={vi.fn()} isDragActive={true} />,
+      );
+      const group = container.querySelector('.group');
+      expect(group).not.toHaveClass('hover:bg-white/5');
+    });
   });
 
-  it('handles play click', () => {
-    const onPlay = vi.fn();
-    const onRemove = vi.fn();
+  describe('interactions', () => {
+    it('handles play click', () => {
+      const onPlay = vi.fn();
+      const onRemove = vi.fn();
 
-    render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
-    const container = screen.getByText('Test Title').closest('.group');
-    fireEvent.click(container!);
+      customRender(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
+      const container = screen.getByText('Test Title').closest('.group');
+      fireEvent.click(container!);
 
-    expect(onPlay).toHaveBeenCalledWith(mockTrack);
+      expect(onPlay).toHaveBeenCalledWith(mockTrack);
+    });
+
+    it('handles remove click', () => {
+      const onPlay = vi.fn();
+      const onRemove = vi.fn();
+
+      customRender(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
+
+      const buttons = screen.getAllByRole('button');
+      fireEvent.click(buttons[buttons.length - 1]);
+      expect(onRemove).toHaveBeenCalledWith('1', expect.anything());
+    });
+
+    it('stops propagation when clicking the drag handle', () => {
+      const onPlay = vi.fn();
+      const onRemove = vi.fn();
+
+      customRender(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
+
+      const container = screen.getByText('Test Title').closest('.group');
+      const dragHandle = container!.querySelector('.cursor-grab');
+
+      fireEvent.click(dragHandle!);
+
+      expect(onPlay).not.toHaveBeenCalled();
+    });
   });
 
-  it('handles remove click', () => {
-    const onPlay = vi.fn();
-    const onRemove = vi.fn();
+  describe('drag state', () => {
+    it('renders correctly when dragging', () => {
+      vi.mocked(useSortable).mockReturnValueOnce({
+        attributes: {},
+        listeners: {},
+        setNodeRef: vi.fn(),
+        transform: null,
+        transition: undefined,
+        isDragging: true,
+      } as unknown as ReturnType<typeof useSortable>);
 
-    render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
-
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[buttons.length - 1]);
-    expect(onRemove).toHaveBeenCalledWith('test-1', expect.anything());
-  });
-
-  it('renders fallback icon without cover', () => {
-    const noCoverTrack = {
-      ...mockTrack,
-      album: { cover: null },
-    } as unknown as PlayrQueueItem;
-
-    render(<QueueItem track={noCoverTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.queryByAltText('Test Title')).not.toBeInTheDocument();
-  });
-
-  it('stops propagation when clicking the drag handle', () => {
-    const onPlay = vi.fn();
-    const onRemove = vi.fn();
-
-    render(<QueueItem track={mockTrack} onPlay={onPlay} onRemove={onRemove} />);
-
-    // The DotsSixVerticalIcon is inside a div.
-    const container = screen.getByText('Test Title').closest('.group');
-    const dragHandle = container!.querySelector('.cursor-grab');
-
-    fireEvent.click(dragHandle!);
-
-    // Stop propagation should prevent the onPlay handler from being invoked
-    expect(onPlay).not.toHaveBeenCalled();
-  });
-
-  it('renders correctly when dragging', () => {
-    vi.mocked(useSortable).mockReturnValueOnce({
-      attributes: {},
-      listeners: {},
-      setNodeRef: vi.fn(),
-      transform: null,
-      transition: undefined,
-      isDragging: true,
-    } as unknown as ReturnType<typeof useSortable>);
-
-    render(<QueueItem track={mockTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
-    const container = screen.getByText('Test Title').closest('.group');
-    expect(container).toHaveStyle({ zIndex: 1 });
-  });
-
-  it('joins multiple artist names correctly', () => {
-    const multiArtistTrack = {
-      ...mockTrack,
-      artists: [{ name: 'Artist A' }, { name: 'Artist B' }],
-    } as PlayrQueueItem;
-
-    render(<QueueItem track={multiArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
-  });
-
-  it('disables hover styles when isDragActive is true', () => {
-    const { container } = render(
-      <QueueItem track={mockTrack} onPlay={vi.fn()} onRemove={vi.fn()} isDragActive={true} />,
-    );
-    const group = container.querySelector('.group');
-    expect(group).not.toHaveClass('hover:bg-white/5');
+      customRender(<QueueItem track={mockTrack} onPlay={vi.fn()} onRemove={vi.fn()} />);
+      const container = screen.getByText('Test Title').closest('.group');
+      expect(container).toHaveStyle({ zIndex: 1 });
+    });
   });
 });
 
 describe('QueueItemOverlay', () => {
-  const mockTrack = {
-    uniqueId: 'test-1',
-    title: 'Test Title',
-    artists: [{ name: 'Test Artist' }],
-    album: { cover: { url: 'http://example.com/cover.jpg' } },
-  } as PlayrQueueItem;
+  const mockTrack: PlayrQueueItem = {
+    uniqueId: '1',
+    ...trackBuilder({ title: 'Test Title' }),
+    artists: [artistBuilder({ name: 'Test Artist' })],
+    album: {
+      ...albumBuilder({ name: 'Test Album' }),
+      cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+    },
+  };
 
-  it('renders with album cover', () => {
-    render(<QueueItemOverlay track={mockTrack} />);
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test Artist')).toBeInTheDocument();
-    expect(screen.getByAltText('Test Title')).toHaveAttribute(
-      'src',
-      'http://example.com/cover.jpg',
-    );
-  });
+  describe('rendering', () => {
+    it('renders with album cover', () => {
+      customRender(<QueueItemOverlay track={mockTrack} />);
+      expect(screen.getByText('Test Title')).toBeInTheDocument();
+      expect(screen.getByText('Test Artist')).toBeInTheDocument();
+      expect(screen.getByAltText('Test Title')).toHaveAttribute(
+        'src',
+        'http://example.com/cover.jpg',
+      );
+    });
 
-  it('renders fallback icon without cover', () => {
-    const noCoverTrack = {
-      ...mockTrack,
-      album: { cover: null },
-    } as unknown as PlayrQueueItem;
+    it('renders fallback icon without cover', () => {
+      const noCoverTrack: PlayrQueueItem = {
+        uniqueId: '2',
+        ...trackBuilder({ title: 'Test Title 2' }),
+        artists: [artistBuilder({ name: 'Test Artist' })],
+        album: { ...albumBuilder({ name: 'Test Album' }), cover: null },
+      };
 
-    render(<QueueItemOverlay track={noCoverTrack} />);
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.queryByAltText('Test Title')).not.toBeInTheDocument();
-  });
+      customRender(<QueueItemOverlay track={noCoverTrack} />);
+      expect(screen.getByText('Test Title 2')).toBeInTheDocument();
+      expect(screen.queryByAltText('Test Title 2')).not.toBeInTheDocument();
+    });
 
-  it('joins multiple artist names correctly', () => {
-    const multiArtistTrack = {
-      ...mockTrack,
-      artists: [{ name: 'Artist A' }, { name: 'Artist B' }],
-    } as PlayrQueueItem;
+    it('joins multiple artist names correctly', () => {
+      const multiArtistTrack: PlayrQueueItem = {
+        uniqueId: '3',
+        ...trackBuilder({ title: 'Test Title 3' }),
+        artists: [artistBuilder({ name: 'Artist A' }), artistBuilder({ name: 'Artist B' })],
+        album: {
+          ...albumBuilder({ name: 'Test Album' }),
+          cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
+        },
+      };
 
-    render(<QueueItemOverlay track={multiArtistTrack} />);
-    expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
+      customRender(<QueueItemOverlay track={multiArtistTrack} />);
+      expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
+    });
   });
 });

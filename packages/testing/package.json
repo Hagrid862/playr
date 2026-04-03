@@ -25,6 +25,16 @@
       "types": "./dist/requests/index.d.ts",
       "import": "./dist/requests/index.js",
       "default": "./dist/requests/index.js"
+    },
+    "./builders": {
+      "types": "./dist/builders/index.d.ts",
+      "import": "./dist/builders/index.js",
+      "default": "./dist/builders/index.js"
+    },
+    "./mocks": {
+      "types": "./dist/mocks/index.d.ts",
+      "import": "./dist/mocks/index.js",
+      "default": "./dist/mocks/index.js"
     }
   },
   "scripts": {

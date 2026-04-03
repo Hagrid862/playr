@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { customRender } from '@repo/testing/web';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import useMeasure from 'react-use-measure';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,7 +17,7 @@ describe('SingleTrackCoverUpdateBanner', () => {
   });
 
   it('renders New artwork detected and cover options', () => {
-    render(
+    customRender(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl={null}
         trackCoverPreviewUrl="blob:track-cover"
@@ -41,7 +42,7 @@ describe('SingleTrackCoverUpdateBanner', () => {
       { height: 0, width: 0, x: 0, y: 0, top: 0, right: 0, bottom: 0, left: 0 },
       vi.fn(), // forceRefresh - 3rd element
     ] as ReturnType<typeof useMeasure>);
-    render(
+    customRender(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl="http://example.com/cover.jpg"
         trackCoverPreviewUrl="blob:track-cover"
@@ -58,7 +59,7 @@ describe('SingleTrackCoverUpdateBanner', () => {
 
   it('calls onSelect(true) when New cover is clicked', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl={null}
         trackCoverPreviewUrl="blob:track-cover"
@@ -75,7 +76,7 @@ describe('SingleTrackCoverUpdateBanner', () => {
 
   it('calls onSelect(false) when Current cover is clicked', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl={null}
         trackCoverPreviewUrl="blob:track-cover"
@@ -95,7 +96,7 @@ describe('SingleTrackCoverUpdateBanner', () => {
 
   it('minimizes when caret up is clicked', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl={null}
         trackCoverPreviewUrl="blob:track-cover"
@@ -114,7 +115,7 @@ describe('SingleTrackCoverUpdateBanner', () => {
 
   it('shows Using from file when minimized and useTrackCover is true', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl={null}
         trackCoverPreviewUrl="blob:track-cover"
@@ -131,7 +132,7 @@ describe('SingleTrackCoverUpdateBanner', () => {
 
   it('expands when minimized bar is clicked', async () => {
     const user = userEvent.setup();
-    render(
+    customRender(
       <SingleTrackCoverUpdateBanner
         currentAlbumCoverUrl={null}
         trackCoverPreviewUrl="blob:track-cover"

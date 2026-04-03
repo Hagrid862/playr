@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { AlbumType } from '@repo/db';
+import { customRender } from '@repo/testing/web';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { createMockCreateAlbumRequest } from '../__tests__/fixtures';
 import { CreateAlbumForm } from './CreateAlbumForm';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -66,7 +67,13 @@ describe('CreateAlbumForm', () => {
   const mockOnFileSelect = vi.fn();
 
   const defaultProps = {
-    formData: createMockCreateAlbumRequest(),
+    formData: {
+      name: '',
+      description: '',
+      type: AlbumType.album,
+      artistId: 'artist-123',
+      releaseDate: null,
+    },
     isLoading: false,
     isValid: true,
     onSubmit: mockOnSubmit,
@@ -77,33 +84,33 @@ describe('CreateAlbumForm', () => {
   };
 
   it('renders correctly', () => {
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     expect(screen.getByRole('button', { name: /Create Album/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Cancel/i })).toBeInTheDocument();
   });
 
   it('handles field changes via detailed component', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     await user.click(screen.getByText('Change Name'));
     expect(mockOnChange).toHaveBeenCalledWith('name', 'New Name');
   });
 
   it('handles field blur via detailed component', async () => {
     const user = userEvent.setup();
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     await user.click(screen.getByText('Blur Name'));
     expect(mockOnBlur).toHaveBeenCalledWith('name');
   });
 
   it('shows loading state', () => {
-    render(<CreateAlbumForm {...defaultProps} isLoading={true} />);
+    customRender(<CreateAlbumForm {...defaultProps} isLoading={true} />);
     expect(screen.getByText(/Creating.../i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Creating.../i })).toBeDisabled();
   });
 
   it('disables submit button when form is invalid', () => {
-    render(<CreateAlbumForm {...defaultProps} isValid={false} />);
+    customRender(<CreateAlbumForm {...defaultProps} isValid={false} />);
     expect(screen.getByRole('button', { name: /Create Album/i })).toBeDisabled();
   });
 
@@ -111,7 +118,7 @@ describe('CreateAlbumForm', () => {
     const user = userEvent.setup();
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
 
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['blob'], 'test.png', { type: 'image/png' });
@@ -127,7 +134,7 @@ describe('CreateAlbumForm', () => {
     const user = userEvent.setup();
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
 
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['blob'], 'test.png', { type: 'image/png' });
@@ -142,7 +149,7 @@ describe('CreateAlbumForm', () => {
   });
 
   it('triggers click on hidden file input when cover container is clicked', () => {
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     const coverContainer = screen.getByText(/Upload Cover/i);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const clickSpy = vi.spyOn(fileInput, 'click');
@@ -152,7 +159,7 @@ describe('CreateAlbumForm', () => {
   });
 
   it('shows Invalid File Format dialog when dropping non-image file', () => {
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
     fireEvent.drop(window, { dataTransfer: { files: [file] } });
 
@@ -160,7 +167,7 @@ describe('CreateAlbumForm', () => {
   });
 
   it('shows Too Many Files dialog when dropping multiple files', () => {
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     const file1 = new File(['x'], 'a.png', { type: 'image/png' });
     const file2 = new File(['y'], 'b.png', { type: 'image/png' });
     fireEvent.drop(window, { dataTransfer: { files: [file1, file2] } });
@@ -169,7 +176,7 @@ describe('CreateAlbumForm', () => {
   });
 
   it('handles removing file selection via input onChange', () => {
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
 
     fireEvent.change(fileInput, { target: { files: [] } });
@@ -187,7 +194,7 @@ describe('CreateAlbumForm', () => {
       configurable: true,
     });
 
-    render(<CreateAlbumForm {...defaultProps} />);
+    customRender(<CreateAlbumForm {...defaultProps} />);
     const file = new File(['image'], 'test.png', { type: 'image/png' });
 
     fireEvent.drop(window, { dataTransfer: { files: [file] } });
@@ -201,7 +208,7 @@ describe('CreateAlbumForm', () => {
 
   it('handles file operations when fileInputRef.current is null', () => {
     // This covers the false branches of `if (fileInputRef.current)`
-    render(<CreateAlbumForm {...defaultProps} _testHideFileInput={true} />);
+    customRender(<CreateAlbumForm {...defaultProps} _testHideFileInput={true} />);
 
     // Simulate drop
     const file = new File(['image'], 'test.png', { type: 'image/png' });
@@ -215,7 +222,7 @@ describe('CreateAlbumForm', () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
 
     // we need to set a file so that the remove button appears
-    render(<CreateAlbumForm {...defaultProps} _testHideFileInput={true} />);
+    customRender(<CreateAlbumForm {...defaultProps} _testHideFileInput={true} />);
 
     // Bypass the visual upload and just drop it to set the preview
     const file = new File(['blob'], 'test.png', { type: 'image/png' });

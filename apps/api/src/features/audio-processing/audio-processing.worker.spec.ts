@@ -1,17 +1,17 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
-import { audioFileBuilder, trackWithAccessBuilder } from '@repo/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Logger, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccessRole, AudioFormat, AudioQuality, ProcessingStatus } from '@repo/db';
+import { audioFileBuilder, trackWithAccessBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Job } from 'bullmq';
 import * as fs from 'fs/promises';
 import * as mm from 'music-metadata';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AudioTranscodeService } from './audio-transcode.service';
 import { AudioProcessingJobData, AudioProcessingWorker } from './audio-processing.worker';
+import { AudioTranscodeService } from './audio-transcode.service';
 import { WaveformService } from './waveform.service';
 
 vi.mock('fs/promises');

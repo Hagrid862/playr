@@ -1,10 +1,10 @@
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Track } from '@repo/db';
-import { trackBuilder } from '@repo/testing';
+import { trackBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateLibraryTrackCommand } from '../impl/update-library-track.command';
 import { UpdateLibraryTrackHandler } from './update-library-track.handler';

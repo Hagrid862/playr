@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { albumBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumType, PrismaClient, Visibility } from '@repo/db';
+import { albumBuilder } from '@repo/testing/builders';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { AlbumRepository } from './album.repository';

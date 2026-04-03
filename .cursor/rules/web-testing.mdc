@@ -1,0 +1,12 @@
+---
+globs: apps/web/**/*.test.ts,apps/web/**/*.test.tsx
+alwaysApply: false
+---
+
+- scope: `@repo/web` Vitest + jsdom; config in `apps/web/vite.config.ts` (`test` block); `apps/web/src/setupTests.ts` for jest-dom and DOM polyfills. E2E is `apps/e2e` (Playwright), not Vitest.
+- location: co-locate `*.test.ts` / `*.test.tsx` with source. Optional `__tests__/` for shared fixtures (e.g. `fixtures.ts`). Never put tests in `packages/testing` (utilities only).
+- data: import builders from `@repo/testing` (`trackBuilder`, `albumBuilder`, `artistBuilder`, `userBuilder`, `imageBuilder`, etc.). Builders default via @ngneat/falso; last spread is `...overrides`.
+- overrides: call `trackBuilder()` / `albumBuilder()` with no args when any fake data is fine. Pass `Partial<>` only when (1) the test asserts on that field, (2) entities need a shared FK (`albumId`, `artistId`, …), or (3) you need null/edge values. Do not set id/title/etc. for stability unless the test depends on them.
+- react: import `customRender` (QueryClient only; default for most UI), `customRenderWithRouter` when the tree needs TanStack Router, plus `createRouterMock`, store mocks, `createFormMocks` from `@repo/testing/web`. Use defaults; override only what the scenario tests (same idea as store mocks).
+- local: repeated compositions → thin wrapper next to feature (e.g. `components/.../test-utils/*.ts`) using builders + `vi.fn()`, not full hand-written entities.
+- mocks: `vi.mock` modules; `vi.mocked` for typed hooks. Zustand: mock the store module, then e.g. `vi.mocked(usePlayerStore).mockReturnValue(createPlayerStoreMock({ ... }))` with minimal overrides. In `beforeEach`, call `vi.clearAllMocks()` so each test starts with reset call history for `vi.mock`/`vi.mocked` and for `mockReturnValue(createPlayerStoreMock(...))` (and similar) setups—prefer that over clearing in `afterEach`. When you use `vi.spyOn`, call `vi.restoreAllMocks()` in `afterEach` so implementations reset to originals.
