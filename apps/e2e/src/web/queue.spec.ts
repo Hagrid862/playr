@@ -1,11 +1,14 @@
 import { expect, Page, test } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { DashboardPage } from "./dashboard.po";
-import { LoginPage } from "./login.po";
-import { RegistrationPage } from "./registration.po";
 import { LibraryArtistsPage } from "./library-artists.po";
-import { QueuePage } from "./queue.po";
+import { LoginPage } from "./login.po";
 import { PlayerPage } from "./player.po";
-import path from "path";
+import { QueuePage } from "./queue.po";
+import { RegistrationPage } from "./registration.po";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 test.describe("Queue Management", () => {
   let page: Page;
