@@ -43,4 +43,5 @@ apps/api/src/metadata.ts
 
 # IDEs and editors
 .idea/
-.vscode/
+.vscode/**/*
+!.vscode/tasks.json

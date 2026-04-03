@@ -1,0 +1,250 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "$(gear) Build",
+      "type": "shell",
+      "command": "pnpm run build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(play) Dev",
+      "type": "shell",
+      "command": "pnpm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(checklist) Lint",
+      "type": "shell",
+      "command": "pnpm run lint",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": "$eslint-stylish"
+    },
+    {
+      "label": "$(edit) Format",
+      "type": "shell",
+      "command": "pnpm run format",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(checklist) Format Check",
+      "type": "shell",
+      "command": "pnpm run format:check",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(symbol-misc) Check Types",
+      "type": "shell",
+      "command": "pnpm run check-types",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "$(beaker) Test",
+      "type": "shell",
+      "command": "pnpm run test",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(beaker) Test Unit",
+      "type": "shell",
+      "command": "pnpm run test:unit",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(beaker) Test Integration",
+      "type": "shell",
+      "command": "pnpm run test:integration",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(beaker) Test E2E",
+      "type": "shell",
+      "command": "pnpm run test:e2e",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(run-coverage) Test Coverage",
+      "type": "shell",
+      "command": "pnpm run test:coverage",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(database) Prisma Generate",
+      "type": "shell",
+      "command": "pnpm run prisma:generate",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(database) Prisma Migrate",
+      "type": "shell",
+      "command": "pnpm run prisma:migrate",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(database) Prisma Push",
+      "type": "shell",
+      "command": "pnpm run prisma:push",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(database) Prisma Studio",
+      "type": "shell",
+      "command": "pnpm run prisma:studio",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "$(play) Start",
+      "type": "shell",
+      "command": "pnpm run start",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(server-process) Docker Up (main)",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(rocket) Docker Up (prod)",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.prod.yml up -d",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(server) Docker Up (dev services only)",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.dev.yml up -d",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(debug-stop) Docker Down",
+      "type": "shell",
+      "command": "docker compose down",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "$(debug-restart) Docker Restart",
+      "type": "shell",
+      "command": "docker compose restart",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    }
+  ]
+}
