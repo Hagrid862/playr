@@ -50,6 +50,8 @@ describe('playback-queue', () => {
       const next = reordered.filter((i) => i.type === 'playingNext');
       expect(manual.map((i) => i.position)).toEqual([0, 1]);
       expect(next.map((i) => i.position)).toEqual([0, 1]);
+      expect(manual.map((i) => i.originalPosition)).toEqual([0, 1]);
+      expect(next.map((i) => i.originalPosition)).toEqual([0, 1]);
     });
   });
 });

@@ -1,17 +1,17 @@
 import { playbackTrackToQueueItem } from '@/lib/playback-mappers';
 import { getOrderedNextQueue, reorderKeepingPartitions, shuffleArray } from '@/lib/playback-queue';
 import {
-  afterLocalPlaybackMutation,
-  afterLocalPlaybackMutationWithClaim,
-  isPlaybackSyncConnected,
-  syncPlayingStateToServer,
+    afterLocalPlaybackMutation,
+    afterLocalPlaybackMutationWithClaim,
+    isPlaybackSyncConnected,
+    syncPlayingStateToServer,
 } from '@/lib/playback-sync';
 import type { ListPlaybackDeviceEntry, QueueItem } from '@repo/contracts';
 import {
-  PLAYBACK_HISTORY_MAX_LENGTH,
-  PlaybackTrack,
-  StreamAudioQuality,
-  type PlaybackState,
+    PLAYBACK_HISTORY_MAX_LENGTH,
+    PlaybackTrack,
+    StreamAudioQuality,
+    type PlaybackState,
 } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -72,7 +72,7 @@ export interface PlayerState {
 
 function reindexQueuePositions(queue: QueueItem[]): QueueItem[] {
   const sorted = [...queue].sort((a, b) => a.position - b.position);
-  return sorted.map((item, i) => ({ ...item, position: i }));
+  return sorted.map((item, i) => ({ ...item, position: i, originalPosition: i }));
 }
 
 function shouldClaimActiveDevice(activeDeviceId: string | null, localPlaybackDeviceId: string) {
