@@ -1,10 +1,10 @@
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import {
-    StreamAudioQuality,
-    type ListPlaybackDeviceEntry,
-    type PlaybackState,
-    type PlaybackTrack,
-    type ZodTrack,
+  StreamAudioQuality,
+  type ListPlaybackDeviceEntry,
+  type PlaybackState,
+  type PlaybackTrack,
+  type ZodTrack,
 } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

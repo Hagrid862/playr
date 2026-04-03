@@ -3,14 +3,14 @@ import { getOrderedNextQueue } from '@/lib/playback-queue';
 import { createPlaybackSocket } from '@/lib/playback-socket';
 import { usePlayerStore } from '@/stores/player.store';
 import {
-    PLAYBACK_HISTORY_MAX_LENGTH,
-    type ListPlaybackDevicesResponse,
-    type PlaybackState,
-    type PlaybackTrack,
-    type SetActiveDeviceRequest,
-    type SetCurrentTimeStateRequest,
-    type SetPlaybackStateRequest,
-    type SetPlayingStateRequest,
+  PLAYBACK_HISTORY_MAX_LENGTH,
+  type ListPlaybackDevicesResponse,
+  type PlaybackState,
+  type PlaybackTrack,
+  type SetActiveDeviceRequest,
+  type SetCurrentTimeStateRequest,
+  type SetPlaybackStateRequest,
+  type SetPlayingStateRequest,
 } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 
