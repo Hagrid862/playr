@@ -1,4 +1,4 @@
-import { zodTrackToPlaybackTrack } from '@/lib/playback-mappers';
+import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
 import { usePlayerStore } from './player.store';

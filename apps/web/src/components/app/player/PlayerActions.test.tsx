@@ -1,4 +1,4 @@
-import * as playbackSync from '@/lib/playback-sync';
+import * as playbackSync from '@/lib/playback/sync/playback-sync';
 import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -49,7 +49,7 @@ const { findPopoverTriggerChild, findPopoverContentChild } = vi.hoisted(() => {
 vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
-vi.mock('@/lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   listPlaybackDevices: vi.fn(),
   setActivePlaybackDevice: vi.fn(),
 }));

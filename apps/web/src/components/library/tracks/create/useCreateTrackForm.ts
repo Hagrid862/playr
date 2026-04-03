@@ -1,5 +1,8 @@
-import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
-import { cleanFilenameToTitle } from '@/lib/clean-audio-filename';
+import {
+  extractCoverFromAudioFile,
+  extractMetadataFromAudioFile,
+} from '@/lib/audio/audio-metadata';
+import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import type { CreateLibraryTrackRequest } from '@repo/contracts';
 import { CreateLibraryTrackRequestSchema, ZodAlbumInfer } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';

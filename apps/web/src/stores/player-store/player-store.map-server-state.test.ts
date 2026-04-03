@@ -2,7 +2,7 @@ import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { PlaybackState, PlaybackTrack, ZodTrack } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
 import { describe, expect, it } from 'vitest';
-import { zodTrackToPlaybackTrack } from '../../lib/playback-mappers';
+import { zodTrackToPlaybackTrack } from '../../lib/playback/playback-mappers';
 import { mapServerPlaybackToPatch } from './player-store.map-server-state';
 
 const createTrack = (id: string, title = 'Test Track'): PlaybackTrack =>

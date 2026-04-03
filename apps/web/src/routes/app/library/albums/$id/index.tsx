@@ -20,7 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
-import { zodTrackToPlaybackTrack } from '@/lib/playback-mappers';
+import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
   DiscIcon,

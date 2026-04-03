@@ -1,4 +1,4 @@
-import { getOrderedNextQueue } from '@/lib/playback-queue';
+import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
 import type { PlaybackState } from '@repo/contracts';
 import type { PlayerState } from './player-store.types';
 

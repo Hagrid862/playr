@@ -1,7 +1,7 @@
-import { cleanFilenameToTitle } from '@/lib/clean-audio-filename.ts';
-import { extractCoverFromAudioFile } from '@/lib/audio-metadata';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { extractCoverFromAudioFile } from '@/lib/audio/audio-metadata';
+import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import type { BulkTrackItem, TrackWithCover } from '@/lib/types/library';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { BulkTrackUploadFormProps } from './BulkTrackUploadForm.types';
 
 export function useBulkTrackUpload({

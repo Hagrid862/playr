@@ -2,8 +2,8 @@ import {
   extractCoverFromAudioFile,
   extractMetadataFromAudioFile,
   type ExtractedAudioMetadata,
-} from '@/lib/audio-metadata';
-import { cleanFilenameToTitle } from '@/lib/clean-audio-filename';
+} from '@/lib/audio/audio-metadata';
+import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import type { BulkTrackItem, TrackWithCover } from '@/lib/types/library';
 import type { CreateLibraryAlbumRequest } from '@repo/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

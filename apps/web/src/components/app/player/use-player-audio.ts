@@ -1,5 +1,5 @@
-import { getOrderedNextQueue } from '@/lib/playback-queue';
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { StreamAudioQuality } from '@repo/contracts';

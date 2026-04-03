@@ -1,6 +1,10 @@
-import { playbackTrackToQueueItem } from '@/lib/playback-mappers';
-import { getOrderedNextQueue, reorderKeepingPartitions, shuffleArray } from '@/lib/playback-queue';
-import { afterLocalPlaybackMutation } from '@/lib/playback-sync';
+import { playbackTrackToQueueItem } from '@/lib/playback/playback-mappers';
+import {
+  getOrderedNextQueue,
+  reorderKeepingPartitions,
+  shuffleArray,
+} from '@/lib/playback/queue/playback-queue';
+import { afterLocalPlaybackMutation } from '@/lib/playback/sync/playback-sync';
 import type { StoreApi } from 'zustand';
 import type { PlayerState } from './player-store.types';
 import {
