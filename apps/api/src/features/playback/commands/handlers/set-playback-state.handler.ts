@@ -15,6 +15,16 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
 
   constructor(private readonly persistence: PlaybackStatePersistenceService) {}
 
+  private upsertDeviceById(
+    devices: PlaybackStatePayload['devices'],
+    device: { id: string; name: string; icon: PlaybackStatePayload['devices'][number]['icon'] },
+  ): PlaybackStatePayload['devices'] {
+    const map = new Map<string, PlaybackStatePayload['devices'][number]>();
+    for (const d of devices) map.set(d.id, d);
+    map.set(device.id, device as PlaybackStatePayload['devices'][number] & { id: string });
+    return [...map.values()];
+  }
+
   async execute(command: SetPlaybackStateCommand): Promise<PlaybackState> {
     const state: PlaybackStatePayload = {
       ...command.request.state,
@@ -38,18 +48,46 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
     };
 
     if (expectedVersion === 0) {
+      const activeDevice: PlaybackStatePayload['devices'][number] = {
+        id: command.playbackDeviceId,
+        name: command.playbackDeviceName,
+        icon: command.playbackDeviceIcon,
+      };
+
       const firstState = claimActiveDevice
         ? {
             ...payload,
             activeDeviceId: command.playbackDeviceId,
+            devices: this.upsertDeviceById(payload.devices, activeDevice),
           }
         : payload;
       return this.persistence.createIfAbsent(command.userId, firstState);
     } else {
+      const activeDevice: PlaybackStatePayload['devices'][number] = {
+        id: command.playbackDeviceId,
+        name: command.playbackDeviceName,
+        icon: command.playbackDeviceIcon,
+      };
+
       return this.persistence.applyMutation(command.userId, expectedVersion, (current) => ({
         ...current,
         ...payload,
-        devices: payload.devices.length > 0 ? payload.devices : current.devices,
+        devices: (() => {
+          // Update must not drop other connected devices: merge rather than replace.
+          const base = current.devices ?? [];
+          if (payload.devices.length > 0) {
+            const map = new Map<string, PlaybackStatePayload['devices'][number]>();
+            for (const d of base) map.set(d.id, d);
+            for (const d of payload.devices) map.set(d.id, d);
+            if (claimActiveDevice) {
+              map.set(activeDevice.id, activeDevice);
+            }
+            return [...map.values()];
+          }
+
+          // If client sent no devices, only inject active device metadata (when claiming).
+          return claimActiveDevice ? this.upsertDeviceById(base, activeDevice) : base;
+        })(),
         activeDeviceId: claimActiveDevice ? command.playbackDeviceId : current.activeDeviceId,
       }));
     }

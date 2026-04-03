@@ -21,7 +21,7 @@ export class AddQueueItemHandler implements ICommandHandler<AddQueueItemCommand>
           : Math.max(0, Math.min(insertAt, ordered.length));
 
       const next = [...ordered];
-      const maxOriginalPos = next.reduce((max, item) => Math.max(max, item.originalPosition), -1);
+      const maxOriginalPos = next.reduce((max, q) => Math.max(max, q.originalPosition), -1);
       next.splice(index, 0, {
         ...item,
         originalPosition: item.originalPosition ?? maxOriginalPos + 1,
