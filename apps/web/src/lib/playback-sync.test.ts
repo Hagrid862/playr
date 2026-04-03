@@ -3,26 +3,26 @@ import type { PlayerState } from '@/stores/player.store';
 import { usePlayerStore } from '@/stores/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type {
-  ListPlaybackDeviceEntry,
-  ListPlaybackDevicesResponse,
-  PlaybackState,
-  PlaybackTrack,
-  QueueItem,
+    ListPlaybackDeviceEntry,
+    ListPlaybackDevicesResponse,
+    PlaybackState,
+    PlaybackTrack,
+    QueueItem,
 } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlaybackSocket } from './playback-socket';
 import {
-  afterLocalPlaybackMutation,
-  afterLocalPlaybackMutationWithClaim,
-  connectPlaybackSync,
-  disconnectPlaybackSync,
-  emitCurrentTimeSync,
-  getPlaybackSocket,
-  isPlaybackSyncConnected,
-  listPlaybackDevices,
-  setActivePlaybackDevice,
-  syncPlayingStateToServer,
+    afterLocalPlaybackMutation,
+    afterLocalPlaybackMutationWithClaim,
+    connectPlaybackSync,
+    disconnectPlaybackSync,
+    emitCurrentTimeSync,
+    getPlaybackSocket,
+    isPlaybackSyncConnected,
+    listPlaybackDevices,
+    setActivePlaybackDevice,
+    syncPlayingStateToServer,
 } from './playback-sync';
 
 type SocketOnCall = [event: string, handler: (...args: unknown[]) => void];
@@ -447,6 +447,57 @@ describe('playback-sync', () => {
     it('getPlaybackSocket returns the socket', () => {
       connectPlaybackSync('token');
       expect(getPlaybackSocket()).toBe(mockSocket);
+    });
+
+    it('set-state payload is built from the store at flush, not when the write is queued', async () => {
+      const queueBefore = [
+        testQueueItem({
+          queueId: '01900000-0000-7000-8000-0000000000b1',
+          track: playbackTrackStub('t-a'),
+        }),
+      ];
+      const queueAfter = [
+        testQueueItem({
+          queueId: '01900000-0000-7000-8000-0000000000b2',
+          track: playbackTrackStub('t-b'),
+        }),
+      ];
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({
+          ...baseState,
+          currentTrack: playbackTrackStub('track-1'),
+          queue: queueBefore,
+          playbackVersion: 1,
+        }),
+      );
+      connectPlaybackSync('token');
+      afterLocalPlaybackMutation();
+
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({
+          ...baseState,
+          currentTrack: playbackTrackStub('track-1'),
+          queue: queueAfter,
+          playbackVersion: 2,
+        }),
+      );
+      await flushMicrotasks();
+
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'command:set-state',
+        expect.objectContaining({
+          expectedVersion: 2,
+          state: expect.objectContaining({
+            queue: [
+              expect.objectContaining({
+                queueId: '01900000-0000-7000-8000-0000000000b2',
+                position: 0,
+              }),
+            ],
+          }),
+        }),
+        expect.any(Function),
+      );
     });
 
     it('buildSetStateBody handles queue mapping', async () => {
