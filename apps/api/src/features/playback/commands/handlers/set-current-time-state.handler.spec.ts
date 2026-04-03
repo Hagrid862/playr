@@ -1,7 +1,7 @@
+import { BadRequestException } from '@nestjs/common';
 import { PlaybackState } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
 import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetCurrentTimeStateCommand } from '../impl/set-current-time-state.command';
@@ -17,7 +17,7 @@ describe('SetCurrentTimeStateHandler', () => {
 
   const initialState: PlaybackState = playbackStateFixture({
     userId,
-    activeDeviceId: 'device-1',
+    activeDeviceId,
     trackData: {
       id: 'track-1',
       trackId: 't1',

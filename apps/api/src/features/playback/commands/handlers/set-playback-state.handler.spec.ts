@@ -60,6 +60,13 @@ describe('SetPlaybackStateHandler', () => {
     const result = await handler.execute(command);
     expect(result).toEqual(initialState);
     expect(persistence.createIfAbsent).toHaveBeenCalled();
+
+    const [, payload] = persistence.createIfAbsent.mock.calls[0]!;
+    expect(payload.devices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'device-1', name: 'Web', icon: 'desktop' }),
+      ]),
+    );
   });
 
   it('initializes state without claiming device when expectedVersion is 0', async () => {
@@ -101,6 +108,9 @@ describe('SetPlaybackStateHandler', () => {
 
     const result = await handler.execute(command);
     expect(result.activeDeviceId).toBe('device-new');
+    expect(result.devices).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'device-new', icon: 'mobile' })]),
+    );
   });
 
   it('updates state without claiming device when expectedVersion > 0', async () => {
