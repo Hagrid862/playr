@@ -15,6 +15,7 @@ export class SetShuffleStateHandler implements ICommandHandler<SetShuffleStateCo
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       if (shuffle === current.shuffle) {
+        // applyMutation manages version/updatedAt; merge is typed without them, so cast when returning unchanged current.
         return current as Omit<PlaybackState, 'version' | 'updatedAt'>;
       }
 
