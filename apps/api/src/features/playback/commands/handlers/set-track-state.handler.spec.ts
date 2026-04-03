@@ -25,17 +25,7 @@ describe('SetTrackStateHandler', () => {
   const initialState: PlaybackState = playbackStateFixture({
     userId,
     activeDeviceId: 'device-1',
-    trackData: {
-      id: 'track-1',
-      trackId: 't1',
-      title: 'Track',
-      artists: ['Artist'],
-      albumArt: null,
-      albumName: 'Album',
-      albumId: 'album-1',
-      duration: 120,
-      explicit: false,
-    },
+    trackData,
     queue: [],
     currentTime: 10,
     volume: 0.5,

@@ -12,10 +12,17 @@ export const fixtureTrack: PlaybackTrack = {
   explicit: false,
 };
 
+function cloneFixtureTrack(): PlaybackTrack {
+  return {
+    ...fixtureTrack,
+    artists: [...fixtureTrack.artists],
+  };
+}
+
 export function fixtureQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
   return {
     queueId: '01900000-0000-7000-8000-000000000001',
-    track: fixtureTrack,
+    track: cloneFixtureTrack(),
     position: 0,
     type: 'queue',
     originalPosition: 0,
@@ -29,7 +36,7 @@ export function playbackStateFixture(overrides: Partial<PlaybackState> = {}): Pl
     activeDeviceId: 'device-1',
     devices: [],
     isPlaying: false,
-    trackData: fixtureTrack,
+    trackData: cloneFixtureTrack(),
     currentTime: 0,
     queue: [],
     history: [],

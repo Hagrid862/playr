@@ -283,6 +283,30 @@ describe('PlaybackGateway', () => {
       expect(roomEmit).toHaveBeenCalledWith('event:playback-state-updated', updated);
     });
 
+    it('should still pause and broadcast when removeDevice throws', async () => {
+      playbackDeviceRegistry.removeDevice.mockRejectedValue(new Error('registry failure'));
+      const updated = playbackStateFixture({
+        activeDeviceId: null,
+        isPlaying: false,
+        version: 2,
+      });
+      playbackPersistence.pauseAndClearActiveIfDeviceMatches.mockResolvedValue(updated);
+      const roomEmit = vi.fn();
+      server.to.mockReturnValue({ emit: roomEmit } as any);
+
+      const mockSocket = {
+        data: { user: { user: { id: 'u1' } }, playbackDeviceId: 'd1' },
+      } as any;
+
+      await gateway.handleDisconnect(mockSocket);
+
+      expect(playbackPersistence.pauseAndClearActiveIfDeviceMatches).toHaveBeenCalledWith(
+        'u1',
+        'd1',
+      );
+      expect(roomEmit).toHaveBeenCalledWith('event:playback-state-updated', updated);
+    });
+
     it('should skip removal if data is missing', async () => {
       const mockSocket = { data: {} } as any;
 
