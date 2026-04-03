@@ -3,8 +3,7 @@
   "display": "Package",
   "extends": "./base.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "incremental": false,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

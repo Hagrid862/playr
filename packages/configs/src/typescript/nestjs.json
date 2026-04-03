@@ -5,22 +5,12 @@
   "compilerOptions": {
     "noEmit": false,
     "outDir": "./dist",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "target": "esnext",
     "incremental": false,
-    "skipLibCheck": true,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true,
     "types": ["node"],
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
