@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { MusicNotesIcon, PauseIcon, PlayIcon } from '@phosphor-icons/react';
 
 export function PlayerMobile() {

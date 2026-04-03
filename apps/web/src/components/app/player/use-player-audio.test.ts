@@ -1,6 +1,6 @@
 import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { PlaybackTrack } from '@repo/contracts';
 import { StreamAudioQuality } from '@repo/contracts';
@@ -9,7 +9,7 @@ import { waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerAudio } from './use-player-audio';
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: Object.assign(vi.fn(), {
     subscribe: vi.fn(),
   }),

@@ -1,4 +1,4 @@
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { PlaybackTrack, QueueItem } from '@repo/contracts';
@@ -8,7 +8,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Queue } from './Queue';
 import { createPlayerStateMock } from './test-utils/player-test-utils';
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
 
