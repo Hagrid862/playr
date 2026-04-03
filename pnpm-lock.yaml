@@ -569,6 +569,9 @@ importers:
       '@repo/configs':
         specifier: workspace:*
         version: link:../../packages/configs
+      '@repo/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
       '@tanstack/devtools-vite':
         specifier: ^0.4.1
         version: 0.4.1(vite@7.3.1(@types/node@22.19.7)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(tsx@4.21.0))
@@ -727,6 +730,9 @@ importers:
       '@ngneat/falso':
         specifier: ^8.0.2
         version: 8.0.2
+      '@repo/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@repo/db':
         specifier: workspace:*
         version: link:../db
