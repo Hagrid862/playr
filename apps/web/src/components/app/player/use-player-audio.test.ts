@@ -259,7 +259,7 @@ describe('usePlayerAudio', () => {
         repeatMode: 'one',
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
-      const playMock = vi.fn();
+      const playMock = vi.fn().mockResolvedValue(undefined);
       const audioEl = {
         currentTime: 10,
         play: playMock,
@@ -269,6 +269,52 @@ describe('usePlayerAudio', () => {
       result.current.handleTrackEnd();
       expect(audioEl.currentTime).toBe(0);
       expect(playMock).toHaveBeenCalled();
+    });
+
+    it('logs non-AbortError when repeat-one play rejects', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        repeatMode: 'one',
+      } as PlayerState);
+      const { result } = customRenderHook(() => usePlayerAudio());
+      const playError = new Error('play failed');
+      playError.name = 'NotAllowedError';
+      const playMock = vi.fn().mockRejectedValue(playError);
+      const audioEl = {
+        currentTime: 10,
+        play: playMock,
+      } as unknown as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      result.current.handleTrackEnd();
+      await Promise.resolve();
+
+      expect(consoleSpy).toHaveBeenCalledWith('[AppPlayer] Repeat-one play error:', playError);
+      consoleSpy.mockRestore();
+    });
+
+    it('does not log when repeat-one play rejects with AbortError', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        repeatMode: 'one',
+      } as PlayerState);
+      const { result } = customRenderHook(() => usePlayerAudio());
+      const abortError = new Error('Aborted');
+      abortError.name = 'AbortError';
+      const playMock = vi.fn().mockRejectedValue(abortError);
+      const audioEl = {
+        currentTime: 10,
+        play: playMock,
+      } as unknown as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      result.current.handleTrackEnd();
+      await Promise.resolve();
+
+      expect(consoleSpy).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
     });
 
     it('does nothing if repeatMode is one but audioRef.current is null', () => {

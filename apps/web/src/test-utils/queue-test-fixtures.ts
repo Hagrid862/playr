@@ -12,11 +12,17 @@ export const testPlaybackTrack: PlaybackTrack = {
   explicit: false,
 };
 
+let queueIdSeed = 1;
+function nextQueueId(): string {
+  const suffix = String(queueIdSeed++).padStart(12, '0');
+  return `01900000-0000-7000-8000-${suffix}`;
+}
+
 export function testQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
   const { track: trackOverrides, ...rest } = overrides;
   const track = { ...testPlaybackTrack, ...trackOverrides };
   return {
-    queueId: '01900000-0000-7000-8000-000000000001',
+    queueId: nextQueueId(),
     position: 0,
     originalPosition: 0,
     type: 'queue',

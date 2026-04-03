@@ -130,11 +130,16 @@ vi.mock('./History', () => ({
   ),
 }));
 
-function queueItemStub(queueId: string, trackId: string, position = 0): QueueItem {
+function queueItemStub(
+  queueId: string,
+  trackId: string,
+  position = 0,
+  originalPosition?: number,
+): QueueItem {
   return {
     queueId,
     position,
-    originalPosition: position,
+    originalPosition: originalPosition ?? position,
     type: 'queue',
     track: {
       id: trackId,
@@ -163,7 +168,11 @@ describe('Queue', () => {
 
   const defaultQueueState = (): PlayerState =>
     createPlayerStateMock({
-      queue: [queueItemStub(Q1, '1', 0), queueItemStub(Q2, '2', 1), queueItemStub(Q3, '3', 2)],
+      queue: [
+        queueItemStub(Q1, '1', 0, 0),
+        queueItemStub(Q2, '2', 1, 1),
+        queueItemStub(Q3, '3', 2, 99),
+      ],
       currentTrack: {
         id: '1',
         title: 'Track 1',
@@ -269,11 +278,11 @@ describe('Queue', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag End'));
 
-      // `arrayMove` reorders items but does not rewrite `position`; indices 1↔2 → order 1,3,2 with positions 0,2,1.
+      // UI applies `reorderKeepingPartitions` after `arrayMove` so position/originalPosition match indices before `reorderQueue`.
       const expectedQueue: QueueItem[] = [
-        queueItemStub(Q1, '1', 0),
-        queueItemStub(Q3, '3', 2),
-        queueItemStub(Q2, '2', 1),
+        queueItemStub(Q1, '1', 0, 0),
+        queueItemStub(Q3, '3', 1, 1),
+        queueItemStub(Q2, '2', 2, 2),
       ];
 
       expect(mockReorderQueue).toHaveBeenCalledWith(expectedQueue);

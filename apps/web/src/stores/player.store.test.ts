@@ -424,7 +424,7 @@ describe('player.store', () => {
       getState().addToQueue(createTrack('2'));
       const state = getState();
       expect(state.queue.length).toBe(2);
-      expect(state.queue.map((i) => i.track.id).sort()).toEqual(['1', '2']);
+      expect([...state.queue.map((i) => i.track.id)].sort()).toEqual(['1', '2']);
     });
 
     it('removes from queue', () => {
