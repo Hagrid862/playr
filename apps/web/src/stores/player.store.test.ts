@@ -447,6 +447,35 @@ describe('player.store', () => {
       expect(state.queue.map((i) => i.position)).toEqual([0, 1]);
       expect(state.queue.map((i) => i.originalPosition)).toEqual([0, 1]);
     });
+
+    it('playQueueItem jumps to clicked track, drops earlier next-up, and records skips in history', () => {
+      getState().setQueue([createTrack('1'), createTrack('2'), createTrack('3'), createTrack('5')]);
+      const q = getState().queue;
+      const id3 = q.find((x) => x.track.id === '3')!.queueId;
+
+      getState().playQueueItem(id3);
+
+      expect(getState().currentTrack?.id).toBe('3');
+      expect(getState().queue.map((x) => x.track.id)).toEqual(['5']);
+      const histIds = getState().history.map((h) => h.track.id);
+      expect(histIds).toContain('1');
+      expect(histIds).toContain('2');
+    });
+
+    it('repeat all after skip-ahead replays full list order via history', () => {
+      getState().setQueue([createTrack('1'), createTrack('2'), createTrack('3'), createTrack('5')]);
+      getState().toggleRepeatMode();
+
+      const id3 = getState().queue.find((x) => x.track.id === '3')!.queueId;
+      getState().playQueueItem(id3);
+
+      getState().nextTrack();
+      expect(getState().currentTrack?.id).toBe('5');
+
+      getState().nextTrack();
+      expect(getState().currentTrack?.id).toBe('1');
+      expect(getState().queue.map((q) => q.track.id)).toEqual(['2', '3', '5']);
+    });
   });
 
   describe('Play Next', () => {

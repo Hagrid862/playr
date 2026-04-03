@@ -1,17 +1,17 @@
 import { playbackTrackToQueueItem } from '@/lib/playback-mappers';
 import { getOrderedNextQueue, reorderKeepingPartitions, shuffleArray } from '@/lib/playback-queue';
 import {
-    afterLocalPlaybackMutation,
-    afterLocalPlaybackMutationWithClaim,
-    isPlaybackSyncConnected,
-    syncPlayingStateToServer,
+  afterLocalPlaybackMutation,
+  afterLocalPlaybackMutationWithClaim,
+  isPlaybackSyncConnected,
+  syncPlayingStateToServer,
 } from '@/lib/playback-sync';
 import type { ListPlaybackDeviceEntry, QueueItem } from '@repo/contracts';
 import {
-    PLAYBACK_HISTORY_MAX_LENGTH,
-    PlaybackTrack,
-    StreamAudioQuality,
-    type PlaybackState,
+  PLAYBACK_HISTORY_MAX_LENGTH,
+  PlaybackTrack,
+  StreamAudioQuality,
+  type PlaybackState,
 } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -216,8 +216,10 @@ export const usePlayerStore = create<PlayerState>()(
 
       playQueueItem: (queueId) => {
         const { queue, addToHistory, currentTrack, isShuffled } = get();
-        const item = queue.find((i) => i.queueId === queueId);
-        if (!item) return;
+        const ordered = getOrderedNextQueue(queue, isShuffled);
+        const index = ordered.findIndex((i) => i.queueId === queueId);
+        if (index === -1) return;
+        const item = ordered[index]!;
 
         if (currentTrack) {
           addToHistory(
@@ -225,8 +227,13 @@ export const usePlayerStore = create<PlayerState>()(
           );
         }
 
-        const remaining = queue.filter((q) => q.queueId !== queueId);
-        const reindexed = reindexQueuePositions(remaining);
+        const skipped = ordered.slice(0, index);
+        for (const skippedItem of skipped) {
+          addToHistory(skippedItem);
+        }
+
+        const after = ordered.slice(index + 1);
+        const reindexed = after.map((q, i) => ({ ...q, position: i, originalPosition: i }));
 
         set({
           currentTrack: item.track,
