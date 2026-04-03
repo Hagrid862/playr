@@ -1,6 +1,6 @@
 import { createPlayerStateMock } from '@/components/app/test-utils/player-test-utils';
-import type { PlayerState } from '@/stores/player.store';
-import { usePlayerStore } from '@/stores/player.store';
+import type { PlayerState } from '@/stores/player-store/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type {
   ListPlaybackDeviceEntry,
@@ -93,7 +93,7 @@ vi.mock('./playback-device', () => ({
   })),
 }));
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: {
     getState: vi.fn(),
     setState: vi.fn(),

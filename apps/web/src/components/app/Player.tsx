@@ -1,6 +1,6 @@
 import { useIsMobile } from '@/hooks/use-mobile';
 import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { PlayerActions } from './player/PlayerActions';
 import { PlayerControls } from './player/PlayerControls';
 import { PlayerMobile } from './player/PlayerMobile';

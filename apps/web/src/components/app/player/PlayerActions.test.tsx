@@ -1,5 +1,5 @@
 import * as playbackSync from '@/lib/playback-sync';
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
@@ -46,7 +46,7 @@ const { findPopoverTriggerChild, findPopoverContentChild } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
 vi.mock('@/lib/playback-sync', () => ({

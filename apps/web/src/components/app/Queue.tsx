@@ -1,6 +1,6 @@
 import { getOrderedNextQueue, reorderKeepingPartitions } from '@/lib/playback-queue';
 import { cn } from '@/lib/utils';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { QueueItem } from '@repo/contracts';

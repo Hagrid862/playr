@@ -1,4 +1,4 @@
-import type { PlayerState } from '@/stores/player.store';
+import type { PlayerState } from '@/stores/player-store/player.store';
 import { vi } from 'vitest';
 
 export function createPlayerStateMock(overrides: Partial<PlayerState> = {}): PlayerState {

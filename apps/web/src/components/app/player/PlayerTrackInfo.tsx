@@ -1,7 +1,7 @@
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { MusicNotesIcon, SparkleIcon } from '@phosphor-icons/react';
 import { StreamAudioQuality } from '@repo/contracts';
 import { useRef, useState } from 'react';

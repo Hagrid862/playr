@@ -1,4 +1,4 @@
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { History } from './History';
 import { createPlayerStateMock } from './test-utils/player-test-utils';
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
 

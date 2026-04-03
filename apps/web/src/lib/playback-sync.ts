@@ -1,7 +1,7 @@
 import { getLocalPlaybackDeviceMetadata } from '@/lib/playback-device';
 import { getOrderedNextQueue } from '@/lib/playback-queue';
 import { createPlaybackSocket } from '@/lib/playback-socket';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
   PLAYBACK_HISTORY_MAX_LENGTH,
   type ListPlaybackDevicesResponse,
