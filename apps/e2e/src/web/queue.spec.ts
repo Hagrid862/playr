@@ -12,6 +12,25 @@ import { VerifyEmailPage } from "./verify-email.po";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Clicks the album track row (SongCard) and waits until the player shows the track
+ * and progress advances. Scoped to the real card to avoid matching unrelated divs.
+ */
+async function playTrackFromAlbum(
+  page: Page,
+  playerPage: PlayerPage,
+  trackTitle: string,
+) {
+  const trackCard = page
+    .locator("div.group.cursor-pointer")
+    .filter({ hasText: trackTitle })
+    .first();
+  await trackCard.scrollIntoViewIfNeeded();
+  await trackCard.hover();
+  await trackCard.click();
+  await playerPage.expectPlaying(trackTitle);
+}
+
 test.describe("Queue Management", () => {
   let page: Page;
   let artistsPage: LibraryArtistsPage;
@@ -133,10 +152,12 @@ test.describe("Queue Management", () => {
   });
 
   test("should add tracks to queue and verify", async () => {
-    await page.locator("div").filter({ hasText: track1 }).last().click();
-    await expect(playerPage.trackTitle).toHaveText(track1);
+    await playTrackFromAlbum(page, playerPage, track1);
 
-    const track2Card = page.locator("div").filter({ hasText: track2 }).last();
+    const track2Card = page
+      .locator("div.group.cursor-pointer")
+      .filter({ hasText: track2 })
+      .first();
     // Use right-click to open context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to Queue" }).click();
@@ -167,11 +188,13 @@ test.describe("Queue Management", () => {
     }
 
     // Play Track 1
-    await page.locator("div").filter({ hasText: track1 }).last().click();
-    await expect(playerPage.trackTitle).toHaveText(track1);
+    await playTrackFromAlbum(page, playerPage, track1);
 
     // Add Track 2 as Play Next
-    const track2Card = page.locator("div").filter({ hasText: track2 }).last();
+    const track2Card = page
+      .locator("div.group.cursor-pointer")
+      .filter({ hasText: track2 })
+      .first();
     // Use right-click for context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Play Next" }).click();
@@ -228,8 +251,7 @@ test.describe("Queue Management", () => {
     }
 
     // Play Track 1 on primary page
-    await page.locator("div").filter({ hasText: track1 }).last().click();
-    await expect(playerPage.trackTitle).toHaveText(track1);
+    await playTrackFromAlbum(page, playerPage, track1);
 
     // Create a new context to simulate another window
     const newContext = await browser.newContext();

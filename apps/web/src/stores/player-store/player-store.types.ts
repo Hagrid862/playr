@@ -1,9 +1,9 @@
 import type {
-    ListPlaybackDeviceEntry,
-    PlaybackState,
-    PlaybackTrack,
-    QueueItem,
-    StreamAudioQuality,
+  ListPlaybackDeviceEntry,
+  PlaybackState,
+  PlaybackTrack,
+  QueueItem,
+  StreamAudioQuality,
 } from '@repo/contracts';
 
 export interface PlayerState {
