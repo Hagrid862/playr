@@ -158,6 +158,33 @@ describe('PlaybackStatePersistenceService', () => {
       );
       expect(connMock.unwatch).toHaveBeenCalled();
     });
+
+    it('should throw InternalServerErrorException if GET fails', async () => {
+      connMock.get.mockRejectedValueOnce(new Error('GET failed'));
+
+      await expect(service.createIfAbsent(userId, initialState)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it('should log and retry if a command fails in transaction', async () => {
+      connMock.get.mockResolvedValue(null);
+      const errorExecResult: ExecResult = [[new Error('SET failed'), null]];
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValueOnce(errorExecResult).mockResolvedValueOnce(okExecResult),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+      const promise = service.createIfAbsent(userId, initialState);
+
+      await vi.runAllTimersAsync();
+
+      const result = await promise;
+      expect(result.version).toBe(1);
+      expect(connMock.multi).toHaveBeenCalledTimes(2);
+      expect(connMock.unwatch).toHaveBeenCalled();
+    });
   });
 
   describe('applyMutation', () => {
@@ -284,6 +311,34 @@ describe('PlaybackStatePersistenceService', () => {
       await promise;
       expect(caughtError).toBeInstanceOf(ServiceUnavailableException);
     });
+
+    it('should throw InternalServerErrorException if GET fails', async () => {
+      connMock.get.mockRejectedValueOnce(new Error('GET failed'));
+
+      await expect(service.applyMutation(userId, 1, (c) => c)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it('should log and retry if a command fails in transaction', async () => {
+      connMock.get.mockResolvedValue(JSON.stringify(existingState));
+      const errorExecResult: ExecResult = [[new Error('SET failed'), null]];
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValueOnce(errorExecResult).mockResolvedValueOnce(okExecResult),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+      const promise = service.applyMutation(userId, 1, (curr) => ({ ...curr, isPlaying: true }));
+
+      await vi.runAllTimersAsync();
+
+      const result = await promise;
+      expect(result.isPlaying).toBe(true);
+      expect(result.version).toBe(2);
+      expect(connMock.multi).toHaveBeenCalledTimes(2);
+      expect(connMock.unwatch).toHaveBeenCalled();
+    });
   });
 
   describe('pauseAndClearActiveIfDeviceMatches', () => {
@@ -325,6 +380,88 @@ describe('PlaybackStatePersistenceService', () => {
       expect(result?.activeDeviceId).toBeNull();
       expect(result?.isPlaying).toBe(false);
       expect(result?.version).toBe(4);
+    });
+
+    it('should throw InternalServerErrorException if WATCH fails', async () => {
+      connMock.watch.mockRejectedValueOnce(new Error('WATCH failed'));
+
+      await expect(service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1')).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it('should throw InternalServerErrorException if GET fails', async () => {
+      connMock.get.mockRejectedValueOnce(new Error('GET failed'));
+
+      await expect(service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1')).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it('should throw InternalServerErrorException if parse fails', async () => {
+      connMock.get.mockResolvedValueOnce('invalid-json');
+
+      await expect(service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1')).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      expect(connMock.unwatch).toHaveBeenCalled();
+    });
+
+    it('should throw InternalServerErrorException if multi/exec fails', async () => {
+      const st = playbackStateFixture({ userId, activeDeviceId: 'device-1' });
+      connMock.get.mockResolvedValueOnce(JSON.stringify(st));
+      connMock.multi.mockImplementation(() => {
+        throw new Error('Multi failed');
+      });
+
+      await expect(service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1')).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      expect(connMock.unwatch).toHaveBeenCalled();
+    });
+
+    it('should log and retry if a command fails in transaction', async () => {
+      const st = playbackStateFixture({ userId, activeDeviceId: 'device-1' });
+      connMock.get.mockResolvedValue(JSON.stringify(st));
+      const errorExecResult: ExecResult = [[new Error('SET failed'), null]];
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValueOnce(errorExecResult).mockResolvedValueOnce(okExecResult),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+      const promise = service.pauseAndClearActiveIfDeviceMatches(userId, 'device-1');
+
+      await vi.runAllTimersAsync();
+
+      const result = await promise;
+      expect(result?.version).toBe(st.version + 1);
+      expect(connMock.multi).toHaveBeenCalledTimes(2);
+      expect(connMock.unwatch).toHaveBeenCalled();
+    });
+
+    it('should throw ServiceUnavailableException after max retries', async () => {
+      const st = playbackStateFixture({ userId, activeDeviceId: 'device-1' });
+      connMock.get.mockResolvedValue(JSON.stringify(st));
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(null),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+      let caughtError: unknown;
+      const promise = service
+        .pauseAndClearActiveIfDeviceMatches(userId, 'device-1')
+        .catch((err: unknown) => {
+          caughtError = err;
+        });
+
+      for (let i = 0; i < 8; i++) {
+        await vi.advanceTimersByTimeAsync(2000);
+      }
+
+      await promise;
+      expect(caughtError).toBeInstanceOf(ServiceUnavailableException);
     });
   });
 });

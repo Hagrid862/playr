@@ -138,6 +138,135 @@ describe('SetPlaybackStateHandler', () => {
     expect(result.activeDeviceId).toBe('device-1');
   });
 
+  it('handles missing current.devices by defaulting to empty array when expectedVersion > 0', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetPlaybackStateHandler(persistence);
+    const stateWithoutDevices = playbackStateFixture({
+      userId,
+      ...statePayload,
+      devices: undefined as any, // Simulate missing devices field
+      version: 1,
+    });
+
+    const command = new SetPlaybackStateCommand(
+      userId,
+      sessionId,
+      'device-active',
+      'Active Device',
+      'speaker',
+      {
+        state: statePayload,
+        expectedVersion: 1,
+        claimActiveDevice: true,
+      },
+    );
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const result = merge(stateWithoutDevices);
+      return { ...stateWithoutDevices, ...result } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+
+    // Should contain only the active device since payload.devices is empty and base was undefined
+    expect(result.devices).toHaveLength(1);
+    expect(result.devices[0].id).toBe('device-active');
+  });
+
+  it('merges devices when payload contains devices and expectedVersion > 0', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetPlaybackStateHandler(persistence);
+    const existingDevice = { id: 'device-old', name: 'Old', icon: 'desktop' as const };
+    const stateWithDevices = playbackStateFixture({
+      userId,
+      ...statePayload,
+      devices: [existingDevice],
+      version: 1,
+    });
+
+    const newDevice = { id: 'device-new-payload', name: 'New Payload', icon: 'mobile' as const };
+    const command = new SetPlaybackStateCommand(
+      userId,
+      sessionId,
+      'device-active',
+      'Active Device',
+      'speaker',
+      {
+        state: { ...statePayload, devices: [newDevice] },
+        expectedVersion: 1,
+        claimActiveDevice: true,
+      },
+    );
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const result = merge(stateWithDevices);
+      return { ...stateWithDevices, ...result } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+
+    // Should contain:
+    // 1. Existing device from state
+    // 2. New device from payload
+    // 3. Active device from command (because claimActiveDevice is true)
+    expect(result.devices).toHaveLength(3);
+    expect(result.devices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'device-old' }),
+        expect.objectContaining({ id: 'device-new-payload' }),
+        expect.objectContaining({ id: 'device-active', name: 'Active Device', icon: 'speaker' }),
+      ]),
+    );
+    expect(result.activeDeviceId).toBe('device-active');
+  });
+
+  it('merges devices without claiming active device when payload contains devices and claimActiveDevice is false', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetPlaybackStateHandler(persistence);
+    const existingDevice = { id: 'device-old', name: 'Old', icon: 'desktop' as const };
+    const stateWithDevices = playbackStateFixture({
+      userId,
+      ...statePayload,
+      devices: [existingDevice],
+      version: 1,
+      activeDeviceId: 'device-old',
+    });
+
+    const newDevice = { id: 'device-new-payload', name: 'New Payload', icon: 'mobile' as const };
+    const command = new SetPlaybackStateCommand(
+      userId,
+      sessionId,
+      'device-active',
+      'Active Device',
+      'speaker',
+      {
+        state: { ...statePayload, devices: [newDevice] },
+        expectedVersion: 1,
+        claimActiveDevice: false,
+      },
+    );
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const result = merge(stateWithDevices);
+      return { ...stateWithDevices, ...result } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+
+    // Should contain:
+    // 1. Existing device from state
+    // 2. New device from payload
+    // (Active device from command should NOT be added because claimActiveDevice is false)
+    expect(result.devices).toHaveLength(2);
+    expect(result.devices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'device-old' }),
+        expect.objectContaining({ id: 'device-new-payload' }),
+      ]),
+    );
+    expect(result.activeDeviceId).toBe('device-old');
+  });
+
   it('throws BadRequestException on Zod validation failure', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetPlaybackStateHandler(persistence);

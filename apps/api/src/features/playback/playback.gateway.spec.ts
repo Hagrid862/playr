@@ -314,6 +314,52 @@ describe('PlaybackGateway', () => {
 
       expect(playbackDeviceRegistry.removeDevice).not.toHaveBeenCalled();
     });
+
+    it('should log warning if removeDevice throws non-Error', async () => {
+      const mockSocket = {
+        data: { user: { user: { id: 'u1' } }, playbackDeviceId: 'd1' },
+      } as any;
+      playbackDeviceRegistry.removeDevice.mockRejectedValue('registry string error');
+      const loggerWarnSpy = vi.spyOn((gateway as any).logger, 'warn');
+
+      await gateway.handleDisconnect(mockSocket);
+
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Playback disconnect removeDevice failed for user u1: registry string error',
+        ),
+      );
+    });
+
+    it('should log warning if pauseAndClearActiveIfDeviceMatches throws', async () => {
+      const mockSocket = {
+        data: { user: { user: { id: 'u1' } }, playbackDeviceId: 'd1' },
+      } as any;
+      playbackPersistence.pauseAndClearActiveIfDeviceMatches.mockRejectedValue(
+        new Error('pause failed'),
+      );
+      const loggerWarnSpy = vi.spyOn((gateway as any).logger, 'warn');
+
+      await gateway.handleDisconnect(mockSocket);
+
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Playback disconnect pause failed for user u1: pause failed'),
+      );
+    });
+
+    it('should handle non-Error catch in pauseAndClearActiveIfDeviceMatches', async () => {
+      const mockSocket = {
+        data: { user: { user: { id: 'u1' } }, playbackDeviceId: 'd1' },
+      } as any;
+      playbackPersistence.pauseAndClearActiveIfDeviceMatches.mockRejectedValue('string error');
+      const loggerWarnSpy = vi.spyOn((gateway as any).logger, 'warn');
+
+      await gateway.handleDisconnect(mockSocket);
+
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Playback disconnect pause failed for user u1: string error'),
+      );
+    });
   });
 
   describe('Playback Events', () => {
