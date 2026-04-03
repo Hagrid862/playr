@@ -14,8 +14,8 @@ export function reorderKeepingPartitions(newOrder: QueueItem[]): QueueItem[] {
   const manual = newOrder.filter((i) => i.type === 'queue');
   const playingNext = newOrder.filter((i) => i.type === 'playingNext');
   return [
-    ...manual.map((item, i) => ({ ...item, position: i })),
-    ...playingNext.map((item, i) => ({ ...item, position: i })),
+    ...manual.map((item, i) => ({ ...item, position: i, originalPosition: i })),
+    ...playingNext.map((item, i) => ({ ...item, position: i, originalPosition: i })),
   ];
 }
 

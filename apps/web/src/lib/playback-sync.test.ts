@@ -41,7 +41,10 @@ function findEmitAck(calls: unknown[], event: string): (...args: unknown[]) => v
 }
 
 async function flushMicrotasks() {
-  await Promise.resolve();
+  // Flush multiple ticks to handle nested async operations
+  for (let i = 0; i < 3; i++) {
+    await Promise.resolve();
+  }
 }
 
 function playbackTrackStub(id: string, duration = 100): PlaybackTrack {
