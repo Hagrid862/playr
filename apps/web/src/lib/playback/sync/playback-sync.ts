@@ -4,13 +4,12 @@ export {
   emitCurrentTimeSync,
   listPlaybackDevices,
   setActivePlaybackDevice,
-  syncPlayingStateToServer
+  syncPlayingStateToServer,
 } from './playback-sync.commands';
 export {
   connectPlaybackSync,
   disconnectPlaybackSync,
   getPlaybackSocket,
-  isPlaybackSyncConnected
+  isPlaybackSyncConnected,
 } from './playback-sync.connection';
 export { applyStateFromServer } from './playback-sync.store-bridge';
-

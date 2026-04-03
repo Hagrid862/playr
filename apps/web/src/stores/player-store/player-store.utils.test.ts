@@ -10,9 +10,9 @@ vi.mock('../lib/playback-sync', () => ({
 
 import { createTrack, resetPlayerStore } from './player-store.test-helpers';
 import {
-    reindexQueuePositions,
-    shouldClaimActiveDevice,
-    unshuffleBaseline,
+  reindexQueuePositions,
+  shouldClaimActiveDevice,
+  unshuffleBaseline,
 } from './player-store.utils';
 
 describe('player-store.utils', () => {
