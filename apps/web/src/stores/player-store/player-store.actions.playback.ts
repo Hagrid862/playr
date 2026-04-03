@@ -1,5 +1,5 @@
-import { playbackTrackToQueueItem } from '@/lib/playback-mappers';
-import { getOrderedNextQueue } from '@/lib/playback-queue';
+import { playbackTrackToQueueItem } from '@/lib/playback/playback-mappers';
+import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
 import type { QueueItem } from '@repo/contracts';
 import { PLAYBACK_HISTORY_MAX_LENGTH } from '@repo/contracts';
 import type { StoreApi } from 'zustand';

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
-import { listPlaybackDevices, setActivePlaybackDevice } from '@/lib/playback-sync';
+import { listPlaybackDevices, setActivePlaybackDevice } from '@/lib/playback/sync/playback-sync';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {

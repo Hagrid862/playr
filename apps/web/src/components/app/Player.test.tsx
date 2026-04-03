@@ -1,5 +1,5 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import type { PlaybackTrack } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -28,7 +28,7 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: vi.fn(),
 }));
 
-vi.mock('@/lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   emitCurrentTimeSync: vi.fn(),
   isPlaybackSyncConnected: vi.fn(),
 }));

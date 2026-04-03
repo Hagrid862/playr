@@ -1,4 +1,4 @@
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
 import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
@@ -19,7 +19,7 @@ vi.mock('@/stores/auth.store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock('@/lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   emitCurrentTimeSync: vi.fn(),
   isPlaybackSyncConnected: vi.fn(),
 }));

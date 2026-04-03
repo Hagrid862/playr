@@ -1,4 +1,4 @@
-import { afterLocalPlaybackMutationWithClaim } from '@/lib/playback-sync';
+import { afterLocalPlaybackMutationWithClaim } from '@/lib/playback/sync/playback-sync';
 import type { QueueItem } from '@repo/contracts';
 import type { PlayerState } from './player-store.types';
 

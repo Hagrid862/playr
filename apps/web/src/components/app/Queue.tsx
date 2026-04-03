@@ -1,4 +1,4 @@
-import { getOrderedNextQueue, reorderKeepingPartitions } from '@/lib/playback-queue';
+import { getOrderedNextQueue, reorderKeepingPartitions } from '@/lib/playback/queue/playback-queue';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { DragEndEvent } from '@dnd-kit/core';

@@ -2,14 +2,14 @@ import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { PlaybackState, PlaybackTrack } from '@repo/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../lib/playback-sync', () => ({
+vi.mock('../../lib/playback/sync/playback-sync', () => ({
   afterLocalPlaybackMutation: vi.fn(),
   afterLocalPlaybackMutationWithClaim: vi.fn(),
   syncPlayingStateToServer: vi.fn(),
   isPlaybackSyncConnected: vi.fn(() => false),
 }));
 
-import * as playbackSync from '../../lib/playback-sync';
+import * as playbackSync from '../../lib/playback/sync/playback-sync';
 
 import { createTrack, getState, resetPlayerStore } from './player-store.test-helpers';
 import { usePlayerStore } from './player.store';

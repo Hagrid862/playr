@@ -1,4 +1,7 @@
-import { afterLocalPlaybackMutation, syncPlayingStateToServer } from '@/lib/playback-sync';
+import {
+  afterLocalPlaybackMutation,
+  syncPlayingStateToServer,
+} from '@/lib/playback/sync/playback-sync';
 import type { StoreApi } from 'zustand';
 import type { PlayerState } from './player-store.types';
 import { shouldClaimActiveDevice } from './player-store.utils';
