@@ -16,8 +16,10 @@ export const QueueItemSchema = z.object({
   queueId: z.uuidv6(),
   track: PlaybackTrackSchema,
   position: z.number().int().min(0),
-  type: z.enum(["queue", "playingNext"]),
-  originalPosition: z.number().int().min(0),
+  /** Legacy persisted documents may omit this; treat as manual queue. */
+  type: z.enum(["queue", "playingNext"]).default("queue"),
+  /** Legacy persisted documents may omit this; align with first slot. */
+  originalPosition: z.number().int().min(0).default(0),
 });
 
 export type PlaybackTrack = z.infer<typeof PlaybackTrackSchema>;
