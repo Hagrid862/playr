@@ -425,6 +425,52 @@ describe('usePlayerAudio', () => {
       expect(audioEl.currentTime).toBe(50);
     });
 
+    it('does not seek when audio is within 1s of store time', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 20,
+      } as PlayerState);
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
+      const audioEl = { currentTime: 20.5 } as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      rerender();
+
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 21,
+      } as PlayerState);
+      rerender();
+
+      expect(audioEl.currentTime).toBe(20.5);
+    });
+
+    it('does not seek when store time changes slightly but audio is far off (guards server echo)', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 0,
+      } as PlayerState);
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
+      const audioEl = { currentTime: 0 } as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      rerender();
+
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 100,
+      } as PlayerState);
+      rerender();
+      expect(audioEl.currentTime).toBe(100);
+
+      audioEl.currentTime = 0;
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 100.5,
+      } as PlayerState);
+      rerender();
+
+      expect(audioEl.currentTime).toBe(0);
+    });
+
     it('handleTimeUpdate does nothing if audioRef.current is null', () => {
       const { result } = customRenderHook(() => usePlayerAudio());
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = null;

@@ -112,6 +112,34 @@ describe('History', () => {
       expect(mockPlayTrack).toHaveBeenCalledWith(track.track);
     });
 
+    it('uses Cover art as img alt when albumArt is set but title is empty', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        createPlayerStateMock({
+          history: [
+            testQueueItem({
+              queueId: '01900000-0000-7000-8000-0000000000e1',
+              track: {
+                id: '1',
+                title: '',
+                trackId: '1',
+                artists: ['Artist'],
+                albumName: 'Album',
+                albumId: 'album-1',
+                albumArt: 'cover-only.jpg',
+                duration: 100,
+                explicit: false,
+              },
+            }),
+          ],
+          playTrack: mockPlayTrack,
+          toggleQueue: mockToggleQueue,
+        }),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+      expect(screen.getByAltText('Cover art')).toHaveAttribute('src', 'cover-only.jpg');
+    });
+
     it('renders placeholder when albumArt is missing', () => {
       const track: QueueItem = testQueueItem({
         queueId: '01900000-0000-7000-8000-0000000000d1',
