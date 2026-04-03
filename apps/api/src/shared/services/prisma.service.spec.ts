@@ -1,9 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from './prisma.service';
-import { UnitOfWorkService } from './unit-of-work.service';
-import { createPrismaClient } from '@repo/db';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { Test, TestingModule } from '@nestjs/testing';
+import { createPrismaClient } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  TRANSACTION_CONTEXT,
+  type ITransactionContext,
+} from '../interfaces/transaction-context.interface';
+import { PrismaService } from './prisma.service';
 
 // Mock the @repo/db module
 vi.mock('@repo/db', async () => {
@@ -16,7 +19,7 @@ vi.mock('@repo/db', async () => {
 
 describe('PrismaService', () => {
   let service: PrismaService;
-  let unitOfWork: DeepMocked<UnitOfWorkService>;
+  let transactionContext: DeepMocked<ITransactionContext>;
   let mockPrismaClient: any;
   const originalEnv = process.env;
 
@@ -32,10 +35,10 @@ describe('PrismaService', () => {
     };
 
     (createPrismaClient as any).mockReturnValue(mockPrismaClient);
-    unitOfWork = createMock<UnitOfWorkService>();
+    transactionContext = createMock<ITransactionContext>();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PrismaService, { provide: UnitOfWorkService, useValue: unitOfWork }],
+      providers: [PrismaService, { provide: TRANSACTION_CONTEXT, useValue: transactionContext }],
     }).compile();
 
     service = module.get<PrismaService>(PrismaService);
@@ -52,7 +55,8 @@ describe('PrismaService', () => {
 
   it('should throw error if DATABASE_URL is missing', () => {
     delete process.env.DATABASE_URL;
-    expect(() => new PrismaService(unitOfWork)).toThrow(
+    const mockContext = createMock<ITransactionContext>();
+    expect(() => new PrismaService(mockContext)).toThrow(
       'DATABASE_URL environment variable is not set',
     );
   });
@@ -76,25 +80,25 @@ describe('PrismaService', () => {
   });
 
   describe('client selector', () => {
-    it('should return transactional client if available from UnitOfWork', () => {
+    it('should return transactional client if available from transactionContext', () => {
       const mockTx = { user: {} };
-      unitOfWork.getTransactionalClient.mockReturnValue(mockTx as any);
+      transactionContext.getTransactionalClient.mockReturnValue(mockTx as any);
 
       expect(service.client).toBe(mockTx);
-      expect(unitOfWork.getTransactionalClient).toHaveBeenCalled();
+      expect(transactionContext.getTransactionalClient).toHaveBeenCalled();
     });
 
     it('should return main client if no transaction is active', () => {
-      unitOfWork.getTransactionalClient.mockReturnValue(undefined);
+      transactionContext.getTransactionalClient.mockReturnValue(undefined);
 
       expect(service.client).toBe(mockPrismaClient);
-      expect(unitOfWork.getTransactionalClient).toHaveBeenCalled();
+      expect(transactionContext.getTransactionalClient).toHaveBeenCalled();
     });
   });
 
   describe('mainClient', () => {
     it('should always return the original prisma client even if transaction is active', () => {
-      unitOfWork.getTransactionalClient.mockReturnValue({ fake: 'tx' } as any);
+      transactionContext.getTransactionalClient.mockReturnValue({ fake: 'tx' } as any);
 
       expect(service.mainClient).toBe(mockPrismaClient);
     });

@@ -1,21 +1,22 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Inject, forwardRef } from '@nestjs/common';
-import { PrismaClient, createPrismaClient } from '@repo/db';
-import { UnitOfWorkService } from './unit-of-work.service';
+import { forwardRef, Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { createPrismaClient, PrismaClient } from '@repo/db';
+import {
+  TRANSACTION_CONTEXT,
+  type ITransactionContext,
+} from '../interfaces/transaction-context.interface';
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private prisma: PrismaClient;
 
   constructor(
-    @Inject(forwardRef(() => UnitOfWorkService))
-    private readonly unitOfWork: UnitOfWorkService,
+    @Inject(forwardRef(() => TRANSACTION_CONTEXT))
+    private readonly transactionContext: ITransactionContext,
   ) {
     const databaseUrl = process.env.DATABASE_URL;
-
     if (!databaseUrl) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
-
     this.prisma = createPrismaClient(databaseUrl);
   }
 
@@ -28,7 +29,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   }
 
   get client() {
-    return this.unitOfWork.getTransactionalClient() || this.prisma;
+    return this.transactionContext.getTransactionalClient() ?? this.prisma;
   }
 
   get mainClient() {

@@ -7,4 +7,4 @@ export enum StreamAudioQuality {
   low = "low",
 }
 
-export const StreamAudioQualitySchema = z.nativeEnum(StreamAudioQuality);
+export const StreamAudioQualitySchema = z.enum(StreamAudioQuality);

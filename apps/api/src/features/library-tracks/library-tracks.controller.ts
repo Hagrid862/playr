@@ -3,8 +3,8 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { TrackAccessGuard } from '@/shared/guards/track-access.guard';
-
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -24,7 +24,11 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { StreamAudioQuality, GetTrackStreamQualitiesResponse } from '@repo/contracts';
+import {
+  GetTrackStreamQualitiesResponse,
+  StreamAudioQuality,
+  StreamAudioQualitySchema,
+} from '@repo/contracts';
 import type { Response } from 'express';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
@@ -43,6 +47,7 @@ import { GetLibraryTrackQuery } from './queries/impl/get-library-track.query';
 import { GetLibraryTracksQuery } from './queries/impl/get-library-tracks.query';
 import { GetTrackStreamQualitiesQuery } from './queries/impl/get-track-stream-qualities.query';
 import { GetTrackStreamQuery } from './queries/impl/get-track-stream.query';
+
 @ApiTags('Library Tracks')
 @Controller('library/tracks')
 export class LibraryTracksController {
@@ -160,6 +165,7 @@ export class LibraryTracksController {
     return this.commandBus.execute(new DeleteLibraryTrackCommand(id, userId));
   }
 
+  @Get(':id/qualities')
   @ApiResponse({
     status: 401,
     description: 'Unauthorized',
@@ -170,7 +176,6 @@ export class LibraryTracksController {
     description: 'Track not found',
     type: ApiErrorResponseDto,
   })
-  @Get(':id/qualities')
   @ApiOperation({
     summary: 'Get track stream qualities',
     description: 'Retrieves the available audio streaming qualities for a track',
@@ -236,12 +241,20 @@ export class LibraryTracksController {
   async getTrackStream(
     @Param('id') id: string,
     @Headers('range') range: string,
-    @Query('quality') requestedQuality: StreamAudioQuality = StreamAudioQuality.standard,
+    @Query('quality') requestedQuality: string = 'standard',
     @Res() res: Response,
   ) {
+    const parseResult = StreamAudioQualitySchema.safeParse(requestedQuality);
+    if (!parseResult.success) {
+      throw new BadRequestException(
+        'Invalid quality requested, must be one of: ' +
+          Object.values(StreamAudioQuality).join(', '),
+      );
+    }
+    const requestedQualityEnum = parseResult.data;
     try {
       const { stream, metadata } = await this.queryBus.execute(
-        new GetTrackStreamQuery(id, requestedQuality, range),
+        new GetTrackStreamQuery(id, requestedQualityEnum, range),
       );
 
       const { start, end, totalSize, mimeType, quality, format, isPartial } = metadata;

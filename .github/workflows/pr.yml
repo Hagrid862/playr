@@ -589,13 +589,13 @@ jobs:
       - name: Run Migrations
         run: pnpm run prisma:push
         env:
-          DATABASE_URL: "postgresql://playr:playr@localhost:5435/playr?schema=public"
+          DATABASE_URL: "postgresql://playr:playr@localhost:5432/playr?schema=public"
 
       - name: Run E2E tests
         run: pnpm run test:e2e
         env:
           CI: "true"
-          DATABASE_URL: "postgresql://playr:playr@localhost:5435/playr?schema=public"
+          DATABASE_URL: "postgresql://playr:playr@localhost:5432/playr?schema=public"
           S3_ENDPOINT: "localhost:9000"
           S3_ACCESS_KEY: "minioadmin"
           S3_SECRET_KEY: "minioadmin"
