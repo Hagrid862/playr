@@ -242,7 +242,6 @@ export class PlaybackStatePersistenceService {
         try {
           await conn.watch(key);
         } catch (error) {
-          await conn.unwatch();
           this.logger.error(`Redis WATCH failed: ${String(error)}`);
           throw new InternalServerErrorException('Failed to update playback state.');
         }
