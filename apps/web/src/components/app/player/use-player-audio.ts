@@ -207,7 +207,11 @@ export function usePlayerAudio() {
     if (repeatMode === 'one') {
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
-        void audioRef.current.play();
+        audioRef.current.play().catch((err: unknown) => {
+          if (err instanceof Error && err.name !== 'AbortError') {
+            console.error('[AppPlayer] Repeat-one play error:', err);
+          }
+        });
       }
       return;
     }
