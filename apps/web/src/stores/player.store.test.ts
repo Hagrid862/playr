@@ -1,10 +1,10 @@
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import {
-  StreamAudioQuality,
-  type ListPlaybackDeviceEntry,
-  type PlaybackState,
-  type PlaybackTrack,
-  type ZodTrack,
+    StreamAudioQuality,
+    type ListPlaybackDeviceEntry,
+    type PlaybackState,
+    type PlaybackTrack,
+    type ZodTrack,
 } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -442,7 +442,10 @@ describe('player.store', () => {
       const reversed = [q[1]!, q[0]!];
 
       getState().reorderQueue(reversed);
-      expect(getState().queue.map((i) => i.track.id)).toEqual(reversed.map((i) => i.track.id));
+      const state = getState();
+      expect(state.queue.map((i) => i.track.id)).toEqual(reversed.map((i) => i.track.id));
+      expect(state.queue.map((i) => i.position)).toEqual([0, 1]);
+      expect(state.queue.map((i) => i.originalPosition)).toEqual([0, 1]);
     });
   });
 
