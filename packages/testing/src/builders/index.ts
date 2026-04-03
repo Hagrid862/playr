@@ -1,4 +1,6 @@
+export * from "./album-access.builder";
 export * from "./album.builder";
+export * from "./artist-access.builder";
 export * from "./artist.builder";
 export * from "./audio-file.builder";
 export * from "./email-address.builder";
@@ -7,6 +9,8 @@ export * from "./library-album.builder";
 export * from "./library-artist.builder";
 export * from "./library-track.builder";
 export * from "./library.builder";
+export * from "./refresh-token.builder";
 export * from "./session.builder";
+export * from "./track-access.builder";
 export * from "./track.builder";
 export * from "./user.builder";

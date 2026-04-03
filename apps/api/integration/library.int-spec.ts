@@ -1,10 +1,19 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { ArtistGetPayload, Library, LibraryArtistGetPayload } from '@repo/db';
+import { artistBuilder, libraryArtistBuilder, libraryBuilder } from '@repo/testing';
+import { PrismaServiceMock } from '@repo/testing/nestjs';
 import request from 'supertest';
-import { vi } from 'vitest';
-import { PrismaServiceMock } from './mocks/prisma.service.mock';
 import { createIntegrationApp } from './test-utils';
+
+type ArtistWithRelations = ArtistGetPayload<{
+  include: { avatar: true; banner: true };
+}>;
+
+type LibraryArtistWithRelations = LibraryArtistGetPayload<{
+  include: { artist: { include: { avatar: true; banner: true } } };
+}>;
 
 describe('LibraryController (Integration)', () => {
   let app: INestApplication;
@@ -28,6 +37,29 @@ describe('LibraryController (Integration)', () => {
     await app.close();
   });
 
+  const mockLibrary: Library = libraryBuilder({
+    id: 'lib-123',
+    userId: 'user-123',
+  });
+
+  const mockArtist: ArtistWithRelations = {
+    ...artistBuilder({
+      id: 'artist-1',
+      name: 'Artist One',
+    }),
+    avatar: null,
+    banner: null,
+  };
+
+  const mockLibraryArtist: LibraryArtistWithRelations = {
+    ...libraryArtistBuilder({
+      id: 'library-artist-1',
+      libraryId: 'lib-123',
+      artistId: 'artist-1',
+    }),
+    artist: mockArtist,
+  };
+
   const getAuthHeader = async (userId: string = 'user-123') => {
     const token = await jwtService.signAsync(
       { sub: userId, username: 'testuser', sessionId: 'session-123' },
@@ -44,12 +76,7 @@ describe('LibraryController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.library.findUnique.mockResolvedValue(null);
-      prismaMock.client.library.create.mockResolvedValue({
-        id: 'lib-123',
-        userId: 'user-123',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as any);
+      prismaMock.client.library.create.mockResolvedValue(mockLibrary);
 
       const response = await request(app.getHttpServer())
         .post('/library')
@@ -62,9 +89,7 @@ describe('LibraryController (Integration)', () => {
     it('should return 409 if library already exists', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.library.findUnique.mockResolvedValue({
-        id: 'existing-lib',
-      } as any);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
       await request(app.getHttpServer())
         .post('/library')
@@ -81,10 +106,7 @@ describe('LibraryController (Integration)', () => {
     it('should get user library (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.library.findUnique.mockResolvedValue({
-        id: 'lib-123',
-        userId: 'user-123',
-      } as any);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
       const response = await request(app.getHttpServer())
         .get('/library')
@@ -110,41 +132,30 @@ describe('LibraryController (Integration)', () => {
     it('should return paginated library artists (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.library.findUnique.mockResolvedValue({
-        id: 'lib-123',
-        userId: 'user-123',
-      } as any);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
-      const mockArtists = [
+      const mockArtists: LibraryArtistWithRelations[] = [
         {
-          id: 'la-1',
-          libraryId: 'lib-123',
-          artistId: 'artist-1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          artist: {
-            id: 'artist-1',
-            name: 'Artist One',
-            avatar: null,
-            banner: null,
-          },
+          ...libraryArtistBuilder({
+            libraryId: 'lib-123',
+            artistId: 'artist-1',
+          }),
+          artist: mockArtist,
         },
         {
-          id: 'la-2',
-          libraryId: 'lib-123',
-          artistId: 'artist-2',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          ...libraryArtistBuilder({
+            libraryId: 'lib-123',
+            artistId: 'artist-2',
+          }),
           artist: {
-            id: 'artist-2',
-            name: 'Artist Two',
+            ...artistBuilder({ id: 'artist-2', name: 'Artist Two' }),
             avatar: null,
             banner: null,
           },
         },
       ];
 
-      prismaMock.client.libraryArtist.findMany.mockResolvedValue(mockArtists as any);
+      prismaMock.client.libraryArtist.findMany.mockResolvedValue(mockArtists);
       prismaMock.client.libraryArtist.count.mockResolvedValue(2);
 
       const response = await request(app.getHttpServer())
@@ -162,10 +173,7 @@ describe('LibraryController (Integration)', () => {
     it('should return empty list when no artists in library (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.library.findUnique.mockResolvedValue({
-        id: 'lib-123',
-        userId: 'user-123',
-      } as any);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
       prismaMock.client.libraryArtist.findMany.mockResolvedValue([]);
       prismaMock.client.libraryArtist.count.mockResolvedValue(0);
@@ -202,24 +210,9 @@ describe('LibraryController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const artistId = 'artist-1';
 
-      prismaMock.client.library.findUnique.mockResolvedValue({
-        id: 'lib-123',
-        userId: 'user-123',
-      } as any);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
-      prismaMock.client.libraryArtist.findFirst.mockResolvedValue({
-        id: 'la-1',
-        libraryId: 'lib-123',
-        artistId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        artist: {
-          id: artistId,
-          name: 'Artist One',
-          avatar: null,
-          banner: null,
-        },
-      } as any);
+      prismaMock.client.libraryArtist.findFirst.mockResolvedValue(mockLibraryArtist);
 
       const response = await request(app.getHttpServer())
         .get(`/library/artists/${artistId}`)
@@ -233,10 +226,7 @@ describe('LibraryController (Integration)', () => {
     it('should return 404 if artist not found in library', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.library.findUnique.mockResolvedValue({
-        id: 'lib-123',
-        userId: 'user-123',
-      } as any);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
 
       prismaMock.client.libraryArtist.findFirst.mockResolvedValue(null);
 

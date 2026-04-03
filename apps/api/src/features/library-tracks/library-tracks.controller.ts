@@ -214,7 +214,7 @@ export class LibraryTracksController {
         .addMaxSizeValidator({ maxSize: 100 * 1024 * 1024 }) // 100MB
         .addFileTypeValidator({
           fileType:
-            /(audio\/mpeg|audio\/wav|audio\/flac|audio\/ogg|audio\/aac|audio\/mp4|audio\/x-wav|audio\/x-flac)/,
+            /(audio\/mpeg|audio\/wav|audio\/flac|audio\/ogg|audio\/opus|audio\/aac|audio\/mp4|audio\/x-wav|audio\/x-flac)/,
         })
         .build({
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
