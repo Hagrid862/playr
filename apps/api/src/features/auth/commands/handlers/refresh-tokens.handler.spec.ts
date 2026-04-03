@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { userBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionRepository } from '../../../../shared/repositories/session.repository';
 import { UserRepository } from '../../../../shared/repositories/user.repository';
@@ -34,6 +34,7 @@ describe('RefreshTokensHandler', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should be defined', () => {
@@ -53,10 +54,9 @@ describe('RefreshTokensHandler', () => {
         isRevoked: false,
       });
 
-      userRepository.getById.mockResolvedValue({
-        id: mockUserId,
-        username: 'test-user',
-      } as User);
+      userRepository.getById.mockResolvedValue(
+        userBuilder({ id: mockUserId, username: 'test-user' }),
+      );
 
       tokenService.generateAuthTokens.mockResolvedValue({
         accessToken: 'new-access-token',

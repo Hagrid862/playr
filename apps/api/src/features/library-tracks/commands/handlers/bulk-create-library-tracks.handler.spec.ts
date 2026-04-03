@@ -3,12 +3,14 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackSchema } from '@repo/contracts';
-import { Album, Library, Track } from '@repo/db';
+import { AlbumType, Track, Visibility } from '@repo/db';
+import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { BulkCreateLibraryTracksCommand } from '../impl/bulk-create-library-tracks.command';
 import { BulkCreateLibraryTracksHandler } from './bulk-create-library-tracks.handler';
 
@@ -43,60 +45,44 @@ describe('BulkCreateLibraryTracksHandler', () => {
     ],
   };
 
-  const mockLibrary: Library = {
+  const mockLibrary = libraryBuilder({
     id: libraryId,
     userId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
-  const mockAlbum: Album = {
+  const mockAlbum = albumBuilder({
     id: albumId,
     name: 'Test Album',
     description: 'Test Description',
-    type: 'album',
+    type: AlbumType.album,
     totalTracks: 10,
     totalDuration: 3000,
     releaseDate: new Date(),
     coverId: null,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+    visibility: Visibility.private,
+  });
 
-  const mockTrack1: Track = {
+  const mockTrack1: Track = trackBuilder({
     id: 'track-1',
     title: 'Track 1',
     trackNumber: 1,
     diskNumber: 1,
     duration: 0,
     explicit: false,
-    lyrics: null,
-    listenedCount: 0,
     albumId,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+    visibility: Visibility.private,
+  });
 
-  const mockTrack2: Track = {
+  const mockTrack2: Track = trackBuilder({
     id: 'track-2',
     title: 'Track 2',
     trackNumber: 2,
     diskNumber: 1,
     duration: 0,
     explicit: true,
-    lyrics: null,
-    listenedCount: 0,
     albumId,
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+    visibility: Visibility.private,
+  });
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
@@ -150,7 +136,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
       diskNumber: body.tracks[0].diskNumber,
       duration: 0,
       explicit: body.tracks[0].explicit,
-      visibility: 'private',
+      visibility: Visibility.private,
       album: { connect: { id: albumId } },
       artists: { connect: body.tracks[0].artistIds.map((id) => ({ id })) },
       access: {
@@ -166,7 +152,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
       diskNumber: body.tracks[1].diskNumber,
       duration: 0,
       explicit: body.tracks[1].explicit,
-      visibility: 'private',
+      visibility: Visibility.private,
       album: { connect: { id: albumId } },
       artists: { connect: body.tracks[1].artistIds.map((id) => ({ id })) },
       access: {
@@ -231,12 +217,13 @@ describe('BulkCreateLibraryTracksHandler', () => {
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    trackRepository.create.mockResolvedValue({ ...mockTrack1, title: 123 } as any);
+    // @ts-expect-error - we are testing the validation failure
+    trackRepository.create.mockResolvedValue({ ...mockTrack1, title: 123 });
 
     vi.spyOn(TrackSchema, 'safeParse').mockReturnValue({
       success: false,
-      error: { format: () => ({}) },
-    } as any);
+      error: new z.ZodError([]),
+    } as ReturnType<typeof TrackSchema.safeParse>);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
     await expect(handler.execute(command)).rejects.toThrow('Failed to parse track');

@@ -1,8 +1,9 @@
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { libraryBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryQuery } from '../impl/get-library.query';
 import { GetLibraryHandler } from './get-library.handler';
 
@@ -20,10 +21,14 @@ describe('GetLibraryHandler', () => {
     handler = module.get<GetLibraryHandler>(GetLibraryHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should return library if it exists', async () => {
     const userId = 'user-123';
     const query = new GetLibraryQuery(userId);
-    const mockLibrary = { id: 'lib-123', userId } as any;
+    const mockLibrary = libraryBuilder({ id: 'lib-123', userId });
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
 

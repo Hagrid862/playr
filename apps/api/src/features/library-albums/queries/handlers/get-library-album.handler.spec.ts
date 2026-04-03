@@ -1,9 +1,10 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { albumBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryAlbumQuery } from '../impl/get-library-album.query';
 import { GetLibraryAlbumHandler } from './get-library-album.handler';
 
@@ -13,12 +14,10 @@ describe('GetLibraryAlbumHandler', () => {
 
   const mockAlbumId = 'album-123';
   const mockUserId = 'user-123';
-  const mockAlbum = {
+  const mockAlbum = albumBuilder({
     id: mockAlbumId,
     name: 'Test Album',
-    artists: [],
-    tracks: [],
-  };
+  });
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
@@ -30,9 +29,14 @@ describe('GetLibraryAlbumHandler', () => {
     handler = module.get<GetLibraryAlbumHandler>(GetLibraryAlbumHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
   it('should return album successfully', async () => {
     const query = new GetLibraryAlbumQuery(mockAlbumId, mockUserId);
-    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
 
     const result = await handler.execute(query);

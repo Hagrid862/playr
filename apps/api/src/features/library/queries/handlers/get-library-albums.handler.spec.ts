@@ -1,9 +1,10 @@
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { libraryAlbumBuilder, libraryBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryAlbumsQuery } from '../impl/get-library-albums.query';
 import { GetLibraryAlbumsHandler } from './get-library-albums.handler';
 
@@ -27,28 +28,19 @@ describe('GetLibraryAlbumsHandler', () => {
     handler = module.get<GetLibraryAlbumsHandler>(GetLibraryAlbumsHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should return library albums with pagination metadata', async () => {
     const userId = 'user-123';
+    const libraryId = 'lib-123';
     const query = new GetLibraryAlbumsQuery(userId, 1, 10);
-    const library = { id: 'lib-123' } as any;
+    const library = libraryBuilder({ id: libraryId });
     const albums = [
-      {
-        id: 'lib-album-1',
-        libraryId: 'lib-123',
-        albumId: 'album-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      },
-      {
-        id: 'lib-album-2',
-        libraryId: 'lib-123',
-        albumId: 'album-2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      },
-    ] as any[];
+      libraryAlbumBuilder({ id: 'lib-album-1', libraryId, albumId: 'album-1' }),
+      libraryAlbumBuilder({ id: 'lib-album-2', libraryId, albumId: 'album-2' }),
+    ];
     const total = 2;
 
     libraryRepository.getByUserId.mockResolvedValue(library);
@@ -85,7 +77,7 @@ describe('GetLibraryAlbumsHandler', () => {
   it('should throw PreconditionFailedException if failed to parse library albums', async () => {
     const userId = 'user-123';
     const query = new GetLibraryAlbumsQuery(userId, 1, 10);
-    const library = { id: 'lib-123' } as any;
+    const library = libraryBuilder({ id: 'lib-123' });
     const invalidAlbums = [{ invalidField: 'test' }] as any[];
     const total = 1;
 

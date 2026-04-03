@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ImageService } from './image.service';
 
 vi.mock('sharp', async (importOriginal) => {
@@ -30,6 +31,10 @@ describe('ImageService', () => {
     })
       .jpeg()
       .toBuffer();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   describe('getMetadata', () => {

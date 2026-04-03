@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { trackBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClient, Track } from '@repo/db';
+import { PrismaClient, Visibility } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { TrackRepository } from './track.repository';
@@ -9,7 +10,7 @@ describe('TrackRepository', () => {
   let repository: TrackRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockTrack: Track = {
+  const mockTrack = trackBuilder({
     id: 'track-123',
     title: 'Test Track',
     duration: 180,
@@ -19,11 +20,9 @@ describe('TrackRepository', () => {
     explicit: false,
     lyrics: null,
     albumId: 'album-123',
-    visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    visibility: Visibility.private,
     deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();

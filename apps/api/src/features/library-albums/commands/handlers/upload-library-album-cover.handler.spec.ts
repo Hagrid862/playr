@@ -2,7 +2,6 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { ImageService } from '@/shared/services/image.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { StorageService } from '@/shared/services/storage.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -10,12 +9,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { FileBucket } from '@repo/db';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { vi } from 'vitest';
+import { ImageSchema } from '@repo/contracts';
+import { FileBucket, ImageUploadStatus } from '@repo/db';
+import { albumBuilder, imageBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UploadLibraryAlbumCoverCommand } from '../impl/upload-library-album-cover.command';
 import { UploadLibraryAlbumCoverHandler } from './upload-library-album-cover.handler';
-import { ImageSchema } from '@repo/contracts';
 
 describe('UploadLibraryAlbumCoverHandler', () => {
   let handler: UploadLibraryAlbumCoverHandler;
@@ -29,25 +29,16 @@ describe('UploadLibraryAlbumCoverHandler', () => {
   const mockBuffer = Buffer.from('test-image');
   const mockMimeType = 'image/png';
 
-  const mockAlbum = {
-    id: mockAlbumId,
-    coverId: null,
-  };
+  const mockAlbum = albumBuilder({ id: mockAlbumId, coverId: null });
 
-  const mockImageRecord = {
+  const mockImageRecord = imageBuilder({
     id: 'img-123',
-    alt: null,
     bucket: FileBucket.public,
     key: 'key.webp',
     url: 'http://bucket/key.webp',
     mimeType: 'image/webp',
-    blurhash: null,
-    reportId: null,
-    uploadStatus: 'uploaded',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+    uploadStatus: ImageUploadStatus.uploaded,
+  });
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
@@ -71,6 +62,11 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     prisma.mainClient.$transaction.mockImplementation(async (cb) => cb(prisma.client));
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
   it('should upload album cover successfully', async () => {
     const command = new UploadLibraryAlbumCoverCommand(
       mockAlbumId,
@@ -79,7 +75,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockUserId,
     );
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({
@@ -117,9 +113,9 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    const mockAlbumWithCover = { ...mockAlbum, coverId: 'old-cover-id' };
+    const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
 
-    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({
@@ -129,7 +125,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
 
     prisma.client.image.findUnique.mockResolvedValue({
       id: 'old-cover-id',
-      bucket: 'public',
+      bucket: FileBucket.public,
       key: 'old-key',
     } as any);
 
@@ -153,7 +149,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     });
 
     // S3 deletion
-    expect(storageService.deleteFile).toHaveBeenCalledWith('public', 'old-key');
+    expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.public, 'old-key');
   });
 
   it('should not attempt to cleanup S3 if old cover image record not found in DB', async () => {
@@ -163,9 +159,9 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    const mockAlbumWithCover = { ...mockAlbum, coverId: 'old-cover-id' };
+    const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
 
-    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -181,7 +177,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
 
     await handler.execute(command);
 
-    expect(storageService.deleteFile).not.toHaveBeenCalledWith('public', expect.any(String));
+    expect(storageService.deleteFile).not.toHaveBeenCalled();
   });
 
   it('should throw NotFoundException if album not found', async () => {
@@ -203,7 +199,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
@@ -217,7 +213,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockUserId,
     );
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({
@@ -241,16 +237,16 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    const mockAlbumWithCover = { ...mockAlbum, coverId: 'old-cover-id' };
+    const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
 
-    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
 
     prisma.client.image.findUnique.mockResolvedValue({
       id: 'old-cover-id',
-      bucket: 'public',
+      bucket: FileBucket.public,
       key: 'old-key',
     } as any);
 
@@ -280,7 +276,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockUserId,
     );
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum as any);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });

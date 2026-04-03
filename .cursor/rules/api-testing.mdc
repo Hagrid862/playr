@@ -1,0 +1,47 @@
+---
+alwaysApply: false
+globs: ["**/*.spec.ts", "**/*.int-spec.ts"]
+---
+
+# API Testing Standards
+
+## Test Location and Package Roles
+
+- **Unit and integration tests** live inside the project itself (e.g. `apps/api/src/**/*.spec.ts`, `apps/api/integration/**/*.int-spec.ts`).
+- **E2e tests** have their own app using Playwright.
+- **`@repo/testing`** is for utilities only: mock builders, `createMockFile`, `createMock`, etc. No tests belong in the testing package.
+
+## When to Use Unit vs Integration Tests
+
+- **Unit tests** (`*.spec.ts`): Test handlers, services, repositories in isolation with mocked dependencies. Fast, focused on business logic.
+- **Integration tests** (`*.int-spec.ts`): Test HTTP endpoints end-to-end with mocked Prisma. Verify controller + handler + repository flow.
+
+## File Naming and Config
+
+- Unit: `**/*.spec.ts` → `vitest.config.mts`
+- Integration: `integration/**/*.int-spec.ts` → `vitest.config.integration.mts`
+
+## Unit Test Structure
+
+1. Use `createMock<T>()` and `DeepMocked<T>` from `@repo/testing/nestjs`
+2. Use builders from `@repo/testing` for entities: `trackBuilder`, `albumBuilder`, `libraryBuilder`, etc.
+3. Define stable IDs in describe scope for cross-entity relations
+4. `afterEach`: always `vi.clearAllMocks()`; add `vi.restoreAllMocks()` only when using `vi.spyOn`
+5. For `UnitOfWorkService`: `unitOfWork.runInTransaction.mockImplementation(async (cb) => cb())`
+6. For BullMQ: `getQueueToken('queue-name')` with `useValue: createMock<Queue>()`
+
+## Mock Management
+
+- **Shared mocks**: Use `createMockFile` from `@repo/testing` for `Express.Multer.File`
+- **Track with access**: Use `trackWithAccessBuilder` from `@repo/testing` for permission tests
+- **Relations**: Build parent entities first with stable IDs, then children referencing them
+- **Factory functions**: Use parametrized helpers (e.g. `mockTrackWithAccess(trackId, albumId)`) when structure varies by ID
+
+## Integration Test Structure
+
+1. Use `createIntegrationApp()` from `integration/test-utils`
+2. Mock Prisma via `prismaMock.client.*.mockResolvedValue(...)`
+3. Use builders for all Prisma return values
+4. For transactions: `prismaMock.mainClient.$transaction.mockImplementation(async (cb) => cb(prismaMock.client))`
+5. Auth: sign JWT with `jwtService.signAsync({ sub: userId, ... })` for `Authorization: Bearer <token>`
+6. Override external services: `createIntegrationApp((b) => b.overrideProvider(StorageService).useValue(mock))`

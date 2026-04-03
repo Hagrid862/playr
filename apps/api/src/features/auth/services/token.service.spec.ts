@@ -7,7 +7,8 @@ import { RefreshTokenRepository } from '../../../shared/repositories/refresh-tok
 import { UnitOfWorkService } from '../../../shared/services/unit-of-work.service';
 import { PrismaService } from '../../../shared/services/prisma.service';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { refreshTokenBuilder, sessionBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 
 describe('TokenService', () => {
   let service: TokenService;
@@ -61,7 +62,7 @@ describe('TokenService', () => {
     it('should generate tokens and create a new session if sessionId is not provided', async () => {
       // Arrange
       jwtService.signAsync.mockResolvedValue('mock-token');
-      sessionRepository.create.mockResolvedValue({ id: 'new-session-id' } as any);
+      sessionRepository.create.mockResolvedValue(sessionBuilder({ id: 'new-session-id' }));
 
       // Act
       const result = await service.generateAuthTokens('user-123', 'username');
@@ -105,14 +106,12 @@ describe('TokenService', () => {
     it('should return decoded info if token and session are valid', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue({
-        revokedAt: null,
-        deletedAt: null,
-      } as any);
-      sessionRepository.getById.mockResolvedValue({
-        revokedAt: null,
-        deletedAt: null,
-      } as any);
+      refreshTokenRepository.getByToken.mockResolvedValue(
+        refreshTokenBuilder({ revokedAt: null, deletedAt: null }),
+      );
+      sessionRepository.getById.mockResolvedValue(
+        sessionBuilder({ revokedAt: null, deletedAt: null }),
+      );
 
       // Act
       const result = await service.verifyRefreshToken(mockToken);
@@ -151,9 +150,9 @@ describe('TokenService', () => {
     it('should return isRevoked: true if token is revoked in database', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue({
-        revokedAt: new Date(),
-      } as any);
+      refreshTokenRepository.getByToken.mockResolvedValue(
+        refreshTokenBuilder({ revokedAt: new Date() }),
+      );
 
       // Act
       const result = await service.verifyRefreshToken(mockToken);
@@ -169,12 +168,8 @@ describe('TokenService', () => {
     it('should return isRevoked: true if session is revoked in database', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue({
-        revokedAt: null,
-      } as any);
-      sessionRepository.getById.mockResolvedValue({
-        revokedAt: new Date(),
-      } as any);
+      refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
+      sessionRepository.getById.mockResolvedValue(sessionBuilder({ revokedAt: new Date() }));
 
       // Act
       const result = await service.verifyRefreshToken(mockToken);
@@ -186,8 +181,8 @@ describe('TokenService', () => {
     it('should return null if session is deleted', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue({ revokedAt: null } as any);
-      sessionRepository.getById.mockResolvedValue(null); // or session with deletedAt
+      refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
+      sessionRepository.getById.mockResolvedValue(null);
 
       // Act
       const result = await service.verifyRefreshToken(mockToken);

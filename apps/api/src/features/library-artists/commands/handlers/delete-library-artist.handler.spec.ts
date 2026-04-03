@@ -1,9 +1,10 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { artistBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ZodArtist } from '@repo/contracts';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { Visibility } from '@repo/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryArtistCommand } from '../impl/delete-library-artist.command';
 import { DeleteLibraryArtistHandler } from './delete-library-artist.handler';
 
@@ -13,7 +14,7 @@ describe('DeleteLibraryArtistHandler', () => {
 
   const mockUserId = 'user-123';
   const mockArtistId = 'artist-123';
-  const mockArtist: ZodArtist = {
+  const mockArtist = artistBuilder({
     id: mockArtistId,
     name: 'Test Artist',
     description: 'Test Description',
@@ -21,13 +22,8 @@ describe('DeleteLibraryArtistHandler', () => {
     verified: false,
     avatarId: null,
     bannerId: null,
-    avatar: null,
-    banner: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    visibility: 'public',
-  };
+    visibility: Visibility.public,
+  });
 
   beforeEach(async () => {
     artistRepository = createMock<ArtistRepository>();
@@ -42,12 +38,17 @@ describe('DeleteLibraryArtistHandler', () => {
     handler = module.get<DeleteLibraryArtistHandler>(DeleteLibraryArtistHandler);
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
   it('should delete an artist successfully', async () => {
     const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
     const mockDeletedArtist = { ...mockArtist, deletedAt: new Date() };
 
-    artistRepository.findOne.mockResolvedValue(mockArtist as any);
-    artistRepository.softDeleteCascade.mockResolvedValue(mockDeletedArtist as any);
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.softDeleteCascade.mockResolvedValue(mockDeletedArtist);
 
     const result = await handler.execute(command);
 
@@ -64,7 +65,7 @@ describe('DeleteLibraryArtistHandler', () => {
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
-    artistRepository.findOne.mockResolvedValue(mockArtist as any);
+    artistRepository.findOne.mockResolvedValue(mockArtist);
     artistRepository.softDeleteCascade.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);

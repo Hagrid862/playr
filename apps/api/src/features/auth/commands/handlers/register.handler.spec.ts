@@ -5,10 +5,11 @@ import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { ConflictException } from '@nestjs/common';
-import { EmailStatus, User, Gender } from '@repo/db';
+import { EmailStatus, Gender } from '@repo/db';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { RegisterRequestDto } from '../../dto/register.request.dto';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { emailAddressBuilder, userBuilder } from '@repo/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { PrismaClient } from '@repo/db';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { UserSchema } from '@repo/contracts';
@@ -21,7 +22,7 @@ describe('RegisterHandler', () => {
   let unitOfWork: DeepMocked<UnitOfWorkService>;
   let mockPrismaClient: DeepMocked<PrismaClient>;
 
-  const mockUser: User = {
+  const mockUser = userBuilder({
     id: 'user-id-123',
     username: 'testuser',
     password: 'hashed-password',
@@ -29,12 +30,7 @@ describe('RegisterHandler', () => {
     lastName: 'Doe',
     birthDate: '2000-01-01',
     gender: Gender.male,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    avatarId: null,
-    description: null,
-    deletedAt: null,
-  };
+  });
 
   const mockPayload: RegisterRequestDto = {
     username: 'testuser',
@@ -77,6 +73,7 @@ describe('RegisterHandler', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should be defined', () => {
@@ -90,17 +87,14 @@ describe('RegisterHandler', () => {
       userRepository.getByUsername.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
       mockPrismaClient.user.create.mockResolvedValue(mockUser);
-      mockPrismaClient.emailAddress.create.mockResolvedValue({
-        id: 'email-id',
-        email: 'test@example.com',
-        userId: mockUser.id,
-        type: 'primary',
-        status: EmailStatus.verified,
-        updatedAt: new Date(),
-        createdAt: new Date(),
-        verifiedAt: null,
-        deletedAt: null,
-      });
+      mockPrismaClient.emailAddress.create.mockResolvedValue(
+        emailAddressBuilder({
+          id: 'email-id',
+          email: 'test@example.com',
+          userId: mockUser.id,
+          status: EmailStatus.verified,
+        }),
+      );
 
       const command = new RegisterCommand(mockPayload);
 
@@ -148,7 +142,7 @@ describe('RegisterHandler', () => {
 
     it('should throw ConflictException if email already exists', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue({ id: 'existing-email-id' } as User);
+      userRepository.getByEmail.mockResolvedValue(userBuilder({ id: 'existing-email-id' }));
       userRepository.getByUsername.mockResolvedValue(null);
 
       const command = new RegisterCommand(mockPayload);
@@ -165,10 +159,7 @@ describe('RegisterHandler', () => {
     it('should throw ConflictException if username already exists', async () => {
       // Arrange
       userRepository.getByEmail.mockResolvedValue(null);
-      // Same assumption for getByUsername
-      userRepository.getByUsername.mockResolvedValue({
-        id: 'existing-user-id',
-      } as User);
+      userRepository.getByUsername.mockResolvedValue(userBuilder({ id: 'existing-user-id' }));
 
       const command = new RegisterCommand(mockPayload);
 
@@ -182,10 +173,8 @@ describe('RegisterHandler', () => {
 
     it('should prioritize email conflict over username when both exist', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue({ id: 'existing-email-id' } as User);
-      userRepository.getByUsername.mockResolvedValue({
-        id: 'existing-user-id',
-      } as User);
+      userRepository.getByEmail.mockResolvedValue(userBuilder({ id: 'existing-email-id' }));
+      userRepository.getByUsername.mockResolvedValue(userBuilder({ id: 'existing-user-id' }));
 
       const command = new RegisterCommand(mockPayload);
 
@@ -231,16 +220,13 @@ describe('RegisterHandler', () => {
         ...mockPayload,
         lastName: null,
       };
-      const minimalUser = {
-        ...mockUser,
-        lastName: null,
-      };
+      const minimalUser = userBuilder({ lastName: null });
 
       userRepository.getByEmail.mockResolvedValue(null);
       userRepository.getByUsername.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
       mockPrismaClient.user.create.mockResolvedValue(minimalUser);
-      mockPrismaClient.emailAddress.create.mockResolvedValue({} as any);
+      mockPrismaClient.emailAddress.create.mockResolvedValue(emailAddressBuilder());
 
       const command = new RegisterCommand(minimalPayload as any);
 

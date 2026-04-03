@@ -1,9 +1,10 @@
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Track } from '@repo/db';
+import { trackBuilder } from '@repo/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateLibraryTrackCommand } from '../impl/update-library-track.command';
 import { UpdateLibraryTrackHandler } from './update-library-track.handler';
@@ -24,21 +25,15 @@ describe('UpdateLibraryTrackHandler', () => {
     userId,
   );
 
-  const mockTrack: Track = {
+  const mockTrack: Track = trackBuilder({
     id: trackId,
     title: 'Test Track',
     trackNumber: 1,
     diskNumber: 1,
     duration: 180,
-    listenedCount: 0,
-    explicit: false,
-    lyrics: null,
     albumId: 'album-123',
     visibility: 'private',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-  };
+  });
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
@@ -114,8 +109,8 @@ describe('UpdateLibraryTrackHandler', () => {
 
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    // Return track with invalid data for schema
-    trackRepository.update.mockResolvedValue({ ...mockTrack, title: 123 as any });
+    // @ts-expect-error - we are testing the validation failure
+    trackRepository.update.mockResolvedValue({ ...mockTrack, title: 123 });
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
   });

@@ -1,6 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-vitest';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { audioFileBuilder } from '@repo/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AudioFile, PrismaClient } from '@repo/db';
+import { AudioFormat, AudioQuality, FileBucket, PrismaClient, ProcessingStatus } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
 import { AudioFileRepository } from './audio-file.repository';
@@ -9,14 +10,14 @@ describe('AudioFileRepository', () => {
   let repository: AudioFileRepository;
   let mockTx: DeepMocked<PrismaClient>;
 
-  const mockAudioFile: AudioFile = {
+  const mockAudioFile = audioFileBuilder({
     id: 'audio-123',
-    bucket: 'private',
+    bucket: FileBucket.private,
     key: 'tracks/track-123/audio.mp3',
     url: 'http://localhost:9000/private/tracks/track-123/audio.mp3',
     mimeType: 'audio/mpeg',
     size: 5242880,
-    format: 'mp3',
+    format: AudioFormat.mp3,
     duration: 180.5,
     bitrate: 320000,
     sampleRate: 44100,
@@ -24,11 +25,9 @@ describe('AudioFileRepository', () => {
     isOriginal: true,
     waveformJson: '[0.1, 0.2, 0.3]',
     trackId: 'track-123',
-    quality: 'original',
-    status: 'complete',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+    quality: AudioQuality.original,
+    status: ProcessingStatus.complete,
+  });
 
   beforeEach(async () => {
     mockTx = createMock<PrismaClient>();
