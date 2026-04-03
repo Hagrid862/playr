@@ -1,8 +1,8 @@
 import type { PlaybackState } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { applyStateFromServer, getPlaybackSocket } from '../sync/playback-sync';
 import { emitQueueCommand, isPlaybackSyncConnected } from './playback-queue-sync';
-import { applyStateFromServer, getPlaybackSocket } from './playback-sync';
 
 type QueueEmitAck = PlaybackState | { error: string; code?: string } | null;
 
@@ -10,12 +10,12 @@ function asPlaybackSocket(mock: unknown): Socket {
   return mock as Socket;
 }
 
-vi.mock('./playback-sync', () => ({
+vi.mock('../sync/playback-sync', () => ({
   getPlaybackSocket: vi.fn(),
   applyStateFromServer: vi.fn(),
 }));
 
-describe('playback-queue-sync', () => {
+describe('playback/queue/playback-queue-sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

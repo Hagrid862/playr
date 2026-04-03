@@ -1,11 +1,11 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   detectDesktopBrowserFromUserAgent,
-  getOrCreatePlaybackDeviceId,
   getLocalPlaybackDeviceMetadata,
+  getOrCreatePlaybackDeviceId,
 } from './playback-device';
 
-describe('playback-device', () => {
+describe('playback/playback-device', () => {
   describe('detectDesktopBrowserFromUserAgent', () => {
     it('detects Edge', () => {
       expect(detectDesktopBrowserFromUserAgent('Mozilla/5.0 ... Edg/123.0')).toBe('Edge');

@@ -1,6 +1,6 @@
 import type { QueueItem } from '@repo/contracts';
 import { describe, expect, it } from 'vitest';
-import { testPlaybackTrack, testQueueItem } from '../test-utils/queue-test-fixtures';
+import { testPlaybackTrack, testQueueItem } from '../../../test-utils/queue-test-fixtures';
 import { getOrderedNextQueue, reorderKeepingPartitions } from './playback-queue';
 
 let queueIdSeq = 0;
