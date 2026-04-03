@@ -155,7 +155,14 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     if (!client.data?.user?.user?.id || !client.data?.playbackDeviceId) return;
     const userId = client.data.user.user.id as string;
     const deviceId = client.data.playbackDeviceId as string;
-    await this.playbackDeviceRegistry.removeDevice(userId, deviceId);
+    try {
+      await this.playbackDeviceRegistry.removeDevice(userId, deviceId);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.warn(
+        `Playback disconnect removeDevice failed for user ${userId}: ${err.message}`,
+      );
+    }
     try {
       const updated = await this.playbackStatePersistence.pauseAndClearActiveIfDeviceMatches(
         userId,
