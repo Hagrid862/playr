@@ -24,12 +24,13 @@
     "license-checker": "^25.0.1",
     "madge": "^8.0.0",
     "prettier": "catalog:",
+    "prettier-plugin-packagejson": "^3.0.0",
     "turbo": "^2.7.6",
     "typescript": "catalog:"
   },
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.32.1",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "pnpm": {
     "overrides": {
