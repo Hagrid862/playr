@@ -57,6 +57,29 @@ describe('SetQueueHandler', () => {
     expect(result.queue[0].track.title).toBe('Track');
   });
 
+  it('sets originalPosition if not provided', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetQueueHandler(persistence);
+    const itemWithoutOriginalPos = fixtureQueueItem({
+      queueId: '01900000-0000-7000-8000-000000000001',
+      track: initialState.trackData,
+      position: 0,
+      originalPosition: undefined as any,
+      type: 'queue',
+    });
+    const command = new SetQueueCommand(userId, sessionId, {
+      items: [itemWithoutOriginalPos],
+      expectedVersion: 1,
+    });
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      return { ...initialState, ...merge(initialState) } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+    expect(result.queue[0].originalPosition).toBe(0);
+  });
+
   it('throws BadRequestException when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetQueueHandler(persistence);

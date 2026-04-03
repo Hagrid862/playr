@@ -48,6 +48,25 @@ describe('SetShuffleStateHandler', () => {
     expect(persistence.applyMutation).toHaveBeenCalledWith(userId, 1, expect.any(Function));
   });
 
+  it('returns unchanged state when shuffle value is same', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetShuffleStateHandler(persistence);
+    const stateWithShuffleFalse = { ...initialState, shuffle: false };
+    const command = new SetShuffleStateCommand(userId, sessionId, {
+      shuffle: false,
+      expectedVersion: 1,
+    });
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = merge(stateWithShuffleFalse);
+      return { ...stateWithShuffleFalse, ...merged } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+    expect(result.shuffle).toBe(false);
+    expect(persistence.applyMutation).toHaveBeenCalledWith(userId, 1, expect.any(Function));
+  });
+
   it('throws BadRequestException when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetShuffleStateHandler(persistence);
