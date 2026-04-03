@@ -3,14 +3,14 @@ import { getOrderedNextQueue } from '@/lib/playback-queue';
 import { createPlaybackSocket } from '@/lib/playback-socket';
 import { usePlayerStore } from '@/stores/player.store';
 import {
-  PLAYBACK_HISTORY_MAX_LENGTH,
-  type ListPlaybackDevicesResponse,
-  type PlaybackState,
-  type PlaybackTrack,
-  type SetActiveDeviceRequest,
-  type SetCurrentTimeStateRequest,
-  type SetPlaybackStateRequest,
-  type SetPlayingStateRequest,
+    PLAYBACK_HISTORY_MAX_LENGTH,
+    type ListPlaybackDevicesResponse,
+    type PlaybackState,
+    type PlaybackTrack,
+    type SetActiveDeviceRequest,
+    type SetCurrentTimeStateRequest,
+    type SetPlaybackStateRequest,
+    type SetPlayingStateRequest,
 } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 
@@ -19,13 +19,15 @@ let socket: Socket | null = null;
 /** True while a `command:set-state` or `command:set-playing-state` round-trip is in flight. */
 let writeInFlight = false;
 
-let pendingSetStateWrite: {
-  state: SetPlaybackStateRequest['state'];
-  claimActiveDevice: boolean;
-} | null = null;
+/** Intent only: body is built from the live store in `flushWriteQueue` to avoid stale snapshots after server hydrate. */
+type PendingFullStateIntent = { kind: 'full-state'; claimActiveDevice: boolean };
+
+let pendingSetStateWrite: PendingFullStateIntent | null = null;
 
 /** Lightweight play/pause sync when no full snapshot is already queued. */
-let pendingPlayingWrite: { claimActiveDevice: boolean } | null = null;
+type PendingPlayingStateIntent = { kind: 'playing-state'; claimActiveDevice: boolean };
+
+let pendingPlayingWrite: PendingPlayingStateIntent | null = null;
 
 let flushMicrotaskScheduled = false;
 
@@ -177,10 +179,7 @@ function mergeOrQueueFullSnapshot(claimActiveDevice: boolean, schedule = true) {
 
   pendingPlayingWrite = null;
   const nextClaim = pendingSetStateWrite?.claimActiveDevice || claimActiveDevice;
-  pendingSetStateWrite = {
-    state: buildSetStateBody(s.currentTrack),
-    claimActiveDevice: nextClaim,
-  };
+  pendingSetStateWrite = { kind: 'full-state', claimActiveDevice: nextClaim };
   if (schedule) {
     scheduleFlushWriteQueue();
   }
@@ -233,14 +232,20 @@ function flushWriteQueue() {
     const job = pendingSetStateWrite;
     pendingSetStateWrite = null;
 
-    const { playbackVersion } = usePlayerStore.getState();
+    const s = usePlayerStore.getState();
+    if (!s.currentTrack) {
+      flushWriteQueue();
+      return;
+    }
+
     writeInFlight = true;
+    const state = buildSetStateBody(s.currentTrack);
 
     socket!.emit(
       'command:set-state',
       {
-        state: job.state,
-        expectedVersion: playbackVersion,
+        state,
+        expectedVersion: s.playbackVersion,
         claimActiveDevice: job.claimActiveDevice,
       } satisfies SetPlaybackStateRequest,
       (ack: PlaybackState | { error?: string; code?: string }) => {
@@ -301,7 +306,7 @@ export function syncPlayingStateToServer(claimActiveDevice: boolean) {
     return;
   }
 
-  pendingPlayingWrite = { claimActiveDevice };
+  pendingPlayingWrite = { kind: 'playing-state', claimActiveDevice };
   scheduleFlushWriteQueue();
 }
 
