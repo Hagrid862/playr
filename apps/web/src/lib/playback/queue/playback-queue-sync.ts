@@ -1,5 +1,5 @@
 import type { PlaybackState } from '@repo/contracts';
-import { applyStateFromServer, getPlaybackSocket } from './playback-sync';
+import { applyStateFromServer, getPlaybackSocket } from '../sync/playback-sync';
 
 /**
  * Emits a queue command and handles the response.

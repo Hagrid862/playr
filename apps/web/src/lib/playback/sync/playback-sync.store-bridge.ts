@@ -1,0 +1,64 @@
+import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
+import { usePlayerStore } from '@/stores/player-store/player.store';
+import {
+  PLAYBACK_HISTORY_MAX_LENGTH,
+  type PlaybackState,
+  type PlaybackTrack,
+  type SetPlaybackStateRequest,
+} from '@repo/contracts';
+
+/** Active audio client: keep local `currentTime` from the element; still advance `playbackVersion` from server. */
+function isLocalActiveAudioSource(state: {
+  activeDeviceId: string | null;
+  localPlaybackDeviceId: string;
+}): boolean {
+  return (
+    state.activeDeviceId != null &&
+    state.activeDeviceId !== '' &&
+    Boolean(state.localPlaybackDeviceId) &&
+    state.activeDeviceId === state.localPlaybackDeviceId
+  );
+}
+
+/**
+ * Apply a time-only server update (broadcast or set-current-time ack).
+ * Ignores stale `version`; does not overwrite `currentTime` on the device that is playing audio.
+ */
+export function applyCurrentTimeServerUpdate(payload: { currentTime: number; version: number }) {
+  const s = usePlayerStore.getState();
+  if (payload.version < s.playbackVersion) return;
+
+  if (isLocalActiveAudioSource(s)) {
+    usePlayerStore.setState({ playbackVersion: payload.version });
+  } else {
+    usePlayerStore.setState({
+      playbackVersion: payload.version,
+      currentTime: payload.currentTime,
+    });
+  }
+}
+
+export function buildSetStateBody(trackData: PlaybackTrack): SetPlaybackStateRequest['state'] {
+  const s = usePlayerStore.getState();
+  const queue = getOrderedNextQueue(s.queue, s.isShuffled).map((item, index) => ({
+    ...item,
+    position: index,
+  }));
+  return {
+    devices: s.playbackDevices.map((d) => ({ id: d.id, name: d.name, icon: d.icon })),
+    isPlaying: s.isPlaying,
+    trackData,
+    currentTime: Math.min(Math.max(0, Math.floor(s.currentTime)), trackData.duration),
+    volume: Math.min(1, Math.max(0, s.volume)),
+    repeatMode: s.repeatMode,
+    shuffle: s.isShuffled,
+    queue,
+    history: s.history.slice(0, PLAYBACK_HISTORY_MAX_LENGTH),
+    favorited: s.playbackFavorited,
+    inLibrary: s.playbackInLibrary,
+  };
+}
+
+export function applyStateFromServer(state: PlaybackState) {
+  usePlayerStore.getState().applyPlaybackStateFromServer(state);
+}
