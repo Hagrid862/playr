@@ -71,8 +71,7 @@ export interface PlayerState {
 }
 
 function reindexQueuePositions(queue: QueueItem[]): QueueItem[] {
-  const sorted = [...queue].sort((a, b) => a.position - b.position);
-  return sorted.map((item, i) => ({ ...item, position: i, originalPosition: i }));
+  return queue.map((item, i) => ({ ...item, position: i }));
 }
 
 function shouldClaimActiveDevice(activeDeviceId: string | null, localPlaybackDeviceId: string) {

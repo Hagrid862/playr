@@ -1,4 +1,4 @@
-import { getOrderedNextQueue } from '@/lib/playback-queue';
+import { getOrderedNextQueue, reorderKeepingPartitions } from '@/lib/playback-queue';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player.store';
 import { DragEndEvent } from '@dnd-kit/core';
@@ -49,7 +49,7 @@ export function Queue() {
       const newIndex = orderedQueue.findIndex((t) => t.queueId === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
-        const newQueue = arrayMove(orderedQueue, oldIndex, newIndex);
+        const newQueue = reorderKeepingPartitions(arrayMove(orderedQueue, oldIndex, newIndex));
         reorderQueue(newQueue);
       }
     }
