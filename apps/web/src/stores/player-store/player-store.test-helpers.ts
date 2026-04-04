@@ -1,3 +1,14 @@
+import { vi } from 'vitest';
+
+/** Avoid real IndexedDB in unit tests; keeps persist from leaking across runs. */
+vi.mock('../idb-storage', () => ({
+  idbStorage: {
+    getItem: vi.fn().mockResolvedValue(null),
+    setItem: vi.fn().mockResolvedValue(undefined),
+    removeItem: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';

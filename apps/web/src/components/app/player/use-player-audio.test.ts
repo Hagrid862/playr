@@ -21,6 +21,9 @@ vi.mock('@/stores/auth.store', () => ({
 
 vi.mock('@/lib/playback/sync/playback-sync', () => ({
   emitCurrentTimeSync: vi.fn(),
+  firePlaybackCommand: vi.fn(() => {
+    /* args evaluated at call site before mock runs; no-op */
+  }),
   isPlaybackSyncConnected: vi.fn(),
 }));
 

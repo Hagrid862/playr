@@ -10,6 +10,8 @@ vi.mock('../playback-socket', () => ({
   createPlaybackSocket: vi.fn(() => ({
     on: vi.fn(),
     emit: vi.fn(),
+    once: vi.fn(),
+    off: vi.fn(),
     disconnect: vi.fn(),
     removeAllListeners: vi.fn(),
     connected: true,

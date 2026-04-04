@@ -52,6 +52,9 @@ vi.mock('@/stores/player-store/player.store', () => ({
 vi.mock('@/lib/playback/sync/playback-sync', () => ({
   listPlaybackDevices: vi.fn(),
   setActivePlaybackDevice: vi.fn(),
+  firePlaybackCommand: vi.fn(() => {
+    /* args evaluated at call site before mock runs; no-op */
+  }),
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => ({
