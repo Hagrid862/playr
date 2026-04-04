@@ -2,7 +2,7 @@ import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { ListPlaybackDeviceEntry, PlaybackState } from '@repo/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   afterLocalPlaybackMutation: vi.fn(),
   afterLocalPlaybackMutationWithClaim: vi.fn(),
   syncPlayingStateToServer: vi.fn(),

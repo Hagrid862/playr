@@ -1,6 +1,6 @@
 import { createPlayerStateMock } from '@/components/app/test-utils/player-test-utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
-import type { ListPlaybackDeviceEntry } from '@repo/contracts';
+import type { ListPlaybackDeviceEntry, PlaybackState } from '@repo/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlaybackSocket } from '../playback-socket';
 import {
@@ -11,6 +11,10 @@ import {
   setActivePlaybackDevice,
   syncPlayingStateToServer,
 } from './playback-sync';
+import {
+  PlaybackSocketAckTimeoutError,
+  PlaybackSocketDisconnectedError,
+} from './playback-sync.emit-with-ack';
 import {
   asSocketMock,
   basePlaybackSyncTestState,
@@ -25,6 +29,8 @@ vi.mock('../playback-socket', () => ({
   createPlaybackSocket: vi.fn(() => ({
     on: vi.fn(),
     emit: vi.fn(),
+    once: vi.fn(),
+    off: vi.fn(),
     disconnect: vi.fn(),
     removeAllListeners: vi.fn(),
     connected: true,
@@ -110,6 +116,34 @@ describe('playback-sync commands', () => {
         'query:list-devices',
         expect.any(Object),
         expect.any(Function),
+      );
+    });
+
+    it('rejects when list-devices ack times out', async () => {
+      vi.useFakeTimers();
+      try {
+        connectPlaybackSync('token');
+        mockSocket.emit.mockImplementation(() => {
+          /* never invoke ack */
+        });
+        const p = listPlaybackDevices(5000);
+        const rejectsAssertion = expect(p).rejects.toBeInstanceOf(PlaybackSocketAckTimeoutError);
+        await vi.advanceTimersByTimeAsync(5000);
+        await rejectsAssertion;
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('rejects when socket disconnects before list-devices ack', async () => {
+      connectPlaybackSync('token');
+      mockSocket.emit.mockImplementation((event: string) => {
+        if (event === 'query:list-devices') {
+          queueMicrotask(() => mockSocket.simulateDisconnect());
+        }
+      });
+      await expect(listPlaybackDevices(5000)).rejects.toBeInstanceOf(
+        PlaybackSocketDisconnectedError,
       );
     });
   });
@@ -238,6 +272,22 @@ describe('playback-sync commands', () => {
       await emitCurrentTimeSync(10);
       expect(usePlayerStore.setState).not.toHaveBeenCalled();
     });
+
+    it('rejects when set-current-time-state ack times out', async () => {
+      vi.useFakeTimers();
+      try {
+        connectPlaybackSync('token');
+        mockSocket.emit.mockImplementation(() => {
+          /* never invoke ack */
+        });
+        const p = emitCurrentTimeSync(10, 5000);
+        const rejectsAssertion = expect(p).rejects.toBeInstanceOf(PlaybackSocketAckTimeoutError);
+        await vi.advanceTimersByTimeAsync(5000);
+        await rejectsAssertion;
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   describe('setActivePlaybackDevice', () => {
@@ -286,23 +336,56 @@ describe('playback-sync commands', () => {
       );
     });
 
-    it('on version conflict refetches state via get-state', async () => {
+    it('on version conflict refetches state and retries set-active-device', async () => {
+      let playbackVersion = 1;
+      const applyPlaybackStateFromServer = vi.fn((s: PlaybackState) => {
+        playbackVersion = s.version;
+      });
+      vi.mocked(usePlayerStore.getState).mockImplementation(() =>
+        createPlayerStateMock({
+          ...basePlaybackSyncTestState,
+          playbackVersion,
+          applyPlaybackStateFromServer,
+        }),
+      );
+
       connectPlaybackSync('token');
+      let setActiveDeviceCalls = 0;
       mockSocket.emit.mockImplementation(
         (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
           if (event === 'command:set-active-device') {
-            callback({ error: 'version mismatch', code: 'CONFLICT' });
+            setActiveDeviceCalls += 1;
+            if (setActiveDeviceCalls === 1) {
+              callback({ error: 'version mismatch', code: 'CONFLICT' });
+            } else {
+              callback(playbackStateFixture({ version: 31 }));
+            }
           } else if (event === 'query:get-state') {
             callback(playbackStateFixture({ version: 30 }));
+          } else if (event === 'query:list-devices') {
+            callback({ devices: [] });
           }
         },
       );
 
       await setActivePlaybackDevice('new-device');
 
+      expect(setActiveDeviceCalls).toBe(2);
       expect(mockSocket.emit).toHaveBeenCalledWith('query:get-state', {}, expect.any(Function));
-      expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalledWith(
+      const setActiveEmits = mockSocket.emit.mock.calls.filter(
+        (c) => c[0] === 'command:set-active-device',
+      );
+      expect(setActiveEmits[0]?.[1]).toEqual(
+        expect.objectContaining({ deviceId: 'new-device', expectedVersion: 1 }),
+      );
+      expect(setActiveEmits[1]?.[1]).toEqual(
+        expect.objectContaining({ deviceId: 'new-device', expectedVersion: 30 }),
+      );
+      expect(applyPlaybackStateFromServer).toHaveBeenCalledWith(
         expect.objectContaining({ version: 30 }),
+      );
+      expect(applyPlaybackStateFromServer).toHaveBeenCalledWith(
+        expect.objectContaining({ version: 31 }),
       );
     });
 
