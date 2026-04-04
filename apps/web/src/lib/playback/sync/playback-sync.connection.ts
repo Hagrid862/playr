@@ -4,6 +4,7 @@ import { usePlayerStore } from '@/stores/player-store/player.store';
 import type { PlaybackState } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 import { listPlaybackDevices } from './playback-sync.commands';
+import { firePlaybackCommand } from './playback-sync.fire-and-forget';
 import {
   getSocket,
   isPlaybackSocketConnected,
@@ -47,7 +48,7 @@ export function connectPlaybackSync(accessToken: string) {
 
   sock.on('connect', () => {
     hydrate();
-    void listPlaybackDevices();
+    firePlaybackCommand(listPlaybackDevices(), 'listPlaybackDevices');
   });
 
   sock.on('event:playback-state-updated', (state: PlaybackState) => {

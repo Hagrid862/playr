@@ -82,9 +82,13 @@ export function playbackStateFixture(overrides: Partial<PlaybackState> = {}): Pl
 export type PlaybackSocketMock = {
   on: ReturnType<typeof vi.fn>;
   emit: ReturnType<typeof vi.fn>;
+  once: ReturnType<typeof vi.fn>;
+  off: ReturnType<typeof vi.fn>;
   disconnect: ReturnType<typeof vi.fn>;
   removeAllListeners: ReturnType<typeof vi.fn>;
   connected: boolean;
+  /** Invokes handlers registered with once('disconnect', …) (for emitWithAck tests). */
+  simulateDisconnect: () => void;
 };
 
 export type EmitCallbackPayload =
@@ -94,12 +98,38 @@ export type EmitCallbackPayload =
   | null;
 
 export function createPlaybackSocketMock(): PlaybackSocketMock {
+  const disconnectOnceHandlers: Array<(...args: unknown[]) => void> = [];
+
+  const once = vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+    if (event === 'disconnect') {
+      disconnectOnceHandlers.push(handler);
+    }
+  });
+
+  const off = vi.fn((event: string, handler?: (...args: unknown[]) => void) => {
+    if (event === 'disconnect' && handler) {
+      const i = disconnectOnceHandlers.indexOf(handler);
+      if (i >= 0) disconnectOnceHandlers.splice(i, 1);
+    }
+  });
+
+  const simulateDisconnect = () => {
+    const pending = [...disconnectOnceHandlers];
+    disconnectOnceHandlers.length = 0;
+    for (const h of pending) {
+      h();
+    }
+  };
+
   return {
     on: vi.fn(),
     emit: vi.fn(),
+    once,
+    off,
     disconnect: vi.fn(),
     removeAllListeners: vi.fn(),
     connected: true,
+    simulateDisconnect,
   };
 }
 
