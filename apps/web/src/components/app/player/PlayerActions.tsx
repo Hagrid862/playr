@@ -12,7 +12,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
-import { listPlaybackDevices, setActivePlaybackDevice } from '@/lib/playback/sync/playback-sync';
+import {
+  firePlaybackCommand,
+  listPlaybackDevices,
+  setActivePlaybackDevice,
+} from '@/lib/playback/sync/playback-sync';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
@@ -179,7 +183,7 @@ export function PlayerActions() {
         onOpenChange={(open) => {
           setIsDevicePopoverOpen(open);
           if (open) {
-            void listPlaybackDevices();
+            firePlaybackCommand(listPlaybackDevices(), 'listPlaybackDevices');
           }
         }}
       >
@@ -215,7 +219,12 @@ export function PlayerActions() {
                         ? 'bg-white/10 text-white'
                         : 'text-white/70 hover:text-white hover:bg-white/5',
                     )}
-                    onClick={() => void setActivePlaybackDevice(device.id)}
+                    onClick={() =>
+                      firePlaybackCommand(
+                        setActivePlaybackDevice(device.id),
+                        'setActivePlaybackDevice',
+                      )
+                    }
                   >
                     <span className="truncate">
                       {device.isCurrentDevice ? 'Web player (this device)' : device.name}
