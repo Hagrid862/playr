@@ -21,10 +21,11 @@ async function playTrackFromAlbum(
   playerPage: PlayerPage,
   trackTitle: string,
 ) {
-  const trackCard = page
+  const trackCards = page
     .locator("div.group.cursor-pointer")
-    .filter({ hasText: trackTitle })
-    .first();
+    .filter({ hasText: trackTitle });
+  await expect(trackCards).toHaveCount(1);
+  const trackCard = trackCards.first();
   await trackCard.scrollIntoViewIfNeeded();
   await trackCard.hover();
   await trackCard.click();
@@ -154,10 +155,11 @@ test.describe("Queue Management", () => {
   test("should add tracks to queue and verify", async () => {
     await playTrackFromAlbum(page, playerPage, track1);
 
-    const track2Card = page
+    const track2Cards = page
       .locator("div.group.cursor-pointer")
-      .filter({ hasText: track2 })
-      .first();
+      .filter({ hasText: track2 });
+    await expect(track2Cards).toHaveCount(1);
+    const track2Card = track2Cards.first();
     // Use right-click to open context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to Queue" }).click();
@@ -191,10 +193,11 @@ test.describe("Queue Management", () => {
     await playTrackFromAlbum(page, playerPage, track1);
 
     // Add Track 2 as Play Next
-    const track2Card = page
+    const track2Cards = page
       .locator("div.group.cursor-pointer")
-      .filter({ hasText: track2 })
-      .first();
+      .filter({ hasText: track2 });
+    await expect(track2Cards).toHaveCount(1);
+    const track2Card = track2Cards.first();
     // Use right-click for context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Play Next" }).click();
