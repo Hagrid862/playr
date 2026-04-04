@@ -5,6 +5,8 @@ import type {
   SetActiveDeviceRequest,
   SetCurrentTimeStateRequest,
 } from '@repo/contracts';
+import { emitWithAck, PLAYBACK_SOCKET_ACK_TIMEOUT_MS } from './playback-sync.emit-with-ack';
+import { firePlaybackCommand } from './playback-sync.fire-and-forget';
 import {
   getPendingSetStateWrite,
   getSocket,
@@ -52,85 +54,124 @@ export function afterLocalPlaybackMutationWithClaim(claimActiveDevice: boolean) 
   requestSetStateWrite(claimActiveDevice);
 }
 
-export function listPlaybackDevices(): Promise<void> {
+export function listPlaybackDevices(
+  ackTimeoutMs: number = PLAYBACK_SOCKET_ACK_TIMEOUT_MS,
+): Promise<void> {
   if (!isPlaybackSocketConnected()) return Promise.resolve();
 
-  return new Promise((resolve) => {
-    getSocket()!.emit('query:list-devices', {}, (result: ListPlaybackDevicesResponse) => {
-      usePlayerStore.getState().setPlaybackDevices(result.devices);
-      resolve();
-    });
+  const socket = getSocket()!;
+  return emitWithAck<ListPlaybackDevicesResponse>(
+    socket,
+    'query:list-devices',
+    {},
+    ackTimeoutMs,
+  ).then((result) => {
+    usePlayerStore.getState().setPlaybackDevices(result.devices);
   });
 }
 
-export function emitCurrentTimeSync(currentTime: number): Promise<void> {
-  if (!isPlaybackSocketConnected()) return Promise.resolve();
+export async function emitCurrentTimeSync(
+  currentTime: number,
+  ackTimeoutMs: number = PLAYBACK_SOCKET_ACK_TIMEOUT_MS,
+): Promise<void> {
+  if (!isPlaybackSocketConnected()) return;
 
   const { currentTrack, playbackVersion } = usePlayerStore.getState();
-  if (!currentTrack || playbackVersion === 0) return Promise.resolve();
+  if (!currentTrack || playbackVersion === 0) return;
 
   const payload: SetCurrentTimeStateRequest = {
     currentTime: clampCurrentTime(currentTime, currentTrack.duration),
     expectedVersion: playbackVersion,
   };
 
-  return new Promise((resolve) => {
-    getSocket()!.emit(
-      'command:set-current-time-state',
-      payload,
-      (result: PlaybackState | { error?: string; code?: string }) => {
-        const err = parseSyncAckError(result);
-        if (err) {
-          if (isVersionConflict(err.message, err.code)) {
-            getSocket()!.emit('query:get-state', {}, (state: PlaybackState | null) => {
-              if (state) applyStateFromServer(state);
-            });
-          }
-          resolve();
-          return;
-        }
+  const socket = getSocket()!;
+  const result = await emitWithAck<PlaybackState | { error?: string; code?: string }>(
+    socket,
+    'command:set-current-time-state',
+    payload,
+    ackTimeoutMs,
+  );
 
-        if (isPlaybackStateSyncAck(result)) {
-          applyCurrentTimeServerUpdate({
-            currentTime: result.currentTime,
-            version: result.version,
-          });
-        }
-        resolve();
-      },
-    );
-  });
+  const err = parseSyncAckError(result);
+  if (err) {
+    if (isVersionConflict(err.message, err.code)) {
+      const state = await emitWithAck<PlaybackState | null>(
+        socket,
+        'query:get-state',
+        {},
+        ackTimeoutMs,
+      );
+      if (state) applyStateFromServer(state);
+    }
+    return;
+  }
+
+  if (isPlaybackStateSyncAck(result)) {
+    applyCurrentTimeServerUpdate({
+      currentTime: result.currentTime,
+      version: result.version,
+    });
+  }
 }
 
-export function setActivePlaybackDevice(deviceId: string): Promise<void> {
-  if (!isPlaybackSocketConnected()) return Promise.resolve();
+export async function setActivePlaybackDevice(
+  deviceId: string,
+  ackTimeoutMs: number = PLAYBACK_SOCKET_ACK_TIMEOUT_MS,
+): Promise<void> {
+  if (!isPlaybackSocketConnected()) return;
   const { playbackVersion } = usePlayerStore.getState();
-  if (!playbackVersion) return Promise.resolve();
+  if (!playbackVersion) return;
 
-  return new Promise((resolve) => {
-    getSocket()!.emit(
+  const originalDeviceId = deviceId;
+  const socket = getSocket()!;
+
+  const result = await emitWithAck<PlaybackState | { error?: string; code?: string }>(
+    socket,
+    'command:set-active-device',
+    {
+      deviceId: originalDeviceId,
+      expectedVersion: playbackVersion,
+    } satisfies SetActiveDeviceRequest,
+    ackTimeoutMs,
+  );
+
+  const err = parseSyncAckError(result);
+  if (err) {
+    if (!isVersionConflict(err.message, err.code)) return;
+
+    const state = await emitWithAck<PlaybackState | null>(
+      socket,
+      'query:get-state',
+      {},
+      ackTimeoutMs,
+    );
+    if (!state) return;
+
+    applyStateFromServer(state);
+    const sock = getSocket();
+    if (!sock) return;
+
+    const expectedVersion = usePlayerStore.getState().playbackVersion;
+    const retryResult = await emitWithAck<PlaybackState | { error?: string; code?: string }>(
+      sock,
       'command:set-active-device',
       {
-        deviceId,
-        expectedVersion: playbackVersion,
+        deviceId: originalDeviceId,
+        expectedVersion,
       } satisfies SetActiveDeviceRequest,
-      (result: PlaybackState | { error?: string; code?: string }) => {
-        const err = parseSyncAckError(result);
-        if (err) {
-          if (isVersionConflict(err.message, err.code)) {
-            getSocket()!.emit('query:get-state', {}, (state: PlaybackState | null) => {
-              if (state) applyStateFromServer(state);
-            });
-          }
-          resolve();
-          return;
-        }
-        if (isPlaybackStateSyncAck(result)) {
-          applyStateFromServer(result);
-          void listPlaybackDevices();
-        }
-        resolve();
-      },
+      ackTimeoutMs,
     );
-  });
+
+    const retryErr = parseSyncAckError(retryResult);
+    if (!retryErr && isPlaybackStateSyncAck(retryResult)) {
+      applyStateFromServer(retryResult);
+      firePlaybackCommand(listPlaybackDevices(ackTimeoutMs), 'listPlaybackDevices');
+    }
+    return;
+  }
+
+  if (isPlaybackStateSyncAck(result)) {
+    applyStateFromServer(result);
+    firePlaybackCommand(listPlaybackDevices(ackTimeoutMs), 'listPlaybackDevices');
+  }
 }

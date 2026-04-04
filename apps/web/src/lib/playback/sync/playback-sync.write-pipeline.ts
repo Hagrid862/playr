@@ -60,7 +60,7 @@ export function handleSyncWriteAck(
     if (isVersionConflict(err.message, err.code)) {
       getSocket()!.emit('query:get-state', {}, (state: PlaybackState | null) => {
         if (state) applyStateFromServer(state);
-        mergeOrQueueFullSnapshot(meta.kind === 'set-state' ? meta.claim : meta.claim, false);
+        mergeOrQueueFullSnapshot(meta.claim, false);
         flushWriteQueue();
       });
       return;
