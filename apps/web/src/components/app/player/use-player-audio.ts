@@ -1,5 +1,9 @@
 import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
+import {
+  emitCurrentTimeSync,
+  firePlaybackCommand,
+  isPlaybackSyncConnected,
+} from '@/lib/playback/sync/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
@@ -182,7 +186,7 @@ export function usePlayerAudio() {
 
     lastSyncedSecondRef.current = currentSecond;
     lastTimeSyncAtRef.current = now;
-    void emitCurrentTimeSync(localCurrentTime);
+    firePlaybackCommand(emitCurrentTimeSync(localCurrentTime), 'emitCurrentTimeSync');
   };
 
   const handleLoadedMetadata = () => {

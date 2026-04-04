@@ -1,5 +1,9 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
+import {
+  emitCurrentTimeSync,
+  firePlaybackCommand,
+  isPlaybackSyncConnected,
+} from '@/lib/playback/sync/playback-sync';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { PlayerActions } from './player/PlayerActions';
 import { PlayerControls } from './player/PlayerControls';
@@ -31,7 +35,7 @@ export function AppPlayer() {
       return;
     }
 
-    void emitCurrentTimeSync(time);
+    firePlaybackCommand(emitCurrentTimeSync(time), 'emitCurrentTimeSync');
   };
 
   return (
