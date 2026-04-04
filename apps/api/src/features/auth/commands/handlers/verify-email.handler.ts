@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyEmailCommand } from '@/features/auth/commands/impl/verify-email.command';
 import { OtpCodeService } from '@/features/auth/services/otp-code.service';
 import { UserSchema, VerifyEmailResponse } from '@repo/contracts';
-import { BadRequestException, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 import { TokenService } from '@/features/auth/services/token.service';
 import { UserRepository } from '@/shared/repositories/user.repository';
@@ -11,7 +11,6 @@ type VerifyEmailData = VerifyEmailResponse['data'];
 
 @CommandHandler(VerifyEmailCommand)
 export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand> {
-  private readonly logger = new Logger(VerifyEmailHandler.name);
 
   constructor(
     private readonly otpCodeService: OtpCodeService,
@@ -40,8 +39,6 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand> {
     }
 
     await this.emailAddressRepository.edit(emailObject.id, { status: 'verified' });
-
-    this.logger.log(`Successfully verified email address email id ${emailObject.id}`);
 
     const userObject = await this.userRepository.getByEmail(email);
 
