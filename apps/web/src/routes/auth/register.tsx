@@ -8,6 +8,7 @@ import { useRegisterForm } from '@/hooks/forms/useRegisterForm';
 import { CircleNotchIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type SyntheticEvent } from 'react';
+import {useAuthStore} from "@/stores/auth.store.ts";
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
@@ -35,10 +36,16 @@ export function RouteComponent() {
     const data = handleSubmit();
     if (data) {
       try {
-        await registerUser(data);
+        const response = await registerUser(data);
 
-        // Redirect to login page for verification flow
-        await navigate({ to: '/auth/login' });
+        useAuthStore.getState().setUnauthenticatedUser(response.data.user);
+
+        await navigate({
+          to: '/auth/verify-email',
+          search: { isVerificationEmailSent: response.data.isEmailSent }
+        });
+
+
       } catch (err) {
         console.error('Registration failed', err);
       }
