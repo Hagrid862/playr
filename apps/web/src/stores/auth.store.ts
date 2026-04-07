@@ -11,6 +11,7 @@ export interface AuthState {
   /** Set by persist middleware when IndexedDB rehydration completes. Not persisted. */
   _hasHydrated: boolean;
   setAuth: (user: ZodUser, accessToken: string) => void;
+  setUnauthenticatedUser: (user: ZodUser) => void;
   updateAccessToken: (accessToken: string) => void;
   logout: () => void;
 }
@@ -23,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       _hasHydrated: false,
       setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true }),
+      setUnauthenticatedUser: (user) => set({ user, isAuthenticated: false }),
       updateAccessToken: (accessToken) => set({ accessToken }),
       logout: () => {
         set({ user: null, accessToken: null, isAuthenticated: false });
