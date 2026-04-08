@@ -1,6 +1,6 @@
 import { Gender, type User } from "@repo/db";
 import z from "zod";
-import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
+import { zodDateTime, zodDateTimeNullable } from "../utils";
 import {
   ArtistProfileSchema,
   type ZodArtistProfile,
@@ -43,5 +43,25 @@ export const UserSchema: z.ZodType<ZodUser> = z.object({
   communityProfile: z.lazy(() => CommunityProfileSchema).optional(),
   emailAddresses: z.array(z.lazy(() => EmailAddressSchema)).optional(),
 });
+
+export const UserWithPrimaryEmailSchema = UserSchema.transform((user, ctx) => {
+  const primaryEmails = user.emailAddresses?.filter((email) => email.type === "primary") ?? [];
+
+  if (primaryEmails.length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      message: "At least one primary email address is required",
+      path: ["emailAddresses"],
+    });
+    return z.NEVER;
+  }
+
+  return {
+    ...user,
+    emailAddresses: primaryEmails,
+  } as ZodUser & { emailAddresses: [ZodEmailAddress, ...ZodEmailAddress[]] };
+});
+
+export type ZodUserWithPrimaryEmail = z.infer<typeof UserWithPrimaryEmailSchema>;
 
 export type ZodUserInfer = z.infer<typeof UserSchema>;
