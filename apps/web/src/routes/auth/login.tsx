@@ -24,10 +24,20 @@ export function RouteComponent() {
       try {
         const response = await loginUser(data);
 
-        // Persist auth data using store
-        useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
+        //different paths based on whether user primary email is verified
+        if (response.data.outcome === 'authenticated'){
+          // Persist auth data using store
+          useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
 
-        await navigate({ to: '/' });
+          await navigate({ to: '/' });
+        } else if (response.data.outcome === 'unauthenticated') {
+          useAuthStore.getState().setUnauthenticatedUser(response.data.user);
+
+          await navigate({
+            to: '/auth/verify-email',
+            search: { isVerificationEmailSent: response.data.isEmailSent },
+          });
+        }
       } catch (err) {
         console.error('Login failed', err);
       }
