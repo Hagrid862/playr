@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { LoginResponse, UserSchema } from '@repo/contracts';
+import { LoginResponse, UserWithPrimaryEmailSchema } from '@repo/contracts';
 import { LoginCommand } from '../impl/login.command';
 import { TokenService } from '../../services/token.service';
 import { EmailAuthService } from '@/features/auth/services/email-auth.service';
@@ -18,15 +18,18 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
   async execute(command: LoginCommand): Promise<LoginData & { refreshToken?: string }> {
     const { user, isEmailVerified } = command;
 
-    const sanitizedUser = UserSchema.parse(user);
+    const primaryEmailObject = await this.emailAddressRepository.getPrimaryByUserId(user.id);
+
+    if (!primaryEmailObject) {
+      throw new Error('User has no primary email address');
+    }
+
+    const sanitizedUser = UserWithPrimaryEmailSchema.parse({
+      ...user,
+      emailAddresses: [primaryEmailObject],
+    });
 
     if (!isEmailVerified) {
-      const primaryEmailObject = await this.emailAddressRepository.getPrimaryByUserId(user.id);
-
-      if (!primaryEmailObject) {
-        throw new Error('User has no primary email address');
-      }
-
       const isEmailSent = await this.emailAuthService.beginEmailVerification(primaryEmailObject);
 
       return {

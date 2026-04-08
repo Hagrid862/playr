@@ -3,7 +3,7 @@ import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { ConflictException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { RegisterResponse, UserSchema } from '@repo/contracts';
+import { RegisterResponse, UserWithPrimaryEmailSchema } from '@repo/contracts';
 import { EmailStatus, EmailType } from '@repo/db';
 import { RegisterCommand } from '../impl/register.command';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
@@ -23,7 +23,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
 
   async execute(command: RegisterCommand): Promise<RegisterData> {
     const { payload } = command;
-    // Note: username and email are already normalized (lowercase, trimmed) by Zod transforms
+    // Note: Zod transforms already normalize username and email (lowercase, trimmed)
     const { username, email, password, firstName, lastName, birthDate, gender } = payload;
 
     // Check for existing email and username in parallel
@@ -69,7 +69,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
       });
     });
 
-    const sanitizedUser = UserSchema.parse(user);
+    const sanitizedUser = UserWithPrimaryEmailSchema.parse(user);
     const primaryEmailObject = sanitizedUser.emailAddresses?.find(
       (e) => e.type === EmailType.primary,
     );
