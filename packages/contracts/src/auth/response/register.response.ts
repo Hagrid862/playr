@@ -1,10 +1,10 @@
-import { createApiResponseSchema } from "../../api/response.schema";
-import { UserSchema } from "../../schemas/user.schema";
+import { createApiResponseSchema } from "../../api";
+import { UserWithPrimaryEmailSchema } from "../../schemas";
 import { z } from "zod";
 
 export const RegisterResponseSchema = createApiResponseSchema(
   z.object({
-    user: UserSchema,
+    user: UserWithPrimaryEmailSchema,
     isEmailSent: z.boolean(),
   }),
 );

@@ -1,16 +1,16 @@
 import { z } from "zod";
-import { createApiResponseSchema } from "../../api/response.schema";
-import { UserSchema } from "../../schemas";
+import { createApiResponseSchema } from "../../api";
+import { UserWithPrimaryEmailSchema } from "../../schemas";
 
 export const AuthenticatedLoginResponseSchema = z.object({
   outcome: z.literal("authenticated"),
   accessToken: z.string(),
-  user: UserSchema,
+  user: UserWithPrimaryEmailSchema,
 });
 
 export const UnauthenticatedEmailLoginResponseSchema = z.object({
   outcome: z.literal("unauthenticated"),
-  user: UserSchema,
+  user: UserWithPrimaryEmailSchema,
   isEmailSent: z.boolean(),
 });
 
