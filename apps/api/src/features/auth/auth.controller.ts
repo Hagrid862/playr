@@ -72,6 +72,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(200)
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'Login a user' })
   @ApiBody({ type: LoginRequestDto })
