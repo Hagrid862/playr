@@ -1,4 +1,4 @@
-import {VerifyEmailRequest} from "@repo/contracts";
+import { VerifyEmailRequest } from '@repo/contracts';
 
 export type FormData = VerifyEmailRequest;
 
