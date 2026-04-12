@@ -7,6 +7,11 @@ import { vi } from 'vitest';
 type SocketOnCall = [event: string, handler: (...args: unknown[]) => void];
 type SocketEmitAckCall = [event: string, data: unknown, ack: (...args: unknown[]) => void];
 
+/**
+ * Check if the row is a socket on call.
+ * @param row - The row to check.
+ * @returns True if the row is a socket on call, false otherwise.
+ */
 function isSocketOnCall(row: unknown): row is SocketOnCall {
   return (
     Array.isArray(row) &&
@@ -16,6 +21,11 @@ function isSocketOnCall(row: unknown): row is SocketOnCall {
   );
 }
 
+/**
+ * Check if the row is a socket emit ack call.
+ * @param row - The row to check.
+ * @returns True if the row is a socket emit ack call, false otherwise.
+ */
 function isSocketEmitAckCall(row: unknown): row is SocketEmitAckCall {
   return (
     Array.isArray(row) &&
@@ -25,24 +35,46 @@ function isSocketEmitAckCall(row: unknown): row is SocketEmitAckCall {
   );
 }
 
+/**
+ * Find the on handler.
+ * @param calls - The calls to search.
+ * @param event - The event to find.
+ * @returns The on handler.
+ */
 export function findOnHandler(calls: unknown[], event: string): (...args: unknown[]) => void {
   const row = calls.find((c): c is SocketOnCall => isSocketOnCall(c) && c[0] === event);
   if (!row) throw new Error(`on('${event}') not registered`);
   return row[1];
 }
 
+/**
+ * Find the emit ack.
+ * @param calls - The calls to search.
+ * @param event - The event to find.
+ * @returns The emit ack.
+ */
 export function findEmitAck(calls: unknown[], event: string): (...args: unknown[]) => void {
   const row = calls.find((c): c is SocketEmitAckCall => isSocketEmitAckCall(c) && c[0] === event);
   if (!row) throw new Error(`emit('${event}', ..., ack) not found`);
   return row[2];
 }
 
+/**
+ * Flush microtasks.
+ * @returns A promise that resolves when the microtasks are flushed.
+ */
 export async function flushMicrotasks() {
   for (let i = 0; i < 3; i++) {
     await Promise.resolve();
   }
 }
 
+/**
+ * Create a playback track stub.
+ * @param id - The id of the track.
+ * @param duration - The duration of the track.
+ * @returns The playback track stub.
+ */
 export function playbackTrackStub(id: string, duration = 100): PlaybackTrack {
   return {
     id,
@@ -57,7 +89,11 @@ export function playbackTrackStub(id: string, duration = 100): PlaybackTrack {
   };
 }
 
-/** Minimal valid `PlaybackState` for socket/server payload stubs in tests. */
+/**
+ * Create a playback state fixture.
+ * @param overrides - The overrides to apply to the base state.
+ * @returns The playback state fixture.
+ */
 export function playbackStateFixture(overrides: Partial<PlaybackState> = {}): PlaybackState {
   const base: PlaybackState = {
     userId: 'test-user',
@@ -79,6 +115,10 @@ export function playbackStateFixture(overrides: Partial<PlaybackState> = {}): Pl
   return { ...base, ...overrides };
 }
 
+/**
+ * Playback socket mock.
+ * @returns The playback socket mock.
+ */
 export type PlaybackSocketMock = {
   on: ReturnType<typeof vi.fn>;
   emit: ReturnType<typeof vi.fn>;
@@ -91,12 +131,20 @@ export type PlaybackSocketMock = {
   simulateDisconnect: () => void;
 };
 
+/**
+ * Emit callback payload.
+ * @returns The emit callback payload.
+ */
 export type EmitCallbackPayload =
   | PlaybackState
   | ListPlaybackDevicesResponse
   | { error?: string; code?: string; currentTime?: number; version?: number }
   | null;
 
+/**
+ * Create a playback socket mock.
+ * @returns The playback socket mock.
+ */
 export function createPlaybackSocketMock(): PlaybackSocketMock {
   const disconnectOnceHandlers: Array<(...args: unknown[]) => void> = [];
 
@@ -133,6 +181,10 @@ export function createPlaybackSocketMock(): PlaybackSocketMock {
   };
 }
 
+/**
+ * Base playback sync test state.
+ * @returns The base playback sync test state.
+ */
 export const basePlaybackSyncTestState: PlayerState = createPlayerStateMock({
   currentTrack: playbackTrackStub('track-1'),
   playbackVersion: 1,
@@ -146,7 +198,11 @@ export const basePlaybackSyncTestState: PlayerState = createPlayerStateMock({
   playbackInLibrary: false,
 });
 
-/** Test double: only `createPlaybackSocket`’s usage is exercised; full `Socket` is not implemented. */
+/**
+ * As socket mock.
+ * @param mock - The mock to convert to a socket mock.
+ * @returns The socket mock.
+ */
 export function asSocketMock(mock: PlaybackSocketMock): Socket {
   return mock as unknown as Socket;
 }

@@ -27,20 +27,18 @@ export function createPlayerTransportActions(
       syncPlayingStateToServer(false);
     },
     resume: () => {
-      set({ isPlaying: get().currentTrack !== null });
-      if (get().currentTrack) {
-        syncPlayingStateToServer(
-          shouldClaimActiveDevice(get().activeDeviceId, get().localPlaybackDeviceId),
-        );
+      const { currentTrack, activeDeviceId, localPlaybackDeviceId } = get();
+      set({ isPlaying: currentTrack !== null });
+      if (currentTrack) {
+        syncPlayingStateToServer(shouldClaimActiveDevice(activeDeviceId, localPlaybackDeviceId));
       }
     },
     togglePlay: () => {
-      const nextIsPlaying = !get().isPlaying && !!get().currentTrack;
+      const { isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId } = get();
+      const nextIsPlaying = !isPlaying && !!currentTrack;
       set({ isPlaying: nextIsPlaying });
       if (nextIsPlaying) {
-        syncPlayingStateToServer(
-          shouldClaimActiveDevice(get().activeDeviceId, get().localPlaybackDeviceId),
-        );
+        syncPlayingStateToServer(shouldClaimActiveDevice(activeDeviceId, localPlaybackDeviceId));
         return;
       }
       syncPlayingStateToServer(false);

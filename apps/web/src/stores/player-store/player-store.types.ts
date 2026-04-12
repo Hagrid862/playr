@@ -50,7 +50,7 @@ export interface PlayerState {
   playNext: (track: PlaybackTrack) => void;
   removeFromQueue: (uniqueId: string) => void;
   reorderQueue: (newQueue: QueueItem[]) => void;
-  addToHistory: (track: QueueItem) => void;
+  addToHistory: (item: QueueItem) => void;
 
   isQueueOpen: boolean;
   sidebarView: 'queue' | 'lyrics';

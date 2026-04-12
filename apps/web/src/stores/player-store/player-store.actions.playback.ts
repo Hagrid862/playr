@@ -103,7 +103,7 @@ export function createPlayerPlaybackActions(
         return;
       }
 
-      if (repeatMode === 'all' && ordered.length === 0) {
+      if (repeatMode === 'all') {
         const { history: hist } = get();
         if (hist.length === 0) return;
 
