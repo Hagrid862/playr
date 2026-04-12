@@ -2,7 +2,17 @@ import { createPlayerStateMock } from '@/components/app/test-utils/player-test-u
 import type { PlayerState } from '@/stores/player-store/player.store';
 import type { ListPlaybackDevicesResponse, PlaybackState, PlaybackTrack } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
+
+type PlaybackSocketOnFn = (event: string, listener: (...args: unknown[]) => void) => void;
+/**
+ * Emit mock: rest must stay loose so `mockImplementation` can use typed ack parameters.
+ * `unknown[]` is rejected under strict function checking (contravariance vs. real emit stubs).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PlaybackSocketEmitFn = (event: string, ...args: any[]) => unknown;
+type PlaybackSocketOnceFn = (event: string, handler: (...args: unknown[]) => void) => void;
+type PlaybackSocketOffFn = (event: string, handler?: (...args: unknown[]) => void) => void;
 
 type SocketOnCall = [event: string, handler: (...args: unknown[]) => void];
 type SocketEmitAckCall = [event: string, data: unknown, ack: (...args: unknown[]) => void];
@@ -120,12 +130,12 @@ export function playbackStateFixture(overrides: Partial<PlaybackState> = {}): Pl
  * @returns The playback socket mock.
  */
 export type PlaybackSocketMock = {
-  on: ReturnType<typeof vi.fn>;
-  emit: ReturnType<typeof vi.fn>;
-  once: ReturnType<typeof vi.fn>;
-  off: ReturnType<typeof vi.fn>;
-  disconnect: ReturnType<typeof vi.fn>;
-  removeAllListeners: ReturnType<typeof vi.fn>;
+  on: Mock<PlaybackSocketOnFn>;
+  emit: Mock<PlaybackSocketEmitFn>;
+  once: Mock<PlaybackSocketOnceFn>;
+  off: Mock<PlaybackSocketOffFn>;
+  disconnect: Mock<() => void>;
+  removeAllListeners: Mock<() => void>;
   connected: boolean;
   /** Invokes handlers registered with once('disconnect', …) (for emitWithAck tests). */
   simulateDisconnect: () => void;
@@ -148,18 +158,22 @@ export type EmitCallbackPayload =
 export function createPlaybackSocketMock(): PlaybackSocketMock {
   const disconnectOnceHandlers: Array<(...args: unknown[]) => void> = [];
 
-  const once = vi.fn((event: string, handler: (...args: unknown[]) => void) => {
-    if (event === 'disconnect') {
-      disconnectOnceHandlers.push(handler);
-    }
-  });
+  const once: Mock<PlaybackSocketOnceFn> = vi.fn(
+    (event: string, handler: (...args: unknown[]) => void) => {
+      if (event === 'disconnect') {
+        disconnectOnceHandlers.push(handler);
+      }
+    },
+  );
 
-  const off = vi.fn((event: string, handler?: (...args: unknown[]) => void) => {
-    if (event === 'disconnect' && handler) {
-      const i = disconnectOnceHandlers.indexOf(handler);
-      if (i >= 0) disconnectOnceHandlers.splice(i, 1);
-    }
-  });
+  const off: Mock<PlaybackSocketOffFn> = vi.fn(
+    (event: string, handler?: (...args: unknown[]) => void) => {
+      if (event === 'disconnect' && handler) {
+        const i = disconnectOnceHandlers.indexOf(handler);
+        if (i >= 0) disconnectOnceHandlers.splice(i, 1);
+      }
+    },
+  );
 
   const simulateDisconnect = () => {
     const pending = [...disconnectOnceHandlers];
@@ -169,13 +183,18 @@ export function createPlaybackSocketMock(): PlaybackSocketMock {
     }
   };
 
+  const on: Mock<PlaybackSocketOnFn> = vi.fn();
+  const emit: Mock<PlaybackSocketEmitFn> = vi.fn();
+  const disconnect: Mock<() => void> = vi.fn();
+  const removeAllListeners: Mock<() => void> = vi.fn();
+
   return {
-    on: vi.fn(),
-    emit: vi.fn(),
+    on,
+    emit,
     once,
     off,
-    disconnect: vi.fn(),
-    removeAllListeners: vi.fn(),
+    disconnect,
+    removeAllListeners,
     connected: true,
     simulateDisconnect,
   };
@@ -203,6 +222,10 @@ export const basePlaybackSyncTestState: PlayerState = createPlayerStateMock({
  * @param mock - The mock to convert to a socket mock.
  * @returns The socket mock.
  */
+function socketFromUnknown(value: unknown): Socket {
+  return value as Socket;
+}
+
 export function asSocketMock(mock: PlaybackSocketMock): Socket {
-  return mock as unknown as Socket;
+  return socketFromUnknown(mock);
 }
