@@ -11,6 +11,8 @@ interface PlayerTrackInfoProps {
   formatTimeLeft: (time: number, total: number) => string;
   onSeek: (time: number) => void;
   onSeekCommit: (time: number) => void;
+  /** Shown when the stream uses the MP3 format fallback (e.g. after Opus decode error). */
+  showMp3StreamBadge?: boolean;
 }
 
 export function PlayerTrackInfo({
@@ -18,6 +20,7 @@ export function PlayerTrackInfo({
   formatTimeLeft,
   onSeek,
   onSeekCommit,
+  showMp3StreamBadge = false,
 }: PlayerTrackInfoProps) {
   const { currentTrack, currentTime, duration, setCurrentTime, quality } = usePlayerStore();
   const [isHoveringSlider, setIsHoveringSlider] = useState(false);
@@ -72,6 +75,26 @@ export function PlayerTrackInfo({
                     className="bg-stone-800 text-stone-200 border-stone-700 text-xs font-medium"
                   >
                     Playing in Lossless Quality
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {showMp3StreamBadge && (
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="shrink-0 rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wide text-emerald-400 cursor-default"
+                      aria-label="MP3 stream"
+                    >
+                      MP3
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-stone-800 text-stone-200 border-stone-700 text-xs font-medium"
+                  >
+                    Playing MP3 stream (compatibility fallback)
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
