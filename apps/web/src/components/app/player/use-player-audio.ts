@@ -7,9 +7,13 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const PLAYBACK_TIME_SYNC_INTERVAL_MS = 1500;
+
+const isNoActiveDevice = (value: string | null | undefined): boolean => {
+  return value == null || value === '' || value === 'null' || value === 'undefined';
+};
 
 /**
  * Hook to manage audio element synchronization with player store
@@ -41,6 +45,18 @@ export function usePlayerAudio() {
 
   const { accessToken } = useAuthStore();
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  const [streamFormatOverrideState, setStreamFormatOverrideState] = useState<{
+    trackId: string | null;
+    format: 'default' | 'mp3';
+  }>({
+    trackId: null,
+    format: 'default',
+  });
+  const streamFormatOverride =
+    currentTrack?.id != null && streamFormatOverrideState.trackId === currentTrack.id
+      ? streamFormatOverrideState.format
+      : 'default';
 
   useEffect(() => {
     return usePlayerStore.subscribe((state, prevState) => {
@@ -94,8 +110,7 @@ export function usePlayerAudio() {
     if (!audio) return;
     const shouldOutputAudio =
       !isPlaybackSyncConnected() ||
-      activeDeviceId == null ||
-      activeDeviceId === '' ||
+      isNoActiveDevice(activeDeviceId) ||
       activeDeviceId === localPlaybackDeviceId;
 
     if (!isPlaying || !shouldOutputAudio) {
@@ -123,7 +138,7 @@ export function usePlayerAudio() {
     };
 
     void playPromise();
-  }, [isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId]);
+  }, [isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId, streamFormatOverride]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -153,8 +168,7 @@ export function usePlayerAudio() {
     const audio = audioRef.current;
     const shouldOutputAudio =
       !isPlaybackSyncConnected() ||
-      activeDeviceId == null ||
-      activeDeviceId === '' ||
+      isNoActiveDevice(activeDeviceId) ||
       activeDeviceId === localPlaybackDeviceId;
     if (!audio || !shouldOutputAudio) {
       return;
@@ -167,8 +181,7 @@ export function usePlayerAudio() {
       !isPlaybackSyncConnected() ||
       !isPlaying ||
       !currentTrack ||
-      activeDeviceId == null ||
-      activeDeviceId === '' ||
+      isNoActiveDevice(activeDeviceId) ||
       activeDeviceId !== localPlaybackDeviceId ||
       playbackVersion === 0
     ) {
@@ -238,7 +251,29 @@ export function usePlayerAudio() {
     if (quality !== 'auto') {
       queryParams.append('quality', quality);
     }
+    if (streamFormatOverride === 'mp3') {
+      queryParams.append('format', 'mp3');
+    }
     return `${apiBaseUrl}/library/tracks/${currentTrack.id}/stream?${queryParams.toString()}`;
+  };
+
+  const handleStreamError = () => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) {
+      return;
+    }
+    if (streamFormatOverride === 'mp3') {
+      console.error('[AppPlayer] Stream error after mp3 fallback', {
+        trackId: currentTrack.id,
+        error: audio.error,
+      });
+      return;
+    }
+    timeToRestoreRef.current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    setStreamFormatOverrideState({
+      trackId: currentTrack.id,
+      format: 'mp3',
+    });
   };
 
   const formatTime = (time: number) => {
@@ -257,9 +292,11 @@ export function usePlayerAudio() {
     handleTimeUpdate,
     handleLoadedMetadata,
     handleTrackEnd,
+    handleStreamError,
     getAudioUrl,
     formatTime,
     formatTimeLeft,
     nextTrack,
+    isMp3FormatFallback: streamFormatOverride === 'mp3',
   };
 }
