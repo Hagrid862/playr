@@ -82,6 +82,36 @@ describe('AddQueueItemHandler', () => {
     expect(result.queue[2].track.id).toBe('track-3');
   });
 
+  it('treats position undefined like null (covers insertAt === undefined branch)', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new AddQueueItemHandler(persistence);
+    const newTrack: QueueItem = fixtureQueueItem({
+      track: track3,
+      position: 99,
+      queueId: '01900000-0000-7000-8000-000000000003',
+      type: 'queue',
+    });
+    const command = new AddQueueItemCommand(userId, sessionId, {
+      track: newTrack,
+      position: undefined as unknown as null,
+      expectedVersion: 1,
+    });
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = merge(initialState);
+      return {
+        ...initialState,
+        ...merged,
+        version: initialState.version + 1,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    const result = await handler.execute(command);
+    expect(result.queue).toHaveLength(3);
+    expect(result.queue[2].track.id).toBe('track-3');
+  });
+
   it('inserts item at explicit position', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new AddQueueItemHandler(persistence);
@@ -142,6 +172,57 @@ describe('AddQueueItemHandler', () => {
     const result = await handler.execute(command);
     // maxOriginalPos in initialState is 1, so new item should get 1 + 1 = 2
     expect(result.queue[2].originalPosition).toBe(2);
+  });
+
+  it('uses queue item position when originalPosition is nullish for maxOriginalPos', async () => {
+    const stateMissingOriginalOnSecond: PlaybackState = playbackStateFixture({
+      ...initialState,
+      queue: [
+        fixtureQueueItem({
+          track: track1,
+          position: 0,
+          originalPosition: 0,
+          queueId: '01900000-0000-7000-8000-000000000001',
+          type: 'queue',
+        }),
+        fixtureQueueItem({
+          track: track2,
+          position: 9,
+          originalPosition: undefined as unknown as number,
+          queueId: '01900000-0000-7000-8000-000000000002',
+          type: 'queue',
+        }),
+      ],
+    });
+
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new AddQueueItemHandler(persistence);
+    const newTrack: QueueItem = fixtureQueueItem({
+      track: track3,
+      position: 0,
+      originalPosition: undefined as any,
+      queueId: '01900000-0000-7000-8000-000000000003',
+      type: 'queue',
+    });
+    const command = new AddQueueItemCommand(userId, sessionId, {
+      track: newTrack,
+      position: null,
+      expectedVersion: 1,
+    });
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = merge(stateMissingOriginalOnSecond);
+      return {
+        ...stateMissingOriginalOnSecond,
+        ...merged,
+        version: stateMissingOriginalOnSecond.version + 1,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    const result = await handler.execute(command);
+    // max from items: max(0, max(0, 9)) => 9 from position fallback; new item gets 9 + 1
+    expect(result.queue[2].originalPosition).toBe(10);
   });
 
   it('throws BadRequestException when expectedVersion is 0', async () => {

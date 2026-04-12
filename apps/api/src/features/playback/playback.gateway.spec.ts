@@ -329,6 +329,7 @@ describe('PlaybackGateway', () => {
           'Playback disconnect removeDevice failed for user u1: registry string error',
         ),
       );
+      loggerWarnSpy.mockRestore();
     });
 
     it('should log warning if pauseAndClearActiveIfDeviceMatches throws', async () => {
@@ -345,6 +346,7 @@ describe('PlaybackGateway', () => {
       expect(loggerWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('Playback disconnect pause failed for user u1: pause failed'),
       );
+      loggerWarnSpy.mockRestore();
     });
 
     it('should handle non-Error catch in pauseAndClearActiveIfDeviceMatches', async () => {
@@ -359,6 +361,7 @@ describe('PlaybackGateway', () => {
       expect(loggerWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('Playback disconnect pause failed for user u1: string error'),
       );
+      loggerWarnSpy.mockRestore();
     });
   });
 
