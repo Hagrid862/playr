@@ -12,6 +12,10 @@ export const testPlaybackTrack: PlaybackTrack = {
   explicit: false,
 };
 
+export function resetQueueIdSeed(seed = 1): void {
+  queueIdSeed = seed;
+}
+
 let queueIdSeed = 1;
 function nextQueueId(): string {
   const suffix = String(queueIdSeed++).padStart(12, '0');
