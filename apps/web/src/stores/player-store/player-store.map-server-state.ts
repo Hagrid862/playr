@@ -1,6 +1,7 @@
 import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
 import type { PlaybackState } from '@repo/contracts';
 import type { PlayerState } from './player-store.types';
+import { isLocalActiveDevice } from './player-store.utils';
 
 export type MapServerPlaybackClientSnapshot = Pick<
   PlayerState,
@@ -42,11 +43,10 @@ export function mapServerPlaybackToPatch(
     explicit: server.trackData.explicit,
     trackId: server.trackData.trackId,
   };
-  const isActiveOwner =
-    Boolean(client.localPlaybackDeviceId) &&
-    server.activeDeviceId != null &&
-    server.activeDeviceId !== '' &&
-    server.activeDeviceId === client.localPlaybackDeviceId;
+  const isActiveOwner = isLocalActiveDevice(
+    server.activeDeviceId ?? null,
+    client.localPlaybackDeviceId,
+  );
   const skipTime = isActiveOwner && client.playbackVersion > 0 && server.isPlaying;
 
   return {

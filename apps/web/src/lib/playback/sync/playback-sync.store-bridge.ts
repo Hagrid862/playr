@@ -1,4 +1,5 @@
 import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
+import { isLocalActiveDevice } from '@/stores/player-store/player-store.utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
   PLAYBACK_HISTORY_MAX_LENGTH,
@@ -6,19 +7,6 @@ import {
   type PlaybackTrack,
   type SetPlaybackStateRequest,
 } from '@repo/contracts';
-
-/** Active audio client: keep local `currentTime` from the element; still advance `playbackVersion` from server. */
-function isLocalActiveAudioSource(state: {
-  activeDeviceId: string | null;
-  localPlaybackDeviceId: string;
-}): boolean {
-  return (
-    state.activeDeviceId != null &&
-    state.activeDeviceId !== '' &&
-    Boolean(state.localPlaybackDeviceId) &&
-    state.activeDeviceId === state.localPlaybackDeviceId
-  );
-}
 
 /**
  * Apply a time-only server update (broadcast or set-current-time ack).
@@ -28,7 +16,7 @@ export function applyCurrentTimeServerUpdate(payload: { currentTime: number; ver
   const s = usePlayerStore.getState();
   if (payload.version < s.playbackVersion) return;
 
-  if (isLocalActiveAudioSource(s)) {
+  if (isLocalActiveDevice(s.activeDeviceId, s.localPlaybackDeviceId)) {
     usePlayerStore.setState({ playbackVersion: payload.version });
   } else {
     usePlayerStore.setState({
