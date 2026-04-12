@@ -113,12 +113,12 @@ describe('playback-sync write pipeline', () => {
       connectPlaybackSync('token');
       afterLocalPlaybackMutation();
       await flushMicrotasks();
-      const callsBefore = usePlayerStore.getState().applyPlaybackStateFromServer.length;
+      const applyPlaybackStateFromServer = usePlayerStore.getState().applyPlaybackStateFromServer;
 
       const ack = findEmitAck(mockSocket.emit.mock.calls, 'command:set-state');
       ack({});
 
-      expect(usePlayerStore.getState().applyPlaybackStateFromServer.length).toBe(callsBefore);
+      expect(applyPlaybackStateFromServer).not.toHaveBeenCalled();
     });
 
     it('second scheduleFlushWriteQueue before microtask is a no-op', async () => {
@@ -126,11 +126,11 @@ describe('playback-sync write pipeline', () => {
       afterLocalPlaybackMutation();
       afterLocalPlaybackMutation();
       await flushMicrotasks();
-      expect(mockSocket.emit).toHaveBeenCalledWith(
-        'command:set-state',
-        expect.any(Object),
-        expect.any(Function),
+      const setStateCalls = mockSocket.emit.mock.calls.filter(
+        ([event]) => event === 'command:set-state',
       );
+      expect(setStateCalls).toHaveLength(1);
+      expect(setStateCalls[0]?.[1]).toEqual(expect.objectContaining({ claimActiveDevice: false }));
     });
 
     it('with claim: emits set-state with claimActiveDevice true and handles response', async () => {

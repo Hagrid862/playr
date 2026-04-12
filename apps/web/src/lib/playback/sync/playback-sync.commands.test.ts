@@ -4,6 +4,8 @@ import type { ListPlaybackDeviceEntry, PlaybackState } from '@repo/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlaybackSocket } from '../playback-socket';
 import {
+  afterLocalPlaybackMutation,
+  afterLocalPlaybackMutationWithClaim,
   connectPlaybackSync,
   disconnectPlaybackSync,
   emitCurrentTimeSync,
@@ -15,6 +17,7 @@ import {
   PlaybackSocketAckTimeoutError,
   PlaybackSocketDisconnectedError,
 } from './playback-sync.emit-with-ack';
+import * as playbackSyncState from './playback-sync.state';
 import {
   asSocketMock,
   basePlaybackSyncTestState,
@@ -24,6 +27,7 @@ import {
   type EmitCallbackPayload,
   type PlaybackSocketMock,
 } from './playback-sync.test-helpers';
+import * as writePipeline from './playback-sync.write-pipeline';
 
 vi.mock('../playback-socket', () => ({
   createPlaybackSocket: vi.fn(() => ({
@@ -67,6 +71,18 @@ describe('playback-sync commands', () => {
   });
 
   describe('syncPlayingStateToServer', () => {
+    it('returns early when playback socket is not connected', async () => {
+      const mergeSpy = vi.spyOn(writePipeline, 'mergeOrQueueFullSnapshot');
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({ ...basePlaybackSyncTestState }),
+      );
+      syncPlayingStateToServer(false);
+      await flushMicrotasks();
+
+      expect(mergeSpy).not.toHaveBeenCalled();
+      mergeSpy.mockRestore();
+    });
+
     it('returns early when connected but there is no current track', async () => {
       vi.mocked(usePlayerStore.getState).mockReturnValue(
         createPlayerStateMock({ ...basePlaybackSyncTestState, currentTrack: null }),
@@ -80,6 +96,84 @@ describe('playback-sync commands', () => {
         expect.any(Object),
         expect.any(Function),
       );
+    });
+
+    it('queues full snapshot when playbackVersion is 0', async () => {
+      const mergeSpy = vi.spyOn(writePipeline, 'mergeOrQueueFullSnapshot');
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({ ...basePlaybackSyncTestState, playbackVersion: 0 }),
+      );
+      connectPlaybackSync('token');
+      syncPlayingStateToServer(true);
+      await flushMicrotasks();
+
+      expect(mergeSpy).toHaveBeenCalledWith(true);
+      mergeSpy.mockRestore();
+    });
+
+    it('queues full snapshot when a set-state write is in flight', async () => {
+      const mergeSpy = vi.spyOn(writePipeline, 'mergeOrQueueFullSnapshot');
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({ ...basePlaybackSyncTestState, playbackVersion: 5 }),
+      );
+      connectPlaybackSync('token');
+      playbackSyncState.setWriteInFlight(true);
+      syncPlayingStateToServer(false);
+      await flushMicrotasks();
+
+      expect(mergeSpy).toHaveBeenCalledWith(false);
+      mergeSpy.mockRestore();
+    });
+
+    it('queues full snapshot when a pending full-state write already exists', async () => {
+      const mergeSpy = vi.spyOn(writePipeline, 'mergeOrQueueFullSnapshot');
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({ ...basePlaybackSyncTestState, playbackVersion: 5 }),
+      );
+      connectPlaybackSync('token');
+      playbackSyncState.setPendingSetStateWrite({ kind: 'full-state', claimActiveDevice: false });
+      syncPlayingStateToServer(true);
+      await flushMicrotasks();
+
+      expect(mergeSpy).toHaveBeenCalledWith(true);
+      mergeSpy.mockRestore();
+    });
+
+    it('schedules playing-state write when no full snapshot path applies', async () => {
+      const setPendingSpy = vi.spyOn(playbackSyncState, 'setPendingPlayingWrite');
+      const scheduleSpy = vi.spyOn(writePipeline, 'scheduleFlushWriteQueue');
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({ ...basePlaybackSyncTestState, playbackVersion: 12 }),
+      );
+      connectPlaybackSync('token');
+      syncPlayingStateToServer(true);
+      await flushMicrotasks();
+
+      expect(setPendingSpy).toHaveBeenCalledWith({
+        kind: 'playing-state',
+        claimActiveDevice: true,
+      });
+      expect(scheduleSpy).toHaveBeenCalled();
+      setPendingSpy.mockRestore();
+      scheduleSpy.mockRestore();
+    });
+  });
+
+  describe('afterLocalPlaybackMutation', () => {
+    it('requests set-state write without claiming active device', () => {
+      const reqSpy = vi.spyOn(writePipeline, 'requestSetStateWrite');
+      afterLocalPlaybackMutation();
+      expect(reqSpy).toHaveBeenCalledWith(false);
+      reqSpy.mockRestore();
+    });
+  });
+
+  describe('afterLocalPlaybackMutationWithClaim', () => {
+    it('requests set-state write with claim flag', () => {
+      const reqSpy = vi.spyOn(writePipeline, 'requestSetStateWrite');
+      afterLocalPlaybackMutationWithClaim(true);
+      expect(reqSpy).toHaveBeenCalledWith(true);
+      reqSpy.mockRestore();
     });
   });
 
@@ -187,7 +281,7 @@ describe('playback-sync commands', () => {
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalled();
     });
 
-    it('isVersionConflict handles various message formats', async () => {
+    it('detects version conflict from error message even when code is not CONFLICT', async () => {
       connectPlaybackSync('token');
       mockSocket.emit.mockImplementation(
         (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
@@ -425,6 +519,80 @@ describe('playback-sync commands', () => {
 
       expect(mockSocket.emit).toHaveBeenCalledWith('query:get-state', {}, expect.any(Function));
       expect(apply.mock.calls.length).toBe(callsBefore);
+    });
+
+    it('on conflict when getSocket is null after hydrate, skips set-active-device retry', async () => {
+      connectPlaybackSync('token');
+      const getSocketSpy = vi.spyOn(playbackSyncState, 'getSocket');
+      let getSocketCalls = 0;
+      getSocketSpy.mockImplementation(() => {
+        getSocketCalls += 1;
+        if (getSocketCalls === 1) {
+          return asSocketMock(mockSocket);
+        }
+        return null;
+      });
+
+      let setActiveDeviceCalls = 0;
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
+          if (event === 'command:set-active-device') {
+            setActiveDeviceCalls += 1;
+            callback({ error: 'version mismatch', code: 'CONFLICT' });
+          } else if (event === 'query:get-state') {
+            callback(playbackStateFixture({ version: 30 }));
+          }
+        },
+      );
+
+      await setActivePlaybackDevice('new-device');
+
+      expect(setActiveDeviceCalls).toBe(1);
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'query:list-devices',
+        expect.any(Object),
+        expect.any(Function),
+      );
+      getSocketSpy.mockRestore();
+    });
+
+    it('on version conflict when retry ack is not a playback state envelope, does not apply retry payload', async () => {
+      let playbackVersion = 1;
+      const applyPlaybackStateFromServer = vi.fn((s: PlaybackState) => {
+        playbackVersion = s.version;
+      });
+      vi.mocked(usePlayerStore.getState).mockImplementation(() =>
+        createPlayerStateMock({
+          ...basePlaybackSyncTestState,
+          playbackVersion,
+          applyPlaybackStateFromServer,
+        }),
+      );
+
+      connectPlaybackSync('token');
+      let setActiveDeviceCalls = 0;
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
+          if (event === 'command:set-active-device') {
+            setActiveDeviceCalls += 1;
+            if (setActiveDeviceCalls === 1) {
+              callback({ error: 'version mismatch', code: 'CONFLICT' });
+            } else {
+              callback({});
+            }
+          } else if (event === 'query:get-state') {
+            callback(playbackStateFixture({ version: 30 }));
+          }
+        },
+      );
+
+      await setActivePlaybackDevice('new-device');
+
+      expect(setActiveDeviceCalls).toBe(2);
+      expect(applyPlaybackStateFromServer).toHaveBeenCalledTimes(1);
+      expect(applyPlaybackStateFromServer).toHaveBeenCalledWith(
+        expect.objectContaining({ version: 30 }),
+      );
     });
 
     it('when ack is not an error but not a playback state, skips apply and listPlaybackDevices', async () => {

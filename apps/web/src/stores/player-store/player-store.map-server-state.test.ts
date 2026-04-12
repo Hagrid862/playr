@@ -10,13 +10,31 @@ const createTrack = (id: string, title = 'Test Track'): PlaybackTrack =>
     trackBuilder({ id, title, visibility: 'public', albumId: 'test-album' }) as ZodTrack,
   );
 
+const createServerState = (overrides: Partial<PlaybackState> = {}): PlaybackState => ({
+  userId: 'u1',
+  version: 1,
+  devices: [],
+  favorited: 'not-set',
+  inLibrary: false,
+  activeDeviceId: null,
+  trackData: createTrack('default-track'),
+  isPlaying: false,
+  currentTime: 0,
+  volume: 1,
+  repeatMode: 'off',
+  shuffle: false,
+  updatedAt: new Date().toISOString(),
+  queue: [],
+  history: [],
+  ...overrides,
+});
+
 describe('mapServerPlaybackToPatch', () => {
   it('maps server state including ordered queue and metadata', () => {
     const t1 = createTrack('t1', 'Title');
     const t2 = createTrack('t2');
-    const server = {
+    const server = createServerState({
       version: 10,
-      devices: [],
       favorited: 'favorited' as const,
       inLibrary: true,
       activeDeviceId: 'device-1',
@@ -41,7 +59,7 @@ describe('mapServerPlaybackToPatch', () => {
         }),
       ],
       history: [],
-    } as unknown as PlaybackState;
+    });
 
     const patch = mapServerPlaybackToPatch(
       { localPlaybackDeviceId: '', playbackVersion: 0, currentTime: 0 },
@@ -69,10 +87,8 @@ describe('mapServerPlaybackToPatch', () => {
       originalPosition: 0,
       type: 'playingNext',
     });
-    const server = {
+    const server = createServerState({
       version: 3,
-      userId: 'u1',
-      devices: [],
       favorited: 'not-set' as const,
       inLibrary: false,
       activeDeviceId: null,
@@ -82,10 +98,9 @@ describe('mapServerPlaybackToPatch', () => {
       volume: 1,
       repeatMode: 'off' as const,
       shuffle: false,
-      updatedAt: new Date().toISOString(),
       queue: [],
       history: [histItem],
-    } as unknown as PlaybackState;
+    });
 
     const patch = mapServerPlaybackToPatch(
       { localPlaybackDeviceId: '', playbackVersion: 0, currentTime: 0 },
@@ -101,10 +116,8 @@ describe('mapServerPlaybackToPatch', () => {
     const t2 = createTrack('t2');
     const t3 = createTrack('t3');
 
-    const server = {
+    const server = createServerState({
       version: 6,
-      userId: 'u1',
-      devices: [],
       favorited: 'not-set' as const,
       inLibrary: false,
       activeDeviceId: 'this-device',
@@ -114,7 +127,6 @@ describe('mapServerPlaybackToPatch', () => {
       volume: 1,
       repeatMode: 'off' as const,
       shuffle: false,
-      updatedAt: new Date().toISOString(),
       queue: [
         testQueueItem({
           queueId: '01900000-0000-7000-8000-0000000000f1',
@@ -130,7 +142,7 @@ describe('mapServerPlaybackToPatch', () => {
         }),
       ],
       history: [],
-    } as unknown as PlaybackState;
+    });
 
     const patch = mapServerPlaybackToPatch(
       {
