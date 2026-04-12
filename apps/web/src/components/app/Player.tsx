@@ -19,9 +19,11 @@ export function AppPlayer() {
     handleTimeUpdate,
     handleLoadedMetadata,
     handleTrackEnd,
+    handleStreamError,
     getAudioUrl,
     formatTime,
     formatTimeLeft,
+    isMp3FormatFallback,
   } = usePlayerAudio();
 
   const handleSeek = (time: number) => {
@@ -47,6 +49,7 @@ export function AppPlayer() {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleTrackEnd}
+        onError={handleStreamError}
       />
 
       {isMobile ? (
@@ -62,6 +65,7 @@ export function AppPlayer() {
             formatTimeLeft={formatTimeLeft}
             onSeek={handleSeek}
             onSeekCommit={handleSeekCommit}
+            showMp3StreamBadge={isMp3FormatFallback}
           />
 
           {/* Island 3: Actions (Right) */}
