@@ -171,6 +171,8 @@ describe('Queue', () => {
       queue: [
         queueItemStub(Q1, '1', 0, 0),
         queueItemStub(Q2, '2', 1, 1),
+        // For Q3, intentionally set originalPosition to 99 (distinct from the current position 2)
+        // to verify that originalPosition is treated independently of position in tests.
         queueItemStub(Q3, '3', 2, 99),
       ],
       currentTrack: {

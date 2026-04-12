@@ -79,10 +79,12 @@ describe('AppPlayer', () => {
     handleTimeUpdate: vi.fn(),
     handleLoadedMetadata: vi.fn(),
     handleTrackEnd: vi.fn(),
+    handleStreamError: vi.fn(),
     getAudioUrl: vi.fn().mockReturnValue('audio-url.mp3'),
     formatTime: vi.fn(),
     formatTimeLeft: vi.fn(),
     nextTrack: vi.fn(),
+    isMp3FormatFallback: false,
   } as ReturnType<typeof usePlayerAudio>;
 
   beforeEach(() => {
@@ -201,6 +203,9 @@ describe('AppPlayer', () => {
 
         fireEvent.ended(audioEl);
         expect(mockUsePlayerAudio.handleTrackEnd).toHaveBeenCalled();
+
+        fireEvent.error(audioEl);
+        expect(mockUsePlayerAudio.handleStreamError).toHaveBeenCalled();
       }
     });
   });
