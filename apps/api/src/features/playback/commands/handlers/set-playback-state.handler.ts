@@ -21,7 +21,7 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
   ): PlaybackStatePayload['devices'] {
     const map = new Map<string, PlaybackStatePayload['devices'][number]>();
     for (const d of devices) map.set(d.id, d);
-    map.set(device.id, device as PlaybackStatePayload['devices'][number] & { id: string });
+    map.set(device.id, device);
     return [...map.values()];
   }
 

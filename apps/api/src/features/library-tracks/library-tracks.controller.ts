@@ -28,6 +28,8 @@ import {
   GetTrackStreamQualitiesResponse,
   StreamAudioQuality,
   StreamAudioQualitySchema,
+  StreamPreferredFormat,
+  StreamPreferredFormatSchema,
 } from '@repo/contracts';
 import type { Response } from 'express';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
@@ -243,6 +245,7 @@ export class LibraryTracksController {
     @Headers('range') range: string,
     @Query('quality') requestedQuality: string = 'standard',
     @Res() res: Response,
+    @Query('format') formatQuery?: string,
   ) {
     const parseResult = StreamAudioQualitySchema.safeParse(requestedQuality);
     if (!parseResult.success) {
@@ -252,9 +255,22 @@ export class LibraryTracksController {
       );
     }
     const requestedQualityEnum = parseResult.data;
+
+    let preferredFormat: StreamPreferredFormat | undefined;
+    if (formatQuery !== undefined && formatQuery !== '') {
+      const formatParse = StreamPreferredFormatSchema.safeParse(formatQuery);
+      if (!formatParse.success) {
+        throw new BadRequestException(
+          'Invalid format requested, must be one of: ' +
+            Object.values(StreamPreferredFormat).join(', '),
+        );
+      }
+      preferredFormat = formatParse.data;
+    }
+
     try {
       const { stream, metadata } = await this.queryBus.execute(
-        new GetTrackStreamQuery(id, requestedQualityEnum, range),
+        new GetTrackStreamQuery(id, requestedQualityEnum, range, preferredFormat),
       );
 
       const { start, end, totalSize, mimeType, quality, format, isPartial } = metadata;
