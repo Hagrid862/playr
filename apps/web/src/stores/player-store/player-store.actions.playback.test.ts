@@ -153,7 +153,7 @@ describe('player-store.actions.playback', () => {
       expect(histIds).toContain('1');
     });
 
-    it('does not record a current track when none is playing', () => {
+    it('moves preceding queue items to history when jumping via playQueueItem', () => {
       getState().setQueue([createTrack('1'), createTrack('2')]);
       const id2 = getState().queue.find((x) => x.track.id === '2')!.queueId;
       getState().playQueueItem(id2);

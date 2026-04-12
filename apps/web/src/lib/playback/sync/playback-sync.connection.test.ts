@@ -14,6 +14,7 @@ import {
   createPlaybackSocketMock,
   findEmitAck,
   findOnHandler,
+  flushMicrotasks,
   playbackStateFixture,
   type EmitCallbackPayload,
   type PlaybackSocketMock,
@@ -90,6 +91,38 @@ describe('playback-sync connection', () => {
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalled();
 
       expect(mockSocket.emit).toHaveBeenCalledWith('query:list-devices', {}, expect.any(Function));
+    });
+
+    it('logs when the first listPlaybackDevices call rejects on connect', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      connectPlaybackSync('token');
+      const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
+
+      let listDevicesEmits = 0;
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, cb?: (r: unknown) => void) => {
+          if (event === 'query:get-state' && cb) {
+            cb(null);
+          }
+          if (event === 'query:list-devices') {
+            listDevicesEmits += 1;
+            if (listDevicesEmits === 1) {
+              queueMicrotask(() => mockSocket.simulateDisconnect());
+            } else if (cb) {
+              cb({ devices: [] });
+            }
+          }
+        },
+      );
+
+      connectHandler();
+      await flushMicrotasks();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[playback] listPlaybackDevices failed',
+        expect.any(Error),
+      );
+      consoleSpy.mockRestore();
     });
 
     it('applies state from server on update event', () => {
