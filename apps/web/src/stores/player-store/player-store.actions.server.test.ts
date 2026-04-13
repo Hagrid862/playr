@@ -10,10 +10,10 @@ vi.mock('@/lib/playback/sync/playback-sync', () => ({
 }));
 
 import {
-    createServerPlaybackState,
-    createTrack,
-    getState,
-    resetPlayerStore,
+  createServerPlaybackState,
+  createTrack,
+  getState,
+  resetPlayerStore,
 } from './player-store.test-helpers';
 import { usePlayerStore } from './player.store';
 
