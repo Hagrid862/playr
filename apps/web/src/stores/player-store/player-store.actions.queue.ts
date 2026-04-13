@@ -83,7 +83,7 @@ export function createPlayerQueueActions(
       set((state) => {
         const filtered = state.queue.filter((t) => t.queueId !== uniqueId);
         const nextOriginal = state.isShuffled
-          ? state.originalQueue.filter((t) => t.queueId !== uniqueId)
+          ? reindexQueuePositions(state.originalQueue.filter((t) => t.queueId !== uniqueId))
           : state.originalQueue;
         return {
           queue: reindexQueuePositions(filtered),
