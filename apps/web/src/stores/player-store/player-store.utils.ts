@@ -32,7 +32,6 @@ export function shouldClaimActiveDevice(
  * @param localPlaybackDeviceId - The id of the local playback device.
  * @returns True if the active device is the local playback device, false otherwise.
  */
-/** When editing queue structure, exit shuffle and restore the pre-shuffle snapshot. */
 export function unshuffleBaseline(
   state: Pick<PlayerState, 'queue' | 'originalQueue' | 'isShuffled'>,
 ): {
@@ -55,8 +54,10 @@ export function unshuffleBaseline(
  * @param get - The get function to get the player state.
  */
 export function flushPlaybackClaimAfterLocalMutation(get: () => PlayerState): void {
+  const { activeDeviceId, localPlaybackDeviceId } = get();
+
   afterLocalPlaybackMutationWithClaim(
-    shouldClaimActiveDevice(get().activeDeviceId, get().localPlaybackDeviceId),
+    shouldClaimActiveDevice(activeDeviceId, localPlaybackDeviceId),
   );
 }
 
