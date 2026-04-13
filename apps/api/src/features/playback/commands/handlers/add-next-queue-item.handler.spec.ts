@@ -111,6 +111,7 @@ describe('SetNextQueueItemHandler', () => {
       queueId: '01900000-0000-7000-8000-0000000000bb',
       track: { ...trackData, id: 'track-next' },
       position: 0,
+      originalPosition: 0,
       type: 'queue',
     });
     const command = new SetNextQueueItemCommand(userId, sessionId, {
@@ -164,6 +165,9 @@ describe('SetNextQueueItemHandler', () => {
       track: fixtureQueueItem({
         queueId: '01900000-0000-7000-8000-0000000000cc',
         track: trackData,
+        position: 0,
+        originalPosition: 0,
+        type: 'queue',
       }),
       expectedVersion: 0,
     });

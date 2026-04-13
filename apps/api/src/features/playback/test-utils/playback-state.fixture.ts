@@ -1,5 +1,7 @@
 import type { PlaybackState, PlaybackTrack, QueueItem } from '@repo/contracts';
 
+const FIXTURE_UPDATED_AT = '2026-01-01T00:00:00.000Z';
+
 export const fixtureTrack: PlaybackTrack = {
   id: 'track-1',
   title: 'Track',
@@ -46,7 +48,7 @@ export function playbackStateFixture(overrides: Partial<PlaybackState> = {}): Pl
     favorited: 'not-set',
     inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
+    updatedAt: FIXTURE_UPDATED_AT,
     ...overrides,
   };
 }
