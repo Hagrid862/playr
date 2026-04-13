@@ -1,39 +1,13 @@
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
-import type { PlaybackState, PlaybackTrack, ZodTrack } from '@repo/contracts';
-import { trackBuilder } from '@repo/testing/builders';
 import { describe, expect, it } from 'vitest';
-import { zodTrackToPlaybackTrack } from '../../lib/playback/playback-mappers';
 import { mapServerPlaybackToPatch } from './player-store.map-server-state';
-
-const createTrack = (id: string, title = 'Test Track'): PlaybackTrack =>
-  zodTrackToPlaybackTrack(
-    trackBuilder({ id, title, visibility: 'public', albumId: 'test-album' }) as ZodTrack,
-  );
-
-const createServerState = (overrides: Partial<PlaybackState> = {}): PlaybackState => ({
-  userId: 'u1',
-  version: 1,
-  devices: [],
-  favorited: 'not-set',
-  inLibrary: false,
-  activeDeviceId: null,
-  trackData: createTrack('default-track'),
-  isPlaying: false,
-  currentTime: 0,
-  volume: 1,
-  repeatMode: 'off',
-  shuffle: false,
-  updatedAt: new Date().toISOString(),
-  queue: [],
-  history: [],
-  ...overrides,
-});
+import { createServerPlaybackState, createTrack } from './player-store.test-helpers';
 
 describe('mapServerPlaybackToPatch', () => {
   it('maps server state including ordered queue and metadata', () => {
     const t1 = createTrack('t1', 'Title');
     const t2 = createTrack('t2');
-    const server = createServerState({
+    const server = createServerPlaybackState({
       version: 10,
       favorited: 'favorited' as const,
       inLibrary: true,
@@ -87,7 +61,7 @@ describe('mapServerPlaybackToPatch', () => {
       originalPosition: 0,
       type: 'playingNext',
     });
-    const server = createServerState({
+    const server = createServerPlaybackState({
       version: 3,
       favorited: 'not-set' as const,
       inLibrary: false,
@@ -116,7 +90,7 @@ describe('mapServerPlaybackToPatch', () => {
     const t2 = createTrack('t2');
     const t3 = createTrack('t3');
 
-    const server = createServerState({
+    const server = createServerPlaybackState({
       version: 6,
       favorited: 'not-set' as const,
       inLibrary: false,

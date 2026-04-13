@@ -10,7 +10,7 @@ vi.mock('../idb-storage', () => ({
 }));
 
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
-import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
+import type { PlaybackState, PlaybackTrack, ZodTrack } from '@repo/contracts';
 import { trackBuilder } from '@repo/testing/builders';
 import { usePlayerStore } from './player.store';
 
@@ -20,6 +20,28 @@ export function createTrack(id: string, title = 'Test Track'): PlaybackTrack {
   return zodTrackToPlaybackTrack(
     trackBuilder({ id, title, visibility: 'public', albumId: 'test-album' }) as ZodTrack,
   );
+}
+
+/** Full `PlaybackState` for tests (e.g. `applyPlaybackStateFromServer`, `mapServerPlaybackToPatch`). */
+export function createServerPlaybackState(overrides: Partial<PlaybackState> = {}): PlaybackState {
+  return {
+    userId: 'u1',
+    version: 1,
+    devices: [],
+    favorited: 'not-set',
+    inLibrary: false,
+    activeDeviceId: null,
+    trackData: createTrack('default-track'),
+    isPlaying: false,
+    currentTime: 0,
+    volume: 1,
+    repeatMode: 'off',
+    shuffle: false,
+    updatedAt: new Date().toISOString(),
+    queue: [],
+    history: [],
+    ...overrides,
+  };
 }
 
 export function resetPlayerStore(): void {
