@@ -88,6 +88,7 @@ export function flushWriteQueue() {
 
     const s = usePlayerStore.getState();
     if (!s.currentTrack) {
+      // Safe recursion: pendingFull was cleared, so we only process remaining queued writes.
       flushWriteQueue();
       return;
     }
