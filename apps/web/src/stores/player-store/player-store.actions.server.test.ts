@@ -1,5 +1,5 @@
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
-import type { ListPlaybackDeviceEntry, PlaybackState } from '@repo/contracts';
+import type { ListPlaybackDeviceEntry } from '@repo/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/playback/sync/playback-sync', () => ({
@@ -9,7 +9,12 @@ vi.mock('@/lib/playback/sync/playback-sync', () => ({
   isPlaybackSyncConnected: vi.fn(() => false),
 }));
 
-import { createTrack, getState, resetPlayerStore } from './player-store.test-helpers';
+import {
+    createServerPlaybackState,
+    createTrack,
+    getState,
+    resetPlayerStore,
+} from './player-store.test-helpers';
 import { usePlayerStore } from './player.store';
 
 describe('player-store.actions.server', () => {
@@ -21,9 +26,8 @@ describe('player-store.actions.server', () => {
     it('applies playback state from server', () => {
       const t1 = createTrack('t1', 'Title');
       const t2 = createTrack('t2');
-      const stateFromServer = {
+      const stateFromServer = createServerPlaybackState({
         version: 10,
-        devices: [],
         favorited: 'favorited' as const,
         inLibrary: true,
         activeDeviceId: 'device-1',
@@ -47,7 +51,7 @@ describe('player-store.actions.server', () => {
             originalPosition: 0,
           }),
         ],
-      } as unknown as PlaybackState;
+      });
 
       getState().applyPlaybackStateFromServer(stateFromServer);
 
@@ -73,23 +77,14 @@ describe('player-store.actions.server', () => {
         originalPosition: 0,
         type: 'playingNext',
       });
-      const stateFromServer = {
+      const stateFromServer = createServerPlaybackState({
         version: 3,
-        userId: 'u1',
-        devices: [],
-        favorited: 'not-set' as const,
-        inLibrary: false,
-        activeDeviceId: null,
         trackData: t1,
         isPlaying: true,
         currentTime: 0,
-        volume: 1,
-        repeatMode: 'off' as const,
-        shuffle: false,
-        updatedAt: new Date().toISOString(),
         queue: [],
         history: [histItem],
-      } as unknown as PlaybackState;
+      });
 
       getState().applyPlaybackStateFromServer(stateFromServer);
 
@@ -110,20 +105,12 @@ describe('player-store.actions.server', () => {
         isPlaying: true,
       });
 
-      const stateFromServer = {
+      const stateFromServer = createServerPlaybackState({
         version: 6,
-        userId: 'u1',
-        devices: [],
-        favorited: 'not-set' as const,
-        inLibrary: false,
         activeDeviceId: 'this-device',
         trackData: t1,
         isPlaying: true,
         currentTime: 1,
-        volume: 1,
-        repeatMode: 'off' as const,
-        shuffle: false,
-        updatedAt: new Date().toISOString(),
         queue: [
           testQueueItem({
             queueId: '01900000-0000-7000-8000-0000000000f1',
@@ -138,7 +125,7 @@ describe('player-store.actions.server', () => {
             originalPosition: 1,
           }),
         ],
-      } as unknown as PlaybackState;
+      });
 
       getState().applyPlaybackStateFromServer(stateFromServer);
 

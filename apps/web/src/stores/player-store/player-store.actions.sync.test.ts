@@ -1,5 +1,5 @@
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
-import type { PlaybackState, PlaybackTrack } from '@repo/contracts';
+import type { PlaybackTrack } from '@repo/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/playback/sync/playback-sync', () => ({
@@ -11,7 +11,12 @@ vi.mock('@/lib/playback/sync/playback-sync', () => ({
 
 import * as playbackSync from '@/lib/playback/sync/playback-sync';
 
-import { createTrack, getState, resetPlayerStore } from './player-store.test-helpers';
+import {
+  createServerPlaybackState,
+  createTrack,
+  getState,
+  resetPlayerStore,
+} from './player-store.test-helpers';
 import { usePlayerStore } from './player.store';
 
 describe('player-store/player-store.actions.sync', () => {
@@ -99,24 +104,25 @@ describe('player-store/player-store.actions.sync', () => {
     getState().playTrack(createTrack('1'));
     vi.mocked(playbackSync.syncPlayingStateToServer).mockClear();
     getState().pause();
-    expect(playbackSync.syncPlayingStateToServer).toHaveBeenCalledWith(false);
+    expect(playbackSync.syncPlayingStateToServer).toHaveBeenLastCalledWith(false);
     getState().resume();
-    expect(playbackSync.syncPlayingStateToServer).toHaveBeenCalledWith(true);
+    expect(playbackSync.syncPlayingStateToServer).toHaveBeenLastCalledWith(true);
     getState().togglePlay();
-    expect(playbackSync.syncPlayingStateToServer).toHaveBeenCalledWith(false);
+    expect(playbackSync.syncPlayingStateToServer).toHaveBeenLastCalledWith(false);
   });
 
   it('handles null artists in applyPlaybackStateFromServer branch', () => {
-    getState().applyPlaybackStateFromServer({
-      trackData: {
-        id: '1',
-        title: 'T',
-        artists: null,
-        duration: 100,
-      },
-      version: 1,
-      queue: [],
-    } as unknown as PlaybackState);
+    getState().applyPlaybackStateFromServer(
+      createServerPlaybackState({
+        version: 1,
+        trackData: {
+          ...createTrack('1'),
+          title: 'T',
+          artists: null,
+        } as unknown as PlaybackTrack,
+        queue: [],
+      }),
+    );
     expect(getState().currentTrack?.artists).toEqual([]);
   });
 
