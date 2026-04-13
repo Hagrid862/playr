@@ -158,6 +158,55 @@ describe('SetNextQueueItemHandler', () => {
     expect(result.queue[1].originalPosition).toBe(2);
   });
 
+  it('handles legacy queue items missing type and originalPosition', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetNextQueueItemHandler(persistence);
+    const newTrack = fixtureQueueItem({
+      queueId: '01900000-0000-7000-8000-0000000000be',
+      track: { ...trackData, id: 'track-next' },
+      position: 0,
+      originalPosition: undefined as any,
+      type: 'queue',
+    });
+    const command = new SetNextQueueItemCommand(userId, sessionId, {
+      track: newTrack,
+      expectedVersion: 1,
+    });
+
+    const legacyState: PlaybackState = {
+      ...initialState,
+      queue: [
+        fixtureQueueItem({
+          queueId: '01900000-0000-7000-8000-000000000010',
+          track: { ...trackData, id: 'legacy-manual' },
+          position: 10,
+          originalPosition: undefined as any,
+          type: undefined as any,
+        }),
+        fixtureQueueItem({
+          queueId: '01900000-0000-7000-8000-000000000011',
+          track: { ...trackData, id: 'existing-playing-next' },
+          position: 11,
+          originalPosition: 11,
+          type: 'playingNext',
+        }),
+      ],
+    };
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      return { ...legacyState, ...merge(legacyState) } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+    expect(result.queue.map((q) => q.track.id)).toEqual([
+      'legacy-manual',
+      'track-next',
+      'existing-playing-next',
+    ]);
+    expect(result.queue[1].type).toBe('playingNext');
+    expect(result.queue[1].originalPosition).toBe(12);
+  });
+
   it('throws BadRequestException when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetNextQueueItemHandler(persistence);

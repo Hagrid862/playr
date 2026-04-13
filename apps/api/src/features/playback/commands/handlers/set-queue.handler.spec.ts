@@ -57,7 +57,7 @@ describe('SetQueueHandler', () => {
     expect(result.queue[0].track.title).toBe('Track');
   });
 
-  it('sets originalPosition if not provided', async () => {
+  it('preserves missing originalPosition if not provided', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetQueueHandler(persistence);
     const itemWithoutOriginalPos = fixtureQueueItem({
@@ -77,7 +77,8 @@ describe('SetQueueHandler', () => {
     });
 
     const result = await handler.execute(command);
-    expect(result.queue[0].originalPosition).toBe(0);
+    expect(result.queue[0].position).toBe(0);
+    expect(result.queue[0].originalPosition).toBeUndefined();
   });
 
   it('throws BadRequestException when expectedVersion is 0', async () => {

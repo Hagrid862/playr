@@ -23,7 +23,7 @@ function cloneFixtureTrack(): PlaybackTrack {
 
 export function fixtureQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
   return {
-    queueId: '01900000-0000-7000-8000-000000000001',
+    queueId: '01900000-0000-6000-8000-000000000001',
     track: cloneFixtureTrack(),
     position: 0,
     type: 'queue',
