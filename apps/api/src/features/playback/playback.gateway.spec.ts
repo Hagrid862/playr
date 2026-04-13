@@ -307,6 +307,20 @@ describe('PlaybackGateway', () => {
       expect(roomEmit).toHaveBeenCalledWith('event:playback-state-updated', updated);
     });
 
+    it('should not broadcast playback-state-updated when pause returns null', async () => {
+      const roomEmit = vi.fn();
+      server.to.mockReturnValue({ emit: roomEmit } as any);
+      const mockSocket = {
+        data: { user: { user: { id: 'u1' } }, playbackDeviceId: 'd1' },
+      } as any;
+      await gateway.handleDisconnect(mockSocket);
+      expect(playbackPersistence.pauseAndClearActiveIfDeviceMatches).toHaveBeenCalledWith(
+        'u1',
+        'd1',
+      );
+      expect(roomEmit).not.toHaveBeenCalled();
+    });
+
     it('should skip removal if data is missing', async () => {
       const mockSocket = { data: {} } as any;
 
