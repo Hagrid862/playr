@@ -16,16 +16,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Clicks the album track row (SongCard) and waits until the player shows the track
  * and progress advances. Scoped to the real card to avoid matching unrelated divs.
  */
+async function getUniqueAlbumTrackCard(page: Page, trackTitle: string) {
+  const trackCards = page
+    .locator("div.group.cursor-pointer")
+    .filter({ hasText: trackTitle });
+  await expect(trackCards).toHaveCount(1);
+  return trackCards.first();
+}
+
 async function playTrackFromAlbum(
   page: Page,
   playerPage: PlayerPage,
   trackTitle: string,
 ) {
-  const trackCards = page
-    .locator("div.group.cursor-pointer")
-    .filter({ hasText: trackTitle });
-  await expect(trackCards).toHaveCount(1);
-  const trackCard = trackCards.first();
+  const trackCard = await getUniqueAlbumTrackCard(page, trackTitle);
   await trackCard.scrollIntoViewIfNeeded();
   await trackCard.hover();
   await trackCard.click();
@@ -155,11 +159,7 @@ test.describe("Queue Management", () => {
   test("should add tracks to queue and verify", async () => {
     await playTrackFromAlbum(page, playerPage, track1);
 
-    const track2Cards = page
-      .locator("div.group.cursor-pointer")
-      .filter({ hasText: track2 });
-    await expect(track2Cards).toHaveCount(1);
-    const track2Card = track2Cards.first();
+    const track2Card = await getUniqueAlbumTrackCard(page, track2);
     // Use right-click to open context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to Queue" }).click();
@@ -193,11 +193,7 @@ test.describe("Queue Management", () => {
     await playTrackFromAlbum(page, playerPage, track1);
 
     // Add Track 2 as Play Next
-    const track2Cards = page
-      .locator("div.group.cursor-pointer")
-      .filter({ hasText: track2 });
-    await expect(track2Cards).toHaveCount(1);
-    const track2Card = track2Cards.first();
+    const track2Card = await getUniqueAlbumTrackCard(page, track2);
     // Use right-click for context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Play Next" }).click();
