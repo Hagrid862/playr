@@ -95,7 +95,7 @@ export function createPlayerPlaybackActions(
         addToHistory(playbackTrackToQueueItem(currentTrack, { type: 'playingNext', position: 0 }));
         set({
           currentTrack: next.track,
-          queue: rest.map((q, i) => ({ ...q, position: i })),
+          queue: reindexQueuePositions(rest),
           currentTime: 0,
           isPlaying: true,
         });
