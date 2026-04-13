@@ -225,8 +225,9 @@ describe('player-store.actions.queue', () => {
       getState().playNext(createTrack('3'));
 
       const state = getState();
-      expect(state.isShuffled).toBe(false);
+      expect(state.isShuffled).toBe(true);
       expect(state.queue.map((i) => i.track.id)).toEqual(['3', '2']);
+      expect(state.originalQueue.map((i) => i.track.id)).toEqual(['3', '2']);
     });
 
     it('playNext while shuffled when track is not in original queue (weird state)', () => {
@@ -241,7 +242,7 @@ describe('player-store.actions.queue', () => {
       getState().playNext(createTrack('2'));
 
       const state = getState();
-      expect(state.isShuffled).toBe(false);
+      expect(state.isShuffled).toBe(true);
       expect(state.queue.some((i) => i.track.id === '2')).toBe(true);
     });
 
@@ -272,7 +273,7 @@ describe('player-store.actions.queue', () => {
       getState().playNext(track3);
 
       const state = getState();
-      expect(state.isShuffled).toBe(false);
+      expect(state.isShuffled).toBe(true);
       expect(state.queue.length).toBe(2);
       expect(state.queue.map((i) => i.track.id).sort()).toEqual(['2', '3']);
     });

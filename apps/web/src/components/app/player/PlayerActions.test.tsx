@@ -235,6 +235,37 @@ describe('PlayerActions', () => {
       expect(playbackSync.setActivePlaybackDevice).toHaveBeenCalledWith('device-1');
     });
 
+    it('does not switch device when clicking the active device', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          activeDeviceId: 'device-2',
+          playbackDevices: [
+            {
+              id: 'device-1',
+              name: 'Chrome',
+              icon: 'desktop',
+              isActive: false,
+              isCurrentDevice: false,
+            },
+            {
+              id: 'device-2',
+              name: 'Firefox',
+              icon: 'desktop',
+              isActive: true,
+              isCurrentDevice: true,
+            },
+          ],
+        }),
+      );
+
+      customRender(<PlayerActions />);
+      fireEvent.click(screen.getByRole('button', { name: /volume/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Web player \(this device\)/i }));
+
+      expect(playbackSync.setActivePlaybackDevice).not.toHaveBeenCalled();
+      expect(playbackSync.firePlaybackCommand).toHaveBeenCalledTimes(1);
+    });
+
     it('does not list devices when popover closes', () => {
       customRender(<PlayerActions />);
       const openBtn = screen.getByText('Open Popover');
