@@ -28,7 +28,7 @@ export function PlayerTrackInfo({
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const latestSeekTimeRef = useRef<number | null>(null);
 
-  const isLossless = quality === StreamAudioQuality.lossless;
+  const isLossless = quality === StreamAudioQuality.lossless && !showMp3StreamBadge;
 
   const trackTitle = currentTrack?.title || 'No track selected';
   const trackArtist = currentTrack?.artists?.join(', ') || 'Unknown Artist';
