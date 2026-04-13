@@ -120,7 +120,7 @@ describe('player-store/player-store.actions.sync', () => {
     expect(getState().currentTrack?.artists).toEqual([]);
   });
 
-  it('playNext appends to originalQueue when NOT shuffled and track not in queue', () => {
+  it('playNext does not append to originalQueue when not shuffled and track not in queue', () => {
     usePlayerStore.setState({ isShuffled: false, originalQueue: [] });
     getState().playNext(createTrack('3'));
     expect(getState().originalQueue).toEqual([]);

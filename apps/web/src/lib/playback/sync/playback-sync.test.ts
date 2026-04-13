@@ -20,9 +20,9 @@ vi.mock('../playback-socket', () => ({
 
 vi.mock('../playback-device', () => ({
   getLocalPlaybackDeviceMetadata: vi.fn(() => ({
-    playbackDeviceId: 'device-1',
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
+    id: 'device-1',
+    name: 'Web',
+    icon: 'desktop',
   })),
 }));
 

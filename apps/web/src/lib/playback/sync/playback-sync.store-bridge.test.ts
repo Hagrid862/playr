@@ -82,6 +82,30 @@ describe('playback-sync.store-bridge', () => {
       expect(body.isPlaying).toBe(true);
       expect(body.trackData).toEqual(track);
     });
+
+    it('falls back for non-finite currentTime and volume', () => {
+      const track = playbackTrackStub('t2', 200);
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({
+          currentTrack: track,
+          playbackDevices: [],
+          currentTime: Number.NaN,
+          volume: Number.POSITIVE_INFINITY,
+          isPlaying: false,
+          isShuffled: false,
+          repeatMode: 'off',
+          queue: [],
+          history: [],
+          playbackFavorited: 'not-set',
+          playbackInLibrary: false,
+        }),
+      );
+
+      const body = buildSetStateBody(track);
+
+      expect(body.currentTime).toBe(0);
+      expect(body.volume).toBe(1);
+    });
   });
 
   describe('applyStateFromServer', () => {

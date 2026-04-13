@@ -93,36 +93,27 @@ describe('playback-sync connection', () => {
       expect(mockSocket.emit).toHaveBeenCalledWith('query:list-devices', {}, expect.any(Function));
     });
 
-    it('logs when the first listPlaybackDevices call rejects on connect', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('recovers when first listPlaybackDevices call fails on connect', async () => {
       connectPlaybackSync('token');
       const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
-
       let listDevicesEmits = 0;
-      mockSocket.emit.mockImplementation(
-        (event: string, _data: unknown, cb?: (r: unknown) => void) => {
-          if (event === 'query:get-state' && cb) {
-            cb(null);
+      mockSocket.emit.mockImplementation((event, _data, cb) => {
+        if (event === 'query:get-state' && cb) cb(null);
+        if (event === 'query:list-devices') {
+          listDevicesEmits += 1;
+          if (listDevicesEmits === 1) {
+            queueMicrotask(() => mockSocket.simulateDisconnect());
+          } else if (cb) {
+            cb({ devices: [] });
           }
-          if (event === 'query:list-devices') {
-            listDevicesEmits += 1;
-            if (listDevicesEmits === 1) {
-              queueMicrotask(() => mockSocket.simulateDisconnect());
-            } else if (cb) {
-              cb({ devices: [] });
-            }
-          }
-        },
-      );
-
-      connectHandler();
+        }
+      });
+      connectHandler(); // first connect -> list-devices fails
       await flushMicrotasks();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[playback] listPlaybackDevices failed',
-        expect.any(Error),
-      );
-      consoleSpy.mockRestore();
+      connectHandler(); // reconnect -> list-devices succeeds
+      await flushMicrotasks();
+      expect(listDevicesEmits).toBe(2);
+      expect(usePlayerStore.getState().setPlaybackDevices).toHaveBeenCalledWith([]);
     });
 
     it('applies state from server on update event', () => {
