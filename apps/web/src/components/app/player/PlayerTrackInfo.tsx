@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -83,18 +84,20 @@ export function PlayerTrackInfo({
               <TooltipProvider>
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div
+                    <Button
+                      type="button"
+                      size="xs"
                       className="shrink-0 rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wide text-emerald-400 cursor-default"
                       aria-label="MP3 stream"
                     >
                       MP3
-                    </div>
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="bg-stone-800 text-stone-200 border-stone-700 text-xs font-medium"
+                    className="bg-stone-800 text-stone-200 border-stone-700 text-xs font-medium z-999"
                   >
-                    Playing MP3 stream (compatibility fallback)
+                    Playing MP3 stream (compatibility fallback, quality might be worse)
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
