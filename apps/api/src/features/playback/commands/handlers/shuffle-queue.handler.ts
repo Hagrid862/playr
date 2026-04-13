@@ -17,8 +17,8 @@ export class ShuffleQueueHandler implements ICommandHandler<ShuffleQueueCommand>
 
     requirePlaybackMutationExpectedVersion(expectedVersion);
 
-    return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
-      return current as Omit<PlaybackState, 'version' | 'updatedAt'>;
-    });
+    // No-op mutation; queue order is client-owned, so we return current unchanged.
+    // This satisfies the type contract and signals an intentional no-op.
+    return this.persistence.applyMutation(command.userId, expectedVersion, (current) => current);
   }
 }
