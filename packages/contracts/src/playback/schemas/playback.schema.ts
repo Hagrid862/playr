@@ -8,7 +8,7 @@ export const PLAYBACK_HISTORY_MAX_LENGTH = 1024;
 export const PlaybackStateSchema = z.object({
   userId: z.string().nonempty(),
   activeDeviceId: z.string().nullable().optional(),
-  devices: z.array(PlaybackDeviceSchema),
+  devices: z.array(PlaybackDeviceSchema).default([]),
 
   isPlaying: z.boolean(),
   trackData: PlaybackTrackSchema,
