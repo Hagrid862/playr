@@ -11,8 +11,10 @@ import { RegistrationPage } from "./registration.po";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Clicks the album track row (SongCard) and waits until the player shows the track
- * and progress advances. Scoped to the real card to avoid matching unrelated divs.
+ * Gets the unique album track card by title.
+ * @param page - The page object.
+ * @param trackTitle - The title of the track to get.
+ * @returns The unique album track card.
  */
 async function getUniqueAlbumTrackCard(page: Page, trackTitle: string) {
   const trackCards = page
@@ -22,6 +24,14 @@ async function getUniqueAlbumTrackCard(page: Page, trackTitle: string) {
   return trackCards.first();
 }
 
+/**
+ * Plays a track from the album page and waits until the player shows the track
+ * and progress advances. Scoped to the real card to avoid matching unrelated divs.
+ * @param page - The page object.
+ * @param playerPage - The player page object.
+ * @param trackTitle - The title of the track to play.
+ * @returns The track card.
+ */
 async function playTrackFromAlbum(
   page: Page,
   playerPage: PlayerPage,
