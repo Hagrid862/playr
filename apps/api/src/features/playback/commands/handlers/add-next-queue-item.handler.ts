@@ -15,8 +15,10 @@ export class SetNextQueueItemHandler implements ICommandHandler<SetNextQueueItem
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       const ordered = [...current.queue].sort((a, b) => a.position - b.position);
+
+      // Use legacy fallback: if originalPosition is missing, use item's position
       const maxOriginalPos = ordered.reduce(
-        (max, item) => Math.max(max, item.originalPosition),
+        (max, item) => Math.max(max, item.originalPosition ?? item.position),
         -1,
       );
       const item = {
@@ -29,7 +31,8 @@ export class SetNextQueueItemHandler implements ICommandHandler<SetNextQueueItem
       if (current.shuffle) {
         combined = [item, ...ordered];
       } else {
-        const manual = ordered.filter((q) => q.type === 'queue');
+        // Treat missing type as 'queue' for legacy rows
+        const manual = ordered.filter((q) => (q.type ?? 'queue') === 'queue');
         const playingNext = ordered.filter((q) => q.type === 'playingNext');
         combined = [...manual, item, ...playingNext];
       }
