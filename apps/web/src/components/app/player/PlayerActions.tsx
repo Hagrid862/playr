@@ -219,12 +219,13 @@ export function PlayerActions() {
                         ? 'bg-white/10 text-white'
                         : 'text-white/70 hover:text-white hover:bg-white/5',
                     )}
-                    onClick={() =>
+                    onClick={() => {
+                      if (device.id === activeDeviceId) return;
                       firePlaybackCommand(
                         setActivePlaybackDevice(device.id),
                         'setActivePlaybackDevice',
-                      )
-                    }
+                      );
+                    }}
                   >
                     <span className="truncate">
                       {device.isCurrentDevice ? 'Web player (this device)' : device.name}
