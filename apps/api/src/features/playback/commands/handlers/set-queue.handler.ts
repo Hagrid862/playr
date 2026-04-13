@@ -17,7 +17,7 @@ export class SetQueueHandler implements ICommandHandler<SetQueueCommand> {
       const queue = items.map((item, index) => ({
         ...item,
         position: index,
-        originalPosition: item.originalPosition ?? index,
+        originalPosition: item.originalPosition,
       }));
       return { ...current, queue };
     });

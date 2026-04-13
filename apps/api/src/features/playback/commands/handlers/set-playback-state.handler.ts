@@ -69,13 +69,13 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       history: serialized.data.history.slice(0, PLAYBACK_HISTORY_MAX_LENGTH),
     };
 
-    if (expectedVersion === 0) {
-      const activeDevice: PlaybackStatePayload['devices'][number] = {
-        id: command.playbackDeviceId,
-        name: command.playbackDeviceName,
-        icon: command.playbackDeviceIcon,
-      };
+    const activeDevice: PlaybackStatePayload['devices'][number] = {
+      id: command.playbackDeviceId,
+      name: command.playbackDeviceName,
+      icon: command.playbackDeviceIcon,
+    };
 
+    if (expectedVersion === 0) {
       const firstState = claimActiveDevice
         ? {
             ...payload,
@@ -85,12 +85,6 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
         : payload;
       return this.persistence.createIfAbsent(command.userId, firstState);
     } else {
-      const activeDevice: PlaybackStatePayload['devices'][number] = {
-        id: command.playbackDeviceId,
-        name: command.playbackDeviceName,
-        icon: command.playbackDeviceIcon,
-      };
-
       return this.persistence.applyMutation(command.userId, expectedVersion, (current) => ({
         ...current,
         ...payload,
