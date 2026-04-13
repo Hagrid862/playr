@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 const PLAYBACK_TIME_SYNC_INTERVAL_MS = 1500;
 
 const isNoActiveDevice = (value: string | null | undefined): boolean => {
-  return value == null || value === '' || value === 'null' || value === 'undefined';
+  return value == null || value === '';
 };
 
 /**

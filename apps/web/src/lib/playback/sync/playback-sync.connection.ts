@@ -48,9 +48,6 @@ export function connectPlaybackSync(accessToken: string) {
 
   sock.on('connect', () => {
     hydrate();
-    listPlaybackDevices().catch((err) => {
-      console.error('[playback] listPlaybackDevices failed', err);
-    });
     firePlaybackCommand(listPlaybackDevices(), 'listPlaybackDevices');
   });
 

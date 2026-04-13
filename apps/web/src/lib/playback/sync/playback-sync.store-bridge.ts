@@ -28,6 +28,8 @@ export function applyCurrentTimeServerUpdate(payload: { currentTime: number; ver
 
 export function buildSetStateBody(trackData: PlaybackTrack): SetPlaybackStateRequest['state'] {
   const s = usePlayerStore.getState();
+  const safeCurrentTime = Number.isFinite(s.currentTime) ? s.currentTime : 0;
+  const safeVolume = Number.isFinite(s.volume) ? s.volume : 1;
   const queue = getOrderedNextQueue(s.queue, s.isShuffled).map((item, index) => ({
     ...item,
     position: index,
@@ -36,8 +38,8 @@ export function buildSetStateBody(trackData: PlaybackTrack): SetPlaybackStateReq
     devices: s.playbackDevices.map((d) => ({ id: d.id, name: d.name, icon: d.icon })),
     isPlaying: s.isPlaying,
     trackData,
-    currentTime: Math.min(Math.max(0, Math.floor(s.currentTime)), trackData.duration),
-    volume: Math.min(1, Math.max(0, s.volume)),
+    currentTime: Math.min(Math.max(0, Math.floor(safeCurrentTime)), trackData.duration),
+    volume: Math.min(1, Math.max(0, safeVolume)),
     repeatMode: s.repeatMode,
     shuffle: s.isShuffled,
     queue,
