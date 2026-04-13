@@ -25,6 +25,28 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
     return [...map.values()];
   }
 
+  private mergeDevices(
+    currentDevices: PlaybackStatePayload['devices'],
+    payloadDevices: PlaybackStatePayload['devices'],
+    activeDevice: PlaybackStatePayload['devices'][number],
+    claimActiveDevice: boolean,
+  ): PlaybackStatePayload['devices'] {
+    // Update must not drop other connected devices: merge rather than replace.
+    const base = currentDevices ?? [];
+    if (payloadDevices.length > 0) {
+      const map = new Map<string, PlaybackStatePayload['devices'][number]>();
+      for (const d of base) map.set(d.id, d);
+      for (const d of payloadDevices) map.set(d.id, d);
+      if (claimActiveDevice) {
+        map.set(activeDevice.id, activeDevice);
+      }
+      return [...map.values()];
+    }
+
+    // If client sent no devices, only inject active device metadata (when claiming).
+    return claimActiveDevice ? this.upsertDeviceById(base, activeDevice) : base;
+  }
+
   async execute(command: SetPlaybackStateCommand): Promise<PlaybackState> {
     const state: PlaybackStatePayload = {
       ...command.request.state,
@@ -72,22 +94,12 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       return this.persistence.applyMutation(command.userId, expectedVersion, (current) => ({
         ...current,
         ...payload,
-        devices: (() => {
-          // Update must not drop other connected devices: merge rather than replace.
-          const base = current.devices ?? [];
-          if (payload.devices.length > 0) {
-            const map = new Map<string, PlaybackStatePayload['devices'][number]>();
-            for (const d of base) map.set(d.id, d);
-            for (const d of payload.devices) map.set(d.id, d);
-            if (claimActiveDevice) {
-              map.set(activeDevice.id, activeDevice);
-            }
-            return [...map.values()];
-          }
-
-          // If client sent no devices, only inject active device metadata (when claiming).
-          return claimActiveDevice ? this.upsertDeviceById(base, activeDevice) : base;
-        })(),
+        devices: this.mergeDevices(
+          current.devices,
+          payload.devices,
+          activeDevice,
+          claimActiveDevice,
+        ),
         activeDeviceId: claimActiveDevice ? command.playbackDeviceId : current.activeDeviceId,
       }));
     }

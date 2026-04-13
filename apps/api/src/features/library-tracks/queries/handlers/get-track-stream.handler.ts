@@ -16,6 +16,9 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
   async execute(query: GetTrackStreamQuery) {
     const { trackId, requestedQuality, preferredFormat } = query;
 
+    const PREFERRED_LOSSY_SCORE = 100;
+    const NON_PREFERRED_LOSSY_SCORE = 90;
+
     // Find all completed audio files for this track
     const audioFiles = await this.audioFileRepository.findMany({
       where: {
@@ -30,9 +33,13 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
     const lossyFormatScore = (format: AudioFormat): number => {
       if (format === AudioFormat.opus)
-        return preferredFormat === StreamPreferredFormat.mp3 ? 90 : 100;
+        return preferredFormat === StreamPreferredFormat.mp3
+          ? NON_PREFERRED_LOSSY_SCORE
+          : PREFERRED_LOSSY_SCORE;
       if (format === AudioFormat.mp3)
-        return preferredFormat === StreamPreferredFormat.mp3 ? 100 : 90;
+        return preferredFormat === StreamPreferredFormat.mp3
+          ? PREFERRED_LOSSY_SCORE
+          : NON_PREFERRED_LOSSY_SCORE;
       return 0;
     };
 
