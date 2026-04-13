@@ -126,7 +126,7 @@ describe('player-store/player-store.actions.sync', () => {
     expect(getState().originalQueue).toEqual([]);
   });
 
-  it('playNext while shuffled unshuffles then prepends item (originalQueue cleared)', () => {
+  it('playNext while shuffled keeps shuffle enabled and updates queue snapshots', () => {
     vi.mocked(playbackSync.isPlaybackSyncConnected).mockReturnValue(false);
 
     const { playNext } = usePlayerStore.getState();
@@ -164,8 +164,8 @@ describe('player-store/player-store.actions.sync', () => {
 
     const state = usePlayerStore.getState();
     expect(state.queue).toHaveLength(1);
-    expect(state.isShuffled).toBe(false);
-    expect(state.originalQueue).toHaveLength(0);
+    expect(state.isShuffled).toBe(true);
+    expect(state.originalQueue).toHaveLength(1);
   });
 
   it('playNext with shuffle false and currentTrack not in queue', () => {
