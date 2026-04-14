@@ -63,7 +63,12 @@ describe('TrackRepository', () => {
       expect(result).toEqual(mockTrack);
       expect(mockTx.track.findFirst).toHaveBeenCalledWith({
         where: { id: 'track-123', deletedAt: null },
-        include: { artists: true, album: true, access: true },
+        include: {
+          artists: true,
+          album: true,
+          access: true,
+          genres: { include: { genre: true } },
+        },
       });
     });
   });
@@ -122,7 +127,15 @@ describe('TrackRepository', () => {
       const data = { title: 'New Track' } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.create).toHaveBeenCalledWith({ data });
+      expect(mockTx.track.create).toHaveBeenCalledWith({
+        data,
+        include: {
+          artists: true,
+          album: true,
+          access: true,
+          genres: { include: { genre: true } },
+        },
+      });
     });
   });
 
@@ -132,7 +145,16 @@ describe('TrackRepository', () => {
       const data = { title: 'Updated' };
       const result = await repository.update('track-123', data);
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.update).toHaveBeenCalledWith({ where: { id: 'track-123' }, data });
+      expect(mockTx.track.update).toHaveBeenCalledWith({
+        where: { id: 'track-123' },
+        data,
+        include: {
+          artists: true,
+          album: true,
+          access: true,
+          genres: { include: { genre: true } },
+        },
+      });
     });
   });
 

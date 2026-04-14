@@ -19,7 +19,14 @@ export class TrackRepository {
   async findOne(where: TrackWhereInput, includeRelations = false): Promise<Track | null> {
     return await this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
-      include: includeRelations ? { artists: true, album: true, access: true } : undefined,
+      include: includeRelations
+        ? {
+            artists: true,
+            album: true,
+            access: true,
+            genres: { include: { genre: true } },
+          }
+        : undefined,
     });
   }
 
@@ -88,7 +95,15 @@ export class TrackRepository {
   // ─────────────────────────────────────────────────────────────
 
   async create(data: TrackCreateInput): Promise<Track> {
-    return await this.prisma.client.track.create({ data });
+    return await this.prisma.client.track.create({
+      data,
+      include: {
+        artists: true,
+        album: true,
+        access: true,
+        genres: { include: { genre: true } },
+      },
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -96,7 +111,16 @@ export class TrackRepository {
   // ─────────────────────────────────────────────────────────────
 
   async update(id: string, data: TrackUpdateInput): Promise<Track> {
-    return await this.prisma.client.track.update({ where: { id }, data });
+    return await this.prisma.client.track.update({
+      where: { id },
+      data,
+      include: {
+        artists: true,
+        album: true,
+        access: true,
+        genres: { include: { genre: true } },
+      },
+    });
   }
 
   // ─────────────────────────────────────────────────────────────

@@ -54,6 +54,7 @@ describe('AlbumRepository', () => {
         include: {
           cover: true,
           artists: true,
+          genres: { include: { genre: true } },
         },
       });
     });
@@ -67,6 +68,7 @@ describe('AlbumRepository', () => {
         include: {
           cover: true,
           artists: true,
+          genres: { include: { genre: true } },
           tracks: {
             where: { deletedAt: null },
             orderBy: {
@@ -80,6 +82,7 @@ describe('AlbumRepository', () => {
                   cover: true,
                 },
               },
+              genres: { include: { genre: true } },
             },
           },
         },
@@ -99,6 +102,7 @@ describe('AlbumRepository', () => {
         include: {
           cover: true,
           artists: true,
+          genres: { include: { genre: true } },
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -194,7 +198,14 @@ describe('AlbumRepository', () => {
       } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockAlbum);
-      expect(mockTx.album.create).toHaveBeenCalledWith({ data });
+      expect(mockTx.album.create).toHaveBeenCalledWith({
+        data,
+        include: {
+          cover: true,
+          artists: true,
+          genres: { include: { genre: true } },
+        },
+      });
     });
   });
 
@@ -214,7 +225,15 @@ describe('AlbumRepository', () => {
       const data = { name: 'Updated' };
       const result = await repository.update('album-123', data);
       expect(result).toEqual(mockAlbum);
-      expect(mockTx.album.update).toHaveBeenCalledWith({ where: { id: 'album-123' }, data });
+      expect(mockTx.album.update).toHaveBeenCalledWith({
+        where: { id: 'album-123' },
+        data,
+        include: {
+          cover: true,
+          artists: true,
+          genres: { include: { genre: true } },
+        },
+      });
     });
   });
 
