@@ -1,4 +1,6 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
+import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
@@ -12,6 +14,8 @@ import { UpdateLibraryAlbumHandler } from './update-library-album.handler';
 describe('UpdateLibraryAlbumHandler', () => {
   let handler: UpdateLibraryAlbumHandler;
   let albumRepository: DeepMocked<AlbumRepository>;
+  let libraryRepository: DeepMocked<LibraryRepository>;
+  let genreRepository: DeepMocked<GenreRepository>;
 
   const mockUserId = 'user-123';
   const mockAlbumId = 'album-123';
@@ -25,11 +29,18 @@ describe('UpdateLibraryAlbumHandler', () => {
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
+    libraryRepository = createMock<LibraryRepository>();
+    genreRepository = createMock<GenreRepository>();
+
+    libraryRepository.getByUserId.mockResolvedValue({ id: 'library-123', userId: mockUserId } as any);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateLibraryAlbumHandler,
         { provide: AlbumRepository, useValue: albumRepository },
+        { provide: LibraryRepository, useValue: libraryRepository },
+        { provide: GenreRepository, useValue: genreRepository },
       ],
     }).compile();
 

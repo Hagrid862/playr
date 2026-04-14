@@ -1,3 +1,5 @@
+import { GenreRepository } from '@/shared/repositories/genre.repository';
+import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
@@ -13,6 +15,8 @@ describe('UpdateLibraryTrackHandler', () => {
   let handler: UpdateLibraryTrackHandler;
   let unitOfWork: DeepMocked<UnitOfWorkService>;
   let trackRepository: DeepMocked<TrackRepository>;
+  let libraryRepository: DeepMocked<LibraryRepository>;
+  let genreRepository: DeepMocked<GenreRepository>;
 
   const userId = 'user-123';
   const trackId = 'track-123';
@@ -38,14 +42,20 @@ describe('UpdateLibraryTrackHandler', () => {
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
     trackRepository = createMock<TrackRepository>();
+    libraryRepository = createMock<LibraryRepository>();
+    genreRepository = createMock<GenreRepository>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
+    libraryRepository.getByUserId.mockResolvedValue({ id: 'library-123', userId } as any);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateLibraryTrackHandler,
         { provide: UnitOfWorkService, useValue: unitOfWork },
         { provide: TrackRepository, useValue: trackRepository },
+        { provide: LibraryRepository, useValue: libraryRepository },
+        { provide: GenreRepository, useValue: genreRepository },
       ],
     }).compile();
 

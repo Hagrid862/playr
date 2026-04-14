@@ -1,9 +1,14 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
 import { Visibility } from '@repo/db';
@@ -17,6 +22,7 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     private readonly albumRepository: AlbumRepository,
     private readonly trackRepository: TrackRepository,
     private readonly libraryTrackRepository: LibraryTrackRepository,
+    private readonly genreRepository: GenreRepository,
   ) {}
 
   async execute(command: CreateLibraryTrackCommand): Promise<ZodTrack> {
@@ -32,6 +38,21 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     if (!album) {
       throw new PreconditionFailedException('Album not found');
     }
+
+    if (body.genreIds !== undefined && body.genreIds.length > 0) {
+      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+        library.id,
+        body.genreIds,
+      );
+      if (!assignable) {
+        throw new BadRequestException(
+          'One or more genres are invalid or not available to your library',
+        );
+      }
+    }
+
+    const uniqueGenreIds =
+      body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     const track = await this.unitOfWork.runInTransaction(async () => {
       const created = await this.trackRepository.create({
@@ -55,6 +76,15 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
             role: 'owner',
           },
         },
+        ...(uniqueGenreIds && uniqueGenreIds.length > 0
+          ? {
+              genres: {
+                create: uniqueGenreIds.map((genreId) => ({
+                  genre: { connect: { id: genreId } },
+                })),
+              },
+            }
+          : {}),
       });
 
       await this.libraryTrackRepository.create({
