@@ -14,6 +14,8 @@ export const UpdateLibraryTrackRequestSchema = z.object({
   lyrics: z.string().max(10000).optional(),
   visibility: z.enum(Visibility).optional(),
   artistIds: z.array(z.string()).min(1).optional(),
+  /** When set (including `[]`), replaces all track genres. Omit to leave genres unchanged. */
+  genreIds: z.array(z.string()).optional(),
 });
 
 export type UpdateLibraryTrackRequest = z.infer<

@@ -13,6 +13,8 @@ export const CreateLibraryTrackRequestSchema = z.object({
   diskNumber: z.number().int().min(1).default(1),
   explicit: z.boolean().default(false),
   artistIds: z.array(z.string()).min(1, "At least one artist is required"),
+  /** Optional initial genres (system + this library's custom). */
+  genreIds: z.array(z.string()).optional(),
 });
 
 export type CreateLibraryTrackRequest = z.infer<

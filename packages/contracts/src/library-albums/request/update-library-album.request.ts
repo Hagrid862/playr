@@ -15,6 +15,8 @@ export const UpdateLibraryAlbumRequestSchema = z.object({
   type: z.enum(AlbumType).optional(),
   releaseDate: zodDateTimeNullable().optional(),
   coverId: z.string().nullable().optional(),
+  /** When set (including `[]`), replaces all album genres. Omit to leave genres unchanged. */
+  genreIds: z.array(z.string()).optional(),
 });
 
 export type UpdateLibraryAlbumRequest = z.infer<

@@ -17,6 +17,8 @@ export const CreateLibraryAlbumRequestSchema = z.object({
   type: z.enum(AlbumType),
   artistId: zodRequiredString("Artist ID is required"),
   releaseDate: zodDateTimeNullable(),
+  /** Optional initial genres (system + this library's custom). */
+  genreIds: z.array(z.string()).optional(),
 });
 
 export type CreateLibraryAlbumRequest = z.infer<
