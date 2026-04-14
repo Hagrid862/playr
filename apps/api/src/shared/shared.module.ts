@@ -12,6 +12,7 @@ import { LibraryTrackRepository } from './repositories/library-track.repository'
 
 import { TRANSACTION_CONTEXT } from './interfaces/transaction-context.interface';
 import { AudioFileRepository } from './repositories/audio-file.repository';
+import { GenreRepository } from './repositories/genre.repository';
 import { ImageRepository } from './repositories/image.repository';
 import { LibraryRepository } from './repositories/library.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
@@ -51,6 +52,7 @@ import { MailService } from '@/shared/services/mail.service';
     LibraryTrackRepository,
     TrackRepository,
     AudioFileRepository,
+    GenreRepository,
     ImageRepository,
     // guards
     JwtAuthGuard,
@@ -79,6 +81,7 @@ import { MailService } from '@/shared/services/mail.service';
     LibraryTrackRepository,
     TrackRepository,
     AudioFileRepository,
+    GenreRepository,
     ImageRepository,
     // guards
     JwtAuthGuard,
