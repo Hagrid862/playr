@@ -155,8 +155,9 @@ describe('player-store.actions.queue', () => {
       const state = getState();
 
       expect(state.queue.length).toBe(2);
-      expect(state.isShuffled).toBe(false);
-      expect(state.queue.map((i) => i.track.id).sort()).toEqual(['2', '3']);
+      expect(state.isShuffled).toBe(true);
+      expect(state.queue.map((i) => i.track.id)).toEqual(['2', '3']);
+      expect(state.originalQueue.map((i) => i.track.id)).toEqual(['3', '2']);
     });
 
     it('handles removing from queue while shuffled', () => {
