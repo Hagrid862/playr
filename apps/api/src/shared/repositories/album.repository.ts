@@ -22,6 +22,7 @@ export class AlbumRepository {
       ? {
           cover: true,
           artists: true,
+          genres: { include: { genre: true } },
           tracks: {
             where: { deletedAt: null },
             orderBy: {
@@ -35,12 +36,14 @@ export class AlbumRepository {
               },
               artists: true,
               audioFiles: true,
+              genres: { include: { genre: true } },
             },
           },
         }
       : {
           cover: true,
           artists: true,
+          genres: { include: { genre: true } },
         };
 
     return await this.prisma.client.album.findFirst({
@@ -65,6 +68,7 @@ export class AlbumRepository {
       include: {
         cover: true,
         artists: true,
+        genres: { include: { genre: true } },
       },
       orderBy: options.orderBy ?? { createdAt: 'desc' },
     });
@@ -128,7 +132,14 @@ export class AlbumRepository {
   // ─────────────────────────────────────────────────────────────
 
   async create(data: AlbumCreateInput): Promise<Album> {
-    return await this.prisma.client.album.create({ data });
+    return await this.prisma.client.album.create({
+      data,
+      include: {
+        cover: true,
+        artists: true,
+        genres: { include: { genre: true } },
+      },
+    });
   }
 
   async createMany(data: AlbumCreateManyInput[]): Promise<Album[]> {
@@ -140,7 +151,15 @@ export class AlbumRepository {
   // ─────────────────────────────────────────────────────────────
 
   async update(id: string, data: AlbumUpdateInput): Promise<Album> {
-    return await this.prisma.client.album.update({ where: { id }, data });
+    return await this.prisma.client.album.update({
+      where: { id },
+      data,
+      include: {
+        cover: true,
+        artists: true,
+        genres: { include: { genre: true } },
+      },
+    });
   }
 
   async updateMany(updates: { id: string; data: AlbumUpdateInput }[]): Promise<Album[]> {
