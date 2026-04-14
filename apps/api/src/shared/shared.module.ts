@@ -19,6 +19,8 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { SessionRepository } from './repositories/session.repository';
 import { TrackRepository } from './repositories/track.repository';
 import { UserRepository } from './repositories/user.repository';
+import { GenreNormalizationService } from './genres/genre-normalization.service';
+import { GenreResolutionService } from './genres/genre-resolution.service';
 import { HashingService } from './services/hashing.service';
 import { ImageService } from './services/image.service';
 import { PrismaService } from './services/prisma.service';
@@ -39,6 +41,8 @@ import { MailService } from '@/shared/services/mail.service';
     HashingService,
     StorageService,
     MailService,
+    GenreNormalizationService,
+    GenreResolutionService,
     // Repositories
     UserRepository,
     EmailAddressRepository,
@@ -68,6 +72,8 @@ import { MailService } from '@/shared/services/mail.service';
     ImageService,
     StorageService,
     MailService,
+    GenreNormalizationService,
+    GenreResolutionService,
     // Repositories
     UserRepository,
     EmailAddressRepository,
