@@ -61,6 +61,32 @@ export function createPlayerQueueActions(
 
     addToQueue: (track) => {
       set((state) => {
+        if (state.isShuffled) {
+          const shuffledOrdered = getOrderedNextQueue(state.queue, true);
+          const baselineOrdered = state.originalQueue.length
+            ? getOrderedNextQueue(state.originalQueue, false)
+            : getOrderedNextQueue(state.queue, false);
+          const baselineManual = baselineOrdered.filter((i) => i.type === 'queue');
+          const baselinePlayingNext = baselineOrdered.filter((i) => i.type === 'playingNext');
+          const newItem = playbackTrackToQueueItem(track, {
+            type: 'queue',
+            position: shuffledOrdered.length,
+            originalPosition: baselineManual.length,
+          });
+          return {
+            queue: [...shuffledOrdered, newItem].map((item, i) => ({
+              ...item,
+              position: i,
+            })),
+            originalQueue: reorderKeepingPartitions([
+              ...baselineManual,
+              newItem,
+              ...baselinePlayingNext,
+            ]),
+            isShuffled: true,
+          };
+        }
+
         const { queue: q0, originalQueue: o0, isShuffled: sh } = unshuffleBaseline(state);
         const ordered = getOrderedNextQueue(q0, false);
         const manual = ordered.filter((i) => i.type === 'queue');
