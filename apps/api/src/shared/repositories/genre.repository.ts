@@ -123,4 +123,23 @@ export class GenreRepository {
   async delete(id: string): Promise<Genre> {
     return await this.prisma.client.genre.delete({ where: { id } });
   }
+
+  /**
+   * True when every id exists, is not soft-deleted, and is either a system genre
+   * (`libraryId` null) or belongs to the given library.
+   */
+  async areGenreIdsAssignableToLibrary(libraryId: string, genreIds: string[]): Promise<boolean> {
+    if (genreIds.length === 0) {
+      return true;
+    }
+    const unique = [...new Set(genreIds)];
+    const count = await this.prisma.client.genre.count({
+      where: {
+        id: { in: unique },
+        deletedAt: null,
+        OR: [{ libraryId: null }, { libraryId }],
+      },
+    });
+    return count === unique.length;
+  }
 }
