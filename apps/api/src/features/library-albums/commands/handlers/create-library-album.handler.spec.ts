@@ -1,4 +1,5 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
@@ -22,6 +23,7 @@ describe('CreateLibraryAlbumHandler', () => {
   let libraryRepository: DeepMocked<LibraryRepository>;
   let albumRepository: DeepMocked<AlbumRepository>;
   let libraryAlbumRepository: DeepMocked<LibraryAlbumRepository>;
+  let genreRepository: DeepMocked<GenreRepository>;
 
   const mockUserId = 'user-123';
   const mockLibraryId = 'library-123';
@@ -54,6 +56,9 @@ describe('CreateLibraryAlbumHandler', () => {
     libraryRepository = createMock<LibraryRepository>();
     albumRepository = createMock<AlbumRepository>();
     libraryAlbumRepository = createMock<LibraryAlbumRepository>();
+    genreRepository = createMock<GenreRepository>();
+
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -62,6 +67,7 @@ describe('CreateLibraryAlbumHandler', () => {
         { provide: LibraryRepository, useValue: libraryRepository },
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: LibraryAlbumRepository, useValue: libraryAlbumRepository },
+        { provide: GenreRepository, useValue: genreRepository },
       ],
     }).compile();
 

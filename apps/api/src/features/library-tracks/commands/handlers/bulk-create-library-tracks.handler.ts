@@ -1,9 +1,14 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
 import { Visibility } from '@repo/db';
@@ -17,6 +22,7 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
     private readonly albumRepository: AlbumRepository,
     private readonly trackRepository: TrackRepository,
     private readonly libraryTrackRepository: LibraryTrackRepository,
+    private readonly genreRepository: GenreRepository,
   ) {}
 
   async execute(command: BulkCreateLibraryTracksCommand): Promise<{ tracks: ZodTrack[] }> {
@@ -33,10 +39,26 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
       throw new PreconditionFailedException('Album not found');
     }
 
+    const allGenreIds = body.tracks.flatMap((t) => t.genreIds ?? []);
+    if (allGenreIds.length > 0) {
+      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+        library.id,
+        allGenreIds,
+      );
+      if (!assignable) {
+        throw new BadRequestException(
+          'One or more genres are invalid or not available to your library',
+        );
+      }
+    }
+
     const tracks = await this.unitOfWork.runInTransaction(async () => {
       const created: ZodTrack[] = [];
 
       for (const item of body.tracks) {
+        const uniqueGenreIds =
+          item.genreIds !== undefined ? [...new Set(item.genreIds)] : undefined;
+
         const track = await this.trackRepository.create({
           title: item.title,
           trackNumber: item.trackNumber,
@@ -52,6 +74,15 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
               role: 'owner',
             },
           },
+          ...(uniqueGenreIds && uniqueGenreIds.length > 0
+            ? {
+                genres: {
+                  create: uniqueGenreIds.map((genreId) => ({
+                    genre: { connect: { id: genreId } },
+                  })),
+                },
+              }
+            : {}),
         });
 
         await this.libraryTrackRepository.create({
