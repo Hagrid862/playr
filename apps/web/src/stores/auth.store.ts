@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       _hasHydrated: false,
       setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true }),
-      setUnauthenticatedUser: (user) => set({ user, isAuthenticated: false }),
+      setUnauthenticatedUser: (user) => set({ user, isAuthenticated: false, accessToken: null }),
       updateAccessToken: (accessToken) => set({ accessToken }),
       logout: () => {
         set({ user: null, accessToken: null, isAuthenticated: false });
