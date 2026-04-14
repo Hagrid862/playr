@@ -1,4 +1,4 @@
-import { type Genre } from "@repo/db";
+import { GenreKind, type Genre } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 import { AlbumGenreSchema, type ZodAlbumGenre } from "./album-genre.schema";
@@ -16,6 +16,8 @@ export const GenreSchema: z.ZodType<ZodGenre> = z.object({
   name: z.string(),
   slug: z.string(),
   description: z.string().nullable(),
+  kind: z.enum(GenreKind),
+  libraryId: z.string().nullable(),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),
