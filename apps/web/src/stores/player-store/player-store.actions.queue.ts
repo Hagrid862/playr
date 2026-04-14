@@ -40,12 +40,16 @@ export function createPlayerQueueActions(
     toggleShuffle: () => {
       set((state) => {
         if (state.isShuffled) {
+          const restored = state.originalQueue.length
+            ? state.originalQueue.map((q) => ({ ...q }))
+            : reindexQueuePositions(getOrderedNextQueue(state.queue, false));
           return {
             isShuffled: false,
-            queue: state.originalQueue.map((q) => ({ ...q })),
+            queue: restored,
             originalQueue: [],
           };
         }
+
         const ordered = getOrderedNextQueue(state.queue, false);
         const snapshot = ordered.map((q) => ({ ...q }));
         const shuffled = shuffleArray(ordered);
@@ -78,11 +82,9 @@ export function createPlayerQueueActions(
               ...item,
               position: i,
             })),
-            originalQueue: reorderKeepingPartitions([
-              ...baselineManual,
-              newItem,
-              ...baselinePlayingNext,
-            ]),
+            originalQueue: reindexQueuePositions(
+              reorderKeepingPartitions([...baselineManual, newItem, ...baselinePlayingNext]),
+            ),
             isShuffled: true,
           };
         }

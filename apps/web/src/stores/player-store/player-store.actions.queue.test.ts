@@ -156,8 +156,23 @@ describe('player-store.actions.queue', () => {
 
       expect(state.queue.length).toBe(2);
       expect(state.isShuffled).toBe(true);
-      expect(state.queue.map((i) => i.track.id)).toEqual(['2', '3']);
+      expect(state.queue.map((i) => i.track.id).sort()).toEqual(['2', '3']);
       expect(state.originalQueue.map((i) => i.track.id)).toEqual(['3', '2']);
+    });
+
+    it('handles adding to queue while shuffled when original snapshot is empty', () => {
+      const q = [createTrack('1'), createTrack('2')];
+      getState().playTrack(q[0]!, q);
+      getState().toggleShuffle();
+      usePlayerStore.setState({ originalQueue: [] });
+
+      getState().addToQueue(createTrack('3'));
+      const state = getState();
+
+      expect(state.isShuffled).toBe(true);
+      expect(state.queue.map((i) => i.track.id).sort()).toEqual(['2', '3']);
+      expect(state.originalQueue.map((i) => i.track.id)).toEqual(['3', '2']);
+      expect(state.originalQueue.map((i) => i.position)).toEqual([0, 1]);
     });
 
     it('handles removing from queue while shuffled', () => {
@@ -186,6 +201,21 @@ describe('player-store.actions.queue', () => {
 
       expect(state.isShuffled).toBe(true);
       expect(state.queue.length).toBe(0);
+    });
+
+    it('toggleShuffle while shuffled falls back to ordered queue when original snapshot is empty', () => {
+      const q = [createTrack('1'), createTrack('2'), createTrack('3')];
+      getState().playTrack(q[0]!, q);
+      getState().toggleShuffle();
+      usePlayerStore.setState({ originalQueue: [] });
+
+      getState().toggleShuffle();
+      const state = getState();
+
+      expect(state.isShuffled).toBe(false);
+      expect(state.originalQueue).toEqual([]);
+      expect(state.queue.map((i) => i.track.id).sort()).toEqual(['2', '3']);
+      expect(state.queue.map((i) => i.position)).toEqual([0, 1]);
     });
 
     it('reordering clears original queue when shuffled', () => {
