@@ -123,6 +123,8 @@ export function createPlayerQueueActions(
           queue: [],
           originalQueue: [],
           isPlaying: true,
+          currentTime: 0,
+          isShuffled: false,
         });
         flushPlaybackClaimAfterLocalMutation(get);
         return;
