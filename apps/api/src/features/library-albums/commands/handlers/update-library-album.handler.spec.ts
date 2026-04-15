@@ -32,7 +32,10 @@ describe('UpdateLibraryAlbumHandler', () => {
     libraryRepository = createMock<LibraryRepository>();
     genreRepository = createMock<GenreRepository>();
 
-    libraryRepository.getByUserId.mockResolvedValue({ id: 'library-123', userId: mockUserId } as any);
+    libraryRepository.getByUserId.mockResolvedValue({
+      id: 'library-123',
+      userId: mockUserId,
+    } as any);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
