@@ -31,6 +31,7 @@ export class LibraryArtistRepository {
           include: {
             avatar: true,
             banner: true,
+            genres: { include: { genre: true } },
           },
         },
       },
@@ -59,6 +60,7 @@ export class LibraryArtistRepository {
           include: {
             avatar: true,
             banner: true,
+            genres: { include: { genre: true } },
           },
         },
       },
