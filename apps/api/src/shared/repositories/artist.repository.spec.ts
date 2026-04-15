@@ -51,7 +51,7 @@ describe('ArtistRepository', () => {
       expect(result).toEqual(mockArtist);
       expect(mockTx.artist.findFirst).toHaveBeenCalledWith({
         where: { id: 'artist-123', deletedAt: null },
-        include: { avatar: true, banner: true },
+        include: { avatar: true, banner: true, genres: { include: { genre: true } } },
       });
     });
   });
@@ -65,7 +65,7 @@ describe('ArtistRepository', () => {
         where: { deletedAt: null },
         take: 5,
         skip: undefined,
-        include: { avatar: true, banner: true },
+        include: { avatar: true, banner: true, genres: { include: { genre: true } } },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -127,7 +127,10 @@ describe('ArtistRepository', () => {
       const data = { name: 'New Artist', visibility: 'private' } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockArtist);
-      expect(mockTx.artist.create).toHaveBeenCalledWith({ data });
+      expect(mockTx.artist.create).toHaveBeenCalledWith({
+        data,
+        include: { avatar: true, banner: true, genres: { include: { genre: true } } },
+      });
     });
   });
 
@@ -147,7 +150,11 @@ describe('ArtistRepository', () => {
       const data = { name: 'Updated Artist' };
       const result = await repository.update('artist-123', data);
       expect(result).toEqual(mockArtist);
-      expect(mockTx.artist.update).toHaveBeenCalledWith({ where: { id: 'artist-123' }, data });
+      expect(mockTx.artist.update).toHaveBeenCalledWith({
+        where: { id: 'artist-123' },
+        data,
+        include: { avatar: true, banner: true, genres: { include: { genre: true } } },
+      });
     });
   });
 

@@ -20,7 +20,7 @@ export class ArtistRepository {
   async findOne(where: ArtistWhereInput): Promise<Artist | null> {
     return await this.prisma.client.artist.findFirst({
       where: { ...where, deletedAt: null },
-      include: { avatar: true, banner: true },
+      include: { avatar: true, banner: true, genres: { include: { genre: true } } },
     });
   }
 
@@ -34,7 +34,7 @@ export class ArtistRepository {
       where: { ...options.where, deletedAt: null },
       take: options.take,
       skip: options.skip,
-      include: { avatar: true, banner: true },
+      include: { avatar: true, banner: true, genres: { include: { genre: true } } },
       orderBy: options.orderBy ?? { createdAt: 'desc' },
     });
   }
@@ -85,7 +85,10 @@ export class ArtistRepository {
   // ─────────────────────────────────────────────────────────────
 
   async create(data: ArtistCreateInput): Promise<Artist> {
-    return await this.prisma.client.artist.create({ data });
+    return await this.prisma.client.artist.create({
+      data,
+      include: { avatar: true, banner: true, genres: { include: { genre: true } } },
+    });
   }
 
   async createMany(data: ArtistCreateManyInput[]): Promise<Artist[]> {
@@ -97,7 +100,11 @@ export class ArtistRepository {
   // ─────────────────────────────────────────────────────────────
 
   async update(id: string, data: ArtistUpdateInput): Promise<Artist> {
-    return await this.prisma.client.artist.update({ where: { id }, data });
+    return await this.prisma.client.artist.update({
+      where: { id },
+      data,
+      include: { avatar: true, banner: true, genres: { include: { genre: true } } },
+    });
   }
 
   async updateMany(updates: { id: string; data: ArtistUpdateInput }[]): Promise<Artist[]> {
