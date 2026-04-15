@@ -49,7 +49,9 @@ export function RouteComponent() {
   } = useVerifyEmail();
   const {
     handleChange,
+    handleBlur,
     handleSubmit,
+    getFieldError,
   } = useVerifyEmailForm();
 
   const user = useAuthStore((state) => state.user);
@@ -106,11 +108,22 @@ export function RouteComponent() {
       {/* TODO make an actual page and a component and put it here.*/}
       <p>Send verification email: {isVerificationEmailSent ? 'Yes' : 'No'}</p>
       <form onSubmit={onSubmit}>
-        <input type="text" onChange={(e) => handleChange('otpCode', e.target.value)} placeholder="Enter OTP" />
+        <input
+          type="text"
+          onChange={(e) => handleChange('otpCode', e.target.value)}
+          onBlur={() => handleBlur('otpCode')}
+          placeholder="Enter OTP"
+        />
+        <br></br>
+        {getFieldError('otpCode') && <span className="text-destructive">{getFieldError('otpCode')}</span>}
         <input type="submit" value="verify email" />
       </form>
 
-      {primaryEmail ? <p>Primary email: {primaryEmail} </p> : <p className="text-destructive">No primary email address found</p>}
+      {primaryEmail ? (
+        <p>Primary email: {primaryEmail} </p>
+      ) : (
+        <p className="text-destructive">No primary email address found</p>
+      )}
 
       <button
         onClick={onResendEmail}
