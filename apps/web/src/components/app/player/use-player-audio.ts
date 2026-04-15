@@ -92,7 +92,7 @@ export function usePlayerAudio() {
 
         const json = await res.json();
         const parsedQualities = Array.isArray(json?.data) ? json.data : [];
-        const finalQualities: (typeof StreamAudioQuality | 'auto')[] = ['auto', ...parsedQualities];
+        const finalQualities: (StreamAudioQuality | 'auto')[] = ['auto', ...parsedQualities];
 
         setAvailableQualities(finalQualities);
       } catch (err) {
