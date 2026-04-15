@@ -50,8 +50,7 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
       }
     }
 
-    const uniqueGenreIds =
-      body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
+    const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     const updated = await this.unitOfWork.runInTransaction(async () => {
       return await this.trackRepository.update(id, {
