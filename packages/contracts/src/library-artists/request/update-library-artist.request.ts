@@ -10,6 +10,8 @@ export const UpdateLibraryArtistRequestSchema = z.object({
     .string()
     .max(2048, "Description must be 2048 characters or less")
     .optional(),
+  /** When set (including `[]`), replaces all artist genres. Omit to leave genres unchanged. */
+  genreIds: z.array(z.string()).optional(),
 });
 
 export type UpdateLibraryArtistRequest = z.infer<

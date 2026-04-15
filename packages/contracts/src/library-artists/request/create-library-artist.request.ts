@@ -12,6 +12,8 @@ export const CreateLibraryArtistRequestSchema = z.object({
     .string()
     .max(2048, "Description must be 2048 characters or less")
     .optional(),
+  /** Optional initial genres (system + this library's custom). */
+  genreIds: z.array(z.string()).optional(),
 });
 
 export type CreateLibraryArtistRequest = z.infer<
