@@ -1,12 +1,24 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
+import { LibraryRepository } from '@/shared/repositories/library.repository';
+import {
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
 import { UpdateLibraryArtistCommand } from '../impl/update-library-artist.command';
 
 @CommandHandler(UpdateLibraryArtistCommand)
 export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibraryArtistCommand> {
-  constructor(private readonly artistRepository: ArtistRepository) {}
+  constructor(
+    private readonly artistRepository: ArtistRepository,
+    private readonly libraryRepository: LibraryRepository,
+    private readonly genreRepository: GenreRepository,
+  ) {}
 
   async execute(command: UpdateLibraryArtistCommand): Promise<ZodArtist> {
     const { artistId, request, userId } = command;
@@ -31,9 +43,39 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
       }
     }
 
+    const uniqueGenreIds =
+      request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
+
+    if (request.genreIds !== undefined) {
+      const library = await this.libraryRepository.getByUserId(userId);
+      if (!library) {
+        throw new PreconditionFailedException('User library not found');
+      }
+
+      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+        library.id,
+        request.genreIds,
+      );
+      if (!assignable) {
+        throw new BadRequestException(
+          'One or more genres are invalid or not available to your library',
+        );
+      }
+    }
+
     const updatedArtist = await this.artistRepository.update(artistId, {
       name: request.name,
       description: request.description,
+      ...(request.genreIds !== undefined
+        ? {
+            genres: {
+              deleteMany: {},
+              create: (uniqueGenreIds ?? []).map((genreId) => ({
+                genre: { connect: { id: genreId } },
+              })),
+            },
+          }
+        : {}),
     });
 
     const parsed = ArtistSchema.safeParse(updatedArtist);

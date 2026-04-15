@@ -51,8 +51,7 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
       }
     }
 
-    const uniqueGenreIds =
-      body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
+    const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     const track = await this.unitOfWork.runInTransaction(async () => {
       const created = await this.trackRepository.create({
