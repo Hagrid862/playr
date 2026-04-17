@@ -11,7 +11,7 @@ export const Route = createFileRoute('/auth/verify-email')({
   beforeLoad: () => {
     const { user, isAuthenticated, _hasHydrated } = useAuthStore.getState();
 
-    if (!user && _hasHydrated) {
+    if (!user) {
       throw redirect({ to: '/auth/login' });
     }
 
