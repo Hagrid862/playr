@@ -13,7 +13,7 @@ export const Route = createFileRoute('/auth/login')({
 
 export function RouteComponent() {
   const navigate = useNavigate();
-  const { mutateAsync: loginUser, isPending: isLoading, error } = useLogin();
+  const { mutateAsync: loginUser, isPending: isLoading } = useLogin();
   const { formData, isFormValid, handleChange, handleBlur, handleSubmit, getFieldError } =
     useLoginForm();
 
@@ -52,11 +52,6 @@ export function RouteComponent() {
             <CardTitle>Login to your account</CardTitle>
           </CardHeader>
           <CardContent>
-            {error && (
-              <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                {error.message}
-              </div>
-            )}
             <LoginForm
               formData={formData}
               isLoading={isLoading}

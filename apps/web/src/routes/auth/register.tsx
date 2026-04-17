@@ -16,7 +16,7 @@ export const Route = createFileRoute('/auth/register')({
 
 export function RouteComponent() {
   const navigate = useNavigate();
-  const { mutateAsync: registerUser, isPending: isLoading, error } = useRegister();
+  const { mutateAsync: registerUser, isPending: isLoading } = useRegister();
 
   const {
     formData,
@@ -65,11 +65,6 @@ export function RouteComponent() {
                 <CardHeader className="p-0 pb-4">
                   <CardTitle>Create an account</CardTitle>
                 </CardHeader>
-                {error && (
-                  <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                    {error.message}
-                  </div>
-                )}
                 <RegisterForm
                   id="register-form"
                   formData={formData}
