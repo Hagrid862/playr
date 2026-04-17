@@ -1,24 +1,15 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { z } from 'zod';
 import { SyntheticEvent, useEffect, useMemo } from 'react';
 import { useResendEmailVerificationCode, useVerifyEmail } from '@/hooks/api/auth';
-import { useAuthStore } from '@/stores/auth.store.ts';
-import { useVerifyEmailForm } from '@/hooks/forms/useVerifyEmailForm.ts';
+import { useAuthStore } from '@/stores/auth.store';
+import { useVerifyEmailForm } from '@/hooks/forms/useVerifyEmailForm';
 
-const verifyEmailSearchSchema = z.object({
-  isVerificationEmailSent: z
-    .boolean()
-    .optional()
-    .default(false),
-});
 
 export const Route = createFileRoute('/auth/verify-email')({
   component: RouteComponent,
 
-  validateSearch: (search) => verifyEmailSearchSchema.parse(search),
-
-  beforeLoad: ({ context }) => {
-    const { user, isAuthenticated, _hasHydrated } = context.auth;
+  beforeLoad: () => {
+    const { user, isAuthenticated, _hasHydrated } = useAuthStore.getState();
 
     if (!user && _hasHydrated) {
       throw redirect({ to: '/auth/login' });
@@ -38,7 +29,6 @@ export const Route = createFileRoute('/auth/verify-email')({
 });
 
 export function RouteComponent() {
-  const { isVerificationEmailSent } = Route.useSearch();
   const navigate = useNavigate();
   const {
     mutateAsync: resendEmailVerificationCode,
@@ -54,7 +44,7 @@ export function RouteComponent() {
     getFieldError,
   } = useVerifyEmailForm();
 
-  const user = useAuthStore((state) => state.user);
+  const { user } = useAuthStore();
 
   const primaryEmail = useMemo(() => {
     return user?.emailAddresses?.find((e) => e.type === 'primary')?.email;
@@ -106,7 +96,6 @@ export function RouteComponent() {
   return (
     <div>
       {/* TODO make an actual page and a component and put it here.*/}
-      <p>Send verification email: {isVerificationEmailSent ? 'Yes' : 'No'}</p>
       <form onSubmit={onSubmit}>
         <input
           type="text"
@@ -118,12 +107,6 @@ export function RouteComponent() {
         {getFieldError('otpCode') && <span className="text-destructive">{getFieldError('otpCode')}</span>}
         <input type="submit" value="verify email" />
       </form>
-
-      {primaryEmail ? (
-        <p>Primary email: {primaryEmail} </p>
-      ) : (
-        <p className="text-destructive">No primary email address found</p>
-      )}
 
       <button
         onClick={onResendEmail}

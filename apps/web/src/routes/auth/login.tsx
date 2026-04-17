@@ -35,7 +35,6 @@ export function RouteComponent() {
 
           await navigate({
             to: '/auth/verify-email',
-            search: { isVerificationEmailSent: response.data.isEmailSent },
           });
         }
       } catch (err) {
