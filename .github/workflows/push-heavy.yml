@@ -54,14 +54,13 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: pnpm run prisma:generate
 
   build:
@@ -91,10 +90,13 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Build
         run: pnpm run build
@@ -135,7 +137,7 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
@@ -170,10 +172,13 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Check types
         run: pnpm run check-types
@@ -205,10 +210,13 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Lint
         run: pnpm run lint
@@ -240,10 +248,13 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -280,10 +291,13 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -361,10 +375,13 @@ jobs:
             packages/*/node_modules
             packages/db/src/generated
             packages/db/dist
-          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm${{ env.PNPM_VERSION }}-${{ hashFiles('pnpm-lock.yaml', 'packages/db/prisma/schema.prisma', 'packages/db/prisma.config.ts') }}
 
       - name: Install dependencies (cache miss fallback)
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
