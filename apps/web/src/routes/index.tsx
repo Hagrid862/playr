@@ -7,10 +7,12 @@ export const Route = createFileRoute('/')({
 });
 
 function App() {
-  const { accessToken } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
 
   if (accessToken) {
     return <Navigate to="/app" />;
+  } else if (user) {
+    return <Navigate to="/auth/verify-email" />;
   }
 
   return <LandingPage />;
