@@ -5,9 +5,9 @@ import { GenreSchema } from "../../schemas";
 export const GetLibraryGenresResponseSchema = createApiResponseSchema(
   z.object({
     items: z.array(GenreSchema),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1),
   }),
 );
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { libraryGenreIdsSchema } from "../../utils/genre-ids";
 import { zodRequiredString } from "../../utils/zod-shared";
 
 export const CreateLibraryTrackRequestSchema = z.object({
@@ -14,7 +15,7 @@ export const CreateLibraryTrackRequestSchema = z.object({
   explicit: z.boolean().default(false),
   artistIds: z.array(z.string()).min(1, "At least one artist is required"),
   /** Optional initial genres (system + this library's custom). */
-  genreIds: z.array(z.string()).optional(),
+  genreIds: libraryGenreIdsSchema.optional(),
 });
 
 export type CreateLibraryTrackRequest = z.infer<

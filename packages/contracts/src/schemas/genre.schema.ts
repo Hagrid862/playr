@@ -11,6 +11,12 @@ export interface ZodGenre extends Genre {
   tracks?: ZodTrackGenre[];
 }
 
+export const DeletedGenreSchema = z.object({
+  id: z.string(),
+});
+
+export type ZodDeletedGenre = z.infer<typeof DeletedGenreSchema>;
+
 export const GenreSchema: z.ZodType<ZodGenre> = z.object({
   id: z.string(),
   name: z.string(),

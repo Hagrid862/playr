@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { createApiResponseSchema } from "../../api";
-import { GenreSchema } from "../../schemas";
+import { DeletedGenreSchema } from "../../schemas/genre.schema";
 
 export const DeleteLibraryGenreResponseSchema =
-  createApiResponseSchema(GenreSchema);
+  createApiResponseSchema(DeletedGenreSchema);
 
 export type DeleteLibraryGenreResponse = z.infer<
   typeof DeleteLibraryGenreResponseSchema
