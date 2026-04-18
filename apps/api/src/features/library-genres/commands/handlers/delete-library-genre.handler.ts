@@ -1,47 +1,29 @@
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 import { GenreRepository } from '@/shared/repositories/genre.repository';
-import { LibraryRepository } from '@/shared/repositories/library.repository';
-import {
-  ForbiddenException,
-  InternalServerErrorException,
-  NotFoundException,
-  PreconditionFailedException,
-} from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { GenreSchema, type ZodGenre } from '@repo/contracts';
+import { DeletedGenreSchema, type ZodDeletedGenre } from '@repo/contracts';
 import { DeleteLibraryGenreCommand } from '../impl/delete-library-genre.command';
 
 @CommandHandler(DeleteLibraryGenreCommand)
 export class DeleteLibraryGenreHandler implements ICommandHandler<DeleteLibraryGenreCommand> {
   constructor(
-    private readonly libraryRepository: LibraryRepository,
     private readonly genreRepository: GenreRepository,
+    private readonly genreResolution: GenreResolutionService,
   ) {}
 
-  async execute(command: DeleteLibraryGenreCommand): Promise<ZodGenre> {
+  async execute(command: DeleteLibraryGenreCommand): Promise<ZodDeletedGenre> {
     const { genreId, userId } = command;
 
-    const library = await this.libraryRepository.getByUserId(userId);
-
-    if (!library) {
-      throw new PreconditionFailedException('User library not found');
-    }
-
-    const existing = await this.genreRepository.findOne({
-      id: genreId,
-      deletedAt: null,
-    });
-
-    if (!existing) {
-      throw new NotFoundException('Genre not found');
-    }
-
-    if (existing.kind !== 'custom' || existing.libraryId !== library.id) {
-      throw new ForbiddenException('Only custom genres in your library can be deleted');
-    }
+    await this.genreResolution.assertEditableCustomGenreForUser(
+      genreId,
+      userId,
+      'Only custom genres in your library can be deleted',
+    );
 
     const deleted = await this.genreRepository.delete(genreId);
 
-    const parsed = GenreSchema.safeParse(deleted);
+    const parsed = DeletedGenreSchema.safeParse({ id: deleted.id });
 
     if (!parsed.success) {
       throw new InternalServerErrorException('Failed to parse genre');

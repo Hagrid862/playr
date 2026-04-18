@@ -1,12 +1,14 @@
 import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
+import { InternalServerErrorException, Logger, PreconditionFailedException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { GenreSchema, type ZodGenre } from '@repo/contracts';
 import { CreateLibraryGenreCommand } from '../impl/create-library-genre.command';
 
 @CommandHandler(CreateLibraryGenreCommand)
 export class CreateLibraryGenreHandler implements ICommandHandler<CreateLibraryGenreCommand> {
+  private readonly logger = new Logger(CreateLibraryGenreHandler.name);
+
   constructor(
     private readonly libraryRepository: LibraryRepository,
     private readonly genreResolution: GenreResolutionService,
@@ -26,6 +28,7 @@ export class CreateLibraryGenreHandler implements ICommandHandler<CreateLibraryG
     const parsed = GenreSchema.safeParse(created);
 
     if (!parsed.success) {
+      this.logger.error(parsed.error);
       throw new InternalServerErrorException('Failed to parse genre');
     }
 
