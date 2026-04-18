@@ -1,7 +1,13 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
@@ -146,5 +152,54 @@ describe('UpdateLibraryAlbumHandler', () => {
     } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
+  });
+
+  it('should throw PreconditionFailedException when library is missing and genreIds are set', async () => {
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, { genreIds: ['g1'] }, mockUserId);
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    libraryRepository.getByUserId.mockResolvedValue(null);
+
+    await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
+  });
+
+  it('should throw BadRequestException when genres are not assignable', async () => {
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, { genreIds: ['g1'] }, mockUserId);
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    libraryRepository.getByUserId.mockResolvedValue({
+      id: 'library-123',
+      userId: mockUserId,
+    } as any);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+
+    await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should pass genres to album update when genreIds are provided', async () => {
+    const command = new UpdateLibraryAlbumCommand(
+      mockAlbumId,
+      { genreIds: ['a', 'b'] },
+      mockUserId,
+    );
+
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.update.mockResolvedValue({ ...mockAlbum });
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: { ...mockAlbum },
+    } as any);
+
+    await handler.execute(command);
+
+    expect(albumRepository.update).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({
+        genres: {
+          deleteMany: {},
+          create: [{ genre: { connect: { id: 'a' } } }, { genre: { connect: { id: 'b' } } }],
+        },
+      }),
+    );
   });
 });

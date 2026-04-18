@@ -4,7 +4,11 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumType, Track, Visibility } from '@repo/db';
 import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing/builders';
@@ -130,5 +134,51 @@ describe('CreateLibraryTrackHandler', () => {
     trackRepository.create.mockResolvedValue({ ...mockTrack, title: 123 });
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
+  });
+
+  it('should throw BadRequestException when genre ids are not assignable', async () => {
+    const genreCommand = new CreateLibraryTrackCommand(
+      {
+        ...command.body,
+        genreIds: ['g1'],
+      },
+      userId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+
+    await expect(handler.execute(genreCommand)).rejects.toThrow(BadRequestException);
+    expect(unitOfWork.runInTransaction).not.toHaveBeenCalled();
+  });
+
+  it('should dedupe genre ids when creating track', async () => {
+    const genreCommand = new CreateLibraryTrackCommand(
+      {
+        ...command.body,
+        genreIds: ['g1', 'g1', 'g2'],
+      },
+      userId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    trackRepository.create.mockResolvedValue(mockTrack);
+
+    await handler.execute(genreCommand);
+
+    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, [
+      'g1',
+      'g2',
+    ]);
+    expect(trackRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        genres: {
+          create: [{ genre: { connect: { id: 'g1' } } }, { genre: { connect: { id: 'g2' } } }],
+        },
+      }),
+    );
   });
 });

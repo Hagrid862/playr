@@ -92,9 +92,13 @@ describe('DeleteLibraryTrackHandler', () => {
       id: trackId,
       access: { some: { userId, role: 'owner' } },
     });
-    expect(trackRepository.update).toHaveBeenCalledWith(trackId, {
-      deletedAt: expect.any(Date),
-    });
+    expect(trackRepository.update).toHaveBeenCalledWith(
+      trackId,
+      {
+        deletedAt: expect.any(Date),
+      },
+      { includeRelations: false },
+    );
     expect(libraryTrackRepository.deleteMany).toHaveBeenCalledWith({
       trackId,
       library: { userId },
@@ -122,9 +126,13 @@ describe('DeleteLibraryTrackHandler', () => {
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockTrack);
-    expect(trackRepository.update).toHaveBeenCalledWith(trackId, {
-      deletedAt: expect.any(Date),
-    });
+    expect(trackRepository.update).toHaveBeenCalledWith(
+      trackId,
+      {
+        deletedAt: expect.any(Date),
+      },
+      { includeRelations: false },
+    );
     expect(libraryTrackRepository.deleteMany).toHaveBeenCalledWith({
       trackId,
       library: { userId },

@@ -44,6 +44,8 @@ describe('CreateLibraryArtistHandler', () => {
     libraryRepository = createMock<LibraryRepository>();
     libraryArtistRepository = createMock<LibraryArtistRepository>();
 
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+
     // Mock unit of work to just execute the callback
     unitOfWork.runInTransaction.mockImplementation((cb) => cb());
 
@@ -106,7 +108,6 @@ describe('CreateLibraryArtistHandler', () => {
     await handler.execute(command);
 
     expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, [
-      'genre-1',
       'genre-1',
       'genre-2',
     ]);

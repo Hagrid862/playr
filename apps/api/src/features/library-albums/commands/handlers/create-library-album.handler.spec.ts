@@ -4,6 +4,7 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
+  BadRequestException,
   ConflictException,
   InternalServerErrorException,
   PreconditionFailedException,
@@ -128,5 +129,41 @@ describe('CreateLibraryAlbumHandler', () => {
     } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
+  });
+
+  it('should throw BadRequestException when genre ids are not assignable', async () => {
+    const command = new CreateLibraryAlbumCommand({ ...mockRequest, genreIds: ['g1'] }, mockUserId);
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+
+    await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should dedupe genre ids when creating album', async () => {
+    const command = new CreateLibraryAlbumCommand(
+      { ...mockRequest, genreIds: ['g1', 'g1', 'g2'] },
+      mockUserId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(null);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    albumRepository.create.mockResolvedValue(mockAlbum);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
+
+    await handler.execute(command);
+
+    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibraryId, [
+      'g1',
+      'g2',
+    ]);
+    expect(albumRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        genres: {
+          create: [{ genre: { connect: { id: 'g1' } } }, { genre: { connect: { id: 'g2' } } }],
+        },
+      }),
+    );
   });
 });
