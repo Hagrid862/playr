@@ -4,7 +4,7 @@ import { trackBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
-import { TrackRepository } from './track.repository';
+import { DEFAULT_TRACK_INCLUDE, TrackRepository } from './track.repository';
 
 describe('TrackRepository', () => {
   let repository: TrackRepository;
@@ -83,6 +83,18 @@ describe('TrackRepository', () => {
         take: 5,
         skip: undefined,
         orderBy: { createdAt: 'desc' },
+        include: DEFAULT_TRACK_INCLUDE,
+      });
+    });
+
+    it('should omit include when includeRelations is false', async () => {
+      mockTx.track.findMany.mockResolvedValue([mockTrack]);
+      await repository.findMany({ take: 5, includeRelations: false });
+      expect(mockTx.track.findMany).toHaveBeenCalledWith({
+        where: { deletedAt: null },
+        take: 5,
+        skip: undefined,
+        orderBy: { createdAt: 'desc' },
       });
     });
   });
@@ -137,6 +149,13 @@ describe('TrackRepository', () => {
         },
       });
     });
+
+    it('should omit include when includeRelations is false', async () => {
+      mockTx.track.create.mockResolvedValue(mockTrack);
+      const data = { title: 'New Track' } as any;
+      await repository.create(data, { includeRelations: false });
+      expect(mockTx.track.create).toHaveBeenCalledWith({ data });
+    });
   });
 
   describe('update', () => {
@@ -154,6 +173,16 @@ describe('TrackRepository', () => {
           access: true,
           genres: { include: { genre: true } },
         },
+      });
+    });
+
+    it('should omit include when includeRelations is false', async () => {
+      mockTx.track.update.mockResolvedValue(mockTrack);
+      const data = { title: 'Updated' };
+      await repository.update('track-123', data, { includeRelations: false });
+      expect(mockTx.track.update).toHaveBeenCalledWith({
+        where: { id: 'track-123' },
+        data,
       });
     });
   });

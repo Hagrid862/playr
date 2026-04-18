@@ -1,12 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import {
-  Track,
-  TrackCreateInput,
-  TrackOrderByWithRelationInput,
-  TrackUpdateInput,
-  TrackWhereInput,
+    Track,
+    TrackCreateInput,
+    TrackOrderByWithRelationInput,
+    TrackUpdateInput,
+    TrackWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
+
+export const DEFAULT_TRACK_INCLUDE = {
+  artists: true,
+  album: true,
+  access: true,
+  genres: { include: { genre: true } },
+} as const;
 
 @Injectable()
 export class TrackRepository {
@@ -19,14 +26,7 @@ export class TrackRepository {
   async findOne(where: TrackWhereInput, includeRelations = false): Promise<Track | null> {
     return await this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
-      include: includeRelations
-        ? {
-            artists: true,
-            album: true,
-            access: true,
-            genres: { include: { genre: true } },
-          }
-        : undefined,
+      include: includeRelations ? DEFAULT_TRACK_INCLUDE : undefined,
     });
   }
 
@@ -35,7 +35,9 @@ export class TrackRepository {
     take?: number;
     skip?: number;
     orderBy?: TrackOrderByWithRelationInput;
+    includeRelations?: boolean;
   }): Promise<Track[]> {
+    const includeRelations = options.includeRelations ?? true;
     return await this.prisma.client.track.findMany({
       take: options.take,
       skip: options.skip,
@@ -44,6 +46,7 @@ export class TrackRepository {
         deletedAt: null,
       },
       orderBy: options.orderBy ?? { createdAt: 'desc' },
+      ...(includeRelations ? { include: DEFAULT_TRACK_INCLUDE } : {}),
     });
   }
 
@@ -94,15 +97,11 @@ export class TrackRepository {
   // CREATE
   // ─────────────────────────────────────────────────────────────
 
-  async create(data: TrackCreateInput): Promise<Track> {
+  async create(data: TrackCreateInput, options?: { includeRelations?: boolean }): Promise<Track> {
+    const includeRelations = options?.includeRelations ?? true;
     return await this.prisma.client.track.create({
       data,
-      include: {
-        artists: true,
-        album: true,
-        access: true,
-        genres: { include: { genre: true } },
-      },
+      ...(includeRelations ? { include: DEFAULT_TRACK_INCLUDE } : {}),
     });
   }
 
@@ -110,16 +109,16 @@ export class TrackRepository {
   // UPDATE
   // ─────────────────────────────────────────────────────────────
 
-  async update(id: string, data: TrackUpdateInput): Promise<Track> {
+  async update(
+    id: string,
+    data: TrackUpdateInput,
+    options?: { includeRelations?: boolean },
+  ): Promise<Track> {
+    const includeRelations = options?.includeRelations ?? true;
     return await this.prisma.client.track.update({
       where: { id },
       data,
-      include: {
-        artists: true,
-        album: true,
-        access: true,
-        genres: { include: { genre: true } },
-      },
+      ...(includeRelations ? { include: DEFAULT_TRACK_INCLUDE } : {}),
     });
   }
 

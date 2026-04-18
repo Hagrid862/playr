@@ -1,13 +1,39 @@
 import { Injectable } from '@nestjs/common';
 import {
-  Album,
-  AlbumCreateInput,
-  AlbumCreateManyInput,
-  AlbumOrderByWithRelationInput,
-  AlbumUpdateInput,
-  AlbumWhereInput,
+    Album,
+    AlbumCreateInput,
+    AlbumCreateManyInput,
+    AlbumOrderByWithRelationInput,
+    AlbumUpdateInput,
+    AlbumWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
+
+export const DEFAULT_ALBUM_INCLUDE = {
+  cover: true,
+  artists: true,
+  genres: { include: { genre: true } },
+} as const;
+
+export const DETAILED_ALBUM_INCLUDE = {
+  ...DEFAULT_ALBUM_INCLUDE,
+  tracks: {
+    where: { deletedAt: null },
+    orderBy: {
+      trackNumber: 'asc' as const,
+    },
+    include: {
+      album: {
+        include: {
+          cover: true,
+        },
+      },
+      artists: true,
+      audioFiles: true,
+      genres: { include: { genre: true } },
+    },
+  },
+} as const;
 
 @Injectable()
 export class AlbumRepository {
@@ -18,33 +44,7 @@ export class AlbumRepository {
   // ─────────────────────────────────────────────────────────────
 
   async findOne(where: AlbumWhereInput, detailed = false): Promise<Album | null> {
-    const include = detailed
-      ? {
-          cover: true,
-          artists: true,
-          genres: { include: { genre: true } },
-          tracks: {
-            where: { deletedAt: null },
-            orderBy: {
-              trackNumber: 'asc' as const,
-            },
-            include: {
-              album: {
-                include: {
-                  cover: true,
-                },
-              },
-              artists: true,
-              audioFiles: true,
-              genres: { include: { genre: true } },
-            },
-          },
-        }
-      : {
-          cover: true,
-          artists: true,
-          genres: { include: { genre: true } },
-        };
+    const include = detailed ? DETAILED_ALBUM_INCLUDE : DEFAULT_ALBUM_INCLUDE;
 
     return await this.prisma.client.album.findFirst({
       where: { ...where, deletedAt: null },
@@ -65,11 +65,7 @@ export class AlbumRepository {
         ...options.where,
         deletedAt: null,
       },
-      include: {
-        cover: true,
-        artists: true,
-        genres: { include: { genre: true } },
-      },
+      include: DEFAULT_ALBUM_INCLUDE,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
     });
   }
@@ -134,11 +130,7 @@ export class AlbumRepository {
   async create(data: AlbumCreateInput): Promise<Album> {
     return await this.prisma.client.album.create({
       data,
-      include: {
-        cover: true,
-        artists: true,
-        genres: { include: { genre: true } },
-      },
+      include: DEFAULT_ALBUM_INCLUDE,
     });
   }
 
@@ -154,11 +146,7 @@ export class AlbumRepository {
     return await this.prisma.client.album.update({
       where: { id },
       data,
-      include: {
-        cover: true,
-        artists: true,
-        genres: { include: { genre: true } },
-      },
+      include: DEFAULT_ALBUM_INCLUDE,
     });
   }
 
