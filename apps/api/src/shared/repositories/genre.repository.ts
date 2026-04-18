@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {
-    Genre,
-    GenreCreateInput,
-    GenreKind,
-    GenreOrderByWithRelationInput,
-    GenreUpdateInput,
-    GenreWhereInput,
+  Genre,
+  GenreCreateInput,
+  GenreKind,
+  GenreOrderByWithRelationInput,
+  GenreUpdateInput,
+  GenreWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 

@@ -1,12 +1,12 @@
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import {
-    BadRequestException,
-    ConflictException,
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-    PreconditionFailedException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import type { Genre } from '@repo/db';
 import { GenreNormalizationService } from './genre-normalization.service';

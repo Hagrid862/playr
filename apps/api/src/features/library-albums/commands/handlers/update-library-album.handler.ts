@@ -2,11 +2,11 @@ import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import {
-    BadRequestException,
-    ConflictException,
-    InternalServerErrorException,
-    NotFoundException,
-    PreconditionFailedException,
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
