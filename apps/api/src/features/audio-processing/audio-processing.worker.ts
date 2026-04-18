@@ -10,11 +10,11 @@ import * as mm from 'music-metadata';
 import * as os from 'os';
 import * as path from 'path';
 import {
-    LOSSLESS_FORMATS,
-    LOSSLESS_QUALITY_PRESET,
-    TEMP_DIR_PREFIX,
-    TRANSCRIPTION_QUALITIES,
-    WAVEFORM_POINTS,
+  LOSSLESS_FORMATS,
+  LOSSLESS_QUALITY_PRESET,
+  TEMP_DIR_PREFIX,
+  TRANSCRIPTION_QUALITIES,
+  WAVEFORM_POINTS,
 } from './audio-processing.constants';
 import { canUserUpdateTrackDuration } from './audio-processing.utils';
 import { AudioTranscodeService } from './audio-transcode.service';

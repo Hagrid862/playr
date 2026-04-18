@@ -4,10 +4,10 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-    BadRequestException,
-    ConflictException,
-    InternalServerErrorException,
-    PreconditionFailedException,
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';

@@ -5,9 +5,9 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-    BadRequestException,
-    InternalServerErrorException,
-    PreconditionFailedException,
+  BadRequestException,
+  InternalServerErrorException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';

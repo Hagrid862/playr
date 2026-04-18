@@ -1,9 +1,9 @@
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import {
-    InternalServerErrorException,
-    NotFoundException,
-    PreconditionFailedException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
 } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { GetLibraryGenreResponse } from '@repo/contracts';
