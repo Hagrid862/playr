@@ -10,11 +10,11 @@ import * as mm from 'music-metadata';
 import * as os from 'os';
 import * as path from 'path';
 import {
-  LOSSLESS_FORMATS,
-  LOSSLESS_QUALITY_PRESET,
-  TEMP_DIR_PREFIX,
-  TRANSCRIPTION_QUALITIES,
-  WAVEFORM_POINTS,
+    LOSSLESS_FORMATS,
+    LOSSLESS_QUALITY_PRESET,
+    TEMP_DIR_PREFIX,
+    TRANSCRIPTION_QUALITIES,
+    WAVEFORM_POINTS,
 } from './audio-processing.constants';
 import { canUserUpdateTrackDuration } from './audio-processing.utils';
 import { AudioTranscodeService } from './audio-transcode.service';
@@ -104,9 +104,13 @@ export class AudioProcessingWorker extends WorkerHost {
           userId,
         );
         if (hasAccess && (!track.duration || Math.round(duration) !== track.duration)) {
-          await this.trackRepository.update(trackId, {
-            duration: Math.round(duration),
-          });
+          await this.trackRepository.update(
+            trackId,
+            {
+              duration: Math.round(duration),
+            },
+            { includeRelations: false },
+          );
         }
       }
 
