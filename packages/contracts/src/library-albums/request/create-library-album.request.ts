@@ -1,6 +1,7 @@
 import { AlbumType } from "@repo/db";
 import { z } from "zod";
 import { zodDateTimeNullable } from "../../utils";
+import { libraryGenreIdsSchema } from "../../utils/genre-ids";
 import { zodRequiredString } from "../../utils/zod-shared";
 
 export const CreateLibraryAlbumRequestSchema = z.object({
@@ -18,7 +19,7 @@ export const CreateLibraryAlbumRequestSchema = z.object({
   artistId: zodRequiredString("Artist ID is required"),
   releaseDate: zodDateTimeNullable(),
   /** Optional initial genres (system + this library's custom). */
-  genreIds: z.array(z.string()).optional(),
+  genreIds: libraryGenreIdsSchema.optional(),
 });
 
 export type CreateLibraryAlbumRequest = z.infer<
