@@ -4,10 +4,10 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-  BadRequestException,
-  ConflictException,
-  InternalServerErrorException,
-  PreconditionFailedException,
+    BadRequestException,
+    ConflictException,
+    InternalServerErrorException,
+    PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
@@ -32,10 +32,13 @@ export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibrary
       throw new PreconditionFailedException('User library not found');
     }
 
-    if (request.genreIds !== undefined && request.genreIds.length > 0) {
+    const uniqueGenreIds =
+      request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
+
+    if (uniqueGenreIds !== undefined) {
       const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
         library.id,
-        request.genreIds,
+        uniqueGenreIds,
       );
       if (!assignable) {
         throw new BadRequestException(
@@ -43,9 +46,6 @@ export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibrary
         );
       }
     }
-
-    const uniqueGenreIds =
-      request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
 
     const artist = await this.unitOfWork.runInTransaction(async () => {
       const existingArtist = await this.artistRepository.findOne({

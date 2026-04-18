@@ -43,9 +43,6 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
       }
     }
 
-    const uniqueGenreIds =
-      request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
-
     if (request.genreIds !== undefined) {
       const library = await this.libraryRepository.getByUserId(userId);
       if (!library) {
@@ -70,7 +67,7 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
         ? {
             genres: {
               deleteMany: {},
-              create: (uniqueGenreIds ?? []).map((genreId) => ({
+              create: [...new Set(request.genreIds)].map((genreId) => ({
                 genre: { connect: { id: genreId } },
               })),
             },
