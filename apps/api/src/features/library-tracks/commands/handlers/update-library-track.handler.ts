@@ -33,15 +33,16 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
       throw new NotFoundException('Track not found or you do not have permission to update it');
     }
 
-    const library = await this.libraryRepository.getByUserId(userId);
-    if (!library) {
-      throw new PreconditionFailedException('User library not found');
-    }
-
+    let uniqueGenreIds: string[] | undefined;
     if (body.genreIds !== undefined) {
+      uniqueGenreIds = [...new Set(body.genreIds)];
+      const library = await this.libraryRepository.getByUserId(userId);
+      if (!library) {
+        throw new PreconditionFailedException('User library not found');
+      }
       const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
         library.id,
-        body.genreIds,
+        uniqueGenreIds,
       );
       if (!assignable) {
         throw new BadRequestException(
@@ -49,8 +50,6 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
         );
       }
     }
-
-    const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     const updated = await this.unitOfWork.runInTransaction(async () => {
       return await this.trackRepository.update(id, {
@@ -70,7 +69,7 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
           ? {
               genres: {
                 deleteMany: {},
-                create: (uniqueGenreIds ?? []).map((genreId) => ({
+                create: [...new Set(body.genreIds)].map((genreId) => ({
                   genre: { connect: { id: genreId } },
                 })),
               },

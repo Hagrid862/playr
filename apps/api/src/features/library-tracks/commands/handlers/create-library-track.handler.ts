@@ -5,9 +5,9 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-  BadRequestException,
-  InternalServerErrorException,
-  PreconditionFailedException,
+    BadRequestException,
+    InternalServerErrorException,
+    PreconditionFailedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
@@ -39,10 +39,12 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
       throw new PreconditionFailedException('Album not found');
     }
 
-    if (body.genreIds !== undefined && body.genreIds.length > 0) {
+    const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
+
+    if (uniqueGenreIds !== undefined) {
       const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
         library.id,
-        body.genreIds,
+        uniqueGenreIds,
       );
       if (!assignable) {
         throw new BadRequestException(
@@ -50,8 +52,6 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
         );
       }
     }
-
-    const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     const track = await this.unitOfWork.runInTransaction(async () => {
       const created = await this.trackRepository.create({
