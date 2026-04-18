@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {
-  Genre,
-  GenreCreateInput,
-  GenreKind,
-  GenreOrderByWithRelationInput,
-  GenreUpdateInput,
-  GenreWhereInput,
+    Genre,
+    GenreCreateInput,
+    GenreKind,
+    GenreOrderByWithRelationInput,
+    GenreUpdateInput,
+    GenreWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -19,7 +19,10 @@ export class GenreRepository {
 
   async findOne(where: GenreWhereInput): Promise<Genre | null> {
     return await this.prisma.client.genre.findFirst({
-      where: { ...where, deletedAt: null },
+      where: {
+        ...where,
+        deletedAt: 'deletedAt' in where && where.deletedAt !== undefined ? where.deletedAt : null,
+      },
     });
   }
 
@@ -29,10 +32,11 @@ export class GenreRepository {
     skip?: number;
     orderBy?: GenreOrderByWithRelationInput;
   }): Promise<Genre[]> {
+    const w = options.where;
     return await this.prisma.client.genre.findMany({
       where: {
-        ...options.where,
-        deletedAt: null,
+        ...w,
+        deletedAt: w && 'deletedAt' in w && w.deletedAt !== undefined ? w.deletedAt : null,
       },
       take: options.take,
       skip: options.skip,
@@ -44,7 +48,10 @@ export class GenreRepository {
     return await this.prisma.client.genre.count({
       where: {
         ...filter,
-        deletedAt: null,
+        deletedAt:
+          filter && 'deletedAt' in filter && filter.deletedAt !== undefined
+            ? filter.deletedAt
+            : null,
       },
     });
   }
@@ -121,6 +128,13 @@ export class GenreRepository {
   // ─────────────────────────────────────────────────────────────
 
   async delete(id: string): Promise<Genre> {
+    return await this.prisma.client.genre.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async hardDelete(id: string): Promise<Genre> {
     return await this.prisma.client.genre.delete({ where: { id } });
   }
 
