@@ -8,14 +8,14 @@ import { Injectable } from '@nestjs/common';
 export class GenreNormalizationService {
   /**
    * Collapses a raw label to a stable match key: lowercase, strip punctuation,
-   * remove non-alphanumeric ASCII, max length 64.
+   * keep Unicode letters and numbers, max length 64 (UTF-16 code units).
    */
   normalizeToMatchKey(raw: string): string {
     const collapsed = raw
       .normalize('NFD')
       .replace(/\p{M}/gu, '')
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '')
+      .replace(/[^\p{L}\p{N}]+/gu, '')
       .slice(0, 64);
     return collapsed;
   }
