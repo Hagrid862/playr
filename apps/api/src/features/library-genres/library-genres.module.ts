@@ -17,6 +17,5 @@ import { GetLibraryGenresHandler } from './queries/handlers/get-library-genres.h
     UpdateLibraryGenreHandler,
     DeleteLibraryGenreHandler,
   ],
-  exports: [],
 })
 export class LibraryGenresModule {}
