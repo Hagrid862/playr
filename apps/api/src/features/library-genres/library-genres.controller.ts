@@ -2,15 +2,15 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
+    Query,
+    UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -30,6 +30,7 @@ import { GetLibraryGenreQuery } from './queries/impl/get-library-genre.query';
 import { GetLibraryGenresQuery } from './queries/impl/get-library-genres.query';
 
 @ApiTags('Library Genres')
+@UseGuards(JwtAuthGuard)
 @Controller('library/genres')
 export class LibraryGenresController {
   constructor(
@@ -38,7 +39,6 @@ export class LibraryGenresController {
   ) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'List genres available to the library (system + custom)' })
   @ApiResponse({
     status: 200,
@@ -50,14 +50,16 @@ export class LibraryGenresController {
     description: 'Unauthorized',
     type: ApiErrorResponseDto,
   })
-  getGenres(@CurrentUser('id') userId: string, @Query() query: GetLibraryGenresRequestDto) {
+  async getGenres(
+    @CurrentUser('id') userId: string,
+    @Query() query: GetLibraryGenresRequestDto,
+  ): Promise<contracts.GetLibraryGenresResponse['data']> {
     return this.queryBus.execute(
       new GetLibraryGenresQuery(userId, query.page, query.limit, query.query, query.kind),
     );
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get a single genre (system or in your library)' })
   @ApiResponse({
     status: 200,
@@ -74,12 +76,14 @@ export class LibraryGenresController {
     description: 'Genre not found',
     type: ApiErrorResponseDto,
   })
-  getGenre(@CurrentUser('id') userId: string, @Param('id') id: string) {
+  async getGenre(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ): Promise<contracts.GetLibraryGenreResponse['data']> {
     return this.queryBus.execute(new GetLibraryGenreQuery(userId, id));
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a custom genre in your library' })
   @ApiResponse({
     status: 201,
@@ -104,7 +108,6 @@ export class LibraryGenresController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a custom genre in your library' })
   @ApiResponse({
     status: 200,
@@ -135,7 +138,6 @@ export class LibraryGenresController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a custom genre from your library' })
   @ApiResponse({
     status: 200,
@@ -160,7 +162,7 @@ export class LibraryGenresController {
   async deleteGenre(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-  ): Promise<contracts.ZodGenre> {
+  ): Promise<contracts.ZodDeletedGenre> {
     return this.commandBus.execute(new DeleteLibraryGenreCommand(id, userId));
   }
 }
