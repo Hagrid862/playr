@@ -72,6 +72,25 @@ describe('UpdateLibraryArtistHandler', () => {
     expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, dto);
   });
 
+  it('should clear genres when genreIds is an empty array', async () => {
+    const dto = { genreIds: [] as string[] };
+    const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
+
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    artistRepository.update.mockResolvedValue(mockArtist);
+
+    await handler.execute(command);
+
+    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, []);
+    expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
+      name: undefined,
+      description: undefined,
+      genres: { deleteMany: {}, create: [] },
+    });
+  });
+
   it('should replace artist genres when genreIds are provided', async () => {
     const dto = { genreIds: ['genre-1', 'genre-1', 'genre-2'] };
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);

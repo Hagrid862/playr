@@ -4,7 +4,11 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackSchema } from '@repo/contracts';
 import { AlbumType, Track, Visibility } from '@repo/db';
@@ -246,6 +250,47 @@ describe('BulkCreateLibraryTracksHandler', () => {
     expect(unitOfWork.runInTransaction).toHaveBeenCalledTimes(1);
     const transactionCallback = unitOfWork.runInTransaction.mock.calls[0][0];
     expect(typeof transactionCallback).toBe('function');
+  });
+
+  it('should throw BadRequestException when bulk genre ids are not assignable', async () => {
+    const command = new BulkCreateLibraryTracksCommand(
+      albumId,
+      {
+        tracks: [{ ...body.tracks[0], genreIds: ['g1'] }],
+      },
+      userId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+
+    await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+    expect(trackRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should create track with genre relations when genreIds are non-empty', async () => {
+    const command = new BulkCreateLibraryTracksCommand(
+      albumId,
+      {
+        tracks: [{ ...body.tracks[0], genreIds: ['g1', 'g1'] }],
+      },
+      userId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    trackRepository.create.mockResolvedValue(mockTrack1);
+
+    await handler.execute(command);
+
+    expect(trackRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        genres: {
+          create: [{ genre: { connect: { id: 'g1' } } }],
+        },
+      }),
+    );
   });
 
   it('should connect multiple artists when artistIds has multiple ids', async () => {

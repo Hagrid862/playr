@@ -19,6 +19,10 @@ describe('GenreNormalizationService', () => {
       expect(service.normalizeToMatchKey('Alternative Rock')).toBe('alternativerock');
     });
 
+    it('preserves Cyrillic letters in the match key', () => {
+      expect(service.normalizeToMatchKey('Рок')).toBe('рок');
+    });
+
     it('returns empty string for whitespace-only input', () => {
       expect(service.normalizeToMatchKey('   ')).toBe('');
     });
@@ -40,6 +44,14 @@ describe('GenreNormalizationService', () => {
         'Jazz',
         'Blues',
       ]);
+    });
+
+    it('skips non-string elements in arrays', () => {
+      expect(service.flattenRawGenreInput(['Rock', 123 as any, 'Jazz'])).toEqual(['Rock', 'Jazz']);
+    });
+
+    it('splits a plain string on semicolons, slashes, pipes, and commas', () => {
+      expect(service.flattenRawGenreInput('Rock; Jazz/Blues')).toEqual(['Rock', 'Jazz', 'Blues']);
     });
   });
 });
