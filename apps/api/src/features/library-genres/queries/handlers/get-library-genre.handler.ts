@@ -1,8 +1,13 @@
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { NotFoundException, PreconditionFailedException } from '@nestjs/common';
+import {
+    InternalServerErrorException,
+    NotFoundException,
+    PreconditionFailedException,
+} from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { Genre } from '@repo/db';
+import type { GetLibraryGenreResponse } from '@repo/contracts';
+import { GenreSchema } from '@repo/contracts';
 import { GetLibraryGenreQuery } from '../impl/get-library-genre.query';
 
 @QueryHandler(GetLibraryGenreQuery)
@@ -12,7 +17,7 @@ export class GetLibraryGenreHandler implements IQueryHandler<GetLibraryGenreQuer
     private readonly genreRepository: GenreRepository,
   ) {}
 
-  async execute(query: GetLibraryGenreQuery): Promise<Genre> {
+  async execute(query: GetLibraryGenreQuery): Promise<GetLibraryGenreResponse['data']> {
     const { userId, genreId } = query;
 
     const library = await this.libraryRepository.getByUserId(userId);
@@ -31,6 +36,12 @@ export class GetLibraryGenreHandler implements IQueryHandler<GetLibraryGenreQuer
       throw new NotFoundException('Genre not found');
     }
 
-    return genre;
+    const parsed = GenreSchema.safeParse(genre);
+
+    if (!parsed.success) {
+      throw new InternalServerErrorException('Genre response failed validation');
+    }
+
+    return parsed.data;
   }
 }

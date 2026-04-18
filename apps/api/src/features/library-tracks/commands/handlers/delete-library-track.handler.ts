@@ -5,8 +5,8 @@ import { StorageService } from '@/shared/services/storage.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { Logger, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { FileBucket } from '@repo/db';
 import { ZodTrack } from '@repo/contracts';
+import { FileBucket } from '@repo/db';
 import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
 
 @CommandHandler(DeleteLibraryTrackCommand)
@@ -39,9 +39,13 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
 
     await this.unitOfWork.runInTransaction(async () => {
       // Soft delete the track
-      await this.trackRepository.update(id, {
-        deletedAt: new Date(),
-      });
+      await this.trackRepository.update(
+        id,
+        {
+          deletedAt: new Date(),
+        },
+        { includeRelations: false },
+      );
 
       // Remove from all users libraries?
       // Usually library_tracks is per user. If owner deletes, maybe it should be gone from their library.
