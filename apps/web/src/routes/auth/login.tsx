@@ -35,6 +35,7 @@ export function RouteComponent() {
 
           await navigate({
             to: '/auth/verify-email',
+            search: { email: response.data.user.emailAddresses[0].email }
           });
         }
       } catch (err) {
@@ -45,7 +46,7 @@ export function RouteComponent() {
 
   return (
     <div className="flex min-h-screen w-full justify-center bg-background">
-      <div className="flex w-full max-w-[1920px] flex-col items-center justify-center p-4">
+      <div className="flex w-full max-w-480 flex-col items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle>Login to your account</CardTitle>

@@ -4,8 +4,8 @@ import { VerifyEmailRequestSchema } from '@repo/contracts';
 
 export type FormData = VerifyEmailRequest;
 
-export const useVerifyEmailForm = () => {
-  const [formData, setFormData] = useState<FormData>({ email: '', otpCode: '' });
+export const useVerifyEmailForm = (initialEmail: string = '') => {
+  const [formData, setFormData] = useState<FormData>({ email: initialEmail, otpCode: '' });
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
 
   const handleChange  = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {

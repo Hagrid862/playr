@@ -42,6 +42,7 @@ export function RouteComponent() {
 
         await navigate({
           to: '/auth/verify-email',
+          search: { email: response.data.user.emailAddresses[0].email }
         });
 
       } catch (err) {
