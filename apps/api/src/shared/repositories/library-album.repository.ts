@@ -1,67 +1,109 @@
 import { Injectable } from '@nestjs/common';
 import {
+  LibraryAlbum,
   LibraryAlbumCreateInput,
+  LibraryAlbumCreateManyInput,
+  LibraryAlbumGetPayload,
+  LibraryAlbumInclude,
   LibraryAlbumOrderByWithRelationInput,
   LibraryAlbumUpdateInput,
   LibraryAlbumWhereInput,
-  LibraryAlbumGetPayload,
-  LibraryAlbumInclude,
-  LibraryAlbumCreateManyInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
+
+const defaultLibraryAlbumFindInclude = {
+  album: { include: { cover: true, artists: true } },
+} as const;
 
 @Injectable()
 export class LibraryAlbumRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // QUERIES
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Finds a single library album by the given where conditions.
    * @param where - The where conditions to filter the library albums by.
-   * @param include - The relations to include in the result.
    * @returns The found library album or null if not found.
    */
-  async findOne<I extends LibraryAlbumInclude>(
+  async findOne(
     where: LibraryAlbumWhereInput,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }> | null> {
-    return await this.prisma.client.libraryAlbum.findFirst({
+  ): Promise<
+    LibraryAlbumGetPayload<{ include: typeof defaultLibraryAlbumFindInclude }> | null
+  > {
+    return this.prisma.client.libraryAlbum.findFirst({
       where: { ...where, deletedAt: null },
-      include: include ?? { album: { include: { cover: true, artists: true } } },
+      include: defaultLibraryAlbumFindInclude,
+    });
+  }
+
+  /**
+   * Finds a single library album by the given where conditions with relations.
+   * @param where - The where conditions to filter the library albums by.
+   * @param include - The relations to include in the result.
+   * @returns The found library album with relations or null if not found.
+   */
+  async findOneWithInclude<I extends LibraryAlbumInclude>(
+    where: LibraryAlbumWhereInput,
+    include: I,
+  ): Promise<LibraryAlbumGetPayload<{ include: I }> | null> {
+    return this.prisma.client.libraryAlbum.findFirst({
+      where: { ...where, deletedAt: null },
+      include: include,
     });
   }
 
   /**
    * Finds multiple library albums by the given where conditions.
    * @param where - The where conditions to filter the library albums by.
-   * @param options - The options for the query.
-   * @param include - The relations to include in the result.
+   * @param options - The options for the query:
+   *   - `take` (number, optional): The maximum number of library albums to return. Defaults to 10.
+   *   - `skip` (number, optional): The number of library albums to skip before starting to collect the result set. Defaults to 0.
+   *   - `orderBy` (LibraryAlbumOrderByWithRelationInput, optional): The order in which to sort the library albums. Defaults to descending by `createdAt`.
    * @returns The found library albums.
    */
-  async findMany<I extends LibraryAlbumInclude>(
+  async findMany(
     where: LibraryAlbumWhereInput,
     options: {
       take?: number;
       skip?: number;
       orderBy?: LibraryAlbumOrderByWithRelationInput;
     },
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.libraryAlbum.findMany({
+  ): Promise<LibraryAlbumGetPayload<{ include: typeof defaultLibraryAlbumFindInclude }>[]> {
+    return this.prisma.client.libraryAlbum.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
       skip: options.skip ?? 0,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
-      include: include ?? { album: { include: { cover: true, artists: true } } },
+      include: defaultLibraryAlbumFindInclude,
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // EXISTS & COUNT
-  // ─────────────────────────────────────────────────────────────
+  /**
+   * Finds multiple library albums by the given where conditions with relations.
+   * @param where - The where conditions to filter the library albums by.
+   * @param options - The options for the query:
+   *   - `take` (number, optional): The maximum number of library albums to return. Defaults to 10.
+   *   - `skip` (number, optional): The number of library albums to skip before starting to collect the result set. Defaults to 0.
+   *   - `orderBy` (LibraryAlbumOrderByWithRelationInput, optional): The order in which to sort the library albums. Defaults to descending by `createdAt`.
+   * @param include - The relations to include in the result.
+   * @returns The found library albums with relations.
+   */
+  async findManyWithInclude<I extends LibraryAlbumInclude>(
+    where: LibraryAlbumWhereInput,
+    options: {
+      take?: number;
+      skip?: number;
+      orderBy?: LibraryAlbumOrderByWithRelationInput;
+    },
+    include: I,
+  ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
+    return this.prisma.client.libraryAlbum.findMany({
+      where: { ...where, deletedAt: null },
+      take: options.take ?? 10,
+      skip: options.skip ?? 0,
+      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      include: include,
+    });
+  }
 
   /**
    * Checks if a library album exists by the given where conditions.
@@ -81,226 +123,162 @@ export class LibraryAlbumRepository {
    * @returns The number of library albums.
    */
   async count(where?: LibraryAlbumWhereInput): Promise<number> {
-    return await this.prisma.client.libraryAlbum.count({
+    return this.prisma.client.libraryAlbum.count({
       where: { ...where, deletedAt: null },
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CREATE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Creates a new library album.
    * @param data - The data for the library album.
-   * @param include - The relations to include in the result.
    * @returns The created library album.
    */
-  async create<I extends LibraryAlbumInclude>(
-    data: LibraryAlbumCreateInput,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>> {
-    return await this.prisma.client.libraryAlbum.create({ data, include: include ?? undefined });
+  async create(data: LibraryAlbumCreateInput): Promise<LibraryAlbum> {
+    return this.prisma.client.libraryAlbum.create({
+      data,
+    });
   }
 
   /**
    * Creates multiple new library albums.
    * @param data - The data for the library albums.
-   * @param include - The relations to include in the result.
    * @returns The created library albums.
    */
-  async createMany<I extends LibraryAlbumInclude>(
-    data: LibraryAlbumCreateManyInput[],
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.libraryAlbum.createManyAndReturn({
+  async createMany(data: LibraryAlbumCreateManyInput[]): Promise<LibraryAlbum[]> {
+    return this.prisma.client.libraryAlbum.createManyAndReturn({
       data,
-      include: include ?? undefined,
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Updates a library album by the given ID.
    * @param id - The ID of the library album to update.
    * @param data - The data to update the library album with.
-   * @param include - The relations to include in the result.
    * @returns The updated library album.
    */
-  async update<I extends LibraryAlbumInclude>(
-    id: string,
-    data: LibraryAlbumUpdateInput,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>> {
-    return await this.prisma.client.libraryAlbum.update({
-      where: { id },
+  async update(id: string, data: LibraryAlbumUpdateInput): Promise<LibraryAlbum> {
+    return this.prisma.client.libraryAlbum.update({
+      where: { id, deletedAt: null },
       data,
-      include: include ?? undefined,
     });
   }
 
   /**
    * Updates multiple library albums by the given IDs.
    * @param updates - The updates to apply to the library albums.
-   * @param include - The relations to include in the result.
    * @returns The updated library albums.
    */
-  async updateMany<I extends LibraryAlbumInclude>(
+  async updateMany(
     updates: { id: string; data: LibraryAlbumUpdateInput }[],
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
-    return await this.prisma.mainClient.$transaction(
+  ): Promise<LibraryAlbum[]> {
+    return this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.libraryAlbum.update({
-          where: { id },
+          where: { id, deletedAt: null },
           data,
-          include: include ?? undefined,
         }),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Deletes a library album by the given ID.
    * @param id - The ID of the library album to delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted library album.
    */
-  async delete<I extends LibraryAlbumInclude>(
-    id: string,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>> {
-    return await this.prisma.client.libraryAlbum.delete({
+  async delete(id: string): Promise<LibraryAlbum> {
+    return this.prisma.client.libraryAlbum.delete({
       where: { id },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Deletes multiple library albums by the given where conditions.
-   * @param where - The where conditions to filter the library albums by.
-   * @param include - The relations to include in the result.
+   * @param filter - The where conditions to filter the library albums by.
    * @returns The deleted library albums.
    */
-  async deleteMany<I extends LibraryAlbumInclude>(
-    where: LibraryAlbumWhereInput,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
-    const libraryAlbumsToDelete = await this.prisma.client.libraryAlbum.findMany({
-      where: { ...where, deletedAt: null },
-      include: include ?? undefined,
+  async deleteMany(filter: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
+    const toDelete = await this.prisma.client.libraryAlbum.findMany({
+      where: filter,
     });
-    if (libraryAlbumsToDelete.length === 0) return [];
+
+    if (toDelete.length === 0) return [];
 
     await this.prisma.client.libraryAlbum.deleteMany({
-      where: { id: { in: libraryAlbumsToDelete.map((libraryAlbum) => libraryAlbum.id) } },
+      where: { id: { in: toDelete.map((row) => row.id) } },
     });
 
-    return libraryAlbumsToDelete;
+    return toDelete;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SOFT DELETE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Soft deletes a library album by the given ID.
    * @param id - The ID of the library album to soft delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted library album.
    */
-  async softDelete<I extends LibraryAlbumInclude>(
-    id: string,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>> {
-    return await this.prisma.client.libraryAlbum.update({
-      where: { id },
+  async softDelete(id: string): Promise<LibraryAlbum> {
+    return this.prisma.client.libraryAlbum.update({
+      where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Soft deletes multiple library albums by the given where conditions.
    * @param where - The where conditions to filter the library albums by.
-   * @param include - The relations to include in the result.
    * @returns The deleted library albums.
    */
-  async softDeleteMany<I extends LibraryAlbumInclude>(
-    where: LibraryAlbumWhereInput,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
-    const libraryAlbumsToDelete = await this.prisma.client.libraryAlbum.findMany({
-      where,
-      include: include ?? undefined,
-    });
-    if (libraryAlbumsToDelete.length === 0) return [];
+  async softDeleteMany(where: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
+    const deletedAt = new Date();
+    return await this.prisma.mainClient.$transaction(async (tx) => {
+      const rows = await tx.libraryAlbum.findMany({
+        where: { ...where, deletedAt: null },
+      });
+      if (rows.length === 0) return [];
 
-    const libraryAlbumIds = libraryAlbumsToDelete.map((libraryAlbum) => libraryAlbum.id);
-    await this.prisma.client.libraryAlbum.updateMany({
-      where: { id: { in: libraryAlbumIds } },
-      data: { deletedAt: new Date() },
-    });
+      const ids = rows.map((row) => row.id);
+      await tx.libraryAlbum.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt },
+      });
 
-    return await this.prisma.client.libraryAlbum.findMany({
-      where: { id: { in: libraryAlbumIds } },
-      include: include ?? undefined,
+      return tx.libraryAlbum.findMany({
+        where: { id: { in: ids } },
+      });
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // RESTORE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Restores a soft deleted library album by the given ID.
    * @param id - The ID of the library album to restore.
-   * @param include - The relations to include in the result.
    * @returns The restored library album.
    */
-  async restore<I extends LibraryAlbumInclude>(
-    id: string,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>> {
-    return await this.prisma.client.libraryAlbum.update({
-      where: { id },
+  async restore(id: string): Promise<LibraryAlbum> {
+    return this.prisma.client.libraryAlbum.update({
+      where: { id, deletedAt: { not: null } },
       data: { deletedAt: null },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Restores multiple soft deleted library albums by the given where conditions.
    * @param where - The where conditions to filter the library albums by.
-   * @param include - The relations to include in the result.
    * @returns The restored library albums.
    */
-  async restoreMany<I extends LibraryAlbumInclude>(
-    where: LibraryAlbumWhereInput,
-    include?: I,
-  ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
-    const libraryAlbumsToRestore = await this.prisma.client.libraryAlbum.findMany({
-      where,
-      include: include ?? undefined,
+  async restoreMany(where: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
+    const toRestore = await this.prisma.client.libraryAlbum.findMany({
+      where: { ...where, deletedAt: { not: null } },
     });
-    if (libraryAlbumsToRestore.length === 0) return [];
+    if (toRestore.length === 0) return [];
 
-    const libraryAlbumIds = libraryAlbumsToRestore.map((libraryAlbum) => libraryAlbum.id);
+    const ids = toRestore.map((row) => row.id);
     await this.prisma.client.libraryAlbum.updateMany({
-      where: { id: { in: libraryAlbumIds } },
+      where: { id: { in: ids } },
       data: { deletedAt: null },
     });
 
-    return await this.prisma.client.libraryAlbum.findMany({
-      where: { id: { in: libraryAlbumIds } },
-      include: include ?? undefined,
+    return this.prisma.client.libraryAlbum.findMany({
+      where: { id: { in: ids } },
     });
   }
 }

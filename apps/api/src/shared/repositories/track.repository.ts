@@ -1,36 +1,52 @@
 import { Injectable } from '@nestjs/common';
 import {
-  TrackGetPayload,
-  TrackInclude,
+  Track,
   TrackCreateInput,
   TrackCreateManyInput,
+  TrackGetPayload,
+  TrackInclude,
   TrackOrderByWithRelationInput,
   TrackUpdateInput,
   TrackWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
+const defaultTrackFindInclude = {
+  artists: true,
+  album: true,
+  access: true,
+} as const;
+
 @Injectable()
 export class TrackRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // QUERIES
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Finds a single track by the given where conditions.
    * @param where - The where conditions to filter the tracks by.
-   * @param include - The relations to include in the result.
    * @returns The found track or null if not found.
    */
-  async findOne<I extends TrackInclude>(
+  async findOne(
     where: TrackWhereInput,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }> | null> {
-    return await this.prisma.client.track.findFirst({
+  ): Promise<Track | null> {
+    return this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
-      include: include ?? { artists: true, album: true, access: true },
+    });
+  }
+
+  /**
+   * Finds a single track by the given where conditions with custom relations.
+   * @param where - The where conditions to filter the tracks by.
+   * @param include - The relations to include in the result.
+   * @returns The found track with relations or null if not found.
+   */
+  async findOneWithInclude<I extends TrackInclude>(
+    where: TrackWhereInput,
+    include: I,
+  ): Promise<TrackGetPayload<{ include: I }> | null> {
+    return this.prisma.client.track.findFirst({
+      where: { ...where, deletedAt: null },
+      include: include,
     });
   }
 
@@ -41,30 +57,52 @@ export class TrackRepository {
    *   - `take` (number, optional): The maximum number of tracks to return. Defaults to 10.
    *   - `skip` (number, optional): The number of tracks to skip before starting to collect the result set. Defaults to 0.
    *   - `orderBy` (TrackOrderByWithRelationInput, optional): The order in which to sort the tracks. Defaults to descending by `createdAt`.
-   * @param include - The relations to include in the result.
    * @returns The found tracks.
    */
-  async findMany<I extends TrackInclude>(
+  async findMany(
     where: TrackWhereInput,
     options: {
       take?: number;
       skip?: number;
       orderBy?: TrackOrderByWithRelationInput;
     },
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.track.findMany({
+  ): Promise<TrackGetPayload<{ include: typeof defaultTrackFindInclude }>[]> {
+    return this.prisma.client.track.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
       skip: options.skip ?? 0,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
-      include: include ?? { artists: true, album: true, access: true },
+      include: defaultTrackFindInclude,
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // EXISTS & COUNT
-  // ─────────────────────────────────────────────────────────────
+  /**
+   * Finds multiple tracks by the given where conditions with custom relations.
+   * @param where - The where conditions to filter the tracks by.
+   * @param options - The options for the query:
+   *   - `take` (number, optional): The maximum number of tracks to return. Defaults to 10.
+   *   - `skip` (number, optional): The number of tracks to skip before starting to collect the result set. Defaults to 0.
+   *   - `orderBy` (TrackOrderByWithRelationInput, optional): The order in which to sort the tracks. Defaults to descending by `createdAt`.
+   * @param include - The relations to include in the result.
+   * @returns The found tracks with relations.
+   */
+  async findManyWithInclude<I extends TrackInclude>(
+    where: TrackWhereInput,
+    options: {
+      take?: number;
+      skip?: number;
+      orderBy?: TrackOrderByWithRelationInput;
+    },
+    include: I,
+  ): Promise<TrackGetPayload<{ include: I }>[]> {
+    return this.prisma.client.track.findMany({
+      where: { ...where, deletedAt: null },
+      take: options.take ?? 10,
+      skip: options.skip ?? 0,
+      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      include: include,
+    });
+  }
 
   /**
    * Checks if a track exists by the given where conditions.
@@ -82,13 +120,14 @@ export class TrackRepository {
    * @returns The number of tracks.
    */
   async count(where?: TrackWhereInput): Promise<number> {
-    return await this.prisma.client.track.count({ where: { ...where, deletedAt: null } });
+    return this.prisma.client.track.count({ where: { ...where, deletedAt: null } });
   }
 
   /**
-   * Checks if a user has access to a track by the given conditions.
+   * Checks if a user has access to a track (public, direct track access, album access, or artist access).
+   * Guest access uses user id `GUEST` when `userId` is omitted.
    * @param where - The where conditions to filter the tracks by.
-   * @param userId - The ID of the user to check.
+   * @param userId - The ID of the user to check (optional; defaults to guest).
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: TrackWhereInput, userId?: string): Promise<boolean> {
@@ -130,224 +169,158 @@ export class TrackRepository {
     return !!track;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CREATE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Creates a new track.
    * @param data - The data for the track.
-   * @param include - The relations to include in the result.
    * @returns The created track.
    */
-  async create<I extends TrackInclude>(
-    data: TrackCreateInput,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>> {
-    return await this.prisma.client.track.create({
+  async create(data: TrackCreateInput): Promise<Track> {
+    return this.prisma.client.track.create({
       data,
-      include: include ?? { artists: true, album: true, access: true },
     });
   }
 
   /**
    * Creates multiple new tracks.
    * @param data - The data for the tracks.
-   * @param include - The relations to include in the result.
    * @returns The created tracks.
    */
-  async createMany<I extends TrackInclude>(
-    data: TrackCreateManyInput[],
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.track.createManyAndReturn({
+  async createMany(data: TrackCreateManyInput[]): Promise<Track[]> {
+    return this.prisma.client.track.createManyAndReturn({
       data,
-      include: include ?? { artists: true, album: true, access: true },
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Updates a track by the given ID.
    * @param id - The ID of the track to update.
    * @param data - The data to update the track with.
-   * @param include - The relations to include in the result.
    * @returns The updated track.
    */
-  async update<I extends TrackInclude>(
+  async update(
     id: string,
     data: TrackUpdateInput,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>> {
-    return await this.prisma.client.track.update({
-      where: { id },
+  ): Promise<Track> {
+    return this.prisma.client.track.update({
+      where: { id, deletedAt: null },
       data,
-      include: include ?? { artists: true, album: true, access: true },
     });
   }
 
   /**
    * Updates multiple tracks by the given IDs.
    * @param updates - The updates to apply to the tracks.
-   * @param include - The relations to include in the result.
    * @returns The updated tracks.
    */
-  async updateMany<I extends TrackInclude>(
-    updates: { id: string; data: TrackUpdateInput }[],
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>[]> {
-    return await this.prisma.mainClient.$transaction(
+  async updateMany(updates: { id: string; data: TrackUpdateInput }[]): Promise<Track[]> {
+    return this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.track.update({
-          where: { id },
+          where: { id, deletedAt: null },
           data,
-          include: include ?? { artists: true, album: true, access: true },
         }),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Deletes a track by the given ID.
    * @param id - The ID of the track to delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted track.
    */
-  async delete<I extends TrackInclude>(
-    id: string,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>> {
-    return await this.prisma.client.track.delete({
+  async delete(id: string): Promise<Track> {
+    return this.prisma.client.track.delete({
       where: { id },
-      include: include ?? { artists: true, album: true, access: true },
     });
   }
 
   /**
    * Deletes multiple tracks by the given where conditions.
-   * @param where - The where conditions to filter the tracks by.
-   * @param include - The relations to include in the result.
+   * @param filter - The where conditions to filter the tracks by.
    * @returns The deleted tracks.
    */
-  async deleteMany<I extends TrackInclude>(
-    where: TrackWhereInput,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>[]> {
-    const tracksToDelete = await this.prisma.client.track.findMany({
-      where,
-      include: include ?? { artists: true, album: true, access: true },
+  async deleteMany(filter: TrackWhereInput): Promise<Track[]> {
+    const toDelete = await this.prisma.client.track.findMany({
+      where: filter,
     });
-    if (tracksToDelete.length === 0) return [];
+
+    if (toDelete.length === 0) return [];
 
     await this.prisma.client.track.deleteMany({
-      where: { id: { in: tracksToDelete.map((track) => track.id) } },
+      where: { id: { in: toDelete.map((row) => row.id) } },
     });
 
-    return tracksToDelete;
+    return toDelete;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SOFT DELETE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Soft deletes a track by the given ID.
    * @param id - The ID of the track to soft delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted track.
    */
-  async softDelete<I extends TrackInclude>(
-    id: string,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>> {
-    return await this.prisma.client.track.update({
-      where: { id },
+  async softDelete(id: string): Promise<Track> {
+    return this.prisma.client.track.update({
+      where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
-      include: include ?? { artists: true, album: true, access: true },
     });
   }
 
   /**
    * Soft deletes multiple tracks by the given where conditions.
    * @param where - The where conditions to filter the tracks by.
-   * @param include - The relations to include in the result.
    * @returns The deleted tracks.
    */
-  async softDeleteMany<I extends TrackInclude>(
-    where: TrackWhereInput,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>[]> {
-    const tracksToDelete = await this.prisma.client.track.findMany({
-      where,
-      include: include ?? { artists: true, album: true, access: true },
-    });
-    if (tracksToDelete.length === 0) return [];
+  async softDeleteMany(where: TrackWhereInput): Promise<Track[]> {
+    const deletedAt = new Date();
+    return await this.prisma.mainClient.$transaction(async (tx) => {
+      const rows = await tx.track.findMany({
+        where: { ...where, deletedAt: null },
+      });
+      if (rows.length === 0) return [];
 
-    const trackIds = tracksToDelete.map((track) => track.id);
-    await this.prisma.client.track.updateMany({
-      where: { id: { in: trackIds } },
-      data: { deletedAt: new Date() },
-    });
+      const ids = rows.map((row) => row.id);
+      await tx.track.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt },
+      });
 
-    return await this.prisma.client.track.findMany({
-      where: { id: { in: trackIds } },
-      include: include ?? { artists: true, album: true, access: true },
+      return tx.track.findMany({
+        where: { id: { in: ids } },
+      });
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // RESTORE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Restores a soft deleted track by the given ID.
    * @param id - The ID of the track to restore.
-   * @param include - The relations to include in the result.
    * @returns The restored track.
    */
-  async restore<I extends TrackInclude>(
-    id: string,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>> {
-    return await this.prisma.client.track.update({
-      where: { id },
+  async restore(id: string): Promise<Track> {
+    return this.prisma.client.track.update({
+      where: { id, deletedAt: { not: null } },
       data: { deletedAt: null },
-      include: include ?? { artists: true, album: true, access: true },
     });
   }
 
   /**
    * Restores multiple soft deleted tracks by the given where conditions.
    * @param where - The where conditions to filter the tracks by.
-   * @param include - The relations to include in the result.
    * @returns The restored tracks.
    */
-  async restoreMany<I extends TrackInclude>(
-    where: TrackWhereInput,
-    include?: I,
-  ): Promise<TrackGetPayload<{ include: I }>[]> {
-    const tracksToRestore = await this.prisma.client.track.findMany({
-      where,
-      include: include ?? { artists: true, album: true, access: true },
+  async restoreMany(where: TrackWhereInput): Promise<Track[]> {
+    const toRestore = await this.prisma.client.track.findMany({
+      where: { ...where, deletedAt: { not: null } },
     });
-    if (tracksToRestore.length === 0) return [];
+    if (toRestore.length === 0) return [];
 
-    const trackIds = tracksToRestore.map((track) => track.id);
+    const ids = toRestore.map((row) => row.id);
     await this.prisma.client.track.updateMany({
-      where: { id: { in: trackIds } },
+      where: { id: { in: ids } },
       data: { deletedAt: null },
     });
 
-    return await this.prisma.client.track.findMany({
-      where: { id: { in: trackIds } },
-      include: include ?? { artists: true, album: true, access: true },
+    return this.prisma.client.track.findMany({
+      where: { id: { in: ids } },
     });
   }
 }

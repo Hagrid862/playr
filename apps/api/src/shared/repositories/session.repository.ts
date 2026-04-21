@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../services/prisma.service';
 import {
+  Session,
   SessionCreateInput,
   SessionCreateManyInput,
   SessionGetPayload,
@@ -9,28 +9,39 @@ import {
   SessionUpdateInput,
   SessionWhereInput,
 } from '@repo/db';
+import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class SessionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // QUERIES
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Finds a single session by the given where conditions.
    * @param where - The where conditions to filter the sessions by.
-   * @param include - The relations to include in the result.
    * @returns The found session or null if not found.
    */
-  async findOne<I extends SessionInclude>(
+  async findOne(
     where: SessionWhereInput,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }> | null> {
-    return await this.prisma.client.session.findFirst({
+  ): Promise<SessionGetPayload<{ include: { user: true } }> | null> {
+    return this.prisma.client.session.findFirst({
       where: { ...where, deletedAt: null },
-      include: include ?? { user: true },
+      include: { user: true },
+    });
+  }
+
+  /**
+   * Finds a single session by the given where conditions with relations.
+   * @param where - The where conditions to filter the sessions by.
+   * @param include - The relations to include in the result.
+   * @returns The found session with relations or null if not found.
+   */
+  async findOneWithInclude<I extends SessionInclude>(
+    where: SessionWhereInput,
+    include: I,
+  ): Promise<SessionGetPayload<{ include: I }> | null> {
+    return this.prisma.client.session.findFirst({
+      where: { ...where, deletedAt: null },
+      include: include,
     });
   }
 
@@ -41,30 +52,52 @@ export class SessionRepository {
    *   - `take` (number, optional): The maximum number of sessions to return. Defaults to 10.
    *   - `skip` (number, optional): The number of sessions to skip before starting to collect the result set. Defaults to 0.
    *   - `orderBy` (SessionOrderByWithRelationInput, optional): The order in which to sort the sessions. Defaults to descending by `createdAt`.
-   * @param include - The relations to include in the result.
    * @returns The found sessions.
    */
-  async findMany<I extends SessionInclude>(
+  async findMany(
     where: SessionWhereInput,
     options: {
       take?: number;
       skip?: number;
       orderBy?: SessionOrderByWithRelationInput;
     },
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.session.findMany({
+  ): Promise<SessionGetPayload<{ include: { user: true } }>[]> {
+    return this.prisma.client.session.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
       skip: options.skip ?? 0,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
-      include: include ?? { user: true },
+      include: { user: true },
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // EXISTS & COUNT
-  // ─────────────────────────────────────────────────────────────
+  /**
+   * Finds multiple sessions by the given where conditions with relations.
+   * @param where - The where conditions to filter the sessions by.
+   * @param options - The options for the query:
+   *   - `take` (number, optional): The maximum number of sessions to return. Defaults to 10.
+   *   - `skip` (number, optional): The number of sessions to skip before starting to collect the result set. Defaults to 0.
+   *   - `orderBy` (SessionOrderByWithRelationInput, optional): The order in which to sort the sessions. Defaults to descending by `createdAt`.
+   * @param include - The relations to include in the result.
+   * @returns The found sessions with relations.
+   */
+  async findManyWithInclude<I extends SessionInclude>(
+    where: SessionWhereInput,
+    options: {
+      take?: number;
+      skip?: number;
+      orderBy?: SessionOrderByWithRelationInput;
+    },
+    include: I,
+  ): Promise<SessionGetPayload<{ include: I }>[]> {
+    return this.prisma.client.session.findMany({
+      where: { ...where, deletedAt: null },
+      take: options.take ?? 10,
+      skip: options.skip ?? 0,
+      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      include: include,
+    });
+  }
 
   /**
    * Checks if a session exists by the given where conditions.
@@ -82,7 +115,7 @@ export class SessionRepository {
    * @returns The number of sessions.
    */
   async count(where?: SessionWhereInput): Promise<number> {
-    return await this.prisma.client.session.count({ where: { ...where, deletedAt: null } });
+    return this.prisma.client.session.count({ where: { ...where, deletedAt: null } });
   }
 
   /**
@@ -100,221 +133,155 @@ export class SessionRepository {
     return !!session;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CREATE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Creates a new session.
    * @param data - The data for the session.
-   * @param include - The relations to include in the result.
    * @returns The created session.
    */
-  async create<I extends SessionInclude>(
-    data: SessionCreateInput,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>> {
-    return await this.prisma.client.session.create({ data, include: include ?? { user: true } });
+  async create(data: SessionCreateInput): Promise<Session> {
+    return this.prisma.client.session.create({
+      data,
+    });
   }
 
   /**
    * Creates multiple new sessions.
    * @param data - The data for the sessions.
-   * @param include - The relations to include in the result.
    * @returns The created sessions.
    */
-  async createMany<I extends SessionInclude>(
-    data: SessionCreateManyInput[],
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.session.createManyAndReturn({
+  async createMany(data: SessionCreateManyInput[]): Promise<Session[]> {
+    return this.prisma.client.session.createManyAndReturn({
       data,
-      include: include ?? { user: true },
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Updates a session by the given ID.
    * @param id - The ID of the session to update.
    * @param data - The data to update the session with.
-   * @param include - The relations to include in the result.
    * @returns The updated session.
    */
-  async update<I extends SessionInclude>(
-    id: string,
-    data: SessionUpdateInput,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>> {
-    return await this.prisma.client.session.update({
-      where: { id },
+  async update(id: string, data: SessionUpdateInput): Promise<Session> {
+    return this.prisma.client.session.update({
+      where: { id, deletedAt: null },
       data,
-      include: include ?? { user: true },
     });
   }
 
   /**
    * Updates multiple sessions by the given IDs.
    * @param updates - The updates to apply to the sessions.
-   * @param include - The relations to include in the result.
    * @returns The updated sessions.
    */
-  async updateMany<I extends SessionInclude>(
-    updates: { id: string; data: SessionUpdateInput }[],
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>[]> {
-    return await this.prisma.mainClient.$transaction(
+  async updateMany(updates: { id: string; data: SessionUpdateInput }[]): Promise<Session[]> {
+    return this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.session.update({
-          where: { id },
+          where: { id, deletedAt: null },
           data,
-          include: include ?? { user: true },
         }),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Deletes a session by the given ID.
    * @param id - The ID of the session to delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted session.
    */
-  async delete<I extends SessionInclude>(
-    id: string,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>> {
-    return await this.prisma.client.session.delete({
+  async delete(id: string): Promise<Session> {
+    return this.prisma.client.session.delete({
       where: { id },
-      include: include ?? { user: true },
     });
   }
 
   /**
    * Deletes multiple sessions by the given where conditions.
-   * @param where - The where conditions to filter the sessions by.
-   * @param include - The relations to include in the result.
+   * @param filter - The where conditions to filter the sessions by.
    * @returns The deleted sessions.
    */
-  async deleteMany<I extends SessionInclude>(
-    where: SessionWhereInput,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>[]> {
-    const sessionsToDelete = await this.prisma.client.session.findMany({
-      where,
-      include: include ?? { user: true },
+  async deleteMany(filter: SessionWhereInput): Promise<Session[]> {
+    const toDelete = await this.prisma.client.session.findMany({
+      where: filter,
     });
-    if (sessionsToDelete.length === 0) return [];
+
+    if (toDelete.length === 0) return [];
 
     await this.prisma.client.session.deleteMany({
-      where: { id: { in: sessionsToDelete.map((session) => session.id) } },
+      where: { id: { in: toDelete.map((row) => row.id) } },
     });
 
-    return sessionsToDelete;
+    return toDelete;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SOFT DELETE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Soft deletes a session by the given ID.
    * @param id - The ID of the session to soft delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted session.
    */
-  async softDelete<I extends SessionInclude>(
-    id: string,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>> {
-    return await this.prisma.client.session.update({
-      where: { id },
+  async softDelete(id: string): Promise<Session> {
+    return this.prisma.client.session.update({
+      where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
-      include: include ?? { user: true },
     });
   }
 
   /**
    * Soft deletes multiple sessions by the given where conditions.
    * @param where - The where conditions to filter the sessions by.
-   * @param include - The relations to include in the result.
    * @returns The deleted sessions.
    */
-  async softDeleteMany<I extends SessionInclude>(
-    where: SessionWhereInput,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>[]> {
-    const sessionsToDelete = await this.prisma.client.session.findMany({
-      where,
-      include: include ?? { user: true },
-    });
-    if (sessionsToDelete.length === 0) return [];
+  async softDeleteMany(where: SessionWhereInput): Promise<Session[]> {
+    const deletedAt = new Date();
+    return await this.prisma.mainClient.$transaction(async (tx) => {
+      const rows = await tx.session.findMany({
+        where: { ...where, deletedAt: null },
+      });
+      if (rows.length === 0) return [];
 
-    const sessionIds = sessionsToDelete.map((session) => session.id);
-    await this.prisma.client.session.updateMany({
-      where: { id: { in: sessionIds } },
-      data: { deletedAt: new Date() },
-    });
+      const ids = rows.map((row) => row.id);
+      await tx.session.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt },
+      });
 
-    return await this.prisma.client.session.findMany({
-      where: { id: { in: sessionIds } },
-      include: include ?? { user: true },
+      return tx.session.findMany({
+        where: { id: { in: ids } },
+      });
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // RESTORE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Restores a soft deleted session by the given ID.
    * @param id - The ID of the session to restore.
-   * @param include - The relations to include in the result.
    * @returns The restored session.
    */
-  async restore<I extends SessionInclude>(
-    id: string,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>> {
-    return await this.prisma.client.session.update({
-      where: { id },
+  async restore(id: string): Promise<Session> {
+    return this.prisma.client.session.update({
+      where: { id, deletedAt: { not: null } },
       data: { deletedAt: null },
-      include: include ?? { user: true },
     });
   }
 
   /**
    * Restores multiple soft deleted sessions by the given where conditions.
    * @param where - The where conditions to filter the sessions by.
-   * @param include - The relations to include in the result.
    * @returns The restored sessions.
    */
-  async restoreMany<I extends SessionInclude>(
-    where: SessionWhereInput,
-    include?: I,
-  ): Promise<SessionGetPayload<{ include: I }>[]> {
-    const sessionsToRestore = await this.prisma.client.session.findMany({
-      where,
-      include: include ?? { user: true },
+  async restoreMany(where: SessionWhereInput): Promise<Session[]> {
+    const toRestore = await this.prisma.client.session.findMany({
+      where: { ...where, deletedAt: { not: null } },
     });
-    if (sessionsToRestore.length === 0) return [];
+    if (toRestore.length === 0) return [];
 
-    const sessionIds = sessionsToRestore.map((session) => session.id);
+    const ids = toRestore.map((row) => row.id);
     await this.prisma.client.session.updateMany({
-      where: { id: { in: sessionIds } },
+      where: { id: { in: ids } },
       data: { deletedAt: null },
     });
 
-    return await this.prisma.client.session.findMany({
-      where: { id: { in: sessionIds } },
-      include: include ?? { user: true },
+    return this.prisma.client.session.findMany({
+      where: { id: { in: ids } },
     });
   }
 }

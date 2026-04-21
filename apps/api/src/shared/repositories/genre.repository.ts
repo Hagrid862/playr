@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
-  GenreGetPayload,
-  GenreInclude,
+  Genre,
   GenreCreateInput,
   GenreCreateManyInput,
+  GenreGetPayload,
+  GenreInclude,
   GenreOrderByWithRelationInput,
   GenreUpdateInput,
   GenreWhereInput,
@@ -14,23 +15,33 @@ import { PrismaService } from '../services/prisma.service';
 export class GenreRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // QUERIES
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Finds a single genre by the given where conditions.
    * @param where - The where conditions to filter the genres by.
-   * @param include - The relations to include in the result.
    * @returns The found genre or null if not found.
    */
-  async findOne<I extends GenreInclude>(
+  async findOne(
     where: GenreWhereInput,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }> | null> {
-    return await this.prisma.client.genre.findFirst({
+  ): Promise<GenreGetPayload<{ include: { library: true } }> | null> {
+    return this.prisma.client.genre.findFirst({
       where: { ...where, deletedAt: null },
-      include: include ?? undefined,
+      include: { library: true },
+    });
+  }
+
+  /**
+   * Finds a single genre by the given where conditions with relations.
+   * @param where - The where conditions to filter the genres by.
+   * @param include - The relations to include in the result.
+   * @returns The found genre with relations or null if not found.
+   */
+  async findOneWithInclude<I extends GenreInclude>(
+    where: GenreWhereInput,
+    include: I,
+  ): Promise<GenreGetPayload<{ include: I }> | null> {
+    return this.prisma.client.genre.findFirst({
+      where: { ...where, deletedAt: null },
+      include: include,
     });
   }
 
@@ -41,30 +52,52 @@ export class GenreRepository {
    *   - `take` (number, optional): The maximum number of genres to return. Defaults to 10.
    *   - `skip` (number, optional): The number of genres to skip before starting to collect the result set. Defaults to 0.
    *   - `orderBy` (GenreOrderByWithRelationInput, optional): The order in which to sort the genres. Defaults to descending by `createdAt`.
-   * @param include - The relations to include in the result.
    * @returns The found genres.
    */
-  async findMany<I extends GenreInclude>(
+  async findMany(
     where: GenreWhereInput,
     options: {
       take?: number;
       skip?: number;
       orderBy?: GenreOrderByWithRelationInput;
     },
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.genre.findMany({
+  ): Promise<GenreGetPayload<{ include: { library: true } }>[]> {
+    return this.prisma.client.genre.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
       skip: options.skip ?? 0,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
-      include: include ?? undefined,
+      include: { library: true },
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // EXISTS & COUNT
-  // ─────────────────────────────────────────────────────────────
+  /**
+   * Finds multiple genres by the given where conditions with relations.
+   * @param where - The where conditions to filter the genres by.
+   * @param options - The options for the query:
+   *   - `take` (number, optional): The maximum number of genres to return. Defaults to 10.
+   *   - `skip` (number, optional): The number of genres to skip before starting to collect the result set. Defaults to 0.
+   *   - `orderBy` (GenreOrderByWithRelationInput, optional): The order in which to sort the genres. Defaults to descending by `createdAt`.
+   * @param include - The relations to include in the result.
+   * @returns The found genres with relations.
+   */
+  async findManyWithInclude<I extends GenreInclude>(
+    where: GenreWhereInput,
+    options: {
+      take?: number;
+      skip?: number;
+      orderBy?: GenreOrderByWithRelationInput;
+    },
+    include: I,
+  ): Promise<GenreGetPayload<{ include: I }>[]> {
+    return this.prisma.client.genre.findMany({
+      where: { ...where, deletedAt: null },
+      take: options.take ?? 10,
+      skip: options.skip ?? 0,
+      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      include: include,
+    });
+  }
 
   /**
    * Checks if a genre exists by the given where conditions.
@@ -82,224 +115,158 @@ export class GenreRepository {
    * @returns The number of genres.
    */
   async count(where?: GenreWhereInput): Promise<number> {
-    return await this.prisma.client.genre.count({ where: { ...where, deletedAt: null } });
+    return this.prisma.client.genre.count({ where: { ...where, deletedAt: null } });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // CREATE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Creates a new genre.
    * @param data - The data for the genre.
-   * @param include - The relations to include in the result.
    * @returns The created genre.
    */
-  async create<I extends GenreInclude>(
-    data: GenreCreateInput,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>> {
-    return await this.prisma.client.genre.create({ data, include: include ?? undefined });
+  async create(data: GenreCreateInput): Promise<Genre> {
+    return this.prisma.client.genre.create({
+      data,
+    });
   }
 
   /**
    * Creates multiple new genres.
    * @param data - The data for the genres.
-   * @param include - The relations to include in the result.
    * @returns The created genres.
    */
-  async createMany<I extends GenreInclude>(
-    data: GenreCreateManyInput[],
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.genre.createManyAndReturn({
+  async createMany(data: GenreCreateManyInput[]): Promise<Genre[]> {
+    return this.prisma.client.genre.createManyAndReturn({
       data,
-      include: include ?? undefined,
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Updates a genre by the given ID.
    * @param id - The ID of the genre to update.
    * @param data - The data to update the genre with.
-   * @param include - The relations to include in the result.
    * @returns The updated genre.
    */
-  async update<I extends GenreInclude>(
-    id: string,
-    data: GenreUpdateInput,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>> {
-    return await this.prisma.client.genre.update({
-      where: { id },
+  async update(id: string, data: GenreUpdateInput): Promise<Genre> {
+    return this.prisma.client.genre.update({
+      where: { id, deletedAt: null },
       data,
-      include: include ?? undefined,
     });
   }
 
   /**
    * Updates multiple genres by the given IDs.
    * @param updates - The updates to apply to the genres.
-   * @param include - The relations to include in the result.
    * @returns The updated genres.
    */
-  async updateMany<I extends GenreInclude>(
-    updates: { id: string; data: GenreUpdateInput }[],
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>[]> {
-    return await this.prisma.mainClient.$transaction(
+  async updateMany(updates: { id: string; data: GenreUpdateInput }[]): Promise<Genre[]> {
+    return this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.genre.update({
-          where: { id },
+          where: { id, deletedAt: null },
           data,
-          include: include ?? undefined,
         }),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Deletes a genre by the given ID.
    * @param id - The ID of the genre to delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted genre.
    */
-  async delete<I extends GenreInclude>(
-    id: string,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>> {
-    return await this.prisma.client.genre.delete({
+  async delete(id: string): Promise<Genre> {
+    return this.prisma.client.genre.delete({
       where: { id },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Deletes multiple genres by the given where conditions.
-   * @param where - The where conditions to filter the genres by.
-   * @param include - The relations to include in the result.
+   * @param filter - The where conditions to filter the genres by.
    * @returns The deleted genres.
    */
-  async deleteMany<I extends GenreInclude>(
-    where: GenreWhereInput,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>[]> {
-    const genresToDelete = await this.prisma.client.genre.findMany({
-      where,
-      include: include ?? undefined,
+  async deleteMany(filter: GenreWhereInput): Promise<Genre[]> {
+    const toDelete = await this.prisma.client.genre.findMany({
+      where: filter,
     });
-    if (genresToDelete.length === 0) return [];
+
+    if (toDelete.length === 0) return [];
 
     await this.prisma.client.genre.deleteMany({
-      where: { id: { in: genresToDelete.map((genre) => genre.id) } },
+      where: { id: { in: toDelete.map((a) => a.id) } },
     });
 
-    return genresToDelete;
+    return toDelete;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SOFT DELETE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Soft deletes a genre by the given ID.
    * @param id - The ID of the genre to soft delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted genre.
    */
-  async softDelete<I extends GenreInclude>(
-    id: string,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>> {
-    return await this.prisma.client.genre.update({
-      where: { id },
+  async softDelete(id: string): Promise<Genre> {
+    return this.prisma.client.genre.update({
+      where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Soft deletes multiple genres by the given where conditions.
    * @param where - The where conditions to filter the genres by.
-   * @param include - The relations to include in the result.
    * @returns The deleted genres.
    */
-  async softDeleteMany<I extends GenreInclude>(
-    where: GenreWhereInput,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>[]> {
-    const genresToDelete = await this.prisma.client.genre.findMany({
-      where,
-      include: include ?? undefined,
-    });
-    if (genresToDelete.length === 0) return [];
+  async softDeleteMany(where: GenreWhereInput): Promise<Genre[]> {
+    const deletedAt = new Date();
+    return await this.prisma.mainClient.$transaction(async (tx) => {
+      const rows = await tx.genre.findMany({
+        where: { ...where, deletedAt: null },
+      });
+      if (rows.length === 0) return [];
 
-    const genreIds = genresToDelete.map((genre) => genre.id);
-    await this.prisma.client.genre.updateMany({
-      where: { id: { in: genreIds } },
-      data: { deletedAt: new Date() },
-    });
+      const ids = rows.map((row) => row.id);
+      await tx.genre.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt },
+      });
 
-    return await this.prisma.client.genre.findMany({
-      where: { id: { in: genreIds } },
-      include: include ?? undefined,
+      return tx.genre.findMany({
+        where: { id: { in: ids } },
+      });
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // RESTORE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Restores a soft deleted genre by the given ID.
    * @param id - The ID of the genre to restore.
-   * @param include - The relations to include in the result.
    * @returns The restored genre.
    */
-  async restore<I extends GenreInclude>(
-    id: string,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>> {
-    return await this.prisma.client.genre.update({
-      where: { id },
+  async restore(id: string): Promise<Genre> {
+    return this.prisma.client.genre.update({
+      where: { id, deletedAt: { not: null } },
       data: { deletedAt: null },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Restores multiple soft deleted genres by the given where conditions.
    * @param where - The where conditions to filter the genres by.
-   * @param include - The relations to include in the result.
    * @returns The restored genres.
    */
-  async restoreMany<I extends GenreInclude>(
-    where: GenreWhereInput,
-    include?: I,
-  ): Promise<GenreGetPayload<{ include: I }>[]> {
-    const genresToRestore = await this.prisma.client.genre.findMany({
-      where,
-      include: include ?? undefined,
+  async restoreMany(where: GenreWhereInput): Promise<Genre[]> {
+    const toRestore = await this.prisma.client.genre.findMany({
+      where: { ...where, deletedAt: { not: null } },
     });
-    if (genresToRestore.length === 0) return [];
+    if (toRestore.length === 0) return [];
 
-    const genreIds = genresToRestore.map((genre) => genre.id);
+    const ids = toRestore.map((row) => row.id);
     await this.prisma.client.genre.updateMany({
-      where: { id: { in: genreIds } },
+      where: { id: { in: ids } },
       data: { deletedAt: null },
     });
 
-    return await this.prisma.client.genre.findMany({
-      where: { id: { in: genreIds } },
-      include: include ?? undefined,
+    return this.prisma.client.genre.findMany({
+      where: { id: { in: ids } },
     });
   }
 }

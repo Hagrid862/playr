@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../services/prisma.service';
 import {
+  RefreshToken,
   RefreshTokenCreateInput,
   RefreshTokenCreateManyInput,
   RefreshTokenGetPayload,
@@ -9,28 +9,39 @@ import {
   RefreshTokenUpdateInput,
   RefreshTokenWhereInput,
 } from '@repo/db';
+import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class RefreshTokenRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // QUERIES
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Finds a single refresh token by the given where conditions.
    * @param where - The where conditions to filter the refresh tokens by.
-   * @param include - The relations to include in the result.
    * @returns The found refresh token or null if not found.
    */
-  async findOne<I extends RefreshTokenInclude>(
+  async findOne(
     where: RefreshTokenWhereInput,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }> | null> {
-    return await this.prisma.client.refreshToken.findFirst({
+  ): Promise<RefreshTokenGetPayload<{ include: { session: true } }> | null> {
+    return this.prisma.client.refreshToken.findFirst({
       where: { ...where, deletedAt: null },
-      include: include ?? { session: true },
+      include: { session: true },
+    });
+  }
+
+  /**
+   * Finds a single refresh token by the given where conditions with relations.
+   * @param where - The where conditions to filter the refresh tokens by.
+   * @param include - The relations to include in the result.
+   * @returns The found refresh token with relations or null if not found.
+   */
+  async findOneWithInclude<I extends RefreshTokenInclude>(
+    where: RefreshTokenWhereInput,
+    include: I,
+  ): Promise<RefreshTokenGetPayload<{ include: I }> | null> {
+    return this.prisma.client.refreshToken.findFirst({
+      where: { ...where, deletedAt: null },
+      include: include,
     });
   }
 
@@ -41,30 +52,52 @@ export class RefreshTokenRepository {
    *   - `take` (number, optional): The maximum number of refresh tokens to return. Defaults to 10.
    *   - `skip` (number, optional): The number of refresh tokens to skip before starting to collect the result set. Defaults to 0.
    *   - `orderBy` (RefreshTokenOrderByWithRelationInput, optional): The order in which to sort the refresh tokens. Defaults to descending by `createdAt`.
-   * @param include - The relations to include in the result.
    * @returns The found refresh tokens.
    */
-  async findMany<I extends RefreshTokenInclude>(
+  async findMany(
     where: RefreshTokenWhereInput,
     options: {
       take?: number;
       skip?: number;
       orderBy?: RefreshTokenOrderByWithRelationInput;
     },
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.refreshToken.findMany({
+  ): Promise<RefreshTokenGetPayload<{ include: { session: true } }>[]> {
+    return this.prisma.client.refreshToken.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
       skip: options.skip ?? 0,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
-      include: include ?? { session: true },
+      include: { session: true },
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // EXISTS & COUNT
-  // ─────────────────────────────────────────────────────────────
+  /**
+   * Finds multiple refresh tokens by the given where conditions with relations.
+   * @param where - The where conditions to filter the refresh tokens by.
+   * @param options - The options for the query:
+   *   - `take` (number, optional): The maximum number of refresh tokens to return. Defaults to 10.
+   *   - `skip` (number, optional): The number of refresh tokens to skip before starting to collect the result set. Defaults to 0.
+   *   - `orderBy` (RefreshTokenOrderByWithRelationInput, optional): The order in which to sort the refresh tokens. Defaults to descending by `createdAt`.
+   * @param include - The relations to include in the result.
+   * @returns The found refresh tokens with relations.
+   */
+  async findManyWithInclude<I extends RefreshTokenInclude>(
+    where: RefreshTokenWhereInput,
+    options: {
+      take?: number;
+      skip?: number;
+      orderBy?: RefreshTokenOrderByWithRelationInput;
+    },
+    include: I,
+  ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
+    return this.prisma.client.refreshToken.findMany({
+      where: { ...where, deletedAt: null },
+      take: options.take ?? 10,
+      skip: options.skip ?? 0,
+      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      include: include,
+    });
+  }
 
   /**
    * Checks if a refresh token exists by the given where conditions.
@@ -84,7 +117,7 @@ export class RefreshTokenRepository {
    * @returns The number of refresh tokens.
    */
   async count(where?: RefreshTokenWhereInput): Promise<number> {
-    return await this.prisma.client.refreshToken.count({ where: { ...where, deletedAt: null } });
+    return this.prisma.client.refreshToken.count({ where: { ...where, deletedAt: null } });
   }
 
   /**
@@ -102,224 +135,157 @@ export class RefreshTokenRepository {
     return !!token;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CREATE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Creates a new refresh token.
    * @param data - The data for the refresh token.
-   * @param include - The relations to include in the result.
    * @returns The created refresh token.
    */
-  async create<I extends RefreshTokenInclude>(
-    data: RefreshTokenCreateInput,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>> {
-    return await this.prisma.client.refreshToken.create({
+  async create(data: RefreshTokenCreateInput): Promise<RefreshToken> {
+    return this.prisma.client.refreshToken.create({
       data,
-      include: include ?? { session: true },
     });
   }
 
   /**
    * Creates multiple new refresh tokens.
    * @param data - The data for the refresh tokens.
-   * @param include - The relations to include in the result.
    * @returns The created refresh tokens.
    */
-  async createMany<I extends RefreshTokenInclude>(
-    data: RefreshTokenCreateManyInput[],
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.refreshToken.createManyAndReturn({
+  async createMany(data: RefreshTokenCreateManyInput[]): Promise<RefreshToken[]> {
+    return this.prisma.client.refreshToken.createManyAndReturn({
       data,
-      include: include ?? { session: true },
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Updates a refresh token by the given ID.
    * @param id - The ID of the refresh token to update.
    * @param data - The data to update the refresh token with.
-   * @param include - The relations to include in the result.
    * @returns The updated refresh token.
    */
-  async update<I extends RefreshTokenInclude>(
-    id: string,
-    data: RefreshTokenUpdateInput,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>> {
-    return await this.prisma.client.refreshToken.update({
-      where: { id },
+  async update(id: string, data: RefreshTokenUpdateInput): Promise<RefreshToken> {
+    return this.prisma.client.refreshToken.update({
+      where: { id, deletedAt: null },
       data,
-      include: include ?? { session: true },
     });
   }
 
   /**
    * Updates multiple refresh tokens by the given IDs.
    * @param updates - The updates to apply to the refresh tokens.
-   * @param include - The relations to include in the result.
    * @returns The updated refresh tokens.
    */
-  async updateMany<I extends RefreshTokenInclude>(
+  async updateMany(
     updates: { id: string; data: RefreshTokenUpdateInput }[],
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
-    return await this.prisma.mainClient.$transaction(
+  ): Promise<RefreshToken[]> {
+    return this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.refreshToken.update({
-          where: { id },
+          where: { id, deletedAt: null },
           data,
-          include: include ?? { session: true },
         }),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Deletes a refresh token by the given ID.
    * @param id - The ID of the refresh token to delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted refresh token.
    */
-  async delete<I extends RefreshTokenInclude>(
-    id: string,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>> {
-    return await this.prisma.client.refreshToken.delete({
+  async delete(id: string): Promise<RefreshToken> {
+    return this.prisma.client.refreshToken.delete({
       where: { id },
-      include: include ?? { session: true },
     });
   }
 
   /**
    * Deletes multiple refresh tokens by the given where conditions.
-   * @param where - The where conditions to filter the refresh tokens by.
-   * @param include - The relations to include in the result.
+   * @param filter - The where conditions to filter the refresh tokens by.
    * @returns The deleted refresh tokens.
    */
-  async deleteMany<I extends RefreshTokenInclude>(
-    where: RefreshTokenWhereInput,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
-    const refreshTokensToDelete = await this.prisma.client.refreshToken.findMany({
-      where,
-      include: include ?? { session: true },
+  async deleteMany(filter: RefreshTokenWhereInput): Promise<RefreshToken[]> {
+    const toDelete = await this.prisma.client.refreshToken.findMany({
+      where: filter,
     });
-    if (refreshTokensToDelete.length === 0) return [];
+
+    if (toDelete.length === 0) return [];
 
     await this.prisma.client.refreshToken.deleteMany({
-      where: { id: { in: refreshTokensToDelete.map((token) => token.id) } },
+      where: { id: { in: toDelete.map((row) => row.id) } },
     });
 
-    return refreshTokensToDelete;
+    return toDelete;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SOFT DELETE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Soft deletes a refresh token by the given ID.
    * @param id - The ID of the refresh token to soft delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted refresh token.
    */
-  async softDelete<I extends RefreshTokenInclude>(
-    id: string,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>> {
-    return await this.prisma.client.refreshToken.update({
-      where: { id },
+  async softDelete(id: string): Promise<RefreshToken> {
+    return this.prisma.client.refreshToken.update({
+      where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
-      include: include ?? { session: true },
     });
   }
 
   /**
    * Soft deletes multiple refresh tokens by the given where conditions.
    * @param where - The where conditions to filter the refresh tokens by.
-   * @param include - The relations to include in the result.
    * @returns The deleted refresh tokens.
    */
-  async softDeleteMany<I extends RefreshTokenInclude>(
-    where: RefreshTokenWhereInput,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
-    const refreshTokensToDelete = await this.prisma.client.refreshToken.findMany({
-      where,
-      include: include ?? { session: true },
-    });
-    if (refreshTokensToDelete.length === 0) return [];
+  async softDeleteMany(where: RefreshTokenWhereInput): Promise<RefreshToken[]> {
+    const deletedAt = new Date();
+    return await this.prisma.mainClient.$transaction(async (tx) => {
+      const rows = await tx.refreshToken.findMany({
+        where: { ...where, deletedAt: null },
+      });
+      if (rows.length === 0) return [];
 
-    const refreshTokenIds = refreshTokensToDelete.map((token) => token.id);
-    await this.prisma.client.refreshToken.updateMany({
-      where: { id: { in: refreshTokenIds } },
-      data: { deletedAt: new Date() },
-    });
+      const ids = rows.map((row) => row.id);
+      await tx.refreshToken.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt },
+      });
 
-    return await this.prisma.client.refreshToken.findMany({
-      where: { id: { in: refreshTokenIds } },
-      include: include ?? { session: true },
+      return tx.refreshToken.findMany({
+        where: { id: { in: ids } },
+      });
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // RESTORE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Restores a soft deleted refresh token by the given ID.
    * @param id - The ID of the refresh token to restore.
-   * @param include - The relations to include in the result.
    * @returns The restored refresh token.
    */
-  async restore<I extends RefreshTokenInclude>(
-    id: string,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>> {
-    return await this.prisma.client.refreshToken.update({
-      where: { id },
+  async restore(id: string): Promise<RefreshToken> {
+    return this.prisma.client.refreshToken.update({
+      where: { id, deletedAt: { not: null } },
       data: { deletedAt: null },
-      include: include ?? { session: true },
     });
   }
 
   /**
    * Restores multiple soft deleted refresh tokens by the given where conditions.
    * @param where - The where conditions to filter the refresh tokens by.
-   * @param include - The relations to include in the result.
    * @returns The restored refresh tokens.
    */
-  async restoreMany<I extends RefreshTokenInclude>(
-    where: RefreshTokenWhereInput,
-    include?: I,
-  ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
-    const refreshTokensToRestore = await this.prisma.client.refreshToken.findMany({
-      where,
-      include: include ?? { session: true },
+  async restoreMany(where: RefreshTokenWhereInput): Promise<RefreshToken[]> {
+    const toRestore = await this.prisma.client.refreshToken.findMany({
+      where: { ...where, deletedAt: { not: null } },
     });
-    if (refreshTokensToRestore.length === 0) return [];
+    if (toRestore.length === 0) return [];
 
-    const refreshTokenIds = refreshTokensToRestore.map((token) => token.id);
+    const ids = toRestore.map((row) => row.id);
     await this.prisma.client.refreshToken.updateMany({
-      where: { id: { in: refreshTokenIds } },
+      where: { id: { in: ids } },
       data: { deletedAt: null },
     });
 
-    return await this.prisma.client.refreshToken.findMany({
-      where: { id: { in: refreshTokenIds } },
-      include: include ?? { session: true },
+    return this.prisma.client.refreshToken.findMany({
+      where: { id: { in: ids } },
     });
   }
 }

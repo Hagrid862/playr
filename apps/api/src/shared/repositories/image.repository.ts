@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
-  ImageCreateManyInput,
+  Image,
   ImageCreateInput,
+  ImageCreateManyInput,
   ImageGetPayload,
   ImageInclude,
   ImageOrderByWithRelationInput,
@@ -14,23 +15,33 @@ import { PrismaService } from '../services/prisma.service';
 export class ImageRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // QUERIES
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Finds a single image by the given where conditions.
    * @param where - The where conditions to filter the images by.
-   * @param include - The relations to include in the result.
    * @returns The found image or null if not found.
    */
-  async findOne<I extends ImageInclude>(
+  async findOne(
     where: ImageWhereInput,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }> | null> {
-    return await this.prisma.client.image.findFirst({
+  ): Promise<ImageGetPayload<{ include: { variants: true } }> | null> {
+    return this.prisma.client.image.findFirst({
       where: { ...where, deletedAt: null },
-      include: include ?? undefined,
+      include: { variants: true },
+    });
+  }
+
+  /**
+   * Finds a single image by the given where conditions with relations.
+   * @param where - The where conditions to filter the images by.
+   * @param include - The relations to include in the result.
+   * @returns The found image with relations or null if not found.
+   */
+  async findOneWithInclude<I extends ImageInclude>(
+    where: ImageWhereInput,
+    include: I,
+  ): Promise<ImageGetPayload<{ include: I }> | null> {
+    return this.prisma.client.image.findFirst({
+      where: { ...where, deletedAt: null },
+      include: include,
     });
   }
 
@@ -41,30 +52,52 @@ export class ImageRepository {
    *   - `take` (number, optional): The maximum number of images to return. Defaults to 10.
    *   - `skip` (number, optional): The number of images to skip before starting to collect the result set. Defaults to 0.
    *   - `orderBy` (ImageOrderByWithRelationInput, optional): The order in which to sort the images. Defaults to descending by `createdAt`.
-   * @param include - The relations to include in the result.
    * @returns The found images.
    */
-  async findMany<I extends ImageInclude>(
+  async findMany(
     where: ImageWhereInput,
     options: {
       take?: number;
       skip?: number;
       orderBy?: ImageOrderByWithRelationInput;
     },
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.image.findMany({
+  ): Promise<ImageGetPayload<{ include: { variants: true } }>[]> {
+    return this.prisma.client.image.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
       skip: options.skip ?? 0,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
-      include: include ?? undefined,
+      include: { variants: true },
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // EXISTS & COUNT
-  // ─────────────────────────────────────────────────────────────
+  /**
+   * Finds multiple images by the given where conditions with relations.
+   * @param where - The where conditions to filter the images by.
+   * @param options - The options for the query:
+   *   - `take` (number, optional): The maximum number of images to return. Defaults to 10.
+   *   - `skip` (number, optional): The number of images to skip before starting to collect the result set. Defaults to 0.
+   *   - `orderBy` (ImageOrderByWithRelationInput, optional): The order in which to sort the images. Defaults to descending by `createdAt`.
+   * @param include - The relations to include in the result.
+   * @returns The found images with relations.
+   */
+  async findManyWithInclude<I extends ImageInclude>(
+    where: ImageWhereInput,
+    options: {
+      take?: number;
+      skip?: number;
+      orderBy?: ImageOrderByWithRelationInput;
+    },
+    include: I,
+  ): Promise<ImageGetPayload<{ include: I }>[]> {
+    return this.prisma.client.image.findMany({
+      where: { ...where, deletedAt: null },
+      take: options.take ?? 10,
+      skip: options.skip ?? 0,
+      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      include: include,
+    });
+  }
 
   /**
    * Checks if an image exists by the given where conditions.
@@ -82,219 +115,160 @@ export class ImageRepository {
    * @returns The number of images.
    */
   async count(where?: ImageWhereInput): Promise<number> {
-    return await this.prisma.client.image.count({
+    return this.prisma.client.image.count({
       where: { ...where, deletedAt: null },
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CREATE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Creates a new image.
    * @param data - The data for the image.
-   * @param include - The relations to include in the result.
    * @returns The created image.
    */
-  async create<I extends ImageInclude>(
-    data: ImageCreateInput,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>> {
-    return await this.prisma.client.image.create({ data, include: include ?? undefined });
+  async create(data: ImageCreateInput): Promise<Image> {
+    return this.prisma.client.image.create({
+      data,
+    });
   }
 
   /**
    * Creates multiple new images.
    * @param data - The data for the images.
-   * @param include - The relations to include in the result.
    * @returns The created images.
    */
-  async createMany<I extends ImageInclude>(
-    data: ImageCreateManyInput[],
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>[]> {
-    return await this.prisma.client.image.createManyAndReturn({
+  async createMany(data: ImageCreateManyInput[]): Promise<Image[]> {
+    return this.prisma.client.image.createManyAndReturn({
       data,
-      include: include ?? undefined,
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Updates an image by the given ID.
    * @param id - The ID of the image to update.
    * @param data - The data to update the image with.
-   * @param include - The relations to include in the result.
    * @returns The updated image.
    */
-  async update<I extends ImageInclude>(
-    id: string,
-    data: ImageUpdateInput,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>> {
-    return await this.prisma.client.image.update({
-      where: { id },
+  async update(id: string, data: ImageUpdateInput): Promise<Image> {
+    return this.prisma.client.image.update({
+      where: { id, deletedAt: null },
       data,
-      include: include ?? undefined,
     });
   }
 
   /**
    * Updates multiple images by the given IDs.
    * @param updates - The updates to apply to the images.
-   * @param include - The relations to include in the result.
    * @returns The updated images.
    */
-  async updateMany<I extends ImageInclude>(
-    updates: { id: string; data: ImageUpdateInput }[],
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>[]> {
-    return await this.prisma.mainClient.$transaction(
+  async updateMany(updates: { id: string; data: ImageUpdateInput }[]): Promise<Image[]> {
+    return this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
-        this.prisma.client.image.update({ where: { id }, data, include: include ?? undefined }),
+        this.prisma.client.image.update({
+          where: { id, deletedAt: null },
+          data,
+        }),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────────────────────
-
   /**
    * Deletes an image by the given ID.
    * @param id - The ID of the image to delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted image.
    */
-  async delete<I extends ImageInclude>(
-    id: string,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>> {
-    return await this.prisma.client.image.delete({ where: { id }, include: include ?? undefined });
+  async delete(id: string): Promise<Image> {
+    return this.prisma.client.image.delete({
+      where: { id },
+    });
   }
 
   /**
    * Deletes multiple images by the given where conditions.
    * @param filter - The where conditions to filter the images by.
-   * @param include - The relations to include in the result.
    * @returns The deleted images.
    */
-  async deleteMany<I extends ImageInclude>(
-    filter: ImageWhereInput,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>[]> {
-    const imagesToDelete = await this.prisma.client.image.findMany({
+  async deleteMany(filter: ImageWhereInput): Promise<Image[]> {
+    const toDelete = await this.prisma.client.image.findMany({
       where: filter,
-      include: include ?? undefined,
     });
-    if (imagesToDelete.length === 0) return [];
+
+    if (toDelete.length === 0) return [];
 
     await this.prisma.client.image.deleteMany({
-      where: { id: { in: imagesToDelete.map((image) => image.id) } },
+      where: { id: { in: toDelete.map((a) => a.id) } },
     });
 
-    return imagesToDelete;
+    return toDelete;
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // SOFT DELETE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Soft deletes an image by the given ID.
    * @param id - The ID of the image to soft delete.
-   * @param include - The relations to include in the result.
    * @returns The deleted image.
    */
-  async softDelete<I extends ImageInclude>(
-    id: string,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>> {
-    return await this.prisma.client.image.update({
-      where: { id },
+  async softDelete(id: string): Promise<Image> {
+    return this.prisma.client.image.update({
+      where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Soft deletes multiple images by the given where conditions.
    * @param where - The where conditions to filter the images by.
-   * @param include - The relations to include in the result.
    * @returns The deleted images.
    */
-  async softDeleteMany<I extends ImageInclude>(
-    where: ImageWhereInput,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>[]> {
-    const imagesToDelete = await this.prisma.client.image.findMany({
-      where,
-      include: include ?? undefined,
-    });
-    if (imagesToDelete.length === 0) return [];
+  async softDeleteMany(where: ImageWhereInput): Promise<Image[]> {
+    const deletedAt = new Date();
+    return await this.prisma.mainClient.$transaction(async (tx) => {
+      const rows = await tx.image.findMany({
+        where: { ...where, deletedAt: null },
+      });
+      if (rows.length === 0) return [];
 
-    const imageIds = imagesToDelete.map((image) => image.id);
-    await this.prisma.client.image.updateMany({
-      where: { id: { in: imageIds } },
-      data: { deletedAt: new Date() },
-    });
+      const ids = rows.map((row) => row.id);
+      await tx.image.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt },
+      });
 
-    return await this.prisma.client.image.findMany({
-      where: { id: { in: imageIds } },
-      include: include ?? undefined,
+      return tx.image.findMany({
+        where: { id: { in: ids } },
+      });
     });
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // RESTORE
-  // ─────────────────────────────────────────────────────────────
 
   /**
    * Restores a soft deleted image by the given ID.
    * @param id - The ID of the image to restore.
-   * @param include - The relations to include in the result.
    * @returns The restored image.
    */
-  async restore<I extends ImageInclude>(
-    id: string,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>> {
-    return await this.prisma.client.image.update({
-      where: { id },
+  async restore(id: string): Promise<Image> {
+    return this.prisma.client.image.update({
+      where: { id, deletedAt: { not: null } },
       data: { deletedAt: null },
-      include: include ?? undefined,
     });
   }
 
   /**
    * Restores multiple soft deleted images by the given where conditions.
    * @param where - The where conditions to filter the images by.
-   * @param include - The relations to include in the result.
    * @returns The restored images.
    */
-  async restoreMany<I extends ImageInclude>(
-    where: ImageWhereInput,
-    include?: I,
-  ): Promise<ImageGetPayload<{ include: I }>[]> {
-    const imagesToRestore = await this.prisma.client.image.findMany({
-      where,
-      include: include ?? undefined,
+  async restoreMany(where: ImageWhereInput): Promise<Image[]> {
+    const toRestore = await this.prisma.client.image.findMany({
+      where: { ...where, deletedAt: { not: null } },
     });
-    if (imagesToRestore.length === 0) return [];
+    if (toRestore.length === 0) return [];
 
-    const imageIds = imagesToRestore.map((image) => image.id);
+    const ids = toRestore.map((row) => row.id);
     await this.prisma.client.image.updateMany({
-      where: { id: { in: imageIds } },
+      where: { id: { in: ids } },
       data: { deletedAt: null },
     });
 
-    return await this.prisma.client.image.findMany({
-      where: { id: { in: imageIds } },
-      include: include ?? undefined,
+    return this.prisma.client.image.findMany({
+      where: { id: { in: ids } },
     });
   }
 }
