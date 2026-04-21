@@ -2,10 +2,17 @@ import { useAuthStore } from '@/stores/auth.store';
 import { ZodType } from 'zod';
 import { ApiError } from './api-error';
 
-type RequestConfig<T> = Omit<RequestInit, 'body'> & {
+/** Public configuration for API requests */
+export type ApiRequestConfig<T = unknown> = Omit<RequestInit, 'body'> & {
   body?: unknown;
   zodSchema?: ZodType<T>;
-  _retry?: boolean;
+  /** Whether to attempt a token refresh on 401. Defaults to true. */
+  allowRefresh?: boolean;
+};
+
+/** @internal Internal configuration including state for retry loops */
+type InternalRequestConfig<T> = ApiRequestConfig<T> & {
+  _isRetry?: boolean;
 };
 
 class ApiClient {
@@ -32,8 +39,8 @@ class ApiClient {
     this.failedQueue = [];
   }
 
-  async request<T>(endpoint: string, options: RequestConfig<T> = {}): Promise<T> {
-    const { body, zodSchema, _retry, ...customConfig } = options;
+  async request<T>(endpoint: string, options: InternalRequestConfig<T> = {}): Promise<T> {
+    const { body, zodSchema, _isRetry = false, allowRefresh = true, ...customConfig } = options;
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
     const token = useAuthStore.getState().accessToken;
@@ -72,7 +79,7 @@ class ApiClient {
       }
       return data;
     } else {
-      if (response.status === 401 && !_retry) {
+      if (response.status === 401 && !_isRetry && allowRefresh) {
         if (this.isRefreshing) {
           return new Promise((resolve, reject) => {
             this.failedQueue.push({ resolve, reject });
@@ -80,7 +87,7 @@ class ApiClient {
             .then(() => {
               return this.request<T>(endpoint, {
                 ...options,
-                _retry: true,
+                _isRetry: true,
               });
             })
             .catch((err) => {
@@ -111,15 +118,19 @@ class ApiClient {
             // Retry original request
             return this.request<T>(endpoint, {
               ...options,
-              _retry: true,
+              _isRetry: true,
             });
           } else {
             this.processQueue(new Error('Refresh failed'));
-            useAuthStore.getState().logout();
+            if (useAuthStore.getState().isAuthenticated) {
+              useAuthStore.getState().logout();
+            }
           }
         } catch (error) {
           this.processQueue(error);
-          useAuthStore.getState().logout();
+          if (useAuthStore.getState().isAuthenticated) {
+            useAuthStore.getState().logout();
+          }
           throw error;
         } finally {
           this.isRefreshing = false;
@@ -134,6 +145,9 @@ class ApiClient {
 
 export const api = new ApiClient(import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
-export const apiClient = <T>(endpoint: string, options?: RequestConfig<T>) => {
+/**
+ * Global API client for making network requests.
+ */
+export const apiClient = <T>(endpoint: string, options?: ApiRequestConfig<T>) => {
   return api.request<T>(endpoint, options);
 };
