@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import {
 	Card,
 	CardContent,
-	CardDescription, CardFooter,
+	CardDescription,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card"
@@ -48,71 +48,70 @@ export function VerifyEmailForm({
 		<Card className="mx-auto max-w-md">
 			<form onSubmit={onSubmit}>
 				<CardHeader>
-					<CardTitle>Verify your Email</CardTitle>
-					<CardDescription>
-						Enter the verification code we sent to your email address:
-						<span className="font-medium">{formData.email}</span>.
+					<CardTitle className="text-2xl">Verify your Email</CardTitle>
+					<CardDescription className="py-3">
+						Enter the verification code we sent to your email address:{" "}
+						<span className="font-medium text-foreground">{formData.email}</span>.
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
-					<Field data-invalid={!!otpError}>
-						<FieldLabel htmlFor="otp-verification">Verification Code</FieldLabel>
-						<InputOTP
-							maxLength={8}
-							id="otp-verification"
-							required
-							inputMode="numeric"
-							pattern={REGEXP_ONLY_DIGITS}
-							value={formData.otpCode}
-							onChange={(value) => onChange('otpCode', value) }
-							onBlur={() => onBlur('otpCode') }
-							disabled={isVerifyEmailLoading}
-						>
-							<InputOTPGroup className="*:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-11 *:data-[slot=input-otp-slot]:text-xl">
-								<InputOTPSlot index={0} />
-								<InputOTPSlot index={1} />
-								<InputOTPSlot index={2} />
-								<InputOTPSlot index={3} />
-								<InputOTPSlot index={4} />
-								<InputOTPSlot index={5} />
-								<InputOTPSlot index={6} />
-								<InputOTPSlot index={7} />
-							</InputOTPGroup>
-						</InputOTP>
-						{otpError && <FieldError>{otpError}</FieldError>}
-						<div className="flex justify-start">
-							<Button
-								variant="outline"
-								size="xs"
-								type="button"
-								onClick={onResend}
-								disabled={isResendLoading || isVerifyEmailLoading || !!getFieldError('email')}
+				<CardContent className="grid gap-6">
+					<Field data-invalid={!!otpError} className="grid gap-2">
+						<FieldLabel htmlFor="otp-verification" className="text-center">Verification Code</FieldLabel>
+						<div className="flex justify-center">
+							<InputOTP
+								maxLength={8}
+								id="otp-verification"
+								required
+								inputMode="numeric"
+								pattern={REGEXP_ONLY_DIGITS}
+								value={formData.otpCode}
+								onChange={(value) => onChange('otpCode', value) }
+								onBlur={() => onBlur('otpCode') }
+								disabled={isVerifyEmailLoading}
 							>
-								{isResendLoading ? (
-									<CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
-								) : (
-									<ArrowsClockwiseIcon className="mr-2 h-4 w-4" size={16}/>
-								)}
-								Resend Code
-							</Button>
+								<InputOTPGroup className="gap-1 *:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-10 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border *:data-[slot=input-otp-slot]:text-xl">
+									<InputOTPSlot index={0} />
+									<InputOTPSlot index={1} />
+									<InputOTPSlot index={2} />
+									<InputOTPSlot index={3} />
+									<InputOTPSlot index={4} />
+									<InputOTPSlot index={5} />
+									<InputOTPSlot index={6} />
+									<InputOTPSlot index={7} />
+								</InputOTPGroup>
+							</InputOTP>
 						</div>
+						{otpError && <FieldError className="text-center">{otpError}</FieldError>}
 					</Field>
-				</CardContent>
-				<CardFooter>
-					<Field>
+					<div className="flex justify-center mt-2">
 						<Button
-							type="submit"
-							className="w-full"
-							disabled={!isValid || isVerifyEmailLoading}
+							variant="outline"
+							size="sm"
+							type="button"
+							onClick={onResend}
+							disabled={isResendLoading || isVerifyEmailLoading}
+							className="text-muted-foreground hover:text-primary"
 						>
-							{isVerifyEmailLoading ? (
+							{isResendLoading ? (
 								<CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
 							) : (
-								"Verify"
+								<ArrowsClockwiseIcon className="mr-2 h-4 w-4" />
 							)}
+							Resend Code
 						</Button>
-					</Field>
-				</CardFooter>
+					</div>
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={!isValid || isVerifyEmailLoading}
+					>
+						{isVerifyEmailLoading ? (
+							<CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
+						) : (
+							"Verify"
+						)}
+					</Button>
+				</CardContent>
 			</form>
 		</Card>
 	);
