@@ -22,12 +22,12 @@ export class TrackRepository {
    */
   async findOne(
     where: TrackWhereInput,
-  ): Promise<TrackGetPayload<{include: {access: true}}> | null> {
+  ): Promise<TrackGetPayload<{ include: { access: true } }> | null> {
     return this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
       include: {
         access: true,
-      }
+      },
     });
   }
 
@@ -63,7 +63,7 @@ export class TrackRepository {
       skip?: number;
       orderBy?: TrackOrderByWithRelationInput;
     },
-  ): Promise<TrackGetPayload<{include: {access: true}}>[]> {
+  ): Promise<TrackGetPayload<{ include: { access: true } }>[]> {
     return this.prisma.client.track.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
@@ -194,10 +194,7 @@ export class TrackRepository {
    * @param data - The data to update the track with.
    * @returns The updated track.
    */
-  async update(
-    id: string,
-    data: TrackUpdateInput,
-  ): Promise<Track> {
+  async update(id: string, data: TrackUpdateInput): Promise<Track> {
     return this.prisma.client.track.update({
       where: { id, deletedAt: null },
       data,
@@ -253,12 +250,29 @@ export class TrackRepository {
   /**
    * Soft deletes a track by the given ID.
    * @param id - The ID of the track to soft delete.
+   * @param cascade - Option to delete related library links
    * @returns The deleted track.
    */
-  async softDelete(id: string): Promise<Track> {
-    return this.prisma.client.track.update({
-      where: { id, deletedAt: null },
-      data: { deletedAt: new Date() },
+  async softDelete(id: string, cascade: boolean = false): Promise<Track> {
+    if (!cascade) {
+      return this.prisma.client.track.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    const deletedAt = new Date();
+
+    return this.prisma.mainClient.$transaction(async (tx) => {
+      await tx.libraryTrack.updateMany({
+        where: { trackId: id, deletedAt: null },
+        data: { deletedAt },
+      });
+
+      return tx.track.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt },
+      });
     });
   }
 

@@ -231,12 +231,67 @@ export class ArtistRepository {
   /**
    * Soft deletes an artist by the given ID.
    * @param id - The ID of the artist to soft delete.
+   * @param cascade - Option to delete related albums, tracks and library links
    * @returns The deleted artist.
    */
-  async softDelete(id: string): Promise<Artist> {
-    return this.prisma.client.artist.update({
-      where: { id, deletedAt: null },
-      data: { deletedAt: new Date() },
+  async softDelete(id: string, cascade: boolean = false): Promise<Artist> {
+    if (!cascade) {
+      return this.prisma.client.artist.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    const deletedAt = new Date();
+
+    return this.prisma.mainClient.$transaction(async (tx) => {
+      const albums = await tx.album.findMany({
+        where: {
+          deletedAt: null,
+          artists: { some: { id, deletedAt: null } },
+        },
+        select: { id: true },
+      });
+      const albumIds = albums.map((a) => a.id);
+
+      const tracks =
+        albumIds.length > 0
+          ? await tx.track.findMany({
+              where: { albumId: { in: albumIds }, deletedAt: null },
+              select: { id: true },
+            })
+          : [];
+      const trackIds = tracks.map((t) => t.id);
+      if (trackIds.length > 0) {
+        await tx.libraryTrack.updateMany({
+          where: { trackId: { in: trackIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+        await tx.track.updateMany({
+          where: { id: { in: trackIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+      }
+
+      if (albumIds.length > 0) {
+        await tx.libraryAlbum.updateMany({
+          where: { albumId: { in: albumIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+        await tx.album.updateMany({
+          where: { id: { in: albumIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+      }
+      await tx.libraryArtist.updateMany({
+        where: { artistId: id, deletedAt: null },
+        data: { deletedAt },
+      });
+
+      return tx.artist.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt },
+      });
     });
   }
 

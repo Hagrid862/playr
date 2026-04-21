@@ -243,12 +243,45 @@ export class AlbumRepository {
   /**
    * Soft deletes an album by the given ID.
    * @param id - The ID of the album to soft delete.
+   * @param cascade - Option to delete related tracks and library links
    * @returns The deleted album.
    */
-  async softDelete(id: string): Promise<Album> {
-    return this.prisma.client.album.update({
-      where: { id, deletedAt: null },
-      data: { deletedAt: new Date() },
+  async softDelete(id: string, cascade: boolean = false): Promise<Album> {
+    if (!cascade) {
+      return this.prisma.client.album.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    const deletedAt = new Date();
+    return this.prisma.mainClient.$transaction(async (tx) => {
+      const tracks = await tx.track.findMany({
+        where: { albumId: id, deletedAt: null },
+        select: { id: true },
+      });
+      const trackIds = tracks.map((t) => t.id);
+
+      if (trackIds.length > 0) {
+        await tx.libraryTrack.updateMany({
+          where: { trackId: { in: trackIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+        await tx.track.updateMany({
+          where: { id: { in: trackIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+      }
+
+      await tx.libraryAlbum.updateMany({
+        where: { albumId: id, deletedAt: null },
+        data: { deletedAt },
+      });
+
+      return tx.album.update({
+        where: { id, deletedAt: null },
+        data: { deletedAt },
+      });
     });
   }
 
