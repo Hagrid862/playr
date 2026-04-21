@@ -29,6 +29,7 @@ interface VerifyEmailFormProps {
 	getFieldError: (field: keyof FormData) => string | undefined;
 	onResend: () => void;
 	isResendLoading: boolean;
+	resendTimer: number;
 }
 
 export function VerifyEmailForm({
@@ -41,6 +42,7 @@ export function VerifyEmailForm({
 	getFieldError,
 	onResend,
 	isResendLoading,
+	resendTimer = 0,
 }: VerifyEmailFormProps) {
 	const otpError = getFieldError('otpCode');
 
@@ -89,7 +91,7 @@ export function VerifyEmailForm({
 							size="sm"
 							type="button"
 							onClick={onResend}
-							disabled={isResendLoading || isVerifyEmailLoading}
+							disabled={isResendLoading || isVerifyEmailLoading || resendTimer > 0}
 							className="text-muted-foreground hover:text-primary"
 						>
 							{isResendLoading ? (
@@ -97,7 +99,7 @@ export function VerifyEmailForm({
 							) : (
 								<ArrowsClockwiseIcon className="mr-2 h-4 w-4" />
 							)}
-							Resend Code
+							{resendTimer > 0 ? `Wait ${resendTimer}s to Resend code` : "Resend Code"}
 						</Button>
 					</div>
 					<Button

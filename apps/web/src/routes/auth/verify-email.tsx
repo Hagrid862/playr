@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { SyntheticEvent } from 'react';
+import {SyntheticEvent, useEffect, useState} from 'react';
 import { useResendEmailVerificationCode, useVerifyEmail } from '@/hooks/api/auth';
 import { useAuthStore } from '@/stores/auth.store';
 import { useVerifyEmailForm } from '@/hooks/forms/useVerifyEmailForm';
@@ -28,7 +28,18 @@ export const Route = createFileRoute('/auth/verify-email')({
 export function RouteComponent() {
   const navigate = useNavigate();
   const { email } = Route.useSearch();
-  
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
   const {
     mutateAsync: resendEmailVerificationCode,
     isPending: resendEmailVerificationCodeIsLoading,
@@ -67,8 +78,10 @@ export function RouteComponent() {
   };
 
   const onResendEmail = async () => {
+    if (resendTimer > 0) return;
     try{
       await resendEmailVerificationCode({ email: formData.email });
+      setResendTimer(60);
     } catch (err) {
       console.error('Failed to resend email verification code', err);
     }
@@ -86,6 +99,7 @@ export function RouteComponent() {
         getFieldError={getFieldError}
         onResend={onResendEmail}
         isResendLoading={resendEmailVerificationCodeIsLoading}
+        resendTimer={resendTimer}
       />
     </div>
   );
