@@ -6,5 +6,6 @@ export const verifyEmail = (data: VerifyEmailRequest) => {
 		method: 'POST',
 		body: data,
 		zodSchema: VerifyEmailResponseSchema,
+		allowRefresh: false,
 	});
 };

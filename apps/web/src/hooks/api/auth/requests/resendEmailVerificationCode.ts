@@ -7,6 +7,7 @@ export const resendEmailVerificationCode = (data: ResendEmailVerificationCodeReq
 	return apiClient<ResendEmailVerificationCodeResponse>('auth/resend-email-verification-code', {
 		method: "POST",
 		body: data,
-		zodSchema: ResendEmailVerificationCodeResponseSchema
+		zodSchema: ResendEmailVerificationCodeResponseSchema,
+		allowRefresh: false,
 	});
 };
