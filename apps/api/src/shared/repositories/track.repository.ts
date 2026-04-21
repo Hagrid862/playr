@@ -11,12 +11,6 @@ import {
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
-const defaultTrackFindInclude = {
-  artists: true,
-  album: true,
-  access: true,
-} as const;
-
 @Injectable()
 export class TrackRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -28,9 +22,12 @@ export class TrackRepository {
    */
   async findOne(
     where: TrackWhereInput,
-  ): Promise<Track | null> {
+  ): Promise<TrackGetPayload<{include: {access: true}}> | null> {
     return this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
+      include: {
+        access: true,
+      }
     });
   }
 
@@ -66,13 +63,13 @@ export class TrackRepository {
       skip?: number;
       orderBy?: TrackOrderByWithRelationInput;
     },
-  ): Promise<TrackGetPayload<{ include: typeof defaultTrackFindInclude }>[]> {
+  ): Promise<TrackGetPayload<{include: {access: true}}>[]> {
     return this.prisma.client.track.findMany({
       where: { ...where, deletedAt: null },
       take: options.take ?? 10,
       skip: options.skip ?? 0,
       orderBy: options.orderBy ?? { createdAt: 'desc' },
-      include: defaultTrackFindInclude,
+      include: { access: true },
     });
   }
 
