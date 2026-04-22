@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useVerifyEmailForm } from '@/hooks/forms/useVerifyEmailForm';
 import {VerifyEmailForm} from "@/components/auth/VerifyEmailForm.tsx";
 import { z } from 'zod';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const Route = createFileRoute('/auth/verify-email')({
   component: RouteComponent,
@@ -87,20 +88,32 @@ export function RouteComponent() {
     }
   };
 
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background">
-      <VerifyEmailForm
-        formData={formData}
-        isValid={isFormValid}
-        isVerifyEmailLoading={verifyEmailIsLoading}
-        onSubmit={onSubmit}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        getFieldError={getFieldError}
-        onResend={onResendEmail}
-        isResendLoading={resendEmailVerificationCodeIsLoading}
-        resendTimer={resendTimer}
-      />
+      <Card className="mx-auto max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">Verify your Email</CardTitle>
+          <CardDescription className="py-2">
+            Enter the verification code we sent to your email address:{' '}
+            <span className="font-medium text-foreground">{formData.email}</span>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          <VerifyEmailForm
+            formData={formData}
+            isValid={isFormValid}
+            isVerifyEmailLoading={verifyEmailIsLoading}
+            onSubmit={onSubmit}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            getFieldError={getFieldError}
+            onResend={onResendEmail}
+            isResendLoading={resendEmailVerificationCodeIsLoading}
+            resendTimer={resendTimer}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

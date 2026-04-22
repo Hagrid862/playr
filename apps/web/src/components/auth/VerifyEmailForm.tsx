@@ -2,13 +2,6 @@ import {SyntheticEvent} from "react";
 import type {FormData} from "@/hooks/forms/useVerifyEmailForm";
 import { Button } from "@/components/ui/button"
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card"
-import {
 	Field, FieldError, FieldLabel,
 } from "@/components/ui/field"
 import {
@@ -47,74 +40,63 @@ export function VerifyEmailForm({
 	const otpError = getFieldError('otpCode');
 
 	return (
-		<Card className="mx-auto max-w-md">
-			<form onSubmit={onSubmit}>
-				<CardHeader>
-					<CardTitle className="text-2xl">Verify your Email</CardTitle>
-					<CardDescription className="py-3">
-						Enter the verification code we sent to your email address:{" "}
-						<span className="font-medium text-foreground">{formData.email}</span>.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="grid gap-6">
-					<Field data-invalid={!!otpError} className="grid gap-2">
-						<FieldLabel htmlFor="otp-verification" className="text-center">Verification Code</FieldLabel>
-						<div className="flex justify-center">
-							<InputOTP
-								maxLength={8}
-								id="otp-verification"
-								required
-								inputMode="numeric"
-								pattern={REGEXP_ONLY_DIGITS}
-								value={formData.otpCode}
-								onChange={(value) => onChange('otpCode', value) }
-								onBlur={() => onBlur('otpCode') }
-								disabled={isVerifyEmailLoading}
-							>
-								<InputOTPGroup className="gap-1 *:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-10 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border *:data-[slot=input-otp-slot]:text-xl">
-									<InputOTPSlot index={0} />
-									<InputOTPSlot index={1} />
-									<InputOTPSlot index={2} />
-									<InputOTPSlot index={3} />
-									<InputOTPSlot index={4} />
-									<InputOTPSlot index={5} />
-									<InputOTPSlot index={6} />
-									<InputOTPSlot index={7} />
-								</InputOTPGroup>
-							</InputOTP>
-						</div>
-						{otpError && <FieldError className="text-center">{otpError}</FieldError>}
-					</Field>
-					<div className="flex justify-center mt-2">
-						<Button
-							variant="outline"
-							size="sm"
-							type="button"
-							onClick={onResend}
-							disabled={isResendLoading || isVerifyEmailLoading || resendTimer > 0}
-							className="text-muted-foreground hover:text-primary"
-						>
-							{isResendLoading ? (
-								<CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
-							) : (
-								<ArrowsClockwiseIcon className="mr-2 h-4 w-4" />
-							)}
-							{resendTimer > 0 ? `Wait ${resendTimer}s to Resend code` : "Resend Code"}
-						</Button>
-					</div>
-					<Button
-						type="submit"
-						className="w-full"
-						disabled={!isValid || isVerifyEmailLoading}
-					>
-						{isVerifyEmailLoading ? (
-							<CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
-						) : (
-							"Verify"
-						)}
-					</Button>
-				</CardContent>
-			</form>
-		</Card>
+    <form onSubmit={onSubmit}>
+      <Field data-invalid={!!otpError} className="grid gap-2">
+        <FieldLabel htmlFor="otp-verification" className="text-center">Verification Code</FieldLabel>
+        <div className="flex justify-center">
+          <InputOTP
+            maxLength={8}
+            id="otp-verification"
+            required
+            inputMode="numeric"
+            pattern={REGEXP_ONLY_DIGITS}
+            value={formData.otpCode}
+            onChange={(value) => onChange('otpCode', value) }
+            onBlur={() => onBlur('otpCode') }
+            disabled={isVerifyEmailLoading}
+          >
+            <InputOTPGroup className="gap-1 *:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-10 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border *:data-[slot=input-otp-slot]:text-xl">
+              <InputOTPSlot index={0} />
+              <InputOTPSlot index={1} />
+              <InputOTPSlot index={2} />
+              <InputOTPSlot index={3} />
+              <InputOTPSlot index={4} />
+              <InputOTPSlot index={5} />
+              <InputOTPSlot index={6} />
+              <InputOTPSlot index={7} />
+            </InputOTPGroup>
+          </InputOTP>
+        </div>
+        {otpError && <FieldError className="text-center">{otpError}</FieldError>}
+      </Field>
+      <div className="flex justify-end py-4">
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={onResend}
+          disabled={isResendLoading || isVerifyEmailLoading || resendTimer > 0}
+          className="text-muted-foreground hover:text-primary"
+        >
+          {isResendLoading ? (
+            <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowsClockwiseIcon className="mr-2 h-4 w-4" />
+          )}
+          {resendTimer > 0 ? `Wait ${resendTimer}s to Resend code` : "Resend Code"}
+        </Button>
+      </div>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={!isValid || isVerifyEmailLoading}
+      >
+        {isVerifyEmailLoading ? (
+          <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          "Verify"
+        )}
+      </Button>
+    </form>
 	);
 }
