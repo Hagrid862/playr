@@ -175,7 +175,7 @@ export class GenreResolutionService {
     userId: string,
     forbiddenMessage = 'Only custom genres in your library can be modified',
   ): Promise<Genre> {
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
     if (!library) {
       throw new PreconditionFailedException('User library not found');
     }
@@ -247,5 +247,17 @@ export class GenreResolutionService {
     }
 
     return slug;
+  }
+
+  async assertGenreIdsAssignableToLibrary(libraryId: string, genreIds: string[]): Promise<boolean> {
+    if (genreIds.length === 0) return true;
+
+    const unique = [...new Set(genreIds)];
+    const assignableCount = await this.genreRepository.count({
+      id: { in: unique },
+      OR: [{ kind: 'system', libraryId: null }, { libraryId: libraryId }],
+    });
+
+    return assignableCount === unique.length;
   }
 }

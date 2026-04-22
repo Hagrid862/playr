@@ -69,7 +69,7 @@ export class TokenService {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
 
-      const refreshTokenRecord = await this.refreshTokenRepository.getByToken(token);
+      const refreshTokenRecord = await this.refreshTokenRepository.findOne({ token });
 
       if (!refreshTokenRecord || refreshTokenRecord.deletedAt) {
         throw new UnauthorizedException('Invalid token');
@@ -83,7 +83,7 @@ export class TokenService {
         };
       }
 
-      const session = await this.sessionRepository.getById(payload.sessionId);
+      const session = await this.sessionRepository.findOne({ id: payload.sessionId });
 
       if (!session || session.deletedAt || session.userId !== payload.sub) {
         throw new UnauthorizedException('Invalid token');
@@ -130,12 +130,12 @@ export class TokenService {
   }
 
   async toAuthenticatedUser(payload: JwtPayload): Promise<AuthenticatedUser> {
-    const session = await this.sessionRepository.getById(payload.sessionId);
+    const session = await this.sessionRepository.findOne({ id: payload.sessionId });
     if (!session || session.deletedAt || session.revokedAt || session.userId !== payload.sub) {
       throw new UnauthorizedException('Invalid token');
     }
 
-    const user = await this.userRepository.getById(payload.sub);
+    const user = await this.userRepository.findOne({ id: payload.sub });
     if (!user) {
       throw new UnauthorizedException('Invalid token');
     }
