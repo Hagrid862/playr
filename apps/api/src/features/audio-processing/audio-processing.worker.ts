@@ -87,30 +87,26 @@ export class AudioProcessingWorker extends WorkerHost {
       const { duration, bitrate, sampleRate, numberOfChannels } = metadata.format;
 
       await this.audioFileRepository.update(audioFileId, {
-        duration,
-        bitrate,
-        sampleRate,
-        channels: numberOfChannels,
+        duration: duration ?? undefined,
+        bitrate: bitrate ?? undefined,
+        sampleRate: sampleRate ?? undefined,
+        channels: numberOfChannels ?? undefined,
         status: ProcessingStatus.complete,
       });
 
       if (duration) {
-        const track = await this.trackRepository.findOne({ id: trackId }, true);
+        const track = await this.trackRepository.findOneWithInclude(
+          { id: trackId },
+          { access: true },
+        );
         if (!track) {
           throw new NotFoundException('Track not found');
         }
-        const hasAccess = canUserUpdateTrackDuration(
-          track as { access?: { userId: string; role: string }[] },
-          userId,
-        );
+        const hasAccess = canUserUpdateTrackDuration(track, userId);
         if (hasAccess && (!track.duration || Math.round(duration) !== track.duration)) {
-          await this.trackRepository.update(
-            trackId,
-            {
-              duration: Math.round(duration),
-            },
-            { includeRelations: false },
-          );
+          await this.trackRepository.update(trackId, {
+            duration: Math.round(duration),
+          });
         }
       }
 
