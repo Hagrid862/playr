@@ -30,3 +30,16 @@ export const ApiFailureResponseSchema = z.object({
   error: ErrorSchema,
   meta: MetaSchema,
 });
+
+export const createPaginatedResponseSchema = <T extends z.ZodTypeAny>(
+  itemSchema: T,
+) =>
+  z.object({
+    items: z.array(itemSchema),
+    total: z.number(),
+    page: z.number(),
+    limit: z.number(),
+  });
+export type PaginatedResponse<T extends z.ZodTypeAny> = z.infer<
+  ReturnType<typeof createPaginatedResponseSchema<T>>
+>;
