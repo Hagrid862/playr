@@ -51,7 +51,7 @@ export class SessionRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of sessions to return. Defaults to 10.
    *   - `skip` (number, optional): The number of sessions to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (SessionOrderByWithRelationInput, optional): The order in which to sort the sessions. Defaults to descending by `createdAt`.
+   *   - `orderBy` (SessionOrderByWithRelationInput or array of it, optional): The order in which to sort the sessions. Defaults to descending by `createdAt`.
    * @returns The found sessions.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class SessionRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: SessionOrderByWithRelationInput;
+      orderBy?: SessionOrderByWithRelationInput | SessionOrderByWithRelationInput[];
     },
   ): Promise<SessionGetPayload<{ include: { user: true } }>[]> {
     return this.prisma.client.session.findMany({
@@ -77,7 +77,7 @@ export class SessionRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of sessions to return. Defaults to 10.
    *   - `skip` (number, optional): The number of sessions to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (SessionOrderByWithRelationInput, optional): The order in which to sort the sessions. Defaults to descending by `createdAt`.
+   *   - `orderBy` (SessionOrderByWithRelationInput or array of it, optional): The order in which to sort the sessions. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found sessions with relations.
    */
@@ -86,7 +86,7 @@ export class SessionRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: SessionOrderByWithRelationInput;
+      orderBy?: SessionOrderByWithRelationInput | SessionOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<SessionGetPayload<{ include: I }>[]> {
@@ -282,6 +282,35 @@ export class SessionRepository {
 
     return this.prisma.client.session.findMany({
       where: { id: { in: ids } },
+    });
+  }
+
+  /**
+   * revokes session in database based on given session id.
+   * @param id - The id of session that should be revoked.
+   * @returns The revoked session.
+   */
+  async revoke(id: string): Promise<Session> {
+    return this.prisma.client.session.update({
+      where: { id, deletedAt: null, revokedAt: null },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * revokes sessions in database based on owner user id.
+   * @param userId - The id of user that sessions should be revoked.
+   * @returns The revoked sessions.
+   */
+  async revokeAllByUserId(userId: string): Promise<Session[]> {
+    const revokedAt = new Date();
+    return this.prisma.client.session.updateManyAndReturn({
+      where: { userId: userId, deletedAt: null, revokedAt: null },
+      data: {
+        revokedAt: revokedAt,
+      },
     });
   }
 }

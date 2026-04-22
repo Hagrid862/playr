@@ -51,7 +51,7 @@ export class ImageRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of images to return. Defaults to 10.
    *   - `skip` (number, optional): The number of images to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (ImageOrderByWithRelationInput, optional): The order in which to sort the images. Defaults to descending by `createdAt`.
+   *   - `orderBy` (ImageOrderByWithRelationInput or array of it, optional): The order in which to sort the images. Defaults to descending by `createdAt`.
    * @returns The found images.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class ImageRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: ImageOrderByWithRelationInput;
+      orderBy?: ImageOrderByWithRelationInput | ImageOrderByWithRelationInput[];
     },
   ): Promise<ImageGetPayload<{ include: { variants: true } }>[]> {
     return this.prisma.client.image.findMany({
@@ -77,7 +77,7 @@ export class ImageRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of images to return. Defaults to 10.
    *   - `skip` (number, optional): The number of images to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (ImageOrderByWithRelationInput, optional): The order in which to sort the images. Defaults to descending by `createdAt`.
+   *   - `orderBy` (ImageOrderByWithRelationInput or array of it, optional): The order in which to sort the images. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found images with relations.
    */
@@ -86,7 +86,7 @@ export class ImageRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: ImageOrderByWithRelationInput;
+      orderBy?: ImageOrderByWithRelationInput | ImageOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<ImageGetPayload<{ include: I }>[]> {

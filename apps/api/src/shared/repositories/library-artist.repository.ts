@@ -26,9 +26,7 @@ export class LibraryArtistRepository {
    */
   async findOne(
     where: LibraryArtistWhereInput,
-  ): Promise<
-    LibraryArtistGetPayload<{ include: typeof defaultLibraryArtistFindInclude }> | null
-  > {
+  ): Promise<LibraryArtistGetPayload<{ include: typeof defaultLibraryArtistFindInclude }> | null> {
     return this.prisma.client.libraryArtist.findFirst({
       where: { ...where, deletedAt: null },
       include: defaultLibraryArtistFindInclude,
@@ -57,7 +55,7 @@ export class LibraryArtistRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of library artists to return. Defaults to 10.
    *   - `skip` (number, optional): The number of library artists to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryArtistOrderByWithRelationInput, optional): The order in which to sort the library artists. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryArtistOrderByWithRelationInput or array of it, optional): The order in which to sort the library artists. Defaults to descending by `createdAt`.
    * @returns The found library artists.
    */
   async findMany(
@@ -65,7 +63,7 @@ export class LibraryArtistRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryArtistOrderByWithRelationInput;
+      orderBy?: LibraryArtistOrderByWithRelationInput | LibraryArtistOrderByWithRelationInput[];
     },
   ): Promise<LibraryArtistGetPayload<{ include: typeof defaultLibraryArtistFindInclude }>[]> {
     return this.prisma.client.libraryArtist.findMany({
@@ -83,7 +81,7 @@ export class LibraryArtistRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of library artists to return. Defaults to 10.
    *   - `skip` (number, optional): The number of library artists to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryArtistOrderByWithRelationInput, optional): The order in which to sort the library artists. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryArtistOrderByWithRelationInput or array of it, optional): The order in which to sort the library artists. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found library artists with relations.
    */
@@ -92,7 +90,7 @@ export class LibraryArtistRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryArtistOrderByWithRelationInput;
+      orderBy?: LibraryArtistOrderByWithRelationInput | LibraryArtistOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<LibraryArtistGetPayload<{ include: I }>[]> {

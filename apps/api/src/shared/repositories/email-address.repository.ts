@@ -59,7 +59,7 @@ export class EmailAddressRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: EmailAddressOrderByWithRelationInput;
+      orderBy?: EmailAddressOrderByWithRelationInput | EmailAddressOrderByWithRelationInput[];
     },
   ): Promise<EmailAddressGetPayload<{ include: { user: true } }>[]> {
     return this.prisma.client.emailAddress.findMany({
@@ -77,7 +77,7 @@ export class EmailAddressRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of email addresses to return. Defaults to 10.
    *   - `skip` (number, optional): The number of email addresses to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (EmailAddressOrderByWithRelationInput, optional): The order in which to sort the email addresses. Defaults to descending by `createdAt`.
+   *   - `orderBy` (EmailAddressOrderByWithRelationInput or array of it, optional): The order in which to sort the email addresses. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found email addresses with relations.
    */
@@ -86,7 +86,7 @@ export class EmailAddressRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: EmailAddressOrderByWithRelationInput;
+      orderBy?: EmailAddressOrderByWithRelationInput | EmailAddressOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<EmailAddressGetPayload<{ include: I }>[]> {

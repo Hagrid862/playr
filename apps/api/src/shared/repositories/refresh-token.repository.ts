@@ -51,7 +51,7 @@ export class RefreshTokenRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of refresh tokens to return. Defaults to 10.
    *   - `skip` (number, optional): The number of refresh tokens to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (RefreshTokenOrderByWithRelationInput, optional): The order in which to sort the refresh tokens. Defaults to descending by `createdAt`.
+   *   - `orderBy` (RefreshTokenOrderByWithRelationInput or array of it, optional): The order in which to sort the refresh tokens. Defaults to descending by `createdAt`.
    * @returns The found refresh tokens.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class RefreshTokenRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: RefreshTokenOrderByWithRelationInput;
+      orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[];
     },
   ): Promise<RefreshTokenGetPayload<{ include: { session: true } }>[]> {
     return this.prisma.client.refreshToken.findMany({
@@ -77,7 +77,7 @@ export class RefreshTokenRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of refresh tokens to return. Defaults to 10.
    *   - `skip` (number, optional): The number of refresh tokens to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (RefreshTokenOrderByWithRelationInput, optional): The order in which to sort the refresh tokens. Defaults to descending by `createdAt`.
+   *   - `orderBy` (RefreshTokenOrderByWithRelationInput or array of it, optional): The order in which to sort the refresh tokens. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found refresh tokens with relations.
    */
@@ -86,7 +86,7 @@ export class RefreshTokenRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: RefreshTokenOrderByWithRelationInput;
+      orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
@@ -286,6 +286,35 @@ export class RefreshTokenRepository {
 
     return this.prisma.client.refreshToken.findMany({
       where: { id: { in: ids } },
+    });
+  }
+
+  /**
+   * revokes refresh token in database based on given token id.
+   * @param id - The id of token that should be revoked.
+   * @returns The revoked refresh token.
+   */
+  async revoke(id: string): Promise<RefreshToken> {
+    return this.prisma.client.refreshToken.update({
+      where: { id, deletedAt: null, revokedAt: null },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * revokes refresh tokens in database based on owner session id.
+   * @param sessionId - The id of session that tokens should be revoked.
+   * @returns The revoked refresh token.
+   */
+  async revokeAllBySessionId(sessionId: string): Promise<RefreshToken[]> {
+    const revokedAt = new Date();
+    return this.prisma.client.refreshToken.updateManyAndReturn({
+      where: { sessionId: sessionId, deletedAt: null, revokedAt: null },
+      data: {
+        revokedAt: revokedAt,
+      },
     });
   }
 }

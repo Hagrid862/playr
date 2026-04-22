@@ -51,7 +51,7 @@ export class AudioFileRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of audio files to return. Defaults to 10.
    *   - `skip` (number, optional): The number of audio files to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (AudioFileOrderByWithRelationInput, optional): The order in which to sort the audio files. Defaults to descending by `createdAt`.
+   *   - `orderBy` (AudioFileOrderByWithRelationInput or array of it, optional): The order in which to sort the audio files. Defaults to descending by `createdAt`.
    * @returns The found audio files.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class AudioFileRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: AudioFileOrderByWithRelationInput;
+      orderBy?: AudioFileOrderByWithRelationInput | AudioFileOrderByWithRelationInput[];
     },
   ): Promise<AudioFileGetPayload<{ include: { track: true } }>[]> {
     return this.prisma.client.audioFile.findMany({
@@ -77,7 +77,7 @@ export class AudioFileRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of audio files to return. Defaults to 10.
    *   - `skip` (number, optional): The number of audio files to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (AudioFileOrderByWithRelationInput, optional): The order in which to sort the audio files. Defaults to descending by `createdAt`.
+   *   - `orderBy` (AudioFileOrderByWithRelationInput or array of it, optional): The order in which to sort the audio files. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found audio files with relations.
    */
@@ -86,7 +86,7 @@ export class AudioFileRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: AudioFileOrderByWithRelationInput;
+      orderBy?: AudioFileOrderByWithRelationInput | AudioFileOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<AudioFileGetPayload<{ include: I }>[]> {

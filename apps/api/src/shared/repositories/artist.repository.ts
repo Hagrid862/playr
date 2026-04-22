@@ -51,7 +51,7 @@ export class ArtistRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of artists to return. Defaults to 10.
    *   - `skip` (number, optional): The number of artists to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (ArtistOrderByWithRelationInput, optional): The order in which to sort the artists. Defaults to descending by `createdAt`.
+   *   - `orderBy` (ArtistOrderByWithRelationInput or array of it, optional): The order in which to sort the artists. Defaults to descending by `createdAt`.
    * @returns The found artists.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class ArtistRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: ArtistOrderByWithRelationInput;
+      orderBy?: ArtistOrderByWithRelationInput | ArtistOrderByWithRelationInput[];
     },
   ): Promise<ArtistGetPayload<{ include: { avatar: true; banner: true } }>[]> {
     return this.prisma.client.artist.findMany({
@@ -77,7 +77,7 @@ export class ArtistRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of artists to return. Defaults to 10.
    *   - `skip` (number, optional): The number of artists to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (ArtistOrderByWithRelationInput, optional): The order in which to sort the artists. Defaults to descending by `createdAt`.
+   *   - `orderBy` (ArtistOrderByWithRelationInput or array of it, optional): The order in which to sort the artists. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found artists with relations.
    */
@@ -86,7 +86,7 @@ export class ArtistRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: ArtistOrderByWithRelationInput;
+      orderBy?: ArtistOrderByWithRelationInput | ArtistOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<ArtistGetPayload<{ include: I }>[]> {

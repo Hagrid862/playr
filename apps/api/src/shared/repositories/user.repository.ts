@@ -51,7 +51,7 @@ export class UserRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of users to return. Defaults to 10.
    *   - `skip` (number, optional): The number of users to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (UserOrderByWithRelationInput, optional): The order in which to sort the users. Defaults to descending by `createdAt`.
+   *   - `orderBy` (UserOrderByWithRelationInput or array of it, optional): The order in which to sort the users. Defaults to descending by `createdAt`.
    * @returns The found users.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class UserRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: UserOrderByWithRelationInput;
+      orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[];
     },
   ): Promise<UserGetPayload<{ include: { avatar: true } }>[]> {
     return this.prisma.client.user.findMany({
@@ -77,7 +77,7 @@ export class UserRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of users to return. Defaults to 10.
    *   - `skip` (number, optional): The number of users to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (UserOrderByWithRelationInput, optional): The order in which to sort the users. Defaults to descending by `createdAt`.
+   *   - `orderBy` (UserOrderByWithRelationInput or array of it, optional): The order in which to sort the users. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found users with relations.
    */
@@ -86,7 +86,7 @@ export class UserRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: UserOrderByWithRelationInput;
+      orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<UserGetPayload<{ include: I }>[]> {

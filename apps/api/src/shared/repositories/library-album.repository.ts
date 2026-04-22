@@ -26,9 +26,7 @@ export class LibraryAlbumRepository {
    */
   async findOne(
     where: LibraryAlbumWhereInput,
-  ): Promise<
-    LibraryAlbumGetPayload<{ include: typeof defaultLibraryAlbumFindInclude }> | null
-  > {
+  ): Promise<LibraryAlbumGetPayload<{ include: typeof defaultLibraryAlbumFindInclude }> | null> {
     return this.prisma.client.libraryAlbum.findFirst({
       where: { ...where, deletedAt: null },
       include: defaultLibraryAlbumFindInclude,
@@ -57,7 +55,7 @@ export class LibraryAlbumRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of library albums to return. Defaults to 10.
    *   - `skip` (number, optional): The number of library albums to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryAlbumOrderByWithRelationInput, optional): The order in which to sort the library albums. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryAlbumOrderByWithRelationInput or array of it, optional): The order in which to sort the library albums. Defaults to descending by `createdAt`.
    * @returns The found library albums.
    */
   async findMany(
@@ -65,7 +63,7 @@ export class LibraryAlbumRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryAlbumOrderByWithRelationInput;
+      orderBy?: LibraryAlbumOrderByWithRelationInput | LibraryAlbumOrderByWithRelationInput[];
     },
   ): Promise<LibraryAlbumGetPayload<{ include: typeof defaultLibraryAlbumFindInclude }>[]> {
     return this.prisma.client.libraryAlbum.findMany({
@@ -83,7 +81,7 @@ export class LibraryAlbumRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of library albums to return. Defaults to 10.
    *   - `skip` (number, optional): The number of library albums to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryAlbumOrderByWithRelationInput, optional): The order in which to sort the library albums. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryAlbumOrderByWithRelationInput or array of it, optional): The order in which to sort the library albums. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found library albums with relations.
    */
@@ -92,7 +90,7 @@ export class LibraryAlbumRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryAlbumOrderByWithRelationInput;
+      orderBy?: LibraryAlbumOrderByWithRelationInput | LibraryAlbumOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {

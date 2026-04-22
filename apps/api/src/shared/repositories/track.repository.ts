@@ -53,7 +53,7 @@ export class TrackRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of tracks to return. Defaults to 10.
    *   - `skip` (number, optional): The number of tracks to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (TrackOrderByWithRelationInput, optional): The order in which to sort the tracks. Defaults to descending by `createdAt`.
+   *   - `orderBy` (TrackOrderByWithRelationInput or array of it, optional): The order in which to sort the tracks. Defaults to descending by `createdAt`.
    * @returns The found tracks.
    */
   async findMany(
@@ -61,7 +61,7 @@ export class TrackRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: TrackOrderByWithRelationInput;
+      orderBy?: TrackOrderByWithRelationInput | TrackOrderByWithRelationInput[];
     },
   ): Promise<TrackGetPayload<{ include: { access: true } }>[]> {
     return this.prisma.client.track.findMany({
@@ -79,7 +79,7 @@ export class TrackRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of tracks to return. Defaults to 10.
    *   - `skip` (number, optional): The number of tracks to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (TrackOrderByWithRelationInput, optional): The order in which to sort the tracks. Defaults to descending by `createdAt`.
+   *   - `orderBy` (TrackOrderByWithRelationInput or array of it, optional): The order in which to sort the tracks. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found tracks with relations.
    */
@@ -88,7 +88,7 @@ export class TrackRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: TrackOrderByWithRelationInput;
+      orderBy?: TrackOrderByWithRelationInput | TrackOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<TrackGetPayload<{ include: I }>[]> {

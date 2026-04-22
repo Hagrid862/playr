@@ -51,7 +51,7 @@ export class LibraryRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of libraries to return. Defaults to 10.
    *   - `skip` (number, optional): The number of libraries to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryOrderByWithRelationInput, optional): The order in which to sort the libraries. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryOrderByWithRelationInput or array of it, optional): The order in which to sort the libraries. Defaults to descending by `createdAt`.
    * @returns The found libraries.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class LibraryRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryOrderByWithRelationInput;
+      orderBy?: LibraryOrderByWithRelationInput | LibraryOrderByWithRelationInput[];
     },
   ): Promise<LibraryGetPayload<{ include: { user: true } }>[]> {
     return this.prisma.client.library.findMany({
@@ -77,7 +77,7 @@ export class LibraryRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of libraries to return. Defaults to 10.
    *   - `skip` (number, optional): The number of libraries to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryOrderByWithRelationInput, optional): The order in which to sort the libraries. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryOrderByWithRelationInput or array of it, optional): The order in which to sort the libraries. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found libraries with relations.
    */
@@ -86,7 +86,7 @@ export class LibraryRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryOrderByWithRelationInput;
+      orderBy?: LibraryOrderByWithRelationInput | LibraryOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<LibraryGetPayload<{ include: I }>[]> {

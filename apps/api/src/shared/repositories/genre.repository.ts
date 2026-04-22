@@ -51,7 +51,7 @@ export class GenreRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of genres to return. Defaults to 10.
    *   - `skip` (number, optional): The number of genres to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (GenreOrderByWithRelationInput, optional): The order in which to sort the genres. Defaults to descending by `createdAt`.
+   *   - `orderBy` (GenreOrderByWithRelationInput or array of it, optional): The order in which to sort the genres. Defaults to descending by `createdAt`.
    * @returns The found genres.
    */
   async findMany(
@@ -59,7 +59,7 @@ export class GenreRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: GenreOrderByWithRelationInput;
+      orderBy?: GenreOrderByWithRelationInput | GenreOrderByWithRelationInput[];
     },
   ): Promise<GenreGetPayload<{ include: { library: true } }>[]> {
     return this.prisma.client.genre.findMany({
@@ -77,7 +77,7 @@ export class GenreRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of genres to return. Defaults to 10.
    *   - `skip` (number, optional): The number of genres to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (GenreOrderByWithRelationInput, optional): The order in which to sort the genres. Defaults to descending by `createdAt`.
+   *   - `orderBy` (GenreOrderByWithRelationInput or array of it, optional): The order in which to sort the genres. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found genres with relations.
    */
@@ -86,7 +86,7 @@ export class GenreRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: GenreOrderByWithRelationInput;
+      orderBy?: GenreOrderByWithRelationInput | GenreOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<GenreGetPayload<{ include: I }>[]> {

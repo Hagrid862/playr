@@ -26,9 +26,7 @@ export class LibraryTrackRepository {
    */
   async findOne(
     where: LibraryTrackWhereInput,
-  ): Promise<
-    LibraryTrackGetPayload<{ include: typeof defaultLibraryTrackFindInclude }> | null
-  > {
+  ): Promise<LibraryTrackGetPayload<{ include: typeof defaultLibraryTrackFindInclude }> | null> {
     return this.prisma.client.libraryTrack.findFirst({
       where: { ...where, deletedAt: null },
       include: defaultLibraryTrackFindInclude,
@@ -57,7 +55,7 @@ export class LibraryTrackRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of library tracks to return. Defaults to 10.
    *   - `skip` (number, optional): The number of library tracks to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryTrackOrderByWithRelationInput): Sort order. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryTrackOrderByWithRelationInput or array of it): Sort order. Defaults to descending by `createdAt`.
    * @returns The found library tracks.
    */
   async findMany(
@@ -65,7 +63,7 @@ export class LibraryTrackRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryTrackOrderByWithRelationInput;
+      orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
     },
   ): Promise<LibraryTrackGetPayload<{ include: typeof defaultLibraryTrackFindInclude }>[]> {
     return this.prisma.client.libraryTrack.findMany({
@@ -83,7 +81,7 @@ export class LibraryTrackRepository {
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of library tracks to return. Defaults to 10.
    *   - `skip` (number, optional): The number of library tracks to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (LibraryTrackOrderByWithRelationInput, optional): Sort order. Defaults to descending by `createdAt`.
+   *   - `orderBy` (LibraryTrackOrderByWithRelationInput or array of it, optional): Sort order. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
    * @returns The found library tracks with relations.
    */
@@ -92,7 +90,7 @@ export class LibraryTrackRepository {
     options: {
       take?: number;
       skip?: number;
-      orderBy?: LibraryTrackOrderByWithRelationInput;
+      orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
     },
     include: I,
   ): Promise<LibraryTrackGetPayload<{ include: I }>[]> {
