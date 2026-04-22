@@ -31,10 +31,10 @@ export class ArtistAccessGuard implements CanActivate {
       return true;
     }
 
-    const hasAccess = await this.artistRepository.checkAccess(artistId, userId);
+    const hasAccess = await this.artistRepository.checkAccess({ id: artistId }, userId);
 
     if (!hasAccess) {
-      const exists = await this.artistRepository.exists(artistId);
+      const exists = await this.artistRepository.exists({ id: artistId });
       if (!exists) {
         throw new NotFoundException('Artist not found');
       }

@@ -31,11 +31,11 @@ export class AlbumAccessGuard implements CanActivate {
       return true;
     }
 
-    const hasAccess = await this.albumRepository.checkAccess(albumId, userId);
+    const hasAccess = await this.albumRepository.checkAccess({ id: albumId }, userId);
 
     if (!hasAccess) {
       // We check if it exists at all to give a better error message.
-      const exists = await this.albumRepository.exists(albumId);
+      const exists = await this.albumRepository.exists({ id: albumId });
       if (!exists) {
         throw new NotFoundException('Album not found');
       }

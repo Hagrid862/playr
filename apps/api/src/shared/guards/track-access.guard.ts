@@ -31,7 +31,7 @@ export class TrackAccessGuard implements CanActivate {
       return true;
     }
 
-    const hasAccess = await this.trackRepository.checkAccess(trackId, userId);
+    const hasAccess = await this.trackRepository.checkAccess({ id: trackId }, userId);
 
     if (!hasAccess) {
       const track = await this.trackRepository.findOne({ id: trackId });
