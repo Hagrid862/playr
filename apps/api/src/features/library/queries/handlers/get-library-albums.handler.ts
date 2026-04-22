@@ -17,18 +17,28 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
   ): Promise<{ items: ZodLibraryAlbum[]; total: number; page: number; limit: number }> {
     const { userId, page, limit } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
     }
 
     const [items, total] = await Promise.all([
-      this.libraryAlbumRepository.findMany({
-        where: { libraryId: library.id },
-        take: limit,
-        skip: (page - 1) * limit,
-      }),
+      this.libraryAlbumRepository.findManyWithInclude(
+        { libraryId: library.id },
+        {
+          take: limit,
+          skip: (page - 1) * limit,
+        },
+        {
+          album: {
+            include: {
+              cover: true,
+              artists: true,
+            },
+          },
+        },
+      ),
       this.libraryAlbumRepository.count({ libraryId: library.id }),
     ]);
 

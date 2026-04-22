@@ -11,7 +11,7 @@ export class GetLibraryHandler implements IQueryHandler<GetLibraryQuery> {
   async execute(query: GetLibraryQuery): Promise<Library> {
     const { userId } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new NotFoundException('Library not found');

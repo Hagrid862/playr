@@ -11,7 +11,7 @@ export class CreateLibraryHandler implements ICommandHandler<CreateLibraryComman
   async execute(command: CreateLibraryCommand): Promise<Library> {
     const { userId } = command;
 
-    const existingLibrary = await this.libraryRepository.getByUserId(userId);
+    const existingLibrary = await this.libraryRepository.findOne({ userId });
 
     if (existingLibrary) {
       throw new ConflictException('Library already exists');

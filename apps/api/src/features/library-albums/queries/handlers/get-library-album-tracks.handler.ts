@@ -15,22 +15,36 @@ export class GetLibraryAlbumTracksHandler implements IQueryHandler<GetLibraryAlb
   async execute(query: GetLibraryAlbumTracksQuery): Promise<GetLibraryAlbumTracksResponse['data']> {
     const { userId, albumId } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
-      throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
+      throw new PreconditionFailedException(`User library not found`);
     }
 
-    const items = await this.libraryTrackRepository.findMany({
-      where: {
+    const items = await this.libraryTrackRepository.findManyWithInclude(
+      {
         libraryId: library.id,
         track: {
           albumId,
         },
       },
-      orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
-    });
+      {
+        orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
+      },
+      {
+        track: {
+          include: {
+            artists: true,
+            album: {
+              include: {
+                cover: true,
+              },
+            },
+          },
+        },
+      },
+    );
 
-    return (items as unknown as { track: ZodTrack }[]).map((lt) => lt.track);
+    return (items as { track: ZodTrack }[]).map((lt) => lt.track);
   }
 }

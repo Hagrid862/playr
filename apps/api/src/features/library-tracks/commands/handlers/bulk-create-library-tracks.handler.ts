@@ -28,7 +28,7 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
   async execute(command: BulkCreateLibraryTracksCommand): Promise<{ tracks: ZodTrack[] }> {
     const { albumId, body, userId } = command;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
@@ -41,13 +41,14 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
 
     const allGenreIds = body.tracks.flatMap((t) => t.genreIds ?? []);
     if (allGenreIds.length > 0) {
-      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
-        library.id,
-        allGenreIds,
-      );
-      if (!assignable) {
+      const uniqueGenreIds = [...new Set(allGenreIds)];
+      const assignableCount = await this.genreRepository.count({
+        id: { in: uniqueGenreIds },
+        OR: [{ kind: 'system', libraryId: null }, { libraryId: library.id }],
+      });
+      if (assignableCount !== uniqueGenreIds.length) {
         throw new BadRequestException(
-          'One or more genres are invalid or not available to your library',
+          'One or more genres are invalid or not avaliable to your library.',
         );
       }
     }

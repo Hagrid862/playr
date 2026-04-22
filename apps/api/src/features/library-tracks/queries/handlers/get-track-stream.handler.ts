@@ -20,12 +20,13 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
     const NON_PREFERRED_LOSSY_SCORE = 90;
 
     // Find all completed audio files for this track
-    const audioFiles = await this.audioFileRepository.findMany({
-      where: {
+    const audioFiles = await this.audioFileRepository.findMany(
+      {
         trackId,
         status: ProcessingStatus.complete,
       },
-    });
+      {},
+    );
 
     if (audioFiles.length === 0) {
       throw new NotFoundException('No processed audio file found for this track');

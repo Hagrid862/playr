@@ -1,5 +1,4 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
@@ -13,6 +12,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
 import { Visibility } from '@repo/db';
 import { CreateLibraryTrackCommand } from '../impl/create-library-track.command';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 
 @CommandHandler(CreateLibraryTrackCommand)
 export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryTrackCommand> {
@@ -22,13 +22,13 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     private readonly albumRepository: AlbumRepository,
     private readonly trackRepository: TrackRepository,
     private readonly libraryTrackRepository: LibraryTrackRepository,
-    private readonly genreRepository: GenreRepository,
+    private readonly genreResolutionService: GenreResolutionService,
   ) {}
 
   async execute(command: CreateLibraryTrackCommand): Promise<ZodTrack> {
     const { body, userId } = command;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
@@ -42,7 +42,7 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     if (uniqueGenreIds !== undefined) {
-      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
         library.id,
         uniqueGenreIds,
       );

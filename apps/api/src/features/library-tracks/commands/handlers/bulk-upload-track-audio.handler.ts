@@ -50,13 +50,16 @@ export class BulkUploadTrackAudioHandler implements ICommandHandler<BulkUploadTr
 
       this.validateFile(file, i);
 
-      const track = await this.trackRepository.findOne({ id: trackId }, true);
+      const track = await this.trackRepository.findOneWithInclude(
+        { id: trackId },
+        { access: true },
+      );
 
       if (!track) {
         throw new NotFoundException(`Track ${trackId} not found`);
       }
 
-      const trackWithRelations = track as unknown as {
+      const trackWithRelations = track as {
         albumId?: string;
         access?: { userId: string; role: string }[];
       };

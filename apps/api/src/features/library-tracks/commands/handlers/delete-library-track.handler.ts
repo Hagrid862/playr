@@ -33,19 +33,13 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
       throw new NotFoundException('Track not found or you do not have permission to delete it');
     }
 
-    const audioFiles = await this.audioFileRepository.findMany({
-      where: { trackId: id },
-    });
+    const audioFiles = await this.audioFileRepository.findMany({ trackId: id }, {});
 
     await this.unitOfWork.runInTransaction(async () => {
       // Soft delete the track
-      await this.trackRepository.update(
-        id,
-        {
-          deletedAt: new Date(),
-        },
-        { includeRelations: false },
-      );
+      await this.trackRepository.update(id, {
+        deletedAt: new Date(),
+      });
 
       // Remove from all users libraries?
       // Usually library_tracks is per user. If owner deletes, maybe it should be gone from their library.

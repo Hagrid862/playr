@@ -1,5 +1,4 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryArtistRepository } from '@/shared/repositories/library-artist.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
@@ -12,6 +11,7 @@ import {
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ArtistSchema, ZodArtist } from '@repo/contracts';
 import { CreateLibraryArtistCommand } from '../impl/create-library-artist.command';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 
 @CommandHandler(CreateLibraryArtistCommand)
 export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibraryArtistCommand> {
@@ -20,13 +20,13 @@ export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibrary
     private readonly artistRepository: ArtistRepository,
     private readonly libraryRepository: LibraryRepository,
     private readonly libraryArtistRepository: LibraryArtistRepository,
-    private readonly genreRepository: GenreRepository,
+    private readonly genreResolutionService: GenreResolutionService,
   ) {}
 
   async execute(command: CreateLibraryArtistCommand): Promise<ZodArtist> {
     const { request, userId } = command;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
@@ -36,7 +36,7 @@ export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibrary
       request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
 
     if (uniqueGenreIds !== undefined) {
-      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
         library.id,
         uniqueGenreIds,
       );

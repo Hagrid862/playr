@@ -1,41 +1,50 @@
-import { UserRepository } from '@/shared/repositories/user.repository';
 import { HashingService } from '@/shared/services/hashing.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { EmailStatus, User } from '@repo/db';
 import { ValidateUserQuery } from '../impl/validate-user.query';
+import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 
 @QueryHandler(ValidateUserQuery)
 export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly emailAddressRepository: EmailAddressRepository,
     private readonly hashingService: HashingService,
   ) {}
 
   async execute(query: ValidateUserQuery): Promise<User | null> {
     const { email, password } = query;
-    const userWithStatus = await this.userRepository.getByEmailWithStatus(email);
+    const emailAddress = await this.emailAddressRepository.findOneWithInclude(
+      {
+        email,
+        type: 'primary',
+        deletedAt: null,
+      },
+      {
+        user: true,
+      },
+    );
 
-    if (!userWithStatus) {
+    if (!emailAddress?.user) {
       return null;
     }
 
-    const isPasswordValid = await this.hashingService.compare(password, userWithStatus.password);
+    const user = emailAddress.user;
+
+    const isPasswordValid = await this.hashingService.compare(password, user.password);
 
     if (!isPasswordValid) {
       return null;
     }
 
-    if (userWithStatus.deletedAt) {
+    if (user.deletedAt) {
       throw new UnauthorizedException('Account has been deleted');
     }
 
-    if (userWithStatus.emailStatus !== EmailStatus.verified) {
+    if (emailAddress.status !== EmailStatus.verified) {
       throw new UnauthorizedException('Email not verified');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { emailStatus, ...user } = userWithStatus;
-    return user as User;
+    return user;
   }
 }

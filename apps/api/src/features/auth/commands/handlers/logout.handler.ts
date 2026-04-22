@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { RefreshTokenRepository } from '../../../../shared/repositories/refresh-token.repository';
-import { SessionRepository } from '../../../../shared/repositories/session.repository';
+import { RefreshTokenRepository } from '@/shared/repositories/refresh-token.repository';
+import { SessionRepository } from '@/shared/repositories/session.repository';
 import { LogoutCommand } from '../impl/logout.command';
 
 @CommandHandler(LogoutCommand)

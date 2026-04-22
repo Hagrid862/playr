@@ -15,18 +15,20 @@ export class GetLibraryArtistsHandler implements IQueryHandler<GetLibraryArtists
   async execute(query: GetLibraryArtistsQuery): Promise<GetLibraryArtistsResponseDto['data']> {
     const { userId, page, limit } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
     }
 
     const [items, total] = await Promise.all([
-      this.libraryArtistRepository.findMany({
-        where: { libraryId: library.id },
-        take: limit,
-        skip: (page - 1) * limit,
-      }),
+      this.libraryArtistRepository.findMany(
+        { libraryId: library.id },
+        {
+          take: limit,
+          skip: (page - 1) * limit,
+        },
+      ),
       this.libraryArtistRepository.count({ libraryId: library.id }),
     ]);
 

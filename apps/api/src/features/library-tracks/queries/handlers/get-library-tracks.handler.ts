@@ -15,22 +15,34 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
   async execute(query: GetLibraryTracksQuery): Promise<GetLibraryTracksResponse['data']> {
     const { userId, page, limit, albumId } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
     const [items, total] = await Promise.all([
-      this.libraryTrackRepository.findMany({
-        where: {
+      this.libraryTrackRepository.findManyWithInclude(
+        {
           libraryId: library.id,
           track: albumId ? { albumId } : undefined,
         },
-        take: limit,
-        skip: (page - 1) * limit,
-        orderBy: { track: { trackNumber: 'asc' } }, // Sort by track number
-      }),
+        {
+          take: limit,
+          skip: (page - 1) * limit,
+          orderBy: { track: { trackNumber: 'asc' } },
+        },
+        {
+          track: {
+            include: {
+              album: {
+                include: { cover: true },
+              },
+              artists: true,
+            },
+          },
+        },
+      ),
       this.libraryTrackRepository.count({
         libraryId: library.id,
         track: albumId ? { albumId } : undefined,

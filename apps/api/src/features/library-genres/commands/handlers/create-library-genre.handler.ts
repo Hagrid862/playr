@@ -17,7 +17,7 @@ export class CreateLibraryGenreHandler implements ICommandHandler<CreateLibraryG
   async execute(command: CreateLibraryGenreCommand): Promise<ZodGenre> {
     const { request, userId } = command;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');

@@ -22,16 +22,14 @@ export class UploadTrackAudioHandler implements ICommandHandler<UploadTrackAudio
   async execute(command: UploadTrackAudioCommand): Promise<UploadTrackAudioResponse> {
     const { trackId, userId, file } = command;
 
-    const track = await this.trackRepository.findOne({ id: trackId }, true);
+    const track = await this.trackRepository.findOneWithInclude({ id: trackId }, { access: true });
 
     if (!track) {
       throw new NotFoundException('Track not found');
     }
 
-    const trackWithRelations = track as unknown as { access?: { userId: string; role: string }[] };
-
     // Basic permission check - only owners/editors can upload audio
-    const hasAccess = trackWithRelations.access?.some(
+    const hasAccess = track.access?.some(
       (a: { userId: string; role: string }) =>
         a.userId === userId && (a.role === 'owner' || a.role === 'editor'),
     );

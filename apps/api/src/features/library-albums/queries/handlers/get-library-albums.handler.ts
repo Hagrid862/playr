@@ -2,8 +2,8 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { GetLibraryAlbumsResponse } from '@repo/contracts';
 import { GetLibraryAlbumsQuery } from '../impl/get-library-albums.query';
+import { LibraryAlbumSchema, PaginatedResponse } from '@repo/contracts';
 
 @QueryHandler(GetLibraryAlbumsQuery)
 export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQuery> {
@@ -12,21 +12,33 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
   ) {}
 
-  async execute(query: GetLibraryAlbumsQuery): Promise<GetLibraryAlbumsResponse['data']> {
+  async execute(
+    query: GetLibraryAlbumsQuery,
+  ): Promise<PaginatedResponse<typeof LibraryAlbumSchema>> {
     const { userId, page, limit } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
     const [items, total] = await Promise.all([
-      this.libraryAlbumRepository.findMany({
-        where: { libraryId: library.id },
-        take: limit,
-        skip: (page - 1) * limit,
-      }),
+      this.libraryAlbumRepository.findManyWithInclude(
+        { libraryId: library.id },
+        {
+          take: limit,
+          skip: (page - 1) * limit,
+        },
+        {
+          album: {
+            include: {
+              artists: true,
+            },
+            cover: true,
+          },
+        },
+      ),
       this.libraryAlbumRepository.count({ libraryId: library.id }),
     ]);
 

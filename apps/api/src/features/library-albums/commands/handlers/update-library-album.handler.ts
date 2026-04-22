@@ -1,5 +1,4 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import {
   BadRequestException,
@@ -11,13 +10,14 @@ import {
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
 import { UpdateLibraryAlbumCommand } from '../impl/update-library-album.command';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 
 @CommandHandler(UpdateLibraryAlbumCommand)
 export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryAlbumCommand> {
   constructor(
     private readonly albumRepository: AlbumRepository,
     private readonly libraryRepository: LibraryRepository,
-    private readonly genreRepository: GenreRepository,
+    private readonly genreResolutionService: GenreResolutionService,
   ) {}
 
   async execute(command: UpdateLibraryAlbumCommand): Promise<ZodAlbum> {
@@ -38,11 +38,11 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
     let uniqueGenreIds: string[] | undefined;
     if (request.genreIds !== undefined) {
       uniqueGenreIds = [...new Set(request.genreIds)];
-      const library = await this.libraryRepository.getByUserId(userId);
+      const library = await this.libraryRepository.findOne({ userId });
       if (!library) {
         throw new PreconditionFailedException('User library not found');
       }
-      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
         library.id,
         uniqueGenreIds,
       );

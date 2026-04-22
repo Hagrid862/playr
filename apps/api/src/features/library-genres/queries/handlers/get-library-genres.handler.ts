@@ -15,7 +15,7 @@ export class GetLibraryGenresHandler implements IQueryHandler<GetLibraryGenresQu
   async execute(query: GetLibraryGenresQuery): Promise<GetLibraryGenresResponse['data']> {
     const { userId, page, limit, query: q, kind } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
@@ -24,16 +24,20 @@ export class GetLibraryGenresHandler implements IQueryHandler<GetLibraryGenresQu
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      this.genreRepository.findForLibraryList({
+      this.genreRepository.findMany(
+        {
+          libraryId: library.id,
+          name: q,
+          kind,
+        },
+        {
+          skip,
+          take: limit,
+        },
+      ),
+      this.genreRepository.count({
         libraryId: library.id,
-        q,
-        kind,
-        skip,
-        take: limit,
-      }),
-      this.genreRepository.countForLibraryList({
-        libraryId: library.id,
-        q,
+        name: q,
         kind,
       }),
     ]);

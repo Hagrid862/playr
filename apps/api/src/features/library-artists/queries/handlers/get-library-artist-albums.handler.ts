@@ -17,26 +17,36 @@ export class GetLibraryArtistAlbumsHandler implements IQueryHandler<GetLibraryAr
   ): Promise<GetLibraryArtistAlbumsResponseDto['data']> {
     const { userId, artistId, page, limit, type } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
     }
 
     const [items, total] = await Promise.all([
-      this.libraryAlbumRepository.findMany({
-        where: {
+      this.libraryAlbumRepository.findManyWithInclude(
+        {
           libraryId: library.id,
           album: { artists: { some: { id: artistId } }, type: type },
         },
-        take: limit,
-        skip: (page - 1) * limit,
-        orderBy: {
-          album: {
-            releaseDate: 'desc',
+        {
+          take: limit,
+          skip: (page - 1) * limit,
+          orderBy: {
+            album: {
+              releaseDate: 'desc',
+            },
           },
         },
-      }),
+        {
+          album: {
+            include: {
+              artists: true,
+              cover: true,
+            },
+          },
+        },
+      ),
       this.libraryAlbumRepository.count({
         libraryId: library.id,
         album: { artists: { some: { id: artistId } }, type: type },

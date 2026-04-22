@@ -27,7 +27,7 @@ export class RefreshTokensHandler implements ICommandHandler<RefreshTokensComman
       throw new UnauthorizedException('Security breach detected. Please login again.');
     }
 
-    const user = await this.userRepository.getById(userId);
+    const user = await this.userRepository.findOne({ id: userId });
     if (!user) {
       throw new UnauthorizedException('User not found');
     }

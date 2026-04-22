@@ -7,11 +7,13 @@ import { UserSchema, ZodUser } from '@repo/contracts';
 import { EmailStatus } from '@repo/db';
 import { RegisterCommand } from '../impl/register.command';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
+import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 
 @CommandHandler(RegisterCommand)
 export class RegisterHandler implements ICommandHandler<RegisterCommand> {
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly emailAdressRepository: EmailAddressRepository,
     private readonly hashingService: HashingService,
     private readonly prisma: PrismaService,
     private readonly unitOfWork: UnitOfWorkService,
@@ -24,8 +26,8 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
 
     // Check for existing email and username in parallel
     const [existingEmail, existingUsername] = await Promise.all([
-      this.userRepository.getByEmail(email),
-      this.userRepository.getByUsername(username),
+      this.emailAdressRepository.findOne({ email, type: 'primary' }),
+      this.userRepository.findOne({ username }),
     ]);
 
     // Check email first (prioritized if both exist)

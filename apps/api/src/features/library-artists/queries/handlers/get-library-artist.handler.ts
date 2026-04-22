@@ -15,7 +15,7 @@ export class GetLibraryArtistHandler implements IQueryHandler<GetLibraryArtistQu
   async execute(query: GetLibraryArtistQuery): Promise<GetLibraryArtistResponseDto['data']> {
     const { userId, artistId } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');

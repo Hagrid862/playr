@@ -1,4 +1,3 @@
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
@@ -11,6 +10,7 @@ import {
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
 import { UpdateLibraryTrackCommand } from '../impl/update-library-track.command';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 
 @CommandHandler(UpdateLibraryTrackCommand)
 export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryTrackCommand> {
@@ -18,7 +18,7 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
     private readonly unitOfWork: UnitOfWorkService,
     private readonly trackRepository: TrackRepository,
     private readonly libraryRepository: LibraryRepository,
-    private readonly genreRepository: GenreRepository,
+    private readonly genreResolutionService: GenreResolutionService,
   ) {}
 
   async execute(command: UpdateLibraryTrackCommand): Promise<ZodTrack> {
@@ -36,11 +36,11 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
     let uniqueGenreIds: string[] | undefined;
     if (body.genreIds !== undefined) {
       uniqueGenreIds = [...new Set(body.genreIds)];
-      const library = await this.libraryRepository.getByUserId(userId);
+      const library = await this.libraryRepository.findOne({ userId });
       if (!library) {
         throw new PreconditionFailedException('User library not found');
       }
-      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
         library.id,
         uniqueGenreIds,
       );

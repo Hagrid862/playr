@@ -21,7 +21,7 @@ export class DeleteLibraryArtistHandler implements ICommandHandler<DeleteLibrary
     }
 
     try {
-      const deletedArtist = await this.artistRepository.softDeleteCascade(artistId);
+      const deletedArtist = await this.artistRepository.softDelete(artistId, true);
 
       const parsed = ArtistSchema.safeParse(deletedArtist);
 

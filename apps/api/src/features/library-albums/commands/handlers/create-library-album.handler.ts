@@ -1,5 +1,4 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
@@ -12,6 +11,7 @@ import {
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
 import { CreateLibraryAlbumCommand } from '../impl/create-library-album.command';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 
 @CommandHandler(CreateLibraryAlbumCommand)
 export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryAlbumCommand> {
@@ -20,13 +20,13 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
     private readonly libraryRepository: LibraryRepository,
     private readonly albumRepository: AlbumRepository,
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
-    private readonly genreRepository: GenreRepository,
+    private readonly genreResolutionService: GenreResolutionService,
   ) {}
 
   async execute(command: CreateLibraryAlbumCommand): Promise<ZodAlbum> {
     const { request, userId } = command;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
@@ -36,7 +36,7 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
       request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
 
     if (uniqueGenreIds !== undefined) {
-      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
         library.id,
         uniqueGenreIds,
       );
@@ -48,13 +48,16 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
     }
 
     const album = await this.unitOfWork.runInTransaction(async () => {
-      const existingAlbum = await this.albumRepository.findOne({
-        name: request.name,
-        OR: [
-          { access: { some: { userId, role: 'owner' } } },
-          { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
-        ],
-      });
+      const existingAlbum = await this.albumRepository.findOneWithInclude(
+        {
+          name: request.name,
+          OR: [
+            { access: { some: { userId, role: 'owner' } } },
+            { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
+          ],
+        },
+        { access: true, artists: true },
+      );
 
       if (existingAlbum) {
         throw new ConflictException('This album name is already taken');

@@ -11,7 +11,22 @@ export class GetLibraryAlbumHandler implements IQueryHandler<GetLibraryAlbumQuer
   async execute(query: GetLibraryAlbumQuery): Promise<ZodAlbum> {
     const { id } = query;
 
-    const album = await this.albumRepository.findOne({ id }, true);
+    const album = await this.albumRepository.findOneWithInclude(
+      { id },
+      {
+        cover: true,
+        access: true,
+        tracks: {
+          include: {
+            artists: true,
+            album: {
+              include: { cover: true },
+            },
+          },
+        },
+        artists: true,
+      },
+    );
 
     if (!album) {
       throw new NotFoundException('Album not found');

@@ -20,7 +20,7 @@ export class GetLibraryGenreHandler implements IQueryHandler<GetLibraryGenreQuer
   async execute(query: GetLibraryGenreQuery): Promise<GetLibraryGenreResponse['data']> {
     const { userId, genreId } = query;
 
-    const library = await this.libraryRepository.getByUserId(userId);
+    const library = await this.libraryRepository.findOne({ userId });
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
