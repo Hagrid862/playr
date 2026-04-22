@@ -1,12 +1,21 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import {createFileRoute, redirect, useNavigate, useRouter} from '@tanstack/react-router';
 import { SyntheticEvent } from 'react';
 import { useResendEmailVerificationCode, useVerifyEmail } from '@/hooks/api/auth';
 import { useAuthStore } from '@/stores/auth.store';
 import { useVerifyEmailForm } from '@/hooks/forms/useVerifyEmailForm';
-import { VerifyEmailForm } from "@/components/auth/VerifyEmailForm.tsx";
+import { VerifyEmailForm } from "@/components/auth/VerifyEmailForm";
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResendTimer } from '@/hooks/use-resend-timer';
+import {SignOutIcon} from "@phosphor-icons/react";
+import {Button} from "@/components/ui/button.tsx";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute('/auth/verify-email')({
   component: RouteComponent,
@@ -32,7 +41,9 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 export function RouteComponent() {
   const navigate = useNavigate();
+  const router = useRouter();
   const { email } = Route.useSearch();
+  const { logout } = useAuthStore();
   const { timeLeft: resendTimer, startTimer: startResendTimer } = useResendTimer(
     RESEND_COOLDOWN_KEY,
     RESEND_COOLDOWN_SECONDS
@@ -86,8 +97,14 @@ export function RouteComponent() {
     }
   };
 
+  const handleLogout = async () => {
+    logout();
+    await router.invalidate();
+    await navigate({ to: '/auth/login' });
+  };
+
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background">
+    <div className="flex flex-col min-h-screen w-full items-center justify-center bg-background">
       <Card className="mx-auto max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Verify your Email</CardTitle>
@@ -97,20 +114,59 @@ export function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
-      <VerifyEmailForm
-        formData={formData}
-        isValid={isFormValid}
-        isVerifyEmailLoading={verifyEmailIsLoading}
-        onSubmit={onSubmit}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        getFieldError={getFieldError}
-        onResend={onResendEmail}
-        isResendLoading={resendEmailVerificationCodeIsLoading}
-        resendTimer={resendTimer}
-      />
+          <VerifyEmailForm
+            formData={formData}
+            isValid={isFormValid}
+            isVerifyEmailLoading={verifyEmailIsLoading}
+            onSubmit={onSubmit}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            getFieldError={getFieldError}
+            onResend={onResendEmail}
+            isResendLoading={resendEmailVerificationCodeIsLoading}
+            resendTimer={resendTimer}
+          />
         </CardContent>
       </Card>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild className="mt-10">
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            disabled={verifyEmailIsLoading}
+            className="flex items-center justify-center gap-1 text-muted-foreground hover:text-primary"
+            >
+          <SignOutIcon />
+          <span>Log out</span>
+        </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Logging out will reset your email verification progress. You'll need to verify your email again when you sign back in.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+            >
+              <SignOutIcon />
+              <span>Log out</span>
+            </AlertDialogAction>
+            <AlertDialogCancel
+              variant="default"
+              size="sm"
+            >
+              Cancel
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
