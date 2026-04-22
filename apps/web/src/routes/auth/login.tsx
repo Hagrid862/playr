@@ -1,6 +1,6 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import { useLogin } from '@/hooks/api/auth';
 import { useLoginForm } from '@/hooks/forms/useLoginForm';
 import { useAuthStore } from '@/stores/auth.store';
@@ -49,7 +49,10 @@ export function RouteComponent() {
       <div className="flex w-full max-w-480 flex-col items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle>Login to your account</CardTitle>
+            <CardTitle className="text-2xl">Login to your account</CardTitle>
+            <CardDescription className="py-2">
+              Welcome back! Please enter your credentials to access your account.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <LoginForm

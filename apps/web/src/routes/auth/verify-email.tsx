@@ -130,13 +130,13 @@ export function RouteComponent() {
       </Card>
 
       <AlertDialog>
-        <AlertDialogTrigger asChild className="mt-10">
+        <AlertDialogTrigger asChild>
           <Button
             variant="outline"
             size="sm"
             type="button"
             disabled={verifyEmailIsLoading}
-            className="flex items-center justify-center gap-1 text-muted-foreground hover:text-primary"
+            className="flex items-center justify-center gap-1 text-muted-foreground hover:text-primary mt-4"
             >
           <SignOutIcon />
           <span>Log out</span>
