@@ -11,8 +11,8 @@ function App() {
 
   if (accessToken) {
     return <Navigate to="/app" />;
-  } else if (user) {
-    return <Navigate to="/auth/verify-email" />;
+  } else if (!accessToken && user) {
+    return <Navigate to="/auth/verify-email" search={{ email: user.emailAddresses?.[0]?.email ?? '' }} />;
   }
 
   return <LandingPage />;
