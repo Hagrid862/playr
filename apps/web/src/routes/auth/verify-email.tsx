@@ -1,11 +1,12 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import {SyntheticEvent, useEffect, useState} from 'react';
+import { SyntheticEvent } from 'react';
 import { useResendEmailVerificationCode, useVerifyEmail } from '@/hooks/api/auth';
 import { useAuthStore } from '@/stores/auth.store';
 import { useVerifyEmailForm } from '@/hooks/forms/useVerifyEmailForm';
-import {VerifyEmailForm} from "@/components/auth/VerifyEmailForm.tsx";
+import { VerifyEmailForm } from "@/components/auth/VerifyEmailForm.tsx";
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useResendTimer } from '@/hooks/use-resend-timer';
 
 export const Route = createFileRoute('/auth/verify-email')({
   component: RouteComponent,
@@ -26,31 +27,27 @@ export const Route = createFileRoute('/auth/verify-email')({
   },
 });
 
+const RESEND_COOLDOWN_KEY = 'verify-email-resend-available-at';
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export function RouteComponent() {
   const navigate = useNavigate();
   const { email } = Route.useSearch();
-  const [resendTimer, setResendTimer] = useState(0);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [resendTimer]);
+  const { timeLeft: resendTimer, startTimer: startResendTimer } = useResendTimer(
+    RESEND_COOLDOWN_KEY,
+    RESEND_COOLDOWN_SECONDS
+  );
 
   const {
     mutateAsync: resendEmailVerificationCode,
     isPending: resendEmailVerificationCodeIsLoading,
   } = useResendEmailVerificationCode();
-  
+
   const {
     mutateAsync: verifyEmail,
     isPending: verifyEmailIsLoading,
   } = useVerifyEmail();
-  
+
   const {
     formData,
     isFormValid,
@@ -67,7 +64,7 @@ export function RouteComponent() {
 
     try {
       const result = await verifyEmail(data);
-      if (result.success){
+      if (result.success) {
         useAuthStore.getState().setAuth(result.data.user, result.data.accessToken);
         await navigate({ to: '/' });
       } else {
@@ -80,14 +77,14 @@ export function RouteComponent() {
 
   const onResendEmail = async () => {
     if (resendTimer > 0) return;
-    try{
+
+    try {
       await resendEmailVerificationCode({ email: formData.email });
-      setResendTimer(60);
+      startResendTimer();
     } catch (err) {
       console.error('Failed to resend email verification code', err);
     }
   };
-
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background">
@@ -100,18 +97,18 @@ export function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
-          <VerifyEmailForm
-            formData={formData}
-            isValid={isFormValid}
-            isVerifyEmailLoading={verifyEmailIsLoading}
-            onSubmit={onSubmit}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            getFieldError={getFieldError}
-            onResend={onResendEmail}
-            isResendLoading={resendEmailVerificationCodeIsLoading}
-            resendTimer={resendTimer}
-          />
+      <VerifyEmailForm
+        formData={formData}
+        isValid={isFormValid}
+        isVerifyEmailLoading={verifyEmailIsLoading}
+        onSubmit={onSubmit}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        getFieldError={getFieldError}
+        onResend={onResendEmail}
+        isResendLoading={resendEmailVerificationCodeIsLoading}
+        resendTimer={resendTimer}
+      />
         </CardContent>
       </Card>
     </div>
