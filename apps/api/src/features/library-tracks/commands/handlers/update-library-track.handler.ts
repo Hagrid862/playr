@@ -2,7 +2,6 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-  BadRequestException,
   InternalServerErrorException,
   NotFoundException,
   PreconditionFailedException,
@@ -40,15 +39,7 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
       if (!library) {
         throw new PreconditionFailedException('User library not found');
       }
-      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
-        library.id,
-        uniqueGenreIds,
-      );
-      if (!assignable) {
-        throw new BadRequestException(
-          'One or more genres are invalid or not available to your library',
-        );
-      }
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, uniqueGenreIds);
     }
 
     const updated = await this.unitOfWork.runInTransaction(async () => {

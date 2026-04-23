@@ -143,7 +143,9 @@ describe('CreateLibraryAlbumHandler', () => {
     const command = new CreateLibraryAlbumCommand({ ...mockRequest, genreIds: ['g1'] }, mockUserId);
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockRejectedValue(
+      new BadRequestException('One or more genre IDs are not assignable to the library'),
+    );
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });

@@ -138,7 +138,9 @@ describe('CreateLibraryArtistHandler', () => {
     );
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockRejectedValue(
+      new BadRequestException('One or more genre IDs are not assignable to the library'),
+    );
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });

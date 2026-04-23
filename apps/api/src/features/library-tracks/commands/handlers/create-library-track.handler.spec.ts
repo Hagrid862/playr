@@ -154,7 +154,9 @@ describe('CreateLibraryTrackHandler', () => {
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockRejectedValue(
+      new BadRequestException('One or more genre IDs are not assignable to the library'),
+    );
 
     await expect(handler.execute(genreCommand)).rejects.toThrow(BadRequestException);
     expect(unitOfWork.runInTransaction).not.toHaveBeenCalled();

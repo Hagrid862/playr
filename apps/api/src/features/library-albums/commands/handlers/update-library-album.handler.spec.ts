@@ -179,7 +179,9 @@ describe('UpdateLibraryAlbumHandler', () => {
       ...libraryBuilder({ id: 'library-123', userId: mockUserId }),
       user: userBuilder({ id: mockUserId }),
     } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockRejectedValue(
+      new BadRequestException('One or more genre IDs are not assignable to the library'),
+    );
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });

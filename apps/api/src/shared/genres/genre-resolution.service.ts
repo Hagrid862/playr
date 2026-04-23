@@ -249,8 +249,8 @@ export class GenreResolutionService {
     return slug;
   }
 
-  async assertGenreIdsAssignableToLibrary(libraryId: string, genreIds: string[]): Promise<boolean> {
-    if (genreIds.length === 0) return true;
+  async assertGenreIdsAssignableToLibrary(libraryId: string, genreIds: string[]): Promise<void> {
+    if (genreIds.length === 0) return;
 
     const unique = [...new Set(genreIds)];
     const assignableCount = await this.genreRepository.count({
@@ -258,6 +258,8 @@ export class GenreResolutionService {
       OR: [{ kind: 'system', libraryId: null }, { libraryId: libraryId }],
     });
 
-    return assignableCount === unique.length;
+    if (assignableCount !== unique.length) {
+      throw new BadRequestException('One or more genre IDs are not assignable to the library');
+    }
   }
 }

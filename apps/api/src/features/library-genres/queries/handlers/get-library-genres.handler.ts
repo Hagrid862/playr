@@ -2,6 +2,7 @@ import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import type { GenreWhereInput } from '@repo/db';
 import type { GetLibraryGenresResponse } from '@repo/contracts';
 import { GetLibraryGenresQuery } from '../impl/get-library-genres.query';
 
@@ -22,24 +23,30 @@ export class GetLibraryGenresHandler implements IQueryHandler<GetLibraryGenresQu
     }
 
     const skip = (page - 1) * limit;
+    const trimmedQ = q?.trim();
+    const where: GenreWhereInput = {
+      kind,
+      OR: [{ libraryId: null }, { libraryId: library.id }],
+      ...(trimmedQ
+        ? {
+            AND: [
+              {
+                OR: [
+                  { name: { contains: trimmedQ, mode: 'insensitive' } },
+                  { slug: { contains: trimmedQ, mode: 'insensitive' } },
+                ],
+              },
+            ],
+          }
+        : {}),
+    };
 
     const [items, total] = await Promise.all([
-      this.genreRepository.findMany(
-        {
-          libraryId: library.id,
-          name: q,
-          kind,
-        },
-        {
-          skip,
-          take: limit,
-        },
-      ),
-      this.genreRepository.count({
-        libraryId: library.id,
-        name: q,
-        kind,
+      this.genreRepository.findMany(where, {
+        skip,
+        take: limit,
       }),
+      this.genreRepository.count(where),
     ]);
 
     return {

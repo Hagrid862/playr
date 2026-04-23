@@ -154,7 +154,9 @@ describe('UpdateLibraryTrackHandler', () => {
   it('should throw BadRequestException when genres are not assignable', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockRejectedValue(
+      new BadRequestException('One or more genre IDs are not assignable to the library'),
+    );
     const cmd = new UpdateLibraryTrackCommand(trackId, { genreIds: ['g1'] }, userId);
 
     await expect(handler.execute(cmd)).rejects.toThrow(BadRequestException);

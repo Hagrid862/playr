@@ -1,7 +1,6 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import {
-  BadRequestException,
   ConflictException,
   InternalServerErrorException,
   NotFoundException,
@@ -49,15 +48,7 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
         throw new PreconditionFailedException('User library not found');
       }
 
-      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
-        library.id,
-        request.genreIds,
-      );
-      if (!assignable) {
-        throw new BadRequestException(
-          'One or more genres are invalid or not available to your library',
-        );
-      }
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, request.genreIds);
     }
 
     const updatedArtist = await this.artistRepository.update(artistId, {

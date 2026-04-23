@@ -3,7 +3,6 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-  BadRequestException,
   ConflictException,
   InternalServerErrorException,
   PreconditionFailedException,
@@ -36,15 +35,7 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
       request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
 
     if (uniqueGenreIds !== undefined) {
-      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
-        library.id,
-        uniqueGenreIds,
-      );
-      if (!assignable) {
-        throw new BadRequestException(
-          'One or more genres are invalid or not available to your library',
-        );
-      }
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, uniqueGenreIds);
     }
 
     const album = await this.unitOfWork.runInTransaction(async () => {

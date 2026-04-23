@@ -4,7 +4,6 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
-  BadRequestException,
   InternalServerErrorException,
   PreconditionFailedException,
 } from '@nestjs/common';
@@ -42,15 +41,7 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     if (uniqueGenreIds !== undefined) {
-      const assignable = await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
-        library.id,
-        uniqueGenreIds,
-      );
-      if (!assignable) {
-        throw new BadRequestException(
-          'One or more genres are invalid or not available to your library',
-        );
-      }
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, uniqueGenreIds);
     }
 
     const track = await this.unitOfWork.runInTransaction(async () => {

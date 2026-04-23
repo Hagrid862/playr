@@ -69,9 +69,16 @@ describe('GetLibraryGenresHandler', () => {
     });
     expect(genreRepository.findMany).toHaveBeenCalledWith(
       {
-        libraryId: library.id,
-        name: 'rock',
         kind: GenreKind.custom,
+        OR: [{ libraryId: null }, { libraryId: library.id }],
+        AND: [
+          {
+            OR: [
+              { name: { contains: 'rock', mode: 'insensitive' } },
+              { slug: { contains: 'rock', mode: 'insensitive' } },
+            ],
+          },
+        ],
       },
       {
         skip: 10,
@@ -79,9 +86,16 @@ describe('GetLibraryGenresHandler', () => {
       },
     );
     expect(genreRepository.count).toHaveBeenCalledWith({
-      libraryId: library.id,
-      name: 'rock',
       kind: GenreKind.custom,
+      OR: [{ libraryId: null }, { libraryId: library.id }],
+      AND: [
+        {
+          OR: [
+            { name: { contains: 'rock', mode: 'insensitive' } },
+            { slug: { contains: 'rock', mode: 'insensitive' } },
+          ],
+        },
+      ],
     });
   });
 
