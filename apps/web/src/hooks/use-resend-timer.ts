@@ -8,7 +8,12 @@ import { useState, useEffect, useCallback } from 'react';
 export const useResendTimer = (key: string, cooldownSeconds: number = 60) => {
   const getRemainingTime = useCallback(() => {
     if (typeof window === 'undefined') return 0;
-    const expiry = localStorage.getItem(key);
+    let expiry: string | null;
+    try {
+      expiry = window.localStorage.getItem(key);
+    } catch {
+      return 0;
+    }
     if (!expiry) return 0;
 
     const remaining = Math.ceil((Number(expiry) - Date.now()) / 1000);
@@ -39,12 +44,20 @@ export const useResendTimer = (key: string, cooldownSeconds: number = 60) => {
 
   const startTimer = useCallback(() => {
     const expiry = Date.now() + cooldownSeconds * 1000;
-    localStorage.setItem(key, String(expiry));
+    try {
+      window.localStorage.setItem(key, String(expiry));
+    } catch {
+      // Keep the current tab's countdown even when persistence is unavailable.
+    }
     setTimeLeft(cooldownSeconds);
   }, [key, cooldownSeconds]);
 
   const clearTimer = useCallback(() => {
-    localStorage.removeItem(key);
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Ignore unavailable storage.
+    }
     setTimeLeft(0);
   }, [key]);
 
