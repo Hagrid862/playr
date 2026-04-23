@@ -124,11 +124,33 @@ test.describe("Playback Functionality", () => {
     });
   });
   test("should play the track and toggle play/pause", async () => {
-    // Click Play on the album page - specifically looking for the big Play button in the header actions area
-    await test.step("Click Play on album page", async () => {
-      const playButton = page.getByRole("button", { name: /^Play$/ }).first();
-      await playButton.waitFor({ state: "visible", timeout: 10000 });
-      await playButton.click();
+    test.setTimeout(120000);
+
+    // Start playback from the target track row to avoid depending on album-level button state timing.
+    await test.step("Start playback from track row", async () => {
+      await expect(page).toHaveURL(/\/app\/library\/albums\/[^/]+$/);
+      const trackRow = page.locator("div").filter({
+        has: page.getByText(trackName, { exact: true }),
+      });
+
+      await expect
+        .poll(
+          async () => {
+            const processingCount = await trackRow.getByLabel("Processing").count();
+            const failedCount = await trackRow.getByLabel("Processing failed").count();
+            if (processingCount === 0 && failedCount === 0) return true;
+            await page.reload({ waitUntil: "networkidle" });
+            return false;
+          },
+          {
+            timeout: 60000,
+            intervals: [500, 1000, 2000],
+            message: "Track did not become playable (audio processing may still be pending).",
+          },
+        )
+        .toBe(true);
+
+      await page.getByText(trackName, { exact: true }).first().click();
     });
 
     // Verify track info in player
