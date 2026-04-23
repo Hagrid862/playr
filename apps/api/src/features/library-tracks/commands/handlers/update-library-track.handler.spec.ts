@@ -1,4 +1,4 @@
-import { GenreRepository } from '@/shared/repositories/genre.repository';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
@@ -9,8 +9,7 @@ import {
   PreconditionFailedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Track } from '@repo/db';
-import { trackBuilder } from '@repo/testing/builders';
+import { trackBuilder, trackAccessBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateLibraryTrackCommand } from '../impl/update-library-track.command';
@@ -21,7 +20,7 @@ describe('UpdateLibraryTrackHandler', () => {
   let unitOfWork: DeepMocked<UnitOfWorkService>;
   let trackRepository: DeepMocked<TrackRepository>;
   let libraryRepository: DeepMocked<LibraryRepository>;
-  let genreRepository: DeepMocked<GenreRepository>;
+  let genreResolutionService: DeepMocked<GenreResolutionService>;
 
   const userId = 'user-123';
   const trackId = 'track-123';
@@ -34,25 +33,32 @@ describe('UpdateLibraryTrackHandler', () => {
     userId,
   );
 
-  const mockTrack: Track = trackBuilder({
-    id: trackId,
-    title: 'Test Track',
-    trackNumber: 1,
-    diskNumber: 1,
-    duration: 180,
-    albumId: 'album-123',
-    visibility: 'private',
-  });
+  const mockTrack = {
+    ...trackBuilder({
+      id: trackId,
+      title: 'Test Track',
+      trackNumber: 1,
+      diskNumber: 1,
+      duration: 180,
+      albumId: 'album-123',
+      visibility: 'private',
+    }),
+    access: [trackAccessBuilder({ userId, role: 'owner', trackId })],
+  } as NonNullable<Awaited<ReturnType<TrackRepository['findOne']>>>;
+  const mockLibrary = {
+    ...libraryBuilder({ id: 'library-123', userId }),
+    user: userBuilder({ id: userId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();
     trackRepository = createMock<TrackRepository>();
     libraryRepository = createMock<LibraryRepository>();
-    genreRepository = createMock<GenreRepository>();
+    genreResolutionService = createMock<GenreResolutionService>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
-    libraryRepository.getByUserId.mockResolvedValue({ id: 'library-123', userId } as any);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,7 +66,7 @@ describe('UpdateLibraryTrackHandler', () => {
         { provide: UnitOfWorkService, useValue: unitOfWork },
         { provide: TrackRepository, useValue: trackRepository },
         { provide: LibraryRepository, useValue: libraryRepository },
-        { provide: GenreRepository, useValue: genreRepository },
+        { provide: GenreResolutionService, useValue: genreResolutionService },
       ],
     }).compile();
 
@@ -73,7 +79,8 @@ describe('UpdateLibraryTrackHandler', () => {
 
   it('should update track and artists', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    const updatedTrack = { ...mockTrack, title: 'Updated Title' };
+    const { access: _ignoredAccess, ...baseTrack } = mockTrack;
+    const updatedTrack = { ...baseTrack, title: 'Updated Title' };
     trackRepository.update.mockResolvedValue(updatedTrack);
 
     const result = await handler.execute(command);
@@ -96,7 +103,8 @@ describe('UpdateLibraryTrackHandler', () => {
 
   it('should update track without artists if artistIds not provided', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    const updatedTrack = { ...mockTrack, title: 'Updated Title' };
+    const { access: _ignoredAccess, ...baseTrack } = mockTrack;
+    const updatedTrack = { ...baseTrack, title: 'Updated Title' };
     trackRepository.update.mockResolvedValue(updatedTrack);
 
     const commandNoArtists = new UpdateLibraryTrackCommand(
@@ -132,7 +140,7 @@ describe('UpdateLibraryTrackHandler', () => {
 
   it('should throw PreconditionFailedException when genreIds set but library missing', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
     const cmd = new UpdateLibraryTrackCommand(trackId, { genreIds: ['g1'] }, userId);
 
     await expect(handler.execute(cmd)).rejects.toThrow(PreconditionFailedException);
@@ -140,8 +148,8 @@ describe('UpdateLibraryTrackHandler', () => {
 
   it('should throw BadRequestException when genres are not assignable', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    libraryRepository.getByUserId.mockResolvedValue({ id: 'library-123', userId } as any);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
     const cmd = new UpdateLibraryTrackCommand(trackId, { genreIds: ['g1'] }, userId);
 
     await expect(handler.execute(cmd)).rejects.toThrow(BadRequestException);
@@ -155,7 +163,7 @@ describe('UpdateLibraryTrackHandler', () => {
 
     await handler.execute(cmd);
 
-    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith('library-123', [
+    expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith('library-123', [
       'g1',
       'g2',
     ]);

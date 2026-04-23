@@ -2,7 +2,7 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { libraryAlbumBuilder, libraryBuilder } from '@repo/testing/builders';
+import { albumBuilder, artistBuilder, libraryAlbumBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryAlbumsQuery } from '../impl/get-library-albums.query';
@@ -36,25 +36,41 @@ describe('GetLibraryAlbumsHandler', () => {
     const userId = 'user-123';
     const libraryId = 'lib-123';
     const query = new GetLibraryAlbumsQuery(userId, 1, 10);
-    const library = libraryBuilder({ id: libraryId });
+    const library = {
+      ...libraryBuilder({ id: libraryId, userId }),
+      user: userBuilder({ id: userId }),
+    } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
     const albums = [
-      libraryAlbumBuilder({ id: 'lib-album-1', libraryId, albumId: 'album-1' }),
-      libraryAlbumBuilder({ id: 'lib-album-2', libraryId, albumId: 'album-2' }),
-    ];
+      {
+        ...libraryAlbumBuilder({ id: 'lib-album-1', libraryId, albumId: 'album-1' }),
+        album: { ...albumBuilder({ id: 'album-1' }), cover: null, artists: [artistBuilder()] },
+      },
+      {
+        ...libraryAlbumBuilder({ id: 'lib-album-2', libraryId, albumId: 'album-2' }),
+        album: { ...albumBuilder({ id: 'album-2' }), cover: null, artists: [artistBuilder()] },
+      },
+    ] as Awaited<ReturnType<LibraryAlbumRepository['findManyWithInclude']>>;
     const total = 2;
 
-    libraryRepository.getByUserId.mockResolvedValue(library);
-    libraryAlbumRepository.findMany.mockResolvedValue(albums);
+    libraryRepository.findOne.mockResolvedValue(library);
+    libraryAlbumRepository.findManyWithInclude.mockResolvedValue(albums);
     libraryAlbumRepository.count.mockResolvedValue(total);
 
     const result = await handler.execute(query);
 
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryAlbumRepository.findMany).toHaveBeenCalledWith({
-      where: { libraryId: library.id },
-      take: 10,
-      skip: 0,
-    });
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
+    expect(libraryAlbumRepository.findManyWithInclude).toHaveBeenCalledWith(
+      { libraryId: library.id },
+      { take: 10, skip: 0 },
+      {
+        album: {
+          include: {
+            cover: true,
+            artists: true,
+          },
+        },
+      },
+    );
     expect(libraryAlbumRepository.count).toHaveBeenCalledWith({ libraryId: library.id });
     expect(result).toEqual({
       items: albums,
@@ -68,7 +84,7 @@ describe('GetLibraryAlbumsHandler', () => {
     const userId = 'user-123';
     const query = new GetLibraryAlbumsQuery(userId, 1, 10);
 
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
     await expect(handler.execute(query)).rejects.toThrow('User library not found');
@@ -77,12 +93,17 @@ describe('GetLibraryAlbumsHandler', () => {
   it('should throw PreconditionFailedException if failed to parse library albums', async () => {
     const userId = 'user-123';
     const query = new GetLibraryAlbumsQuery(userId, 1, 10);
-    const library = libraryBuilder({ id: 'lib-123' });
+    const library = {
+      ...libraryBuilder({ id: 'lib-123', userId }),
+      user: userBuilder({ id: userId }),
+    } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
     const invalidAlbums = [{ invalidField: 'test' }] as any[];
     const total = 1;
 
-    libraryRepository.getByUserId.mockResolvedValue(library);
-    libraryAlbumRepository.findMany.mockResolvedValue(invalidAlbums);
+    libraryRepository.findOne.mockResolvedValue(library);
+    libraryAlbumRepository.findManyWithInclude.mockResolvedValue(
+      invalidAlbums as Awaited<ReturnType<LibraryAlbumRepository['findManyWithInclude']>>,
+    );
     libraryAlbumRepository.count.mockResolvedValue(total);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);

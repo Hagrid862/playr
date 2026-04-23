@@ -8,22 +8,23 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { GenreSchema } from '@repo/contracts';
 import { GenreKind } from '@repo/db';
-import { libraryBuilder } from '@repo/testing/builders';
+import { libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryGenreQuery } from '../impl/get-library-genre.query';
 import { GetLibraryGenreHandler } from './get-library-genre.handler';
 
-const mockGenre = {
+const mockGenre: NonNullable<Awaited<ReturnType<GenreRepository['findOne']>>> = {
   id: 'g1',
   name: 'Rock',
   slug: 'rock',
   description: null,
   kind: GenreKind.system,
   libraryId: null,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: new Date(),
+  updatedAt: new Date(),
   deletedAt: null,
+  library: null,
 };
 
 describe('GetLibraryGenreHandler', () => {
@@ -32,7 +33,10 @@ describe('GetLibraryGenreHandler', () => {
   let genreRepository: DeepMocked<GenreRepository>;
 
   const userId = 'user-1';
-  const library = libraryBuilder({ id: 'lib-1', userId });
+  const library = {
+    ...libraryBuilder({ id: 'lib-1', userId }),
+    user: userBuilder({ id: userId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
 
   beforeEach(async () => {
     libraryRepository = createMock<LibraryRepository>();
@@ -55,8 +59,8 @@ describe('GetLibraryGenreHandler', () => {
 
   it('should return parsed genre', async () => {
     const query = new GetLibraryGenreQuery(userId, 'g1');
-    libraryRepository.getByUserId.mockResolvedValue(library);
-    genreRepository.findOne.mockResolvedValue(mockGenre as any);
+    libraryRepository.findOne.mockResolvedValue(library);
+    genreRepository.findOne.mockResolvedValue(mockGenre);
 
     const result = await handler.execute(query);
 
@@ -70,14 +74,14 @@ describe('GetLibraryGenreHandler', () => {
 
   it('should throw PreconditionFailedException when no library', async () => {
     const query = new GetLibraryGenreQuery(userId, 'g1');
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
   });
 
   it('should throw NotFoundException when genre missing', async () => {
     const query = new GetLibraryGenreQuery(userId, 'g1');
-    libraryRepository.getByUserId.mockResolvedValue(library);
+    libraryRepository.findOne.mockResolvedValue(library);
     genreRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
@@ -85,7 +89,7 @@ describe('GetLibraryGenreHandler', () => {
 
   it('should throw InternalServerErrorException when GenreSchema fails', async () => {
     const query = new GetLibraryGenreQuery(userId, 'g1');
-    libraryRepository.getByUserId.mockResolvedValue(library);
+    libraryRepository.findOne.mockResolvedValue(library);
     genreRepository.findOne.mockResolvedValue({ bad: true } as any);
     const safeParseSpy = vi.spyOn(GenreSchema, 'safeParse').mockReturnValue({
       success: false,

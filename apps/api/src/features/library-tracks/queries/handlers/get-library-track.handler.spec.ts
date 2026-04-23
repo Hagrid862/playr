@@ -1,8 +1,7 @@
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Track } from '@repo/db';
-import { trackBuilder } from '@repo/testing/builders';
+import { albumBuilder, trackBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryTrackQuery } from '../impl/get-library-track.query';
@@ -16,9 +15,16 @@ describe('GetLibraryTrackHandler', () => {
   const trackId = 'track-123';
   const query = new GetLibraryTrackQuery(trackId, userId);
 
-  const mockTrack: Track = trackBuilder({
-    id: trackId,
-  });
+  const mockTrack = {
+    ...trackBuilder({
+      id: trackId,
+    }),
+    artists: [],
+    album: {
+      ...albumBuilder(),
+      cover: null,
+    },
+  } as NonNullable<Awaited<ReturnType<TrackRepository['findOneWithInclude']>>>;
 
   beforeEach(async () => {
     trackRepository = createMock<TrackRepository>();
@@ -35,22 +41,25 @@ describe('GetLibraryTrackHandler', () => {
   });
 
   it('should return track details', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.findOneWithInclude.mockResolvedValue(mockTrack);
 
     const result = await handler.execute(query);
 
     expect(result).toEqual(mockTrack);
-    expect(trackRepository.findOne).toHaveBeenCalledWith({ id: trackId }, true);
+    expect(trackRepository.findOneWithInclude).toHaveBeenCalledWith(
+      { id: trackId },
+      { artists: true, album: { include: { cover: true } } },
+    );
   });
 
   it('should throw NotFoundException if track not found', async () => {
-    trackRepository.findOne.mockResolvedValue(null);
+    trackRepository.findOneWithInclude.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
-    trackRepository.findOne.mockResolvedValue(trackBuilder({ title: 123 } as any));
+    trackRepository.findOneWithInclude.mockResolvedValue(trackBuilder({ title: 123 } as any) as any);
 
     await expect(handler.execute(query)).rejects.toThrow(InternalServerErrorException);
   });

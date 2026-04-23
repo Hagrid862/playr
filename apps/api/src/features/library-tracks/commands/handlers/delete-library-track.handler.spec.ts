@@ -5,8 +5,8 @@ import { StorageService } from '@/shared/services/storage.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { type Track, AudioFormat, FileBucket, ProcessingStatus, Visibility } from '@repo/db';
-import { audioFileBuilder, trackBuilder } from '@repo/testing/builders';
+import { AudioFormat, FileBucket, ProcessingStatus, Visibility } from '@repo/db';
+import { audioFileBuilder, trackAccessBuilder, trackBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
@@ -24,14 +24,23 @@ describe('DeleteLibraryTrackHandler', () => {
   const trackId = 'track-123';
   const command = new DeleteLibraryTrackCommand(trackId, userId);
 
-  const mockTrack: Track = trackBuilder({
-    id: trackId,
-    title: 'Test Track',
-    trackNumber: 1,
-    diskNumber: 1,
-    duration: 180,
-    albumId: 'album-123',
-    visibility: Visibility.private,
+  const mockTrack = {
+    ...trackBuilder({
+      id: trackId,
+      title: 'Test Track',
+      trackNumber: 1,
+      diskNumber: 1,
+      duration: 180,
+      albumId: 'album-123',
+      visibility: Visibility.private,
+    }),
+    access: [trackAccessBuilder({ userId, role: 'owner', trackId })],
+  } as NonNullable<Awaited<ReturnType<TrackRepository['findOne']>>>;
+  const buildAudioFileWithTrack = (
+    overrides?: Parameters<typeof audioFileBuilder>[0],
+  ): Awaited<ReturnType<AudioFileRepository['findMany']>>[number] => ({
+    ...audioFileBuilder(overrides),
+    track: trackBuilder({ id: trackId }),
   });
 
   beforeEach(async () => {
@@ -68,7 +77,7 @@ describe('DeleteLibraryTrackHandler', () => {
   });
 
   it('should soft delete track, remove library tracks, and delete audio files', async () => {
-    const mockAudioFile = audioFileBuilder({
+    const mockAudioFile = buildAudioFileWithTrack({
       id: 'audio-1',
       trackId,
       bucket: FileBucket.private,
@@ -92,13 +101,9 @@ describe('DeleteLibraryTrackHandler', () => {
       id: trackId,
       access: { some: { userId, role: 'owner' } },
     });
-    expect(trackRepository.update).toHaveBeenCalledWith(
-      trackId,
-      {
-        deletedAt: expect.any(Date),
-      },
-      { includeRelations: false },
-    );
+    expect(trackRepository.update).toHaveBeenCalledWith(trackId, {
+      deletedAt: expect.any(Date),
+    });
     expect(libraryTrackRepository.deleteMany).toHaveBeenCalledWith({
       trackId,
       library: { userId },
@@ -126,13 +131,9 @@ describe('DeleteLibraryTrackHandler', () => {
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockTrack);
-    expect(trackRepository.update).toHaveBeenCalledWith(
-      trackId,
-      {
-        deletedAt: expect.any(Date),
-      },
-      { includeRelations: false },
-    );
+    expect(trackRepository.update).toHaveBeenCalledWith(trackId, {
+      deletedAt: expect.any(Date),
+    });
     expect(libraryTrackRepository.deleteMany).toHaveBeenCalledWith({
       trackId,
       library: { userId },
@@ -142,7 +143,7 @@ describe('DeleteLibraryTrackHandler', () => {
   });
 
   it('should delete multiple audio files and cleanup from storage', async () => {
-    const mockAudioFile1 = audioFileBuilder({
+    const mockAudioFile1 = buildAudioFileWithTrack({
       id: 'audio-1',
       trackId,
       bucket: FileBucket.private,
@@ -156,7 +157,7 @@ describe('DeleteLibraryTrackHandler', () => {
       channels: 2,
       status: ProcessingStatus.complete,
     });
-    const mockAudioFile2 = audioFileBuilder({
+    const mockAudioFile2 = buildAudioFileWithTrack({
       ...mockAudioFile1,
       id: 'audio-2',
       key: 'audio/key2',
@@ -174,7 +175,7 @@ describe('DeleteLibraryTrackHandler', () => {
   });
 
   it('should log error when storage delete fails but still return track', async () => {
-    const mockAudioFile = audioFileBuilder({
+    const mockAudioFile = buildAudioFileWithTrack({
       id: 'audio-1',
       trackId,
       bucket: FileBucket.private,

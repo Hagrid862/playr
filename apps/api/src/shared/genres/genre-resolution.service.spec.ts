@@ -201,14 +201,14 @@ describe('GenreResolutionService', () => {
 
   describe('assertEditableCustomGenreForUser', () => {
     it('throws PreconditionFailedException when library missing', async () => {
-      libraryRepository.getByUserId.mockResolvedValue(null);
+      libraryRepository.findOne.mockResolvedValue(null);
       await expect(service.assertEditableCustomGenreForUser('g1', userId)).rejects.toThrow(
         PreconditionFailedException,
       );
     });
 
     it('throws NotFoundException when genre missing', async () => {
-      libraryRepository.getByUserId.mockResolvedValue(library);
+      libraryRepository.findOne.mockResolvedValue(library as any);
       genreRepository.findOne.mockResolvedValue(null);
       await expect(service.assertEditableCustomGenreForUser('g1', userId)).rejects.toThrow(
         NotFoundException,
@@ -216,7 +216,7 @@ describe('GenreResolutionService', () => {
     });
 
     it('throws ForbiddenException when not custom or wrong library', async () => {
-      libraryRepository.getByUserId.mockResolvedValue(library);
+      libraryRepository.findOne.mockResolvedValue(library as any);
       genreRepository.findOne.mockResolvedValue({
         id: 'g1',
         kind: 'system',
@@ -228,14 +228,14 @@ describe('GenreResolutionService', () => {
     });
 
     it('returns genre when valid custom row', async () => {
-      libraryRepository.getByUserId.mockResolvedValue(library);
+      libraryRepository.findOne.mockResolvedValue(library as any);
       genreRepository.findOne.mockResolvedValue(customGenre);
       const result = await service.assertEditableCustomGenreForUser(customGenre.id, userId);
       expect(result).toBe(customGenre);
     });
 
     it('uses custom forbidden message', async () => {
-      libraryRepository.getByUserId.mockResolvedValue(library);
+      libraryRepository.findOne.mockResolvedValue(library as any);
       genreRepository.findOne.mockResolvedValue({
         id: 'g1',
         kind: 'system',

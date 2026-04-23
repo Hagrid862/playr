@@ -24,6 +24,11 @@ describe('DeleteLibraryArtistHandler', () => {
     bannerId: null,
     visibility: Visibility.public,
   });
+  const mockArtistWithMedia = {
+    ...mockArtist,
+    avatar: null,
+    banner: null,
+  } as NonNullable<Awaited<ReturnType<ArtistRepository['findOne']>>>;
 
   beforeEach(async () => {
     artistRepository = createMock<ArtistRepository>();
@@ -47,13 +52,13 @@ describe('DeleteLibraryArtistHandler', () => {
     const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
     const mockDeletedArtist = { ...mockArtist, deletedAt: new Date() };
 
-    artistRepository.findOne.mockResolvedValue(mockArtist);
-    artistRepository.softDeleteCascade.mockResolvedValue(mockDeletedArtist);
+    artistRepository.findOne.mockResolvedValue(mockArtistWithMedia);
+    artistRepository.softDelete.mockResolvedValue(mockDeletedArtist);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockDeletedArtist);
-    expect(artistRepository.softDeleteCascade).toHaveBeenCalledWith(mockArtistId);
+    expect(artistRepository.softDelete).toHaveBeenCalledWith(mockArtistId, true);
   });
 
   it('should throw NotFoundException if artist is missing or permission denied', async () => {
@@ -65,8 +70,8 @@ describe('DeleteLibraryArtistHandler', () => {
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new DeleteLibraryArtistCommand(mockArtistId, mockUserId);
-    artistRepository.findOne.mockResolvedValue(mockArtist);
-    artistRepository.softDeleteCascade.mockResolvedValue({ invalid: 'data' } as any);
+    artistRepository.findOne.mockResolvedValue(mockArtistWithMedia);
+    artistRepository.softDelete.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
   });

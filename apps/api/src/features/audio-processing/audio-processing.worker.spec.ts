@@ -4,7 +4,7 @@ import { StorageService } from '@/shared/services/storage.service';
 import { Logger, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccessRole, AudioFormat, AudioQuality, ProcessingStatus } from '@repo/db';
-import { audioFileBuilder, trackWithAccessBuilder } from '@repo/testing/builders';
+import { audioFileBuilder, trackBuilder, trackWithAccessBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Job } from 'bullmq';
 import * as fs from 'fs/promises';
@@ -21,6 +21,18 @@ const createMockJob = (
   data: AudioProcessingJobData,
   id: string = 'job-1',
 ): Job<AudioProcessingJobData> => createMock<Job<AudioProcessingJobData>>({ data, id });
+
+type AudioFileWithTrack = NonNullable<Awaited<ReturnType<AudioFileRepository['findOne']>>>;
+
+const audioFileWithTrackBuilder = (
+  overrides?: Parameters<typeof audioFileBuilder>[0],
+): AudioFileWithTrack => {
+  const audioFile = audioFileBuilder(overrides);
+  return {
+    ...audioFile,
+    track: trackBuilder({ id: audioFile.trackId }),
+  };
+};
 
 describe('AudioProcessingWorker', () => {
   let worker: AudioProcessingWorker;
@@ -135,14 +147,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should process audio file successfully for non-lossless', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 0,
@@ -164,7 +176,6 @@ describe('AudioProcessingWorker', () => {
         {
           duration: 120,
         },
-        { includeRelations: false },
       );
       expect(audioFileRepository.create).toHaveBeenCalledTimes(5);
       expect(fs.rm).toHaveBeenCalled();
@@ -172,14 +183,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should process audio file successfully for lossless', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.flac,
           key: 'path/to/original.flac',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 120,
@@ -197,14 +208,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should process WAV file and create original FLAC with undefined bitrate', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.wav,
           key: 'path/to/original.wav',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 0,
@@ -226,14 +237,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should handle track not found exception', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(null);
+      trackRepository.findOneWithInclude.mockResolvedValue(null);
 
       await expect(worker.process(mockJob)).rejects.toThrow(NotFoundException);
       expect(audioFileRepository.update).toHaveBeenCalledWith('af-123', {
@@ -243,7 +254,7 @@ describe('AudioProcessingWorker', () => {
 
     it('should catch global errors and mark as failed', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
@@ -259,7 +270,7 @@ describe('AudioProcessingWorker', () => {
 
     it('should process audio file and not update duration if missing from metadata', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
@@ -276,13 +287,13 @@ describe('AudioProcessingWorker', () => {
       } as mm.IAudioMetadata);
 
       await worker.process(mockJob);
-      expect(trackRepository.findOne).not.toHaveBeenCalled();
+      expect(trackRepository.findOneWithInclude).not.toHaveBeenCalled();
       expect(trackRepository.update).not.toHaveBeenCalled();
     });
 
     it('should process audio file and not update track if access role is invalid', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
@@ -292,7 +303,7 @@ describe('AudioProcessingWorker', () => {
       vi.mocked(mm.parseFile).mockResolvedValue({
         format: { duration: 120 },
       } as mm.IAudioMetadata);
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 0,
@@ -307,7 +318,7 @@ describe('AudioProcessingWorker', () => {
 
     it('should skip transcoding if quality and format match', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           quality: AudioQuality.low,
@@ -318,7 +329,7 @@ describe('AudioProcessingWorker', () => {
       vi.mocked(mm.parseFile).mockResolvedValue({
         format: { duration: 120 },
       } as mm.IAudioMetadata);
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 0,
@@ -334,14 +345,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should log error if transcode fails for one quality and continue', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.wav,
           key: 'path/to/original.wav',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 0,
@@ -364,14 +375,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should use temp dir prefix with job id', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 0,
@@ -397,14 +408,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should fallback to unknown job id when job id is missing', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 0,
@@ -426,7 +437,7 @@ describe('AudioProcessingWorker', () => {
 
     it('should skip track update if rounded duration matches existing duration', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
@@ -441,7 +452,7 @@ describe('AudioProcessingWorker', () => {
           numberOfChannels: 2,
         },
       } as mm.IAudioMetadata);
-      trackRepository.findOne.mockResolvedValue(
+      trackRepository.findOneWithInclude.mockResolvedValue(
         trackWithAccessBuilder({
           id: 'tr-123',
           duration: 120,
@@ -458,14 +469,14 @@ describe('AudioProcessingWorker', () => {
 
     it('should log warning if temp dir cleanup fails', async () => {
       audioFileRepository.findOne.mockResolvedValue(
-        audioFileBuilder({
+        audioFileWithTrackBuilder({
           id: 'af-123',
           format: AudioFormat.mp3,
           key: 'path/to/original.mp3',
         }),
       );
       storageService.getFile.mockResolvedValue(Buffer.from('input'));
-      trackRepository.findOne.mockResolvedValue(null);
+      trackRepository.findOneWithInclude.mockResolvedValue(null);
 
       const cleanupError = new Error('Cleanup failed');
       vi.mocked(fs.rm).mockRejectedValue(cleanupError);

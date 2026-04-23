@@ -13,6 +13,10 @@ import { PrismaService } from '../../../shared/services/prisma.service';
 import { UnitOfWorkService } from '../../../shared/services/unit-of-work.service';
 import { TokenService } from './token.service';
 
+type RefreshTokenWithSession = NonNullable<Awaited<ReturnType<RefreshTokenRepository['findOne']>>>;
+type SessionWithUser = NonNullable<Awaited<ReturnType<SessionRepository['findOne']>>>;
+type UserWithAvatar = NonNullable<Awaited<ReturnType<UserRepository['findOne']>>>;
+
 describe('TokenService', () => {
   let service: TokenService;
   let jwtService: DeepMocked<JwtService>;
@@ -116,19 +120,27 @@ describe('TokenService', () => {
   describe('verifyRefreshToken', () => {
     const mockToken = 'some-jwt-token';
     const mockPayload = { sub: 'user-123', sessionId: 'session-123' };
+    const refreshTokenWithSessionBuilder = (overrides?: Record<string, unknown>): RefreshTokenWithSession =>
+      ({
+        ...refreshTokenBuilder(),
+        session: sessionBuilder({ id: mockPayload.sessionId, userId: mockPayload.sub }),
+        ...overrides,
+      }) as RefreshTokenWithSession;
+    const sessionWithUserBuilder = (overrides?: Record<string, unknown>): SessionWithUser =>
+      ({
+        ...sessionBuilder({ id: mockPayload.sessionId, userId: mockPayload.sub }),
+        user: userBuilder({ id: mockPayload.sub }),
+        ...overrides,
+      }) as SessionWithUser;
 
     it('should return decoded info if token and session are valid', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue(
-        refreshTokenBuilder({ revokedAt: null, deletedAt: null }),
+      refreshTokenRepository.findOne.mockResolvedValue(
+        refreshTokenWithSessionBuilder({ revokedAt: null, deletedAt: null }),
       );
-      sessionRepository.getById.mockResolvedValue(
-        sessionBuilder({
-          userId: mockPayload.sub,
-          revokedAt: null,
-          deletedAt: null,
-        }),
+      sessionRepository.findOne.mockResolvedValue(
+        sessionWithUserBuilder({ revokedAt: null, deletedAt: null }),
       );
 
       // Act
@@ -157,7 +169,7 @@ describe('TokenService', () => {
     it('should throw UnauthorizedException if token is not found in database', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue(null);
+      refreshTokenRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
       const promise = service.verifyRefreshToken(mockToken);
@@ -168,8 +180,8 @@ describe('TokenService', () => {
     it('should return isRevoked: true if token is revoked in database', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue(
-        refreshTokenBuilder({ revokedAt: new Date() }),
+      refreshTokenRepository.findOne.mockResolvedValue(
+        refreshTokenWithSessionBuilder({ revokedAt: new Date() }),
       );
 
       // Act
@@ -186,9 +198,11 @@ describe('TokenService', () => {
     it('should return isRevoked: true if session is revoked in database', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
-      sessionRepository.getById.mockResolvedValue(
-        sessionBuilder({ userId: mockPayload.sub, revokedAt: new Date() }),
+      refreshTokenRepository.findOne.mockResolvedValue(
+        refreshTokenWithSessionBuilder({ revokedAt: null }),
+      );
+      sessionRepository.findOne.mockResolvedValue(
+        sessionWithUserBuilder({ revokedAt: new Date() }),
       );
 
       // Act
@@ -201,8 +215,10 @@ describe('TokenService', () => {
     it('should throw UnauthorizedException if session is deleted', async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
-      sessionRepository.getById.mockResolvedValue(null);
+      refreshTokenRepository.findOne.mockResolvedValue(
+        refreshTokenWithSessionBuilder({ revokedAt: null }),
+      );
+      sessionRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
       const promise = service.verifyRefreshToken(mockToken);
@@ -213,8 +229,12 @@ describe('TokenService', () => {
     it("should throw UnauthorizedException if session user doesn't match payload userUID", async () => {
       // Arrange
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      refreshTokenRepository.getByToken.mockResolvedValue(refreshTokenBuilder({ revokedAt: null }));
-      sessionRepository.getById.mockResolvedValue(sessionBuilder({ userId: 'other-user' }));
+      refreshTokenRepository.findOne.mockResolvedValue(
+        refreshTokenWithSessionBuilder({ revokedAt: null }),
+      );
+      sessionRepository.findOne.mockResolvedValue(
+        sessionWithUserBuilder({ userId: 'other-user' }),
+      );
 
       // Act & Assert
       const promise = service.verifyRefreshToken(mockToken);
@@ -284,12 +304,15 @@ describe('TokenService', () => {
       iat: 1,
       exp: 2,
     };
-    const mockUser = userBuilder({ id: 'user-123' });
-    const mockSession = sessionBuilder({ id: 'session-123', userId: 'user-123' });
+    const mockUser = { ...userBuilder({ id: 'user-123' }), avatar: null } as UserWithAvatar;
+    const mockSession = {
+      ...sessionBuilder({ id: 'session-123', userId: 'user-123' }),
+      user: userBuilder({ id: 'user-123' }),
+    } as SessionWithUser;
 
     it('should return authenticated user for valid payload', async () => {
-      sessionRepository.getById.mockResolvedValue(mockSession);
-      userRepository.getById.mockResolvedValue(mockUser);
+      sessionRepository.findOne.mockResolvedValue(mockSession);
+      userRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.toAuthenticatedUser(mockPayload);
 
@@ -297,20 +320,23 @@ describe('TokenService', () => {
     });
 
     it('should throw UnauthorizedException if session is missing', async () => {
-      sessionRepository.getById.mockResolvedValue(null);
+      sessionRepository.findOne.mockResolvedValue(null);
 
       await expect(service.toAuthenticatedUser(mockPayload)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if session belongs to another user', async () => {
-      sessionRepository.getById.mockResolvedValue(sessionBuilder({ userId: 'another-user' }));
+      sessionRepository.findOne.mockResolvedValue({
+        ...sessionBuilder({ userId: 'another-user' }),
+        user: userBuilder({ id: 'another-user' }),
+      } as SessionWithUser);
 
       await expect(service.toAuthenticatedUser(mockPayload)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if user is missing', async () => {
-      sessionRepository.getById.mockResolvedValue(mockSession);
-      userRepository.getById.mockResolvedValue(null);
+      sessionRepository.findOne.mockResolvedValue(mockSession);
+      userRepository.findOne.mockResolvedValue(null);
 
       await expect(service.toAuthenticatedUser(mockPayload)).rejects.toThrow(UnauthorizedException);
     });
@@ -325,13 +351,16 @@ describe('TokenService', () => {
       iat: 1,
       exp: 2,
     };
-    const mockUser = userBuilder({ id: 'user-123' });
-    const mockSession = sessionBuilder({ id: 'session-123', userId: 'user-123' });
+    const mockUser = { ...userBuilder({ id: 'user-123' }), avatar: null } as UserWithAvatar;
+    const mockSession = {
+      ...sessionBuilder({ id: 'session-123', userId: 'user-123' }),
+      user: userBuilder({ id: 'user-123' }),
+    } as SessionWithUser;
 
     it('should authenticate user with valid access token', async () => {
       jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      sessionRepository.getById.mockResolvedValue(mockSession);
-      userRepository.getById.mockResolvedValue(mockUser);
+      sessionRepository.findOne.mockResolvedValue(mockSession);
+      userRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.authenticateWithAccessToken(mockToken);
 

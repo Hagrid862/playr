@@ -12,7 +12,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackSchema } from '@repo/contracts';
 import { AlbumType, Track, Visibility } from '@repo/db';
-import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing/builders';
+import { albumBuilder, libraryBuilder, trackBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -51,22 +51,29 @@ describe('BulkCreateLibraryTracksHandler', () => {
     ],
   };
 
-  const mockLibrary = libraryBuilder({
-    id: libraryId,
-    userId,
-  });
+  const mockLibrary = {
+    ...libraryBuilder({
+      id: libraryId,
+      userId,
+    }),
+    user: userBuilder({ id: userId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
 
-  const mockAlbum = albumBuilder({
-    id: albumId,
-    name: 'Test Album',
-    description: 'Test Description',
-    type: AlbumType.album,
-    totalTracks: 10,
-    totalDuration: 3000,
-    releaseDate: new Date(),
-    coverId: null,
-    visibility: Visibility.private,
-  });
+  const mockAlbum = {
+    ...albumBuilder({
+      id: albumId,
+      name: 'Test Album',
+      description: 'Test Description',
+      type: AlbumType.album,
+      totalTracks: 10,
+      totalDuration: 3000,
+      releaseDate: new Date(),
+      coverId: null,
+      visibility: Visibility.private,
+    }),
+    access: [],
+    cover: null,
+  } as NonNullable<Awaited<ReturnType<AlbumRepository['findOne']>>>;
 
   const mockTrack1: Track = trackBuilder({
     id: 'track-1',
@@ -99,7 +106,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     genreRepository = createMock<GenreRepository>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreRepository.count.mockResolvedValue(1);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -124,7 +131,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
   it('should create multiple tracks and link them to library', async () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValueOnce(mockTrack1).mockResolvedValueOnce(mockTrack2);
 
@@ -134,7 +141,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     expect(result.tracks[0]).toEqual(mockTrack1);
     expect(result.tracks[1]).toEqual(mockTrack2);
 
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(albumRepository.findOne).toHaveBeenCalledWith({ id: albumId });
     expect(unitOfWork.runInTransaction).toHaveBeenCalled();
 
@@ -187,7 +194,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     const singleTrackBody = { tracks: [body.tracks[0]] };
     const command = new BulkCreateLibraryTracksCommand(albumId, singleTrackBody, userId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack1);
 
@@ -201,7 +208,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
 
   it('should throw PreconditionFailedException if library not found', async () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
     await expect(handler.execute(command)).rejects.toThrow('User library not found');
@@ -212,7 +219,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
 
   it('should throw PreconditionFailedException if album not found', async () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
@@ -224,7 +231,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
   it('should throw InternalServerErrorException if TrackSchema validation fails', async () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     // @ts-expect-error - we are testing the validation failure
     trackRepository.create.mockResolvedValue({ ...mockTrack1, title: 123 });
@@ -241,7 +248,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
   it('should run all operations within transaction', async () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValueOnce(mockTrack1).mockResolvedValueOnce(mockTrack2);
 
@@ -261,9 +268,9 @@ describe('BulkCreateLibraryTracksHandler', () => {
       userId,
     );
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    genreRepository.count.mockResolvedValue(0);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
     expect(trackRepository.create).not.toHaveBeenCalled();
@@ -278,7 +285,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
       userId,
     );
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack1);
 
@@ -304,7 +311,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     };
     const command = new BulkCreateLibraryTracksCommand(albumId, multiArtistBody, userId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack1);
 

@@ -2,7 +2,7 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { libraryAlbumBuilder, libraryBuilder } from '@repo/testing/builders';
+import { albumBuilder, artistBuilder, libraryAlbumBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryArtistAlbumsQuery } from '../impl/get-library-artist-albums.query';
@@ -16,8 +16,20 @@ describe('GetLibraryArtistAlbumsHandler', () => {
   const userId = 'user-123';
   const artistId = 'artist-123';
   const libraryId = 'lib-123';
-  const mockLibrary = libraryBuilder({ id: libraryId, userId });
-  const mockAlbums = [libraryAlbumBuilder({ id: 'la-1', libraryId, albumId: 'a-1' })];
+  const mockLibrary = {
+    ...libraryBuilder({ id: libraryId, userId }),
+    user: userBuilder({ id: userId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
+  const mockAlbums = [
+    {
+      ...libraryAlbumBuilder({ id: 'la-1', libraryId, albumId: 'a-1' }),
+      album: {
+        ...albumBuilder({ id: 'a-1', type: 'album' }),
+        artists: [artistBuilder()],
+        cover: null,
+      },
+    },
+  ] as Awaited<ReturnType<LibraryAlbumRepository['findManyWithInclude']>>;
   const mockTotal = 1;
 
   beforeEach(async () => {
@@ -42,8 +54,8 @@ describe('GetLibraryArtistAlbumsHandler', () => {
   it('should return albums and total count when library exists', async () => {
     const query = new GetLibraryArtistAlbumsQuery(userId, artistId, 1, 10, 'album');
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryAlbumRepository.findMany.mockResolvedValue(mockAlbums);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    libraryAlbumRepository.findManyWithInclude.mockResolvedValue(mockAlbums);
     libraryAlbumRepository.count.mockResolvedValue(mockTotal);
 
     const result = await handler.execute(query);
@@ -54,12 +66,13 @@ describe('GetLibraryArtistAlbumsHandler', () => {
       page: 1,
       limit: 10,
     });
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryAlbumRepository.findMany).toHaveBeenCalledWith({
-      where: {
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
+    expect(libraryAlbumRepository.findManyWithInclude).toHaveBeenCalledWith(
+      {
         libraryId: mockLibrary.id,
         album: { artists: { some: { id: artistId } }, type: 'album' },
       },
+      {
       take: 10,
       skip: 0,
       orderBy: {
@@ -67,7 +80,16 @@ describe('GetLibraryArtistAlbumsHandler', () => {
           releaseDate: 'desc',
         },
       },
-    });
+      },
+      {
+        album: {
+          include: {
+            artists: true,
+            cover: true,
+          },
+        },
+      },
+    );
     expect(libraryAlbumRepository.count).toHaveBeenCalledWith({
       libraryId: mockLibrary.id,
       album: { artists: { some: { id: artistId } }, type: 'album' },
@@ -77,10 +99,10 @@ describe('GetLibraryArtistAlbumsHandler', () => {
   it('should throw PreconditionFailedException if library not found', async () => {
     const query = new GetLibraryArtistAlbumsQuery(userId, artistId, 1, 10);
 
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryAlbumRepository.findMany).not.toHaveBeenCalled();
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
+    expect(libraryAlbumRepository.findManyWithInclude).not.toHaveBeenCalled();
   });
 });

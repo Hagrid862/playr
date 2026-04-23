@@ -2,7 +2,7 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { NotFoundException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { libraryArtistBuilder, libraryBuilder } from '@repo/testing/builders';
+import { artistBuilder, libraryArtistBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryArtistQuery } from '../impl/get-library-artist.query';
@@ -16,12 +16,23 @@ describe('GetLibraryArtistHandler', () => {
   const userId = 'user-123';
   const artistId = 'artist-123';
   const libraryId = 'lib-123';
-  const mockLibrary = libraryBuilder({ id: libraryId, userId });
-  const mockLibraryArtist = libraryArtistBuilder({
-    id: 'la-123',
-    artistId,
-    libraryId,
-  });
+  const mockLibrary = {
+    ...libraryBuilder({ id: libraryId, userId }),
+    user: userBuilder({ id: userId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
+  const mockLibraryArtist = {
+    ...libraryArtistBuilder({
+      id: 'la-123',
+      artistId,
+      libraryId,
+    }),
+    artist: {
+      ...artistBuilder({ id: artistId }),
+      avatar: null,
+      banner: null,
+      genres: [],
+    },
+  } as NonNullable<Awaited<ReturnType<LibraryArtistRepository['findOne']>>>;
 
   beforeEach(async () => {
     libraryRepository = createMock<LibraryRepository>();
@@ -44,14 +55,14 @@ describe('GetLibraryArtistHandler', () => {
   });
 
   it('should return library artist if found', async () => {
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     libraryArtistRepository.findOne.mockResolvedValue(mockLibraryArtist);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
     const result = await handler.execute(query);
 
     expect(result).toEqual(mockLibraryArtist);
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(libraryArtistRepository.findOne).toHaveBeenCalledWith({
       libraryId,
       artistId,
@@ -59,23 +70,23 @@ describe('GetLibraryArtistHandler', () => {
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(libraryArtistRepository.findOne).not.toHaveBeenCalled();
   });
 
   it('should throw NotFoundException if artist not found in library', async () => {
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     libraryArtistRepository.findOne.mockResolvedValue(null);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(libraryArtistRepository.findOne).toHaveBeenCalledWith({
       libraryId,
       artistId,

@@ -17,6 +17,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UploadLibraryAlbumCoverCommand } from '../impl/upload-library-album-cover.command';
 import { UploadLibraryAlbumCoverHandler } from './upload-library-album-cover.handler';
 
+type AlbumWithRelations = NonNullable<Awaited<ReturnType<AlbumRepository['findOne']>>>;
+
 describe('UploadLibraryAlbumCoverHandler', () => {
   let handler: UploadLibraryAlbumCoverHandler;
   let albumRepository: DeepMocked<AlbumRepository>;
@@ -29,7 +31,11 @@ describe('UploadLibraryAlbumCoverHandler', () => {
   const mockBuffer = Buffer.from('test-image');
   const mockMimeType = 'image/png';
 
-  const mockAlbum = albumBuilder({ id: mockAlbumId, coverId: null });
+  const mockAlbum = {
+    ...albumBuilder({ id: mockAlbumId, coverId: null }),
+    access: [],
+    cover: null,
+  } as AlbumWithRelations;
 
   const mockImageRecord = imageBuilder({
     id: 'img-123',
@@ -113,7 +119,11 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
+    const mockAlbumWithCover = {
+      ...albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' }),
+      access: [],
+      cover: null,
+    } as AlbumWithRelations;
 
     albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
@@ -159,7 +169,11 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
+    const mockAlbumWithCover = {
+      ...albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' }),
+      access: [],
+      cover: null,
+    } as AlbumWithRelations;
 
     albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
@@ -237,7 +251,11 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
+    const mockAlbumWithCover = {
+      ...albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' }),
+      access: [],
+      cover: null,
+    } as AlbumWithRelations;
 
     albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);

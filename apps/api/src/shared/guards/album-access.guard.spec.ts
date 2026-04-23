@@ -77,7 +77,7 @@ describe('AlbumAccessGuard', () => {
     const result = await guard.canActivate(mockExecutionContext);
 
     expect(result).toBe(true);
-    expect(albumRepository.checkAccess).toHaveBeenCalledWith('123', 'userId');
+    expect(albumRepository.checkAccess).toHaveBeenCalledWith({ id: '123' }, 'userId');
   });
 
   it('should throw NotFoundException if access denied and album does not exist', async () => {
@@ -90,7 +90,7 @@ describe('AlbumAccessGuard', () => {
     vi.mocked(albumRepository.exists).mockResolvedValue(false);
 
     await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(NotFoundException);
-    expect(albumRepository.exists).toHaveBeenCalledWith('123');
+    expect(albumRepository.exists).toHaveBeenCalledWith({ id: '123' });
   });
 
   it('should throw ForbiddenException if access denied and album exists', async () => {

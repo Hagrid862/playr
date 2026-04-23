@@ -1,4 +1,5 @@
 import { UserRepository } from '@/shared/repositories/user.repository';
+import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
@@ -13,9 +14,13 @@ import { RegisterRequestDto } from '../../dto/register.request.dto';
 import { RegisterCommand } from '../impl/register.command';
 import { RegisterHandler } from './register.handler';
 
+type ExistingUser = NonNullable<Awaited<ReturnType<UserRepository['findOne']>>>;
+type ExistingEmailAddress = NonNullable<Awaited<ReturnType<EmailAddressRepository['findOne']>>>;
+
 describe('RegisterHandler', () => {
   let handler: RegisterHandler;
   let userRepository: DeepMocked<UserRepository>;
+  let emailAddressRepository: DeepMocked<EmailAddressRepository>;
   let hashingService: DeepMocked<HashingService>;
   let prismaService: DeepMocked<PrismaService>;
   let unitOfWork: DeepMocked<UnitOfWorkService>;
@@ -41,8 +46,21 @@ describe('RegisterHandler', () => {
     gender: 'male',
   };
 
+  const existingUserBuilder = (id: string): ExistingUser =>
+    ({
+      ...userBuilder({ id }),
+      avatar: null,
+    }) as ExistingUser;
+
+  const existingEmailAddressBuilder = (userId: string, email: string): ExistingEmailAddress =>
+    ({
+      ...emailAddressBuilder({ userId, email }),
+      user: userBuilder({ id: userId }),
+    }) as ExistingEmailAddress;
+
   beforeEach(async () => {
     userRepository = createMock<UserRepository>();
+    emailAddressRepository = createMock<EmailAddressRepository>();
     hashingService = createMock<HashingService>();
     mockPrismaClient = createMock<PrismaClient>();
     unitOfWork = createMock<UnitOfWorkService>();
@@ -61,6 +79,7 @@ describe('RegisterHandler', () => {
       providers: [
         RegisterHandler,
         { provide: UserRepository, useValue: userRepository },
+        { provide: EmailAddressRepository, useValue: emailAddressRepository },
         { provide: HashingService, useValue: hashingService },
         { provide: PrismaService, useValue: prismaService },
         { provide: UnitOfWorkService, useValue: unitOfWork },
@@ -82,8 +101,8 @@ describe('RegisterHandler', () => {
   describe('execute', () => {
     it('should successfully register a new user', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue(null);
-      userRepository.getByUsername.mockResolvedValue(null);
+      emailAddressRepository.findOne.mockResolvedValue(null);
+      userRepository.findOne.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
       mockPrismaClient.user.create.mockResolvedValue(mockUser);
       mockPrismaClient.emailAddress.create.mockResolvedValue(
@@ -101,8 +120,11 @@ describe('RegisterHandler', () => {
       const result = await handler.execute(command);
 
       // Assert
-      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
+      expect(emailAddressRepository.findOne).toHaveBeenCalledWith({
+        email: mockPayload.email,
+        type: 'primary',
+      });
+      expect(userRepository.findOne).toHaveBeenCalledWith({ username: mockPayload.username });
       expect(hashingService.hash).toHaveBeenCalledWith(mockPayload.password);
 
       expect(unitOfWork.runInTransaction).toHaveBeenCalled();
@@ -141,8 +163,10 @@ describe('RegisterHandler', () => {
 
     it('should throw ConflictException if email already exists', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue(userBuilder({ id: 'existing-email-id' }));
-      userRepository.getByUsername.mockResolvedValue(null);
+      emailAddressRepository.findOne.mockResolvedValue(
+        existingEmailAddressBuilder('existing-email-id', mockPayload.email),
+      );
+      userRepository.findOne.mockResolvedValue(null);
 
       const command = new RegisterCommand(mockPayload);
 
@@ -150,15 +174,18 @@ describe('RegisterHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow(ConflictException);
       await expect(handler.execute(command)).rejects.toThrow('Email already exists');
 
-      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
+      expect(emailAddressRepository.findOne).toHaveBeenCalledWith({
+        email: mockPayload.email,
+        type: 'primary',
+      });
       // Username check is now called in parallel (not skipped)
-      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
+      expect(userRepository.findOne).toHaveBeenCalledWith({ username: mockPayload.username });
     });
 
     it('should throw ConflictException if username already exists', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue(null);
-      userRepository.getByUsername.mockResolvedValue(userBuilder({ id: 'existing-user-id' }));
+      emailAddressRepository.findOne.mockResolvedValue(null);
+      userRepository.findOne.mockResolvedValue(existingUserBuilder('existing-user-id'));
 
       const command = new RegisterCommand(mockPayload);
 
@@ -166,28 +193,36 @@ describe('RegisterHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow(ConflictException);
       await expect(handler.execute(command)).rejects.toThrow('Username already exists');
 
-      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
+      expect(emailAddressRepository.findOne).toHaveBeenCalledWith({
+        email: mockPayload.email,
+        type: 'primary',
+      });
+      expect(userRepository.findOne).toHaveBeenCalledWith({ username: mockPayload.username });
     });
 
     it('should prioritize email conflict over username when both exist', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue(userBuilder({ id: 'existing-email-id' }));
-      userRepository.getByUsername.mockResolvedValue(userBuilder({ id: 'existing-user-id' }));
+      emailAddressRepository.findOne.mockResolvedValue(
+        existingEmailAddressBuilder('existing-email-id', mockPayload.email),
+      );
+      userRepository.findOne.mockResolvedValue(existingUserBuilder('existing-user-id'));
 
       const command = new RegisterCommand(mockPayload);
 
       // Act & Assert
       // Email error should be thrown first (email check is prioritized)
       await expect(handler.execute(command)).rejects.toThrow('Email already exists');
-      expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(userRepository.getByUsername).toHaveBeenCalledWith(mockPayload.username);
+      expect(emailAddressRepository.findOne).toHaveBeenCalledWith({
+        email: mockPayload.email,
+        type: 'primary',
+      });
+      expect(userRepository.findOne).toHaveBeenCalledWith({ username: mockPayload.username });
     });
 
     it('should throw error if user creation fails', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue(null);
-      userRepository.getByUsername.mockResolvedValue(null);
+      emailAddressRepository.findOne.mockResolvedValue(null);
+      userRepository.findOne.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
 
       mockPrismaClient.user.create.mockRejectedValue(new Error('Database error')); // Simulate failure
@@ -200,8 +235,8 @@ describe('RegisterHandler', () => {
 
     it('should throw error if email creation fails', async () => {
       // Arrange
-      userRepository.getByEmail.mockResolvedValue(null);
-      userRepository.getByUsername.mockResolvedValue(null);
+      emailAddressRepository.findOne.mockResolvedValue(null);
+      userRepository.findOne.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
 
       mockPrismaClient.user.create.mockResolvedValue(mockUser);
@@ -221,8 +256,8 @@ describe('RegisterHandler', () => {
       };
       const minimalUser = userBuilder({ lastName: null });
 
-      userRepository.getByEmail.mockResolvedValue(null);
-      userRepository.getByUsername.mockResolvedValue(null);
+      emailAddressRepository.findOne.mockResolvedValue(null);
+      userRepository.findOne.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
       mockPrismaClient.user.create.mockResolvedValue(minimalUser);
       mockPrismaClient.emailAddress.create.mockResolvedValue(emailAddressBuilder());

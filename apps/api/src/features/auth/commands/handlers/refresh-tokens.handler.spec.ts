@@ -9,6 +9,8 @@ import { TokenService } from '../../services/token.service';
 import { RefreshTokensCommand } from '../impl/refresh-tokens.command';
 import { RefreshTokensHandler } from './refresh-tokens.handler';
 
+type UserWithAvatar = NonNullable<Awaited<ReturnType<UserRepository['findOne']>>>;
+
 describe('RefreshTokensHandler', () => {
   let handler: RefreshTokensHandler;
   let tokenService: DeepMocked<TokenService>;
@@ -54,8 +56,11 @@ describe('RefreshTokensHandler', () => {
         isRevoked: false,
       });
 
-      userRepository.getById.mockResolvedValue(
-        userBuilder({ id: mockUserId, username: 'test-user' }),
+      userRepository.findOne.mockResolvedValue(
+        {
+          ...userBuilder({ id: mockUserId, username: 'test-user' }),
+          avatar: null,
+        } as UserWithAvatar,
       );
 
       tokenService.generateAuthTokens.mockResolvedValue({
@@ -70,7 +75,7 @@ describe('RefreshTokensHandler', () => {
 
       // Assert
       expect(tokenService.verifyRefreshToken).toHaveBeenCalledWith(mockRefreshToken);
-      expect(userRepository.getById).toHaveBeenCalledWith(mockUserId);
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: mockUserId });
       expect(tokenService.generateAuthTokens).toHaveBeenCalledWith(
         mockUserId,
         'test-user',
@@ -119,7 +124,7 @@ describe('RefreshTokensHandler', () => {
         sessionId: mockSessionId,
         isRevoked: false,
       });
-      userRepository.getById.mockResolvedValue(null);
+      userRepository.findOne.mockResolvedValue(null);
       const command = new RefreshTokensCommand(mockRefreshToken);
 
       // Act & Assert

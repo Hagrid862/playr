@@ -4,21 +4,21 @@ import { InternalServerErrorException, PreconditionFailedException } from '@nest
 import { Test, TestingModule } from '@nestjs/testing';
 import { GenreSchema } from '@repo/contracts';
 import { GenreKind } from '@repo/db';
-import { libraryBuilder } from '@repo/testing/builders';
+import { libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryGenreCommand } from '../impl/create-library-genre.command';
 import { CreateLibraryGenreHandler } from './create-library-genre.handler';
 
-const validGenreRow = {
+const validGenreRow: Awaited<ReturnType<GenreResolutionService['ensureCustomGenre']>> = {
   id: 'genre-1',
   name: 'My Genre',
   slug: 'mygenre',
   description: null,
   kind: GenreKind.custom,
   libraryId: 'library-1',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: new Date(),
+  updatedAt: new Date(),
   deletedAt: null,
 };
 
@@ -28,7 +28,10 @@ describe('CreateLibraryGenreHandler', () => {
   let genreResolution: DeepMocked<GenreResolutionService>;
 
   const userId = 'user-1';
-  const mockLibrary = libraryBuilder({ id: 'library-1', userId });
+  const mockLibrary = {
+    ...libraryBuilder({ id: 'library-1', userId }),
+    user: userBuilder({ id: userId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
 
   beforeEach(async () => {
     libraryRepository = createMock<LibraryRepository>();
@@ -51,8 +54,8 @@ describe('CreateLibraryGenreHandler', () => {
 
   it('should create a custom genre', async () => {
     const command = new CreateLibraryGenreCommand({ name: 'My Genre' }, userId);
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    genreResolution.ensureCustomGenre.mockResolvedValue(validGenreRow as any);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    genreResolution.ensureCustomGenre.mockResolvedValue(validGenreRow);
 
     const result = await handler.execute(command);
 
@@ -62,7 +65,7 @@ describe('CreateLibraryGenreHandler', () => {
 
   it('should throw PreconditionFailedException when library is missing', async () => {
     const command = new CreateLibraryGenreCommand({ name: 'X' }, userId);
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
     expect(genreResolution.ensureCustomGenre).not.toHaveBeenCalled();
@@ -70,7 +73,7 @@ describe('CreateLibraryGenreHandler', () => {
 
   it('should throw InternalServerErrorException when GenreSchema validation fails', async () => {
     const command = new CreateLibraryGenreCommand({ name: 'Bad' }, userId);
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     genreResolution.ensureCustomGenre.mockResolvedValue({ invalid: true } as any);
     const safeParseSpy = vi.spyOn(GenreSchema, 'safeParse').mockReturnValue({
       success: false,

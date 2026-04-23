@@ -77,7 +77,7 @@ describe('ArtistAccessGuard', () => {
     const result = await guard.canActivate(mockExecutionContext);
 
     expect(result).toBe(true);
-    expect(artistRepository.checkAccess).toHaveBeenCalledWith('123', 'userId');
+    expect(artistRepository.checkAccess).toHaveBeenCalledWith({ id: '123' }, 'userId');
   });
 
   it('should throw NotFoundException if access denied and artist does not exist', async () => {
@@ -90,7 +90,7 @@ describe('ArtistAccessGuard', () => {
     vi.mocked(artistRepository.exists).mockResolvedValue(false);
 
     await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(NotFoundException);
-    expect(artistRepository.exists).toHaveBeenCalledWith('123');
+    expect(artistRepository.exists).toHaveBeenCalledWith({ id: '123' });
   });
 
   it('should throw ForbiddenException if access denied and artist exists', async () => {

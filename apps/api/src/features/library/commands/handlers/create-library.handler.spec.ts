@@ -1,7 +1,7 @@
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { libraryBuilder } from '@repo/testing/builders';
+import { libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryCommand } from '../impl/create-library.command';
@@ -33,12 +33,12 @@ describe('CreateLibraryHandler', () => {
     const command = new CreateLibraryCommand(userId);
     const mockLibrary = libraryBuilder({ id: 'lib-123', userId });
 
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
     libraryRepository.create.mockResolvedValue(mockLibrary);
 
     const result = await handler.execute(command);
 
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(libraryRepository.create).toHaveBeenCalledWith({
       user: { connect: { id: userId } },
     });
@@ -48,9 +48,12 @@ describe('CreateLibraryHandler', () => {
   it('should throw ConflictException if library already exists', async () => {
     const userId = 'user-123';
     const command = new CreateLibraryCommand(userId);
-    const existingLibrary = libraryBuilder({ id: 'lib-123', userId });
+    const existingLibrary = {
+      ...libraryBuilder({ id: 'lib-123', userId }),
+      user: userBuilder({ id: userId }),
+    } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
 
-    libraryRepository.getByUserId.mockResolvedValue(existingLibrary);
+    libraryRepository.findOne.mockResolvedValue(existingLibrary);
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
     await expect(handler.execute(command)).rejects.toThrow('Library already exists');

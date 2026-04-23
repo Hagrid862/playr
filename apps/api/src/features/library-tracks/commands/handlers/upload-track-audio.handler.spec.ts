@@ -61,7 +61,7 @@ describe('UploadTrackAudioHandler', () => {
     });
 
     it('should throw NotFoundException if track does not exist', async () => {
-      trackRepository.findOne.mockResolvedValue(null);
+      trackRepository.findOneWithInclude.mockResolvedValue(null);
 
       await expect(handler.execute(mockCommand)).rejects.toThrow(NotFoundException);
     });
@@ -72,7 +72,7 @@ describe('UploadTrackAudioHandler', () => {
         userId: 'other-user',
         role: AccessRole.owner,
       });
-      trackRepository.findOne.mockResolvedValue(trackWithOtherOwner);
+      trackRepository.findOneWithInclude.mockResolvedValue(trackWithOtherOwner);
 
       await expect(handler.execute(mockCommand)).rejects.toThrow(ForbiddenException);
     });
@@ -83,13 +83,13 @@ describe('UploadTrackAudioHandler', () => {
         userId: mockUserId,
         role: AccessRole.viewer,
       });
-      trackRepository.findOne.mockResolvedValue(trackWithViewerAccess);
+      trackRepository.findOneWithInclude.mockResolvedValue(trackWithViewerAccess);
 
       await expect(handler.execute(mockCommand)).rejects.toThrow(ForbiddenException);
     });
 
     it('should upload file, create audio file record, and dispatch job on success', async () => {
-      trackRepository.findOne.mockResolvedValue(mockTrackWithOwnerAccess);
+      trackRepository.findOneWithInclude.mockResolvedValue(mockTrackWithOwnerAccess);
 
       const mockUrl = 'https://s3.url/path';
       storageService.uploadFile.mockResolvedValue({ url: mockUrl, key: 'test-key' });
@@ -210,7 +210,7 @@ describe('UploadTrackAudioHandler', () => {
       ];
 
       it.each(scenarios)('$description', async ({ mimetype, originalname, expectedFormat }) => {
-        trackRepository.findOne.mockResolvedValue(mockTrackWithOwnerAccess);
+        trackRepository.findOneWithInclude.mockResolvedValue(mockTrackWithOwnerAccess);
         storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
         audioFileRepository.create.mockResolvedValue(audioFileBuilder({ id: 'id' }));
 

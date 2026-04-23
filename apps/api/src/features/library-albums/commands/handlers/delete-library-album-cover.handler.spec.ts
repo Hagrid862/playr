@@ -12,6 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryAlbumCoverCommand } from '../impl/delete-library-album-cover.command';
 import { DeleteLibraryAlbumCoverHandler } from './delete-library-album-cover.handler';
 
+type AlbumWithRelations = NonNullable<Awaited<ReturnType<AlbumRepository['findOne']>>>;
+type ImageWithVariants = NonNullable<Awaited<ReturnType<ImageRepository['findOne']>>>;
+
 describe('DeleteLibraryAlbumCoverHandler', () => {
   let handler: DeleteLibraryAlbumCoverHandler;
   let albumRepository: DeepMocked<AlbumRepository>;
@@ -23,7 +26,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
   const mockAlbumId = 'album-123';
   const mockCoverId = 'cover-456';
 
-  const mockAlbum = albumBuilder({
+  const mockAlbum = {
+    ...albumBuilder({
     id: mockAlbumId,
     name: 'Test Album',
     description: 'Test Description',
@@ -33,21 +37,27 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
     releaseDate: new Date(),
     coverId: mockCoverId,
     visibility: Visibility.public,
-  });
+    }),
+    access: [],
+    cover: null,
+  } as AlbumWithRelations;
 
-  const mockAlbumWithoutCover = albumBuilder({
+  const mockAlbumWithoutCover = {
     ...mockAlbum,
     coverId: null,
-  });
+  } as AlbumWithRelations;
 
-  const mockImage = imageBuilder({
-    id: mockCoverId,
-    bucket: FileBucket.private,
-    key: 'covers/album-123/cover.webp',
-    url: 'https://storage.url/cover.webp',
-    mimeType: 'image/webp',
-    uploadStatus: ImageUploadStatus.uploaded,
-  });
+  const mockImage = {
+    ...imageBuilder({
+      id: mockCoverId,
+      bucket: FileBucket.private,
+      key: 'covers/album-123/cover.webp',
+      url: 'https://storage.url/cover.webp',
+      mimeType: 'image/webp',
+      uploadStatus: ImageUploadStatus.uploaded,
+    }),
+    variants: [],
+  } as ImageWithVariants;
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();

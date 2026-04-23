@@ -8,23 +8,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryAlbumCommand } from '../impl/delete-library-album.command';
 import { DeleteLibraryAlbumHandler } from './delete-library-album.handler';
 
+type AlbumWithRelations = NonNullable<Awaited<ReturnType<AlbumRepository['findOne']>>>;
+
 describe('DeleteLibraryAlbumHandler', () => {
   let handler: DeleteLibraryAlbumHandler;
   let albumRepository: DeepMocked<AlbumRepository>;
 
   const mockUserId = 'user-123';
   const mockAlbumId = 'album-123';
-  const mockAlbum = albumBuilder({
-    id: mockAlbumId,
-    name: 'Test Album',
-    description: 'Test Description',
-    type: AlbumType.album,
-    totalTracks: 10,
-    totalDuration: 3000,
-    releaseDate: new Date(),
-    coverId: null,
-    visibility: Visibility.public,
-  });
+  const mockAlbum = {
+    ...albumBuilder({
+      id: mockAlbumId,
+      name: 'Test Album',
+      description: 'Test Description',
+      type: AlbumType.album,
+      totalTracks: 10,
+      totalDuration: 3000,
+      releaseDate: new Date(),
+      coverId: null,
+      visibility: Visibility.public,
+    }),
+    access: [],
+    cover: null,
+  } as AlbumWithRelations;
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
@@ -52,7 +58,10 @@ describe('DeleteLibraryAlbumHandler', () => {
 
     const result = await handler.execute(command);
 
-    expect(result).toEqual(mockDeletedAlbum);
+    expect(result).toMatchObject({
+      id: mockDeletedAlbum.id,
+      deletedAt: mockDeletedAlbum.deletedAt,
+    });
     expect(albumRepository.update).toHaveBeenCalledWith(mockAlbumId, {
       deletedAt: expect.any(Date),
     });

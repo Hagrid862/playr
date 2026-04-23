@@ -1,7 +1,7 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
   BadRequestException,
@@ -12,7 +12,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
 import { AlbumType, Visibility } from '@repo/db';
-import { albumBuilder, libraryBuilder } from '@repo/testing/builders';
+import { albumBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryAlbumCommand } from '../impl/create-library-album.command';
@@ -24,7 +24,7 @@ describe('CreateLibraryAlbumHandler', () => {
   let libraryRepository: DeepMocked<LibraryRepository>;
   let albumRepository: DeepMocked<AlbumRepository>;
   let libraryAlbumRepository: DeepMocked<LibraryAlbumRepository>;
-  let genreRepository: DeepMocked<GenreRepository>;
+  let genreResolutionService: DeepMocked<GenreResolutionService>;
 
   const mockUserId = 'user-123';
   const mockLibraryId = 'library-123';
@@ -39,7 +39,10 @@ describe('CreateLibraryAlbumHandler', () => {
     artistId: mockArtistId,
   };
 
-  const mockLibrary = libraryBuilder({ id: mockLibraryId, userId: mockUserId });
+  const mockLibrary = {
+    ...libraryBuilder({ id: mockLibraryId, userId: mockUserId }),
+    user: userBuilder({ id: mockUserId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
   const mockAlbum = albumBuilder({
     id: mockAlbumId,
     name: mockRequest.name,
@@ -57,9 +60,9 @@ describe('CreateLibraryAlbumHandler', () => {
     libraryRepository = createMock<LibraryRepository>();
     albumRepository = createMock<AlbumRepository>();
     libraryAlbumRepository = createMock<LibraryAlbumRepository>();
-    genreRepository = createMock<GenreRepository>();
+    genreResolutionService = createMock<GenreResolutionService>();
 
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,7 +71,7 @@ describe('CreateLibraryAlbumHandler', () => {
         { provide: LibraryRepository, useValue: libraryRepository },
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: LibraryAlbumRepository, useValue: libraryAlbumRepository },
-        { provide: GenreRepository, useValue: genreRepository },
+        { provide: GenreResolutionService, useValue: genreResolutionService },
       ],
     }).compile();
 
@@ -85,8 +88,8 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should create library album successfully', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    albumRepository.findOneWithInclude.mockResolvedValue(null);
     albumRepository.create.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
 
@@ -102,7 +105,7 @@ describe('CreateLibraryAlbumHandler', () => {
 
   it('should throw PreconditionFailedException if user library not found', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
   });
@@ -110,8 +113,15 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should throw ConflictException if album name already exists', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(albumBuilder({ id: 'existing-id' }));
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    albumRepository.findOneWithInclude.mockResolvedValue(
+      {
+        ...albumBuilder({ id: 'existing-id' }),
+        cover: null,
+        access: [],
+        artists: [],
+      } as NonNullable<Awaited<ReturnType<AlbumRepository['findOneWithInclude']>>>,
+    );
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -119,8 +129,8 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should throw InternalServerErrorException if result parsing fails', async () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    albumRepository.findOneWithInclude.mockResolvedValue(null);
     albumRepository.create.mockResolvedValue({ invalid: 'data' } as any);
 
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
@@ -134,8 +144,8 @@ describe('CreateLibraryAlbumHandler', () => {
   it('should throw BadRequestException when genre ids are not assignable', async () => {
     const command = new CreateLibraryAlbumCommand({ ...mockRequest, genreIds: ['g1'] }, mockUserId);
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });
@@ -146,18 +156,21 @@ describe('CreateLibraryAlbumHandler', () => {
       mockUserId,
     );
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    albumRepository.findOneWithInclude.mockResolvedValue(null);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
     albumRepository.create.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
 
     await handler.execute(command);
 
-    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibraryId, [
+    expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(
+      mockLibraryId,
+      [
       'g1',
       'g2',
-    ]);
+      ],
+    );
     expect(albumRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         genres: {

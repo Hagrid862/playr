@@ -1,8 +1,8 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
   BadRequestException,
@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumType, Track, Visibility } from '@repo/db';
-import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing/builders';
+import { albumBuilder, libraryBuilder, trackBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryTrackCommand } from '../impl/create-library-track.command';
@@ -24,7 +24,7 @@ describe('CreateLibraryTrackHandler', () => {
   let albumRepository: DeepMocked<AlbumRepository>;
   let trackRepository: DeepMocked<TrackRepository>;
   let libraryTrackRepository: DeepMocked<LibraryTrackRepository>;
-  let genreRepository: DeepMocked<GenreRepository>;
+  let genreResolutionService: DeepMocked<GenreResolutionService>;
 
   const userId = 'user-123';
   const command = new CreateLibraryTrackCommand(
@@ -39,22 +39,29 @@ describe('CreateLibraryTrackHandler', () => {
     userId,
   );
 
-  const mockLibrary = libraryBuilder({
-    id: 'library-123',
-    userId,
-  });
+  const mockLibrary = {
+    ...libraryBuilder({
+      id: 'library-123',
+      userId,
+    }),
+    user: userBuilder({ id: userId }),
+  } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
 
-  const mockAlbum = albumBuilder({
-    id: 'album-123',
-    name: 'Test Album',
-    description: 'Test Description',
-    type: AlbumType.album,
-    totalTracks: 10,
-    totalDuration: 3000,
-    releaseDate: new Date(),
-    coverId: null,
-    visibility: Visibility.private,
-  });
+  const mockAlbum = {
+    ...albumBuilder({
+      id: 'album-123',
+      name: 'Test Album',
+      description: 'Test Description',
+      type: AlbumType.album,
+      totalTracks: 10,
+      totalDuration: 3000,
+      releaseDate: new Date(),
+      coverId: null,
+      visibility: Visibility.private,
+    }),
+    access: [],
+    cover: null,
+  } as NonNullable<Awaited<ReturnType<AlbumRepository['findOne']>>>;
 
   const mockTrack: Track = trackBuilder({
     id: 'track-123',
@@ -73,10 +80,10 @@ describe('CreateLibraryTrackHandler', () => {
     albumRepository = createMock<AlbumRepository>();
     trackRepository = createMock<TrackRepository>();
     libraryTrackRepository = createMock<LibraryTrackRepository>();
-    genreRepository = createMock<GenreRepository>();
+    genreResolutionService = createMock<GenreResolutionService>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -86,7 +93,7 @@ describe('CreateLibraryTrackHandler', () => {
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: TrackRepository, useValue: trackRepository },
         { provide: LibraryTrackRepository, useValue: libraryTrackRepository },
-        { provide: GenreRepository, useValue: genreRepository },
+        { provide: GenreResolutionService, useValue: genreResolutionService },
       ],
     }).compile();
 
@@ -98,14 +105,14 @@ describe('CreateLibraryTrackHandler', () => {
   });
 
   it('should create a track and link to library', async () => {
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockTrack);
-    expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
+    expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(albumRepository.findOne).toHaveBeenCalledWith({ id: command.body.albumId });
     expect(trackRepository.create).toHaveBeenCalled();
     expect(libraryTrackRepository.create).toHaveBeenCalledWith({
@@ -115,20 +122,20 @@ describe('CreateLibraryTrackHandler', () => {
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
   });
 
   it('should throw PreconditionFailedException if album not found', async () => {
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
   });
 
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
     // @ts-expect-error - we are testing the validation failure
     trackRepository.create.mockResolvedValue({ ...mockTrack, title: 123 });
@@ -145,9 +152,9 @@ describe('CreateLibraryTrackHandler', () => {
       userId,
     );
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
 
     await expect(handler.execute(genreCommand)).rejects.toThrow(BadRequestException);
     expect(unitOfWork.runInTransaction).not.toHaveBeenCalled();
@@ -162,14 +169,14 @@ describe('CreateLibraryTrackHandler', () => {
       userId,
     );
 
-    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
     trackRepository.create.mockResolvedValue(mockTrack);
 
     await handler.execute(genreCommand);
 
-    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, [
+    expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, [
       'g1',
       'g2',
     ]);

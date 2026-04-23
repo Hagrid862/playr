@@ -1,6 +1,6 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
-import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
+import { GenreResolutionService } from '@/shared/genres/genre-resolution.service';
 import {
   BadRequestException,
   ConflictException,
@@ -11,7 +11,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
-import { albumBuilder } from '@repo/testing/builders';
+import { albumBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateLibraryAlbumCommand } from '../impl/update-library-album.command';
@@ -21,35 +21,39 @@ describe('UpdateLibraryAlbumHandler', () => {
   let handler: UpdateLibraryAlbumHandler;
   let albumRepository: DeepMocked<AlbumRepository>;
   let libraryRepository: DeepMocked<LibraryRepository>;
-  let genreRepository: DeepMocked<GenreRepository>;
+  let genreResolutionService: DeepMocked<GenreResolutionService>;
 
   const mockUserId = 'user-123';
   const mockAlbumId = 'album-123';
-  const mockAlbum = albumBuilder({
-    id: mockAlbumId,
-    name: 'Old Name',
-    description: 'Old Desc',
-    type: AlbumType.album,
-    coverId: 'old-cover',
-  });
+  const mockAlbum = {
+    ...albumBuilder({
+      id: mockAlbumId,
+      name: 'Old Name',
+      description: 'Old Desc',
+      type: AlbumType.album,
+      coverId: 'old-cover',
+    }),
+    access: [],
+    cover: null,
+  } as NonNullable<Awaited<ReturnType<AlbumRepository['findOne']>>>;
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
     libraryRepository = createMock<LibraryRepository>();
-    genreRepository = createMock<GenreRepository>();
+    genreResolutionService = createMock<GenreResolutionService>();
 
-    libraryRepository.getByUserId.mockResolvedValue({
-      id: 'library-123',
-      userId: mockUserId,
-    } as any);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    libraryRepository.findOne.mockResolvedValue({
+      ...libraryBuilder({ id: 'library-123', userId: mockUserId }),
+      user: userBuilder({ id: mockUserId }),
+    } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateLibraryAlbumHandler,
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: LibraryRepository, useValue: libraryRepository },
-        { provide: GenreRepository, useValue: genreRepository },
+        { provide: GenreResolutionService, useValue: genreResolutionService },
       ],
     }).compile();
 
@@ -94,7 +98,11 @@ describe('UpdateLibraryAlbumHandler', () => {
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
 
     albumRepository.findOne.mockResolvedValueOnce(mockAlbum); // Existing
-    albumRepository.findOne.mockResolvedValueOnce(albumBuilder({ id: 'other' })); // Collision
+    albumRepository.findOne.mockResolvedValueOnce({
+      ...albumBuilder({ id: 'other' }),
+      access: [],
+      cover: null,
+    } as NonNullable<Awaited<ReturnType<AlbumRepository['findOne']>>>); // Collision
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -158,7 +166,7 @@ describe('UpdateLibraryAlbumHandler', () => {
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, { genreIds: ['g1'] }, mockUserId);
 
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    libraryRepository.getByUserId.mockResolvedValue(null);
+    libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
   });
@@ -167,11 +175,11 @@ describe('UpdateLibraryAlbumHandler', () => {
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, { genreIds: ['g1'] }, mockUserId);
 
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    libraryRepository.getByUserId.mockResolvedValue({
-      id: 'library-123',
-      userId: mockUserId,
-    } as any);
-    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+    libraryRepository.findOne.mockResolvedValue({
+      ...libraryBuilder({ id: 'library-123', userId: mockUserId }),
+      user: userBuilder({ id: mockUserId }),
+    } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });
