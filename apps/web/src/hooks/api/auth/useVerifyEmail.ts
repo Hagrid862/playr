@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { VerifyEmailRequest, VerifyEmailResponse } from "@repo/contracts";
+import type { VerifyEmailRequest, VerifyEmailResponse } from "@repo/contracts";
 import {verifyEmail} from "@/hooks/api/auth/requests/verifyEmail";
 
 export const useVerifyEmail = () => {

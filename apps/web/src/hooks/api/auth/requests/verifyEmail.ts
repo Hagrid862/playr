@@ -1,4 +1,5 @@
-import { VerifyEmailRequest, VerifyEmailResponse, VerifyEmailResponseSchema } from "@repo/contracts";
+import type { VerifyEmailRequest, VerifyEmailResponse } from "@repo/contracts";
+import { VerifyEmailResponseSchema } from "@repo/contracts";
 import { apiClient } from "@/lib/api-client";
 
 export const verifyEmail = (data: VerifyEmailRequest) => {

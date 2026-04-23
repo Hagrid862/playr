@@ -1,6 +1,6 @@
 import {useMutation} from "@tanstack/react-query";
-import {ResendEmailVerificationCodeRequest, ResendEmailVerificationCodeResponse} from "@repo/contracts";
-import {resendEmailVerificationCode} from "@/hooks/api/auth/requests/resendEmailVerificationCode.ts";
+import type {ResendEmailVerificationCodeRequest, ResendEmailVerificationCodeResponse} from "@repo/contracts";
+import {resendEmailVerificationCode} from "@/hooks/api/auth/requests/resendEmailVerificationCode";
 
 export const useResendEmailVerificationCode = () => {
 	return useMutation<ResendEmailVerificationCodeResponse, Error, ResendEmailVerificationCodeRequest>({

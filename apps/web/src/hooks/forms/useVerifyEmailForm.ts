@@ -1,4 +1,4 @@
-import { VerifyEmailRequest } from '@repo/contracts';
+import type { VerifyEmailRequest } from '@repo/contracts';
 import { useCallback, useMemo, useState } from 'react';
 import { VerifyEmailRequestSchema } from '@repo/contracts';
 
