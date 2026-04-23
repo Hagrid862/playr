@@ -9,6 +9,7 @@ import { CircleNotchIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type SyntheticEvent } from 'react';
 import {useAuthStore} from "@/stores/auth.store";
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
@@ -46,7 +47,9 @@ export function RouteComponent() {
         });
 
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         console.error('Registration failed', err);
+        toast.error(message);
       }
     }
   };

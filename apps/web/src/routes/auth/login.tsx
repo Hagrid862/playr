@@ -6,6 +6,7 @@ import { useLoginForm } from '@/hooks/forms/useLoginForm';
 import { useAuthStore } from '@/stores/auth.store';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { SyntheticEvent } from 'react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
@@ -39,7 +40,9 @@ export function RouteComponent() {
           });
         }
       } catch (err) {
-        console.error('Login failed', err);
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Registration failed', err);
+        toast.error(message);
       }
     }
   };
