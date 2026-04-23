@@ -176,10 +176,10 @@ describe('CreateLibraryTrackHandler', () => {
 
     await handler.execute(genreCommand);
 
-    expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, [
-      'g1',
-      'g2',
-    ]);
+    expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(
+      mockLibrary.id,
+      ['g1', 'g2'],
+    );
     expect(trackRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         genres: {

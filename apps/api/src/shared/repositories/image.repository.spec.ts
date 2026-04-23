@@ -106,10 +106,7 @@ describe('ImageRepository', () => {
 
     const txRows = {
       image: {
-        findMany: vi
-          .fn()
-          .mockResolvedValueOnce([row])
-          .mockResolvedValueOnce([row]),
+        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
@@ -123,4 +120,3 @@ describe('ImageRepository', () => {
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
   });
 });
-

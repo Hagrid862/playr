@@ -171,12 +171,9 @@ describe('AudioProcessingWorker', () => {
       expect(mm.parseFile).toHaveBeenCalled();
       expect(waveformService.generateWaveform).toHaveBeenCalledWith(expect.any(String), 1024);
       expect(audioFileRepository.update).toHaveBeenCalledWith('af-123', expect.any(Object));
-      expect(trackRepository.update).toHaveBeenCalledWith(
-        'tr-123',
-        {
-          duration: 120,
-        },
-      );
+      expect(trackRepository.update).toHaveBeenCalledWith('tr-123', {
+        duration: 120,
+      });
       expect(audioFileRepository.create).toHaveBeenCalledTimes(5);
       expect(fs.rm).toHaveBeenCalled();
     });

@@ -114,14 +114,12 @@ describe('CreateLibraryAlbumHandler', () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    albumRepository.findOneWithInclude.mockResolvedValue(
-      {
-        ...albumBuilder({ id: 'existing-id' }),
-        cover: null,
-        access: [],
-        artists: [],
-      } as NonNullable<Awaited<ReturnType<AlbumRepository['findOneWithInclude']>>>,
-    );
+    albumRepository.findOneWithInclude.mockResolvedValue({
+      ...albumBuilder({ id: 'existing-id' }),
+      cover: null,
+      access: [],
+      artists: [],
+    } as NonNullable<Awaited<ReturnType<AlbumRepository['findOneWithInclude']>>>);
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -166,10 +164,7 @@ describe('CreateLibraryAlbumHandler', () => {
 
     expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(
       mockLibraryId,
-      [
-      'g1',
-      'g2',
-      ],
+      ['g1', 'g2'],
     );
     expect(albumRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({

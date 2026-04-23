@@ -145,10 +145,7 @@ describe('GenreRepository', () => {
 
     const txRows = {
       genre: {
-        findMany: vi
-          .fn()
-          .mockResolvedValueOnce([row])
-          .mockResolvedValueOnce([row]),
+        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
@@ -162,4 +159,3 @@ describe('GenreRepository', () => {
     await expect(repository.restoreMany({ libraryId: 'l1' })).resolves.toEqual([row]);
   });
 });
-

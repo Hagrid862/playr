@@ -2,7 +2,12 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { artistBuilder, libraryArtistBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
+import {
+  artistBuilder,
+  libraryArtistBuilder,
+  libraryBuilder,
+  userBuilder,
+} from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryArtistsQuery } from '../impl/get-library-artists.query';
@@ -80,8 +85,8 @@ describe('GetLibraryArtistsHandler', () => {
     expect(libraryArtistRepository.findMany).toHaveBeenCalledWith(
       { libraryId },
       {
-      skip: 0,
-      take: limit,
+        skip: 0,
+        take: limit,
       },
     );
     expect(libraryArtistRepository.count).toHaveBeenCalledWith({ libraryId });

@@ -250,10 +250,7 @@ describe('ArtistRepository', () => {
     const rows = [artistBuilder({ id: 'a1' })];
     const tx = {
       artist: {
-        findMany: vi
-          .fn()
-          .mockResolvedValueOnce(rows)
-          .mockResolvedValueOnce(rows),
+        findMany: vi.fn().mockResolvedValueOnce(rows).mockResolvedValueOnce(rows),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
@@ -283,4 +280,3 @@ describe('ArtistRepository', () => {
     });
   });
 });
-

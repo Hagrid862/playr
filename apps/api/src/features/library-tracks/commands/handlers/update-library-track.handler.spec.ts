@@ -9,7 +9,12 @@ import {
   PreconditionFailedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { trackBuilder, trackAccessBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
+import {
+  trackBuilder,
+  trackAccessBuilder,
+  libraryBuilder,
+  userBuilder,
+} from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateLibraryTrackCommand } from '../impl/update-library-track.command';
@@ -163,10 +168,10 @@ describe('UpdateLibraryTrackHandler', () => {
 
     await handler.execute(cmd);
 
-    expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith('library-123', [
-      'g1',
-      'g2',
-    ]);
+    expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(
+      'library-123',
+      ['g1', 'g2'],
+    );
     expect(trackRepository.update).toHaveBeenCalledWith(
       trackId,
       expect.objectContaining({

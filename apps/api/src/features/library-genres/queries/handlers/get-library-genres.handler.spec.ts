@@ -69,13 +69,13 @@ describe('GetLibraryGenresHandler', () => {
     });
     expect(genreRepository.findMany).toHaveBeenCalledWith(
       {
-      libraryId: library.id,
-      name: 'rock',
-      kind: GenreKind.custom,
+        libraryId: library.id,
+        name: 'rock',
+        kind: GenreKind.custom,
       },
       {
-      skip: 10,
-      take: 10,
+        skip: 10,
+        take: 10,
       },
     );
     expect(genreRepository.count).toHaveBeenCalledWith({

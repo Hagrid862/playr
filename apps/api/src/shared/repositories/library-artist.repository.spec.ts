@@ -38,7 +38,10 @@ describe('LibraryArtistRepository', () => {
 
   it('exists/count and CRUD/updateMany operations', async () => {
     await setup();
-    mockTx.libraryArtist.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1).mockResolvedValueOnce(3);
+    mockTx.libraryArtist.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(3);
     await expect(repository.exists({ id: 'la1' })).resolves.toBe(false);
     await expect(repository.exists({ id: 'la1' })).resolves.toBe(true);
     await expect(repository.count({ libraryId: 'l1' })).resolves.toBe(3);
@@ -68,7 +71,9 @@ describe('LibraryArtistRepository', () => {
     await repository.softDelete('la1');
     await repository.restore('la1');
 
-    const txEmpty = { libraryArtist: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
+    const txEmpty = {
+      libraryArtist: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
+    };
     mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
 
@@ -88,4 +93,3 @@ describe('LibraryArtistRepository', () => {
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
   });
 });
-

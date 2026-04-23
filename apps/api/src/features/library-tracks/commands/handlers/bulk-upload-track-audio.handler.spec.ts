@@ -207,7 +207,9 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOneWithInclude.mockResolvedValue(mockTrackWithAccess(trackId1, 'other-album-id'));
+      trackRepository.findOneWithInclude.mockResolvedValue(
+        mockTrackWithAccess(trackId1, 'other-album-id'),
+      );
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -293,7 +295,10 @@ describe('BulkUploadTrackAudioHandler', () => {
       const result = await handler.execute(command);
 
       expect(result.audioFiles).toHaveLength(1);
-      expect(trackRepository.findOneWithInclude).toHaveBeenCalledWith({ id: trackId1 }, { access: true });
+      expect(trackRepository.findOneWithInclude).toHaveBeenCalledWith(
+        { id: trackId1 },
+        { access: true },
+      );
       expect(storageService.uploadFile).toHaveBeenCalled();
       expect(audioFileRepository.create).toHaveBeenCalled();
       expect(processingQueue.add).toHaveBeenCalledWith('process-audio', {

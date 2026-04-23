@@ -47,11 +47,7 @@ describe('EmailAddressRepository', () => {
       include: { user: true },
     });
 
-    await repository.findManyWithInclude(
-      { userId: 'u1' },
-      {},
-      { user: true },
-    );
+    await repository.findManyWithInclude({ userId: 'u1' }, {}, { user: true });
     expect(mockTx.emailAddress.findMany).toHaveBeenNthCalledWith(2, {
       where: { userId: 'u1', deletedAt: null },
       take: 10,
@@ -159,10 +155,7 @@ describe('EmailAddressRepository', () => {
 
     const txRows = {
       emailAddress: {
-        findMany: vi
-          .fn()
-          .mockResolvedValueOnce([row])
-          .mockResolvedValueOnce([row]),
+        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
@@ -181,4 +174,3 @@ describe('EmailAddressRepository', () => {
     });
   });
 });
-

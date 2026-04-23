@@ -120,7 +120,9 @@ describe('TokenService', () => {
   describe('verifyRefreshToken', () => {
     const mockToken = 'some-jwt-token';
     const mockPayload = { sub: 'user-123', sessionId: 'session-123' };
-    const refreshTokenWithSessionBuilder = (overrides?: Record<string, unknown>): RefreshTokenWithSession =>
+    const refreshTokenWithSessionBuilder = (
+      overrides?: Record<string, unknown>,
+    ): RefreshTokenWithSession =>
       ({
         ...refreshTokenBuilder(),
         session: sessionBuilder({ id: mockPayload.sessionId, userId: mockPayload.sub }),
@@ -232,9 +234,7 @@ describe('TokenService', () => {
       refreshTokenRepository.findOne.mockResolvedValue(
         refreshTokenWithSessionBuilder({ revokedAt: null }),
       );
-      sessionRepository.findOne.mockResolvedValue(
-        sessionWithUserBuilder({ userId: 'other-user' }),
-      );
+      sessionRepository.findOne.mockResolvedValue(sessionWithUserBuilder({ userId: 'other-user' }));
 
       // Act & Assert
       const promise = service.verifyRefreshToken(mockToken);

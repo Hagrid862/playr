@@ -30,7 +30,9 @@ describe('AudioFileRepository', () => {
       include: { track: true },
     });
 
-    await repository.findOneWithInclude({ id: 'f1' }, { track: { include: { album: true } } } as any);
+    await repository.findOneWithInclude({ id: 'f1' }, {
+      track: { include: { album: true } },
+    } as any);
     expect(mockTx.audioFile.findFirst).toHaveBeenNthCalledWith(2, {
       where: { id: 'f1' },
       include: { track: { include: { album: true } } },
@@ -50,11 +52,7 @@ describe('AudioFileRepository', () => {
       include: { track: true },
     });
 
-    await repository.findManyWithInclude(
-      { trackId: 't1' },
-      {},
-      { track: true },
-    );
+    await repository.findManyWithInclude({ trackId: 't1' }, {}, { track: true });
     expect(mockTx.audioFile.findMany).toHaveBeenNthCalledWith(2, {
       where: { trackId: 't1' },
       take: 10,
@@ -79,7 +77,10 @@ describe('AudioFileRepository', () => {
 
   it('exists and count map to count query', async () => {
     await setup();
-    mockTx.audioFile.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1).mockResolvedValueOnce(5);
+    mockTx.audioFile.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(5);
     await expect(repository.exists({ id: 'f1' })).resolves.toBe(false);
     await expect(repository.exists({ id: 'f1' })).resolves.toBe(true);
     await expect(repository.count({ trackId: 't1' })).resolves.toBe(5);
@@ -102,7 +103,10 @@ describe('AudioFileRepository', () => {
 
     expect(mockTx.audioFile.create).toHaveBeenCalledWith({ data: { key: 'k1' } });
     expect(mockTx.audioFile.createManyAndReturn).toHaveBeenCalledWith({ data: [{ key: 'k1' }] });
-    expect(mockTx.audioFile.update).toHaveBeenCalledWith({ where: { id: 'f1' }, data: { key: 'k2' } });
+    expect(mockTx.audioFile.update).toHaveBeenCalledWith({
+      where: { id: 'f1' },
+      data: { key: 'k2' },
+    });
     expect(mockTx.audioFile.delete).toHaveBeenCalledWith({ where: { id: 'f1' } });
   });
 
@@ -125,4 +129,3 @@ describe('AudioFileRepository', () => {
     });
   });
 });
-

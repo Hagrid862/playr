@@ -2,7 +2,12 @@ import { LibraryArtistRepository } from '@/shared/repositories/library-artist.re
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { NotFoundException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { artistBuilder, libraryArtistBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
+import {
+  artistBuilder,
+  libraryArtistBuilder,
+  libraryBuilder,
+  userBuilder,
+} from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryArtistQuery } from '../impl/get-library-artist.query';

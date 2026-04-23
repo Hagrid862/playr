@@ -94,4 +94,3 @@ describe('RefreshTokenRepository', () => {
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
   });
 });
-

@@ -2,7 +2,13 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { albumBuilder, artistBuilder, libraryAlbumBuilder, libraryBuilder, userBuilder } from '@repo/testing/builders';
+import {
+  albumBuilder,
+  artistBuilder,
+  libraryAlbumBuilder,
+  libraryBuilder,
+  userBuilder,
+} from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryArtistAlbumsQuery } from '../impl/get-library-artist-albums.query';
@@ -73,13 +79,13 @@ describe('GetLibraryArtistAlbumsHandler', () => {
         album: { artists: { some: { id: artistId } }, type: 'album' },
       },
       {
-      take: 10,
-      skip: 0,
-      orderBy: {
-        album: {
-          releaseDate: 'desc',
+        take: 10,
+        skip: 0,
+        orderBy: {
+          album: {
+            releaseDate: 'desc',
+          },
         },
-      },
       },
       {
         album: {

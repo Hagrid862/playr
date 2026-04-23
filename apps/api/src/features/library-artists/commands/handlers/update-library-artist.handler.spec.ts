@@ -116,11 +116,7 @@ describe('UpdateLibraryArtistHandler', () => {
 
     expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(
       mockLibrary.id,
-      [
-      'genre-1',
-      'genre-1',
-      'genre-2',
-      ],
+      ['genre-1', 'genre-1', 'genre-2'],
     );
     expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
       name: undefined,

@@ -50,7 +50,10 @@ describe('LibraryTrackRepository', () => {
 
   it('count/existence and mutations/deletes/restore flows', async () => {
     await setup();
-    mockTx.libraryTrack.count.mockResolvedValueOnce(0).mockResolvedValueOnce(2).mockResolvedValueOnce(8);
+    mockTx.libraryTrack.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(8);
     await expect(repository.exists({ id: 'lt1' })).resolves.toBe(false);
     await expect(repository.exists({ id: 'lt1' })).resolves.toBe(true);
     await expect(repository.count({ libraryId: 'l1' })).resolves.toBe(8);
@@ -80,7 +83,9 @@ describe('LibraryTrackRepository', () => {
     await repository.softDelete('lt1');
     await repository.restore('lt1');
 
-    const txEmpty = { libraryTrack: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
+    const txEmpty = {
+      libraryTrack: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
+    };
     mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
 
@@ -100,4 +105,3 @@ describe('LibraryTrackRepository', () => {
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
   });
 });
-

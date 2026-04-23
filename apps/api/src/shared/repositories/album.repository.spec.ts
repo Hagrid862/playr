@@ -47,11 +47,7 @@ describe('AlbumRepository', () => {
       include: { access: true, cover: true },
     });
 
-    await repository.findManyWithInclude(
-      { id: 'al1' },
-      {},
-      { artists: true },
-    );
+    await repository.findManyWithInclude({ id: 'al1' }, {}, { artists: true });
     expect(mockTx.album.findMany).toHaveBeenNthCalledWith(2, {
       where: { id: 'al1', deletedAt: null },
       take: 10,
@@ -186,10 +182,7 @@ describe('AlbumRepository', () => {
 
     const txRows = {
       album: {
-        findMany: vi
-          .fn()
-          .mockResolvedValueOnce([row])
-          .mockResolvedValueOnce([row]),
+        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
@@ -207,4 +200,3 @@ describe('AlbumRepository', () => {
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
   });
 });
-

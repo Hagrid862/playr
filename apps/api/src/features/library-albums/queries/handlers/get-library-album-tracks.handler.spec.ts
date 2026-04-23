@@ -3,7 +3,12 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Visibility } from '@repo/db';
-import { libraryBuilder, libraryTrackBuilder, trackBuilder, userBuilder } from '@repo/testing/builders';
+import {
+  libraryBuilder,
+  libraryTrackBuilder,
+  trackBuilder,
+  userBuilder,
+} from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.query';

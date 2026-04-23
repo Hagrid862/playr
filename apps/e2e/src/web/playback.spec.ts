@@ -136,8 +136,12 @@ test.describe("Playback Functionality", () => {
       await expect
         .poll(
           async () => {
-            const processingCount = await trackRow.getByLabel("Processing").count();
-            const failedCount = await trackRow.getByLabel("Processing failed").count();
+            const processingCount = await trackRow
+              .getByLabel("Processing")
+              .count();
+            const failedCount = await trackRow
+              .getByLabel("Processing failed")
+              .count();
             if (processingCount === 0 && failedCount === 0) return true;
             await page.reload({ waitUntil: "networkidle" });
             return false;
@@ -145,7 +149,8 @@ test.describe("Playback Functionality", () => {
           {
             timeout: 60000,
             intervals: [500, 1000, 2000],
-            message: "Track did not become playable (audio processing may still be pending).",
+            message:
+              "Track did not become playable (audio processing may still be pending).",
           },
         )
         .toBe(true);

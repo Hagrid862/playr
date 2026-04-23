@@ -56,12 +56,10 @@ describe('RefreshTokensHandler', () => {
         isRevoked: false,
       });
 
-      userRepository.findOne.mockResolvedValue(
-        {
-          ...userBuilder({ id: mockUserId, username: 'test-user' }),
-          avatar: null,
-        } as UserWithAvatar,
-      );
+      userRepository.findOne.mockResolvedValue({
+        ...userBuilder({ id: mockUserId, username: 'test-user' }),
+        avatar: null,
+      } as UserWithAvatar);
 
       tokenService.generateAuthTokens.mockResolvedValue({
         accessToken: 'new-access-token',

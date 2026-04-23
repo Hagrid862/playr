@@ -95,12 +95,10 @@ describe('AuthController (Integration)', () => {
 
     it('should return 409 if username already exists', async () => {
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
-      prismaMock.client.user.findFirst.mockResolvedValue(
-        {
-          ...userBuilder({ id: 'existing', username: validRegistration.username }),
-          avatar: null,
-        } as any,
-      );
+      prismaMock.client.user.findFirst.mockResolvedValue({
+        ...userBuilder({ id: 'existing', username: validRegistration.username }),
+        avatar: null,
+      } as any);
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')
@@ -230,18 +228,16 @@ describe('AuthController (Integration)', () => {
       );
 
       // Mock database checks
-      prismaMock.client.refreshToken.findFirst.mockResolvedValue(
-        {
-          ...refreshTokenBuilder({
-            token: signedToken,
-            sessionId,
-          }),
-          session: sessionBuilder({
-            id: sessionId,
-            userId,
-          }),
-        } as any,
-      );
+      prismaMock.client.refreshToken.findFirst.mockResolvedValue({
+        ...refreshTokenBuilder({
+          token: signedToken,
+          sessionId,
+        }),
+        session: sessionBuilder({
+          id: sessionId,
+          userId,
+        }),
+      } as any);
 
       prismaMock.client.session.findUnique.mockResolvedValue(
         sessionBuilder({
@@ -250,25 +246,21 @@ describe('AuthController (Integration)', () => {
         }),
       );
 
-      prismaMock.client.session.findFirst.mockResolvedValue(
-        {
-          ...sessionBuilder({
-            id: sessionId,
-            userId,
-          }),
-          user: userBuilder({ id: userId, username: 'testuser' }),
-        } as any,
-      );
+      prismaMock.client.session.findFirst.mockResolvedValue({
+        ...sessionBuilder({
+          id: sessionId,
+          userId,
+        }),
+        user: userBuilder({ id: userId, username: 'testuser' }),
+      } as any);
 
-      prismaMock.client.user.findFirst.mockResolvedValue(
-        {
-          ...userBuilder({
-            id: userId,
-            username: 'testuser',
-          }),
-          avatar: null,
-        } as any,
-      );
+      prismaMock.client.user.findFirst.mockResolvedValue({
+        ...userBuilder({
+          id: userId,
+          username: 'testuser',
+        }),
+        avatar: null,
+      } as any);
 
       // Mock rotation (revoking old, creating new)
       prismaMock.client.refreshToken.update.mockResolvedValue(

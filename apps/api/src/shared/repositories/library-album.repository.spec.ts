@@ -132,10 +132,7 @@ describe('LibraryAlbumRepository', () => {
 
     const txRows = {
       libraryAlbum: {
-        findMany: vi
-          .fn()
-          .mockResolvedValueOnce([row])
-          .mockResolvedValueOnce([row]),
+        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
@@ -149,4 +146,3 @@ describe('LibraryAlbumRepository', () => {
     await expect(repository.restoreMany({ libraryId: 'l1' })).resolves.toEqual([row]);
   });
 });
-
