@@ -1,39 +1,45 @@
-<!-- Premium Email Verification Template for Playr -->
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f6fa; padding: 32px 0;">
-    <tr>
-        <td align="center">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 420px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(30,41,59,0.06);">
-                <tr>
-                    <td align="center" style="padding: 32px 32px 0 32px;">
-                        <!-- Logo or Brand -->
-                        <span style="display: inline-block; font-size: 28px; font-weight: bold; color: #10b981; font-family: Arial, Helvetica, sans-serif; letter-spacing: -1px; margin-bottom: 8px;">Playr</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 16px 32px 0 32px;">
-                        <h1 style="font-size: 22px; font-weight: bold; color: #1e293b; margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif;">Verify your email address</h1>
-                        <p style="font-size: 15px; color: #475569; margin: 0 0 24px 0; font-family: Arial, Helvetica, sans-serif;">Hi! Thank you for joining Playr. To activate your account, please enter the code below in the Playr App:</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 0 32px 0 32px;">
-                        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 0 0 24px 0;">
-                            <tr>
-                                <td align="center" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 0;">
-                                    <span style="font-family: Courier, 'Courier New', monospace; font-size: 32px; font-weight: bold; color: #10b981; letter-spacing: 8px; display: inline-block;">
-                                        {{code}}
-                                    </span>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" style="padding: 0 32px 32px 32px;">
-                        <p style="font-size: 13px; color: #64748b; margin: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif;">This code will expire in {{ttlMinutes}} minutes. If you did not request this verification, you can safely ignore this email.</p>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{HtmlTitle}}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="100%" style="max-width: 520px; border-spacing: 0; padding: 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 8px rgba(30,41,59,0.06);">
+                    <tr>
+                        <td style="padding: 0;">
+                            {{> header}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0 24px 24px 24px; color: #1e293b;">
+                            <h1 style="font-size: 22px; font-weight: bold; color: #1e293b; margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif;" align="center">Verify your email address</h1>
+                            <p style="font-size: 15px; color: #475569; margin: 0 0 24px 0; font-family: Arial, Helvetica, sans-serif;" align="center">Hi! Thank you for joining Playr. To activate your account, please enter the code below in the Playr App:</p>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td align="center" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 0;">
+                                        <span style="font-family: Courier, 'Courier New', monospace; font-size: 32px; font-weight: bold; color: #10b981; letter-spacing: 8px; display: inline-block;">
+                                            {{code}}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="font-size: 13px; color: #64748b; margin: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif; text-align: center;">
+                                This code will expire in {{ttlMinutes}} minutes. If you did not request this verification, you can safely ignore this email.
+                            </p>
+                        </td>
+                    <tr>
+                        <td style="padding: 0;">
+                            {{> footer}}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
