@@ -19,20 +19,23 @@ export function setupJwtAuthPrismaMocks(
   const sessionId = overrides.sessionId ?? DEFAULT_AUTH_SESSION_ID;
   const username = overrides.username ?? DEFAULT_AUTH_USERNAME;
 
-  prismaMock.client.session.findUnique.mockResolvedValue(
-    sessionBuilder({
-      id: sessionId,
-      userId,
-      revokedAt: null,
-      deletedAt: null,
-    }),
-  );
+  const session = sessionBuilder({
+    id: sessionId,
+    userId,
+    revokedAt: null,
+    deletedAt: null,
+  });
+  const user = userBuilder({
+    id: userId,
+    username,
+    deletedAt: null,
+  });
 
-  prismaMock.client.user.findUnique.mockResolvedValue(
-    userBuilder({
-      id: userId,
-      username,
-      deletedAt: null,
-    }),
-  );
+  // Auth stack resolves users/sessions through repository findOne() -> prisma.findFirst().
+  prismaMock.client.session.findFirst.mockResolvedValue(session as any);
+  prismaMock.client.user.findFirst.mockResolvedValue({ ...user, avatar: null } as any);
+
+  // Keep legacy direct lookup compatibility for tests that still call findUnique by id.
+  prismaMock.client.session.findUnique.mockResolvedValue(session as any);
+  prismaMock.client.user.findUnique.mockResolvedValue(user as any);
 }
