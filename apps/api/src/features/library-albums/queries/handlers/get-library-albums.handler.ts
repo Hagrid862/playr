@@ -34,8 +34,8 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
           album: {
             include: {
               artists: true,
+              cover: true,
             },
-            cover: true,
           },
         },
       ),

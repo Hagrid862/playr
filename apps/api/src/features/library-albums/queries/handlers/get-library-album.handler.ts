@@ -17,6 +17,9 @@ export class GetLibraryAlbumHandler implements IQueryHandler<GetLibraryAlbumQuer
         cover: true,
         access: true,
         tracks: {
+          where: {
+            deletedAt: null,
+          },
           include: {
             artists: true,
             album: {

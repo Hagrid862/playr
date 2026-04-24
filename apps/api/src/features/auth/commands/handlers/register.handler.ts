@@ -13,7 +13,7 @@ import { EmailAddressRepository } from '@/shared/repositories/email-address.repo
 export class RegisterHandler implements ICommandHandler<RegisterCommand> {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly emailAdressRepository: EmailAddressRepository,
+    private readonly emailAddressRepository: EmailAddressRepository,
     private readonly hashingService: HashingService,
     private readonly prisma: PrismaService,
     private readonly unitOfWork: UnitOfWorkService,
@@ -26,7 +26,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
 
     // Check for existing email and username in parallel
     const [existingEmail, existingUsername] = await Promise.all([
-      this.emailAdressRepository.findOne({ email, type: 'primary' }),
+      this.emailAddressRepository.findOne({ email, type: 'primary' }),
       this.userRepository.findOne({ username }),
     ]);
 

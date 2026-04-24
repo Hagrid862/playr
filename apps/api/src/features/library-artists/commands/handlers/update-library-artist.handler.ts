@@ -43,12 +43,16 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
     }
 
     if (request.genreIds !== undefined) {
+      const uniqueGenreIds = [...new Set(request.genreIds)];
       const library = await this.libraryRepository.findOne({ userId });
       if (!library) {
         throw new PreconditionFailedException('User library not found');
       }
 
-      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, request.genreIds);
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
+        library.id,
+        uniqueGenreIds,
+      );
     }
 
     const updatedArtist = await this.artistRepository.update(artistId, {

@@ -17,8 +17,20 @@ export class CreateLibraryHandler implements ICommandHandler<CreateLibraryComman
       throw new ConflictException('Library already exists');
     }
 
-    return this.libraryRepository.create({
-      user: { connect: { id: userId } },
-    });
+    try {
+      return await this.libraryRepository.create({
+        user: { connect: { id: userId } },
+      });
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
+        throw new ConflictException('Library already exists');
+      }
+      throw error;
+    }
   }
 }

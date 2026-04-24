@@ -1,8 +1,8 @@
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { PreconditionFailedException } from '@nestjs/common';
+import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { GetLibraryAlbumTracksResponse, type ZodTrack } from '@repo/contracts';
+import { GetLibraryAlbumTracksResponse, TrackSchema } from '@repo/contracts';
 import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.query';
 
 @QueryHandler(GetLibraryAlbumTracksQuery)
@@ -45,6 +45,13 @@ export class GetLibraryAlbumTracksHandler implements IQueryHandler<GetLibraryAlb
       },
     );
 
-    return (items as { track: ZodTrack }[]).map((lt) => lt.track);
+    return items.map((lt) => {
+      const parsedTrack = TrackSchema.safeParse(lt.track);
+      if (!parsedTrack.success) {
+        throw new InternalServerErrorException('Failed to parse track');
+      }
+
+      return parsedTrack.data;
+    });
   }
 }

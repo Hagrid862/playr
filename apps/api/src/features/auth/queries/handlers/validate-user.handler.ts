@@ -1,7 +1,8 @@
 import { HashingService } from '@/shared/services/hashing.service';
+import { AuthenticatedPrincipal } from '@/common/types/auth.types';
 import { UnauthorizedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { EmailStatus, User } from '@repo/db';
+import { EmailStatus } from '@repo/db';
 import { ValidateUserQuery } from '../impl/validate-user.query';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 
@@ -12,7 +13,7 @@ export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {
     private readonly hashingService: HashingService,
   ) {}
 
-  async execute(query: ValidateUserQuery): Promise<User | null> {
+  async execute(query: ValidateUserQuery): Promise<AuthenticatedPrincipal | null> {
     const { email, password } = query;
     const emailAddress = await this.emailAddressRepository.findOneWithInclude(
       {
@@ -45,6 +46,7 @@ export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {
       throw new UnauthorizedException('Email not verified');
     }
 
-    return user;
+    const { password: _password, ...principal } = user;
+    return principal;
   }
 }

@@ -39,7 +39,10 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
       if (!library) {
         throw new PreconditionFailedException('User library not found');
       }
-      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, uniqueGenreIds);
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
+        library.id,
+        uniqueGenreIds,
+      );
     }
 
     const updated = await this.unitOfWork.runInTransaction(async () => {

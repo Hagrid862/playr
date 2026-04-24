@@ -41,7 +41,10 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
       if (!library) {
         throw new PreconditionFailedException('User library not found');
       }
-      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, uniqueGenreIds);
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
+        library.id,
+        uniqueGenreIds,
+      );
     }
 
     if (request.name && request.name !== album.name) {

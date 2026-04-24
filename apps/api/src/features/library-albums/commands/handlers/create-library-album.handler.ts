@@ -35,7 +35,10 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
       request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
 
     if (uniqueGenreIds !== undefined) {
-      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, uniqueGenreIds);
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
+        library.id,
+        uniqueGenreIds,
+      );
     }
 
     const album = await this.unitOfWork.runInTransaction(async () => {

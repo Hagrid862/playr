@@ -3,10 +3,7 @@ import { LibraryTrackRepository } from '@/shared/repositories/library-track.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import {
-  InternalServerErrorException,
-  PreconditionFailedException,
-} from '@nestjs/common';
+import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
 import { Visibility } from '@repo/db';
@@ -41,7 +38,10 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
     const uniqueGenreIds = body.genreIds !== undefined ? [...new Set(body.genreIds)] : undefined;
 
     if (uniqueGenreIds !== undefined) {
-      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(library.id, uniqueGenreIds);
+      await this.genreResolutionService.assertGenreIdsAssignableToLibrary(
+        library.id,
+        uniqueGenreIds,
+      );
     }
 
     const track = await this.unitOfWork.runInTransaction(async () => {
