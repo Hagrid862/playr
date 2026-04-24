@@ -1,6 +1,6 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 import { Button } from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLogin } from '@/hooks/api/auth';
 import { useLoginForm } from '@/hooks/forms/useLoginForm';
 import { useAuthStore } from '@/stores/auth.store';
@@ -26,7 +26,7 @@ export function RouteComponent() {
         const response = await loginUser(data);
 
         //different paths based on whether user primary email is verified
-        if (response.data.outcome === 'authenticated'){
+        if (response.data.outcome === 'authenticated') {
           // Persist auth data using store
           useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
 
@@ -36,7 +36,7 @@ export function RouteComponent() {
 
           await navigate({
             to: '/auth/verify-email',
-            search: { email: response.data.user.emailAddresses[0].email }
+            search: { email: response.data.user.emailAddresses[0].email },
           });
         }
       } catch (err) {

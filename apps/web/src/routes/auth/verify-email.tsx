@@ -1,21 +1,25 @@
-import {createFileRoute, redirect, useNavigate, useRouter} from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { SyntheticEvent } from 'react';
 import { useResendEmailVerificationCode, useVerifyEmail } from '@/hooks/api/auth';
 import { useAuthStore } from '@/stores/auth.store';
 import { useVerifyEmailForm } from '@/hooks/forms/useVerifyEmailForm';
-import { VerifyEmailForm } from "@/components/auth/VerifyEmailForm";
+import { VerifyEmailForm } from '@/components/auth/VerifyEmailForm';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResendTimer } from '@/hooks/use-resend-timer';
-import {SignOutIcon} from "@phosphor-icons/react";
-import {Button} from "@/components/ui/button.tsx";
+import { SignOutIcon } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button.tsx';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export const Route = createFileRoute('/auth/verify-email')({
   component: RouteComponent,
@@ -46,7 +50,7 @@ export function RouteComponent() {
   const { logout } = useAuthStore();
   const { timeLeft: resendTimer, startTimer: startResendTimer } = useResendTimer(
     RESEND_COOLDOWN_KEY,
-    RESEND_COOLDOWN_SECONDS
+    RESEND_COOLDOWN_SECONDS,
   );
 
   const {
@@ -54,19 +58,10 @@ export function RouteComponent() {
     isPending: resendEmailVerificationCodeIsLoading,
   } = useResendEmailVerificationCode();
 
-  const {
-    mutateAsync: verifyEmail,
-    isPending: verifyEmailIsLoading,
-  } = useVerifyEmail();
+  const { mutateAsync: verifyEmail, isPending: verifyEmailIsLoading } = useVerifyEmail();
 
-  const {
-    formData,
-    isFormValid,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    getFieldError,
-  } = useVerifyEmailForm(email);
+  const { formData, isFormValid, handleChange, handleBlur, handleSubmit, getFieldError } =
+    useVerifyEmailForm(email);
 
   const onSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -137,31 +132,25 @@ export function RouteComponent() {
             type="button"
             disabled={verifyEmailIsLoading}
             className="flex items-center justify-center gap-1 text-muted-foreground hover:text-primary mt-4"
-            >
-          <SignOutIcon />
-          <span>Log out</span>
-        </Button>
+          >
+            <SignOutIcon />
+            <span>Log out</span>
+          </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Logging out will reset your email verification progress. You&apos;ll need to verify your email again when you sign back in.
+              Logging out will reset your email verification progress. You&apos;ll need to verify
+              your email again when you sign back in.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-            >
+            <AlertDialogAction onClick={handleLogout} variant="outline" size="sm">
               <SignOutIcon />
               <span>Log out</span>
             </AlertDialogAction>
-            <AlertDialogCancel
-              variant="default"
-              size="sm"
-            >
+            <AlertDialogCancel variant="default" size="sm">
               Cancel
             </AlertDialogCancel>
           </AlertDialogFooter>
