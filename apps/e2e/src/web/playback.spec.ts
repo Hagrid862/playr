@@ -133,27 +133,30 @@ test.describe("Playback Functionality", () => {
         has: page.getByText(trackName, { exact: true }),
       });
 
-      await expect
-        .poll(
-          async () => {
-            const processingCount = await trackRow
-              .getByLabel("Processing")
-              .count();
-            const failedCount = await trackRow
-              .getByLabel("Processing failed")
-              .count();
-            if (processingCount === 0 && failedCount === 0) return true;
-            await page.reload({ waitUntil: "networkidle" });
-            return false;
-          },
-          {
-            timeout: 60000,
-            intervals: [500, 1000, 2000],
-            message:
-              "Track did not become playable (audio processing may still be pending).",
-          },
-        )
-        .toBe(true);
+      const deadline = Date.now() + 60_000;
+      const processingFailedError = () =>
+        new Error(`Audio processing failed for track "${trackName}".`);
+      // Reload at most every few seconds; between reloads, let Playwright
+      // auto-wait for the "Processing" label to disappear. "Processing failed" is terminal — fail fast, do not reload until it vanishes.
+      while (Date.now() < deadline) {
+        await expect(trackRow.getByLabel("Processing")).toHaveCount(0, {
+          timeout: 5_000,
+        }).catch(() => {});
+        const failedCount = await trackRow
+          .getByLabel("Processing failed")
+          .count();
+        if (failedCount > 0) throw processingFailedError();
+        const processingCount = await trackRow
+          .getByLabel("Processing")
+          .count();
+        if (processingCount === 0) break;
+        await page.reload({ waitUntil: "networkidle" });
+      }
+      // After the 60s window, track must be playable (not stuck processing).
+      if ((await trackRow.getByLabel("Processing failed").count()) > 0) {
+        throw processingFailedError();
+      }
+      await expect(trackRow.getByLabel("Processing")).toHaveCount(0);
 
       await page.getByText(trackName, { exact: true }).first().click();
     });

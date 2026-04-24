@@ -171,6 +171,7 @@ export class UserRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the user from the database without checking or respecting the deletedAt field.
    * Deletes a user by the given ID.
    * @param id - The ID of the user to delete.
    * @returns The deleted user.
@@ -182,6 +183,7 @@ export class UserRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the users from the database without checking or respecting the deletedAt field.
    * Deletes multiple users by the given where conditions.
    * @param filter - The where conditions to filter the users by.
    * @returns The deleted users.

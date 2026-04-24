@@ -219,6 +219,7 @@ export class AlbumRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the album from the database without checking or respecting the deletedAt field.
    * Deletes an album by the given ID.
    * @param id - The ID of the album to delete.
    * @returns The deleted album.
@@ -230,6 +231,7 @@ export class AlbumRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the albums from the database without checking or respecting the deletedAt field.
    * Deletes multiple albums by the given where conditions.
    * @param filter - The where conditions to filter the albums by.
    * @returns The deleted albums.

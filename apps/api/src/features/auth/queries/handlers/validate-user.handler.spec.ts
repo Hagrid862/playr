@@ -23,7 +23,8 @@ describe('ValidateUserHandler', () => {
     birthDate: '2000-01-01',
     gender: Gender.male,
   });
-  const { password: _password, ...expectedPrincipal } = mockUser;
+  const { password, ...expectedPrincipal } = mockUser;
+  void password;
 
   beforeEach(async () => {
     emailAddressRepository = createMock<EmailAddressRepository>();

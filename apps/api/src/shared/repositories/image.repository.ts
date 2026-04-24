@@ -173,6 +173,9 @@ export class ImageRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the image from the database without checking or respecting the deletedAt field.
+   * Use softDelete(id) if you want to mark the image as deleted instead of removing it permanently.
+   *
    * Deletes an image by the given ID.
    * @param id - The ID of the image to delete.
    * @returns The deleted image.
@@ -184,6 +187,7 @@ export class ImageRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the images from the database without checking or respecting the deletedAt field.
    * Deletes multiple images by the given where conditions.
    * @param filter - The where conditions to filter the images by.
    * @returns The deleted images.

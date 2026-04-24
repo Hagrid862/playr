@@ -186,6 +186,7 @@ export class EmailAddressRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the email address from the database without checking or respecting the deletedAt field.
    * Deletes multiple email addresses by the given where conditions.
    * @param filter - The where conditions to filter the email addresses by.
    * @returns The deleted email addresses.
@@ -207,6 +208,7 @@ export class EmailAddressRepository {
   }
 
   /**
+   * WARNING: This method marks the email address as deleted by setting the `deletedAt` field to the current date/time.
    * Soft deletes an email address by the given ID.
    * @param id - The ID of the email address to soft delete.
    * @returns The deleted email address.

@@ -120,10 +120,15 @@ export class SessionRepository {
   }
 
   /**
-   * Checks if a user has access to a session by the given conditions.
-   * @param where - The where conditions to filter the sessions by.
-   * @param userId - The ID of the user to check.
-   * @returns True if the user owns the session, false otherwise.
+   * Checks if an authenticated user owns a non-deleted session matching the given `where`.
+   *
+   * When `userId` is omitted, returns `false` immediately and does not query the database.
+   * Sessions are always tied to a user account; unlike catalog entities there is no public or
+   * shared visibility path for unauthenticated callers through this method.
+   *
+   * @param where - Conditions merged with `userId` and `deletedAt: null` for the lookup.
+   * @param userId - Authenticated user id. Required for any `true` result.
+   * @returns True if such a session exists for that user; false if unauthenticated or not found.
    */
   async checkAccess(where: SessionWhereInput, userId?: string): Promise<boolean> {
     if (!userId) return false;
@@ -186,6 +191,7 @@ export class SessionRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the session from the database without checking or respecting the deletedAt field.
    * Deletes a session by the given ID.
    * @param id - The ID of the session to delete.
    * @returns The deleted session.
@@ -197,6 +203,7 @@ export class SessionRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the sessions from the database without checking or respecting the deletedAt field.
    * Deletes multiple sessions by the given where conditions.
    * @param filter - The where conditions to filter the sessions by.
    * @returns The deleted sessions.

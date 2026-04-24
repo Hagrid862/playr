@@ -142,7 +142,8 @@ export class TokenService {
     if (!user) {
       throw new UnauthorizedException('Invalid token');
     }
-    const { password: _password, ...principal } = user;
+    const { password: hashedPassword, ...principal } = user;
+    void hashedPassword;
     return { user: principal, sessionId: payload.sessionId };
   }
 

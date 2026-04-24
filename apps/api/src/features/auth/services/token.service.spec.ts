@@ -315,7 +315,8 @@ describe('TokenService', () => {
       userRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.toAuthenticatedUser(mockPayload);
-      const { password: _password, ...expectedUser } = mockUser;
+      const { password, ...expectedUser } = mockUser;
+      void password;
 
       expect(result).toEqual({ user: expectedUser, sessionId: 'session-123' });
     });
@@ -364,7 +365,8 @@ describe('TokenService', () => {
       userRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.authenticateWithAccessToken(mockToken);
-      const { password: _password, ...expectedUser } = mockUser;
+      const { password, ...expectedUser } = mockUser;
+      void password;
 
       expect(result).toEqual({ user: expectedUser, sessionId: 'session-123' });
     });

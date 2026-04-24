@@ -179,6 +179,7 @@ export class LibraryArtistRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the library artist from the database without checking or respecting the deletedAt field.
    * Deletes a library artist by the given ID.
    * @param id - The ID of the library artist to delete.
    * @returns The deleted library artist.
@@ -190,6 +191,7 @@ export class LibraryArtistRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the library artists from the database without checking or respecting the deletedAt field.
    * Deletes multiple library artists by the given where conditions.
    * @param filter - The where conditions to filter the library artists by.
    * @returns The deleted library artists.

@@ -53,6 +53,9 @@ describe('UserRepository', () => {
 
   it('deleteMany/softDeleteMany/restoreMany empty and non-empty paths', async () => {
     await setup();
+    mockTx.$transaction.mockImplementation(async (arg: unknown) =>
+      typeof arg === 'function' ? (arg as (tx: typeof mockTx) => Promise<unknown>)(mockTx) : arg,
+    );
     mockTx.user.findMany.mockResolvedValueOnce([]);
     await expect(repository.deleteMany({})).resolves.toEqual([]);
     const row = userBuilder({ id: 'u1' });
@@ -63,22 +66,14 @@ describe('UserRepository', () => {
     await repository.softDelete('u1');
     await repository.restore('u1');
 
-    const txEmpty = { user: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.user.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
-    const txRows = {
-      user: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.user.updateManyAndReturn.mockResolvedValueOnce([row] as any);
     await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
 
-    mockTx.user.findMany.mockResolvedValueOnce([]);
+    mockTx.user.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
-    mockTx.user.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.user.updateMany.mockResolvedValue({ count: 1 } as any);
+    mockTx.user.updateManyAndReturn.mockResolvedValueOnce([row] as any);
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
   });
 });

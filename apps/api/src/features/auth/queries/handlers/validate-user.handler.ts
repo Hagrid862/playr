@@ -46,7 +46,8 @@ export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {
       throw new UnauthorizedException('Email not verified');
     }
 
-    const { password: _password, ...principal } = user;
+    const { password: hashedPassword, ...principal } = user;
+    void hashedPassword;
     return principal;
   }
 }

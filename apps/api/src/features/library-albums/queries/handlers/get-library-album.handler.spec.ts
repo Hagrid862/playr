@@ -54,11 +54,15 @@ describe('GetLibraryAlbumHandler', () => {
         cover: true,
         access: true,
         tracks: {
-          where: { deletedAt: null },
+          where: {
+            deletedAt: null,
+            album: { is: { deletedAt: null } },
+          },
           include: {
             artists: true,
             album: {
               include: { cover: true },
+              where: { deletedAt: null },
             },
           },
         },

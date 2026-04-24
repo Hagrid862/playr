@@ -154,6 +154,7 @@ export class GenreRepository {
   }
 
   /**
+   * WARNING: This method marks the genres as deleted by setting the `deletedAt` field to the current date/time.
    * Updates multiple genres by the given IDs.
    * @param updates - The updates to apply to the genres.
    * @returns The updated genres.
@@ -170,6 +171,7 @@ export class GenreRepository {
   }
 
   /**
+   * WARNING: This method marks the genre as deleted by setting the `deletedAt` field to the current date/time.
    * Deletes a genre by the given ID.
    * @param id - The ID of the genre to delete.
    * @returns The deleted genre.
@@ -179,16 +181,13 @@ export class GenreRepository {
   }
 
   /**
-   * Deletes multiple genres by the given where conditions.
-   * @param filter - The where conditions to filter the genres by.
-   * @returns The deleted genres.
+   * Soft deletes multiple genres by the given filter conditions.
+   * Note: This sets the `deletedAt` field to the current date/time.
+   * @param filter - The filter conditions to select genres to soft delete.
+   * @returns The soft-deleted genres.
    */
   async deleteMany(filter: GenreWhereInput): Promise<Genre[]> {
-    const combinedWhere: GenreWhereInput = {
-      ...filter,
-      deletedAt: filter.deletedAt ?? null,
-    };
-    return this.softDeleteMany(combinedWhere);
+    return this.softDeleteMany(filter);
   }
 
   /**

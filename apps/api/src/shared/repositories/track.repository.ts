@@ -158,8 +158,14 @@ export class TrackRepository {
     }
 
     const andClauses: TrackWhereInput[] = [{ OR: accessOr }];
-    if (callerOr && callerOr.length > 0) {
-      andClauses.unshift({ OR: callerOr });
+    if (callerOr) {  
+      const orList = Array.isArray(callerOr) ? callerOr : [callerOr];  
+      if (orList.length > 0) {  
+        andClauses.unshift({ OR: orList });  
+      }  
+    }
+    if (callerAnd) {
+      andClauses.unshift(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
     }
     if (callerAnd) {
       andClauses.unshift(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
@@ -229,6 +235,7 @@ export class TrackRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the track from the database without checking or respecting the deletedAt field.
    * Deletes a track by the given ID.
    * @param id - The ID of the track to delete.
    * @returns The deleted track.
@@ -239,15 +246,20 @@ export class TrackRepository {
     });
   }
 
-  /**
+  /** 
+   * WARNING: This method performs a permanent (hard) delete and purges the tracks from the database without checking or respecting the deletedAt field.
    * Deletes multiple tracks by the given where conditions.
    * @param filter - The where conditions to filter the tracks by.
    * @returns The deleted tracks.
    */
   async deleteMany(filter: TrackWhereInput): Promise<Track[]> {
+    const combinedWhere: TrackWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    }
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.track.findMany({
-        where: filter,
+        where: combinedWhere,
       });
 
       if (toDelete.length === 0) return [];

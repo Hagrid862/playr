@@ -181,6 +181,7 @@ export class LibraryTrackRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the library track from the database without checking or respecting the deletedAt field.
    * Deletes a library track by the given ID.
    * @param id - The ID of the library track to delete.
    * @returns The deleted library track.
@@ -192,6 +193,7 @@ export class LibraryTrackRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the library tracks from the database without checking or respecting the deletedAt field.
    * Deletes multiple library tracks by the given where conditions.
    * @param filter - The where conditions to filter the library tracks by.
    * @returns The deleted library tracks.

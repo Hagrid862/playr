@@ -171,6 +171,7 @@ export class LibraryRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the library from the database without checking or respecting the deletedAt field.
    * Deletes a library by the given ID.
    * @param id - The ID of the library to delete.
    * @returns The deleted library.
@@ -182,6 +183,7 @@ export class LibraryRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the libraries from the database without checking or respecting the deletedAt field.
    * Deletes multiple libraries by the given where conditions.
    * @param filter - The where conditions to filter the libraries by.
    * @returns The deleted libraries.

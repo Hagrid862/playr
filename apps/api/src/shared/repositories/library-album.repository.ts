@@ -181,6 +181,7 @@ export class LibraryAlbumRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the library album from the database without checking or respecting the deletedAt field.
    * Deletes a library album by the given ID.
    * @param id - The ID of the library album to delete.
    * @returns The deleted library album.
@@ -192,6 +193,7 @@ export class LibraryAlbumRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the library albums from the database without checking or respecting the deletedAt field.
    * Deletes multiple library albums by the given where conditions.
    * @param filter - The where conditions to filter the library albums by.
    * @returns The deleted library albums.

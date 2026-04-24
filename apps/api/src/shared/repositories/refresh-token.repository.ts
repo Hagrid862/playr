@@ -46,7 +46,7 @@ export class RefreshTokenRepository {
     });
   }
 
-  /**
+  /** 
    * Finds multiple refresh tokens by the given where conditions.
    * @param where - The where conditions to filter the refresh tokens by.
    * @param options - The options for the query:
@@ -190,6 +190,7 @@ export class RefreshTokenRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the refresh token from the database without checking or respecting the deletedAt field.
    * Deletes a refresh token by the given ID.
    * @param id - The ID of the refresh token to delete.
    * @returns The deleted refresh token.
@@ -201,6 +202,7 @@ export class RefreshTokenRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the refresh tokens from the database without checking or respecting the deletedAt field.
    * Deletes multiple refresh tokens by the given where conditions.
    * @param filter - The where conditions to filter the refresh tokens by.
    * @returns The deleted refresh tokens.

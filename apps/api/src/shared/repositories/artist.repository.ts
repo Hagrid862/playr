@@ -202,6 +202,7 @@ export class ArtistRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the artist from the database without checking or respecting the deletedAt field.
    * Deletes an artist by the given ID.
    * @param id - The ID of the artist to delete.
    * @returns The deleted artist.
@@ -213,17 +214,16 @@ export class ArtistRepository {
   }
 
   /**
+   * WARNING: This method performs a permanent (hard) delete and purges the artists from the database without checking or respecting the deletedAt field.
    * Deletes multiple artists by the given where conditions.
    * @param filter - The where conditions to filter the artists by.
    * @returns The deleted artists.
    */
-  async deleteMany(filter: ArtistWhereInput, options?: { purge?: boolean }): Promise<Artist[]> {
-    const purge = options?.purge ?? false;
-    const baseWhere: ArtistWhereInput = purge ? filter : { ...filter, deletedAt: null };
 
+  async deleteMany(filter: ArtistWhereInput): Promise<Artist[]> {
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.artist.findMany({
-        where: baseWhere,
+        where: filter,
       });
 
       if (toDelete.length === 0) return [];
