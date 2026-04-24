@@ -1,5 +1,5 @@
-import { User } from '@repo/db';
+import { AuthenticatedPrincipal } from '@/common/types/auth.types';
 
 export class LoginCommand {
-  constructor(public readonly user: User) {}
+  constructor(public readonly user: AuthenticatedPrincipal) {}
 }
