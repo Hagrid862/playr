@@ -83,9 +83,6 @@ describe('EmailAddressRepository', () => {
     expect(mockTx.emailAddress.count).toHaveBeenNthCalledWith(1, {
       where: { id: 'e1', deletedAt: null },
     });
-    expect(mockTx.emailAddress.count).toHaveBeenNthCalledWith(2, {
-      where: { id: 'e1', deletedAt: null },
-    });
     expect(mockTx.emailAddress.count).toHaveBeenNthCalledWith(3, {
       where: { userId: 'u1', deletedAt: null },
     });
@@ -109,6 +106,11 @@ describe('EmailAddressRepository', () => {
     expect(mockTx.emailAddress.create).toHaveBeenCalledWith({ data: { address: 'x@test.dev' } });
     expect(mockTx.emailAddress.createManyAndReturn).toHaveBeenCalledWith({
       data: [{ address: 'x@test.dev' }],
+    });
+    expect(mockTx.$transaction).toHaveBeenCalled();
+    expect(mockTx.emailAddress.update).toHaveBeenCalledWith({
+      where: { id: 'e1', deletedAt: null },
+      data: { address: 'z@test.dev' },
     });
     expect(mockTx.emailAddress.update).toHaveBeenCalledWith({
       where: { id: 'e1', deletedAt: null },

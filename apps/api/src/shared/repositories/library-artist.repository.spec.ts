@@ -25,15 +25,54 @@ describe('LibraryArtistRepository', () => {
     await setup();
     mockTx.libraryArtist.findFirst.mockResolvedValue({ id: 'la1' } as any);
     mockTx.libraryArtist.findMany.mockResolvedValue([]);
+
+    // findOne
     await repository.findOne({ id: 'la1' });
+    expect(mockTx.libraryArtist.findFirst).toHaveBeenCalledWith({
+      where: { deletedAt: null, id: 'la1' },
+      include: undefined,
+    });
+
+    // findOneWithInclude
     await repository.findOneWithInclude({ id: 'la1' }, { artist: true });
+    expect(mockTx.libraryArtist.findFirst).toHaveBeenCalledWith({
+      where: { deletedAt: null, id: 'la1' },
+      include: { artist: true },
+    });
+
+    // findMany (defaults)
     await repository.findMany({ libraryId: 'l1' }, {});
+    expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null, libraryId: 'l1' },
+      take: undefined,
+      skip: undefined,
+      orderBy: undefined,
+      include: undefined,
+    });
+
+    // findManyWithInclude (defaults)
     await repository.findManyWithInclude({ libraryId: 'l1' }, {}, { artist: true });
+    expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null, libraryId: 'l1' },
+      take: undefined,
+      skip: undefined,
+      orderBy: undefined,
+      include: { artist: true },
+    });
+
+    // findManyWithInclude (custom pagination, custom include)
     await repository.findManyWithInclude(
       { libraryId: 'l1' },
       { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { artist: true },
     );
+    expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null, libraryId: 'l1' },
+      take: 2,
+      skip: 1,
+      orderBy: { createdAt: 'asc' },
+      include: { artist: true },
+    });
   });
 
   it('exists/count and CRUD/updateMany operations', async () => {
@@ -42,9 +81,22 @@ describe('LibraryArtistRepository', () => {
       .mockResolvedValueOnce(0)
       .mockResolvedValueOnce(1)
       .mockResolvedValueOnce(3);
+
+    // exists (first false, then true)
     await expect(repository.exists({ id: 'la1' })).resolves.toBe(false);
+    expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
+      where: { deletedAt: null, id: 'la1' },
+    });
     await expect(repository.exists({ id: 'la1' })).resolves.toBe(true);
+    expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
+      where: { deletedAt: null, id: 'la1' },
+    });
+
+    // count
     await expect(repository.count({ libraryId: 'l1' })).resolves.toBe(3);
+    expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
+      where: { deletedAt: null, libraryId: 'l1' },
+    });
 
     const row = libraryArtistBuilder({ id: 'la1' });
     mockTx.libraryArtist.create.mockResolvedValue(row);
@@ -52,30 +104,82 @@ describe('LibraryArtistRepository', () => {
     mockTx.libraryArtist.update.mockResolvedValue(row);
     mockTx.libraryArtist.delete.mockResolvedValue(row);
     mockTx.$transaction.mockResolvedValue([row] as any);
+
+    // create
     await repository.create({ libraryId: 'l1', artistId: 'a1' } as any);
+    expect(mockTx.libraryArtist.create).toHaveBeenCalledWith({
+      data: { libraryId: 'l1', artistId: 'a1' },
+    });
+
+    // createMany
     await repository.createMany([{ libraryId: 'l1', artistId: 'a1' } as any]);
+    expect(mockTx.libraryArtist.createManyAndReturn).toHaveBeenCalledWith([
+      { libraryId: 'l1', artistId: 'a1' },
+    ]);
+
+    // update
     await repository.update('la1', { artistId: 'a2' } as any);
+    expect(mockTx.libraryArtist.update).toHaveBeenCalledWith({
+      where: { id: 'la1' },
+      data: { artistId: 'a2' },
+    });
+
+    // updateMany
     await repository.updateMany([{ id: 'la1', data: { artistId: 'a2' } as any }]);
+    // Since implementation may batch through $transaction, just verify update args are correct for each call
+    expect(mockTx.$transaction).toHaveBeenCalled();
+    // Check that one of the updates within the transaction is for the correct id/data
+    // (best effort, as $transaction batches)
+    // The update signature is: { where: { id }, data }
+    // The function that gets passed to $transaction is expected to call update for each input
+    // Can't dig into its internals here, but we can assure $transaction was called.
+
+    // delete
     await repository.delete('la1');
+    expect(mockTx.libraryArtist.delete).toHaveBeenCalledWith({
+      where: { id: 'la1' },
+    });
   });
 
   it('deleteMany/softDeleteMany/restoreMany branches', async () => {
     await setup();
     mockTx.libraryArtist.findMany.mockResolvedValueOnce([]);
     await expect(repository.deleteMany({})).resolves.toEqual([]);
+    expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { ...{}, deletedAt: null },
+    });
+
     const row = libraryArtistBuilder({ id: 'la1' });
     mockTx.libraryArtist.findMany.mockResolvedValueOnce([row]);
     await expect(repository.deleteMany({})).resolves.toEqual([row]);
+    expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { ...{}, deletedAt: null },
+    });
+    expect(mockTx.libraryArtist.delete).toHaveBeenCalledWith({
+      where: { id: 'la1' },
+    });
 
     mockTx.libraryArtist.update.mockResolvedValue(row);
     await repository.softDelete('la1');
+    expect(mockTx.libraryArtist.update).toHaveBeenCalledWith({
+      where: { id: 'la1' },
+      data: { deletedAt: expect.any(Date) },
+    });
+
     await repository.restore('la1');
+    expect(mockTx.libraryArtist.update).toHaveBeenCalledWith({
+      where: { id: 'la1' },
+      data: { deletedAt: null },
+    });
 
     const txEmpty = {
       libraryArtist: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
     };
     mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
+    expect(txEmpty.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { ...{}, deletedAt: null },
+    });
 
     const txRows = {
       libraryArtist: {
@@ -85,11 +189,30 @@ describe('LibraryArtistRepository', () => {
     };
     mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
     await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
+    expect(txRows.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { ...{}, deletedAt: null },
+    });
+    expect(txRows.libraryArtist.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['la1'] } },
+      data: { deletedAt: expect.any(Date) },
+    });
 
     mockTx.libraryArtist.findMany.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
+    expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { ...{}, deletedAt: { not: null } },
+    });
+
     mockTx.libraryArtist.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
     mockTx.libraryArtist.updateMany.mockResolvedValue({ count: 1 } as any);
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
+    // restoreMany will call findMany twice, and then updateMany
+    expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      where: { ...{}, deletedAt: { not: null } },
+    });
+    expect(mockTx.libraryArtist.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['la1'] } },
+      data: { deletedAt: null },
+    });
   });
 });

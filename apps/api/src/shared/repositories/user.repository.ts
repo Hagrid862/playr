@@ -224,22 +224,9 @@ export class UserRepository {
    * @returns The deleted users.
    */
   async softDeleteMany(where: UserWhereInput): Promise<User[]> {
-    const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.user.findMany({
-        where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.user.updateMany({
-        where: { id: { in: ids } },
-        data: { deletedAt },
-      });
-
-      return tx.user.findMany({
-        where: { id: { in: ids } },
-      });
+    return this.prisma.client.user.updateManyAndReturn({
+      where: { ...where, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -261,19 +248,9 @@ export class UserRepository {
    * @returns The restored users.
    */
   async restoreMany(where: UserWhereInput): Promise<User[]> {
-    const toRestore = await this.prisma.client.user.findMany({
+    return this.prisma.client.user.updateManyAndReturn({
       where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
-
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.user.updateMany({
-      where: { id: { in: ids } },
       data: { deletedAt: null },
-    });
-
-    return this.prisma.client.user.findMany({
-      where: { id: { in: ids } },
     });
   }
 }

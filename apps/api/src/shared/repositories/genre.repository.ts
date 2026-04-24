@@ -209,7 +209,7 @@ export class GenreRepository {
    * @returns The deleted genres.
    */
   async softDeleteMany(where: GenreWhereInput): Promise<Genre[]> {
-    return this.prisma.mainClient.genre.updateManyAndReturn({
+    return this.prisma.client.genre.updateManyAndReturn({
       where: { ...where, deletedAt: null },
       data: { deletedAt: new Date() },
     });

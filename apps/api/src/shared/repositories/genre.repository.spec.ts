@@ -101,7 +101,6 @@ describe('GenreRepository', () => {
     mockTx.genre.create.mockResolvedValue(row);
     mockTx.genre.createManyAndReturn.mockResolvedValue([row]);
     mockTx.genre.update.mockResolvedValue(row);
-    mockTx.genre.delete.mockResolvedValue(row);
     mockTx.$transaction.mockResolvedValue([row] as any);
 
     await repository.create({ name: 'Rock' } as any);
@@ -120,6 +119,7 @@ describe('GenreRepository', () => {
       where: { id: 'g1', deletedAt: null },
       data: { deletedAt: expect.any(Date) },
     });
+    expect(mockTx.genre.delete).not.toHaveBeenCalled();
   });
 
   it('deleteMany covers empty and non-empty branches', async () => {

@@ -187,9 +187,13 @@ export class LibraryRepository {
    * @returns The deleted libraries.
    */
   async deleteMany(filter: LibraryWhereInput): Promise<Library[]> {
+    const combinedWhere: LibraryWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.library.findMany({
-        where: filter,
+        where: combinedWhere,
       });
 
       if (toDelete.length === 0) return [];

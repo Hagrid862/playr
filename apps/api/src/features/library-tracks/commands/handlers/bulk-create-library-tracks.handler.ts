@@ -48,7 +48,7 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
       });
       if (assignableCount !== uniqueGenreIds.length) {
         throw new BadRequestException(
-          'One or more genres are invalid or not avaliable to your library.',
+          'One or more genres are invalid or not available to your library.',
         );
       }
     }

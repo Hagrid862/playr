@@ -129,7 +129,7 @@ export class TrackRepository {
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: TrackWhereInput, userId?: string): Promise<boolean> {
-    const { OR: callerOr, ...baseWhere } = where;
+    const { OR: callerOr, AND: callerAnd, ...baseWhere } = where;
     const accessOr: TrackWhereInput[] = [{ visibility: 'public' }];
     if (userId) {
       accessOr.push(
@@ -160,6 +160,9 @@ export class TrackRepository {
     const andClauses: TrackWhereInput[] = [{ OR: accessOr }];
     if (callerOr && callerOr.length > 0) {
       andClauses.unshift({ OR: callerOr });
+    }
+    if (callerAnd) {
+      andClauses.unshift(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
     }
 
     const track = await this.prisma.client.track.findFirst({

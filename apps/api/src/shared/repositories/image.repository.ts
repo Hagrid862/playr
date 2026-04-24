@@ -189,10 +189,12 @@ export class ImageRepository {
    * @returns The deleted images.
    */
   async deleteMany(filter: ImageWhereInput): Promise<Image[]> {
+    const combinedWhere: ImageWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const toDelete = await tx.image.findMany({
-        where: filter,
-      });
+      const toDelete = await tx.image.findMany({ where: combinedWhere });
 
       if (toDelete.length === 0) return [];
 

@@ -120,7 +120,7 @@ export class ArtistRepository {
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: ArtistWhereInput, userId?: string): Promise<boolean> {
-    const { OR: callerOr, ...baseWhere } = where;
+    const { OR: callerOr, AND: callerAnd, ...baseWhere } = where;
     const accessOr: ArtistWhereInput[] = [{ visibility: 'public' }];
     if (userId) {
       accessOr.push({
@@ -133,6 +133,9 @@ export class ArtistRepository {
     const andClauses: ArtistWhereInput[] = [{ OR: accessOr }];
     if (callerOr && callerOr.length > 0) {
       andClauses.unshift({ OR: callerOr });
+    }
+    if (callerAnd) {
+      andClauses.push(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
     }
 
     const artist = await this.prisma.client.artist.findFirst({
@@ -214,14 +217,13 @@ export class ArtistRepository {
    * @param filter - The where conditions to filter the artists by.
    * @returns The deleted artists.
    */
-  async deleteMany(filter: ArtistWhereInput): Promise<Artist[]> {
-    const combinedWhere: ArtistWhereInput = {
-      ...filter,
-      deletedAt: filter.deletedAt ?? null,
-    };
+  async deleteMany(filter: ArtistWhereInput, options?: { purge?: boolean }): Promise<Artist[]> {
+    const purge = options?.purge ?? false;
+    const baseWhere: ArtistWhereInput = purge ? filter : { ...filter, deletedAt: null };
+
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.artist.findMany({
-        where: combinedWhere,
+        where: baseWhere,
       });
 
       if (toDelete.length === 0) return [];
@@ -251,6 +253,7 @@ export class ArtistRepository {
     const deletedAt = new Date();
 
     return this.prisma.mainClient.$transaction(async (tx) => {
+      // 1. Soft delete albums and tracks via albums
       const albums = await tx.album.findMany({
         where: {
           deletedAt: null,
@@ -268,6 +271,7 @@ export class ArtistRepository {
             })
           : [];
       const trackIds = tracks.map((t) => t.id);
+
       if (trackIds.length > 0) {
         await tx.libraryTrack.updateMany({
           where: { trackId: { in: trackIds }, deletedAt: null },
@@ -290,6 +294,8 @@ export class ArtistRepository {
         });
       }
 
+      // 2. Soft delete tracks directly linked to artist and their libraries
+      // (i.e. where the track's artists relation contains the artist, but not already soft-deleted above)
       const directTracks =
         (await tx.track.findMany({
           where: {
@@ -298,6 +304,7 @@ export class ArtistRepository {
           },
           select: { id: true },
         })) ?? [];
+      // Exclude tracks that were already soft-deleted as album tracks above
       const directTrackIds = directTracks
         .map((track) => track.id)
         .filter((trackId) => !trackIds.includes(trackId));

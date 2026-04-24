@@ -126,7 +126,7 @@ export class AlbumRepository {
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: AlbumWhereInput, userId?: string): Promise<boolean> {
-    const { OR: callerOr, ...baseWhere } = where;
+    const { OR: callerOr, AND: callerAnd, ...baseWhere } = where;
     const accessOr: AlbumWhereInput[] = [{ visibility: 'public' }];
     if (userId) {
       accessOr.push(
@@ -150,6 +150,9 @@ export class AlbumRepository {
     const andClauses: AlbumWhereInput[] = [{ OR: accessOr }];
     if (callerOr && callerOr.length > 0) {
       andClauses.unshift({ OR: callerOr });
+    }
+    if (callerAnd) {
+      andClauses.push(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
     }
 
     const album = await this.prisma.client.album.findFirst({
@@ -232,9 +235,13 @@ export class AlbumRepository {
    * @returns The deleted albums.
    */
   async deleteMany(filter: AlbumWhereInput): Promise<Album[]> {
+    const combinedWhere: AlbumWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.album.findMany({
-        where: filter,
+        where: combinedWhere,
       });
 
       if (toDelete.length === 0) return [];

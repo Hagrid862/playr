@@ -271,19 +271,17 @@ export class LibraryTrackRepository {
    * @returns The restored library tracks.
    */
   async restoreMany(where: LibraryTrackWhereInput): Promise<LibraryTrack[]> {
-    const toRestore = await this.prisma.client.libraryTrack.findMany({
-      where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
-
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.libraryTrack.updateMany({
-      where: { id: { in: ids } },
-      data: { deletedAt: null },
-    });
-
-    return this.prisma.client.libraryTrack.findMany({
-      where: { id: { in: ids } },
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toRestore = await tx.libraryTrack.findMany({
+        where: { ...where, deletedAt: { not: null } },
+      });
+      if (toRestore.length === 0) return [];
+      const ids = toRestore.map((row) => row.id);
+      await tx.libraryTrack.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt: null },
+      });
+      return tx.libraryTrack.findMany({ where: { id: { in: ids } } });
     });
   }
 }
