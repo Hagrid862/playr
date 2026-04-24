@@ -8,6 +8,7 @@ import {
   LibraryOrderByWithRelationInput,
   LibraryUpdateInput,
   LibraryWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -186,17 +187,19 @@ export class LibraryRepository {
    * @returns The deleted libraries.
    */
   async deleteMany(filter: LibraryWhereInput): Promise<Library[]> {
-    const toDelete = await this.prisma.client.library.findMany({
-      where: filter,
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.library.findMany({
+        where: filter,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.library.deleteMany({
+        where: { id: { in: toDelete.map((a) => a.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.library.deleteMany({
-      where: { id: { in: toDelete.map((a) => a.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -254,19 +257,19 @@ export class LibraryRepository {
    * @returns The restored libraries.
    */
   async restoreMany(where: LibraryWhereInput): Promise<Library[]> {
-    const toRestore = await this.prisma.client.library.findMany({
-      where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toRestore = await tx.library.findMany({
+        where: { ...where, deletedAt: { not: null } },
+      });
+      if (toRestore.length === 0) return [];
 
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.library.updateMany({
-      where: { id: { in: ids } },
-      data: { deletedAt: null },
-    });
+      const ids = toRestore.map((row) => row.id);
+      await tx.library.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt: null },
+      });
 
-    return this.prisma.client.library.findMany({
-      where: { id: { in: ids } },
+      return toRestore.map((row) => ({ ...row, deletedAt: null }));
     });
   }
 }

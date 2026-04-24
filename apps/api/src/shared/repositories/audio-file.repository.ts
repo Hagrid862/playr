@@ -8,6 +8,7 @@ import {
   AudioFileOrderByWithRelationInput,
   AudioFileUpdateInput,
   AudioFileWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -188,16 +189,18 @@ export class AudioFileRepository {
    * @returns The deleted audio files.
    */
   async deleteMany(filter: AudioFileWhereInput): Promise<AudioFile[]> {
-    const toDelete = await this.prisma.client.audioFile.findMany({
-      where: filter,
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.audioFile.findMany({
+        where: filter,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.audioFile.deleteMany({
+        where: { id: { in: toDelete.map((a) => a.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.audioFile.deleteMany({
-      where: { id: { in: toDelete.map((a) => a.id) } },
-    });
-
-    return toDelete;
   }
 }

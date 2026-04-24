@@ -8,6 +8,7 @@ import {
   LibraryTrackOrderByWithRelationInput,
   LibraryTrackUpdateInput,
   LibraryTrackWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -196,17 +197,23 @@ export class LibraryTrackRepository {
    * @returns The deleted library tracks.
    */
   async deleteMany(filter: LibraryTrackWhereInput): Promise<LibraryTrack[]> {
-    const toDelete = await this.prisma.client.libraryTrack.findMany({
-      where: filter,
+    const combinedWhere: LibraryTrackWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.libraryTrack.findMany({
+        where: combinedWhere,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.libraryTrack.deleteMany({
+        where: { id: { in: toDelete.map((row) => row.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.libraryTrack.deleteMany({
-      where: { id: { in: toDelete.map((row) => row.id) } },
-    });
-
-    return toDelete;
   }
 
   /**

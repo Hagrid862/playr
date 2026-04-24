@@ -8,6 +8,7 @@ import {
   ImageOrderByWithRelationInput,
   ImageUpdateInput,
   ImageWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -188,17 +189,19 @@ export class ImageRepository {
    * @returns The deleted images.
    */
   async deleteMany(filter: ImageWhereInput): Promise<Image[]> {
-    const toDelete = await this.prisma.client.image.findMany({
-      where: filter,
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.image.findMany({
+        where: filter,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.image.deleteMany({
+        where: { id: { in: toDelete.map((a) => a.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.image.deleteMany({
-      where: { id: { in: toDelete.map((a) => a.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -256,19 +259,19 @@ export class ImageRepository {
    * @returns The restored images.
    */
   async restoreMany(where: ImageWhereInput): Promise<Image[]> {
-    const toRestore = await this.prisma.client.image.findMany({
-      where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toRestore = await tx.image.findMany({
+        where: { ...where, deletedAt: { not: null } },
+      });
+      if (toRestore.length === 0) return [];
 
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.image.updateMany({
-      where: { id: { in: ids } },
-      data: { deletedAt: null },
-    });
+      const ids = toRestore.map((row) => row.id);
+      await tx.image.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt: null },
+      });
 
-    return this.prisma.client.image.findMany({
-      where: { id: { in: ids } },
+      return toRestore.map((row) => ({ ...row, deletedAt: null }));
     });
   }
 }

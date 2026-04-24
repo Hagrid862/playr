@@ -8,6 +8,7 @@ import {
   RefreshTokenOrderByWithRelationInput,
   RefreshTokenUpdateInput,
   RefreshTokenWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -129,7 +130,7 @@ export class RefreshTokenRepository {
   async checkAccess(where: RefreshTokenWhereInput, userId?: string): Promise<boolean> {
     if (!userId) return false;
     const token = await this.prisma.client.refreshToken.findFirst({
-      where: { ...where, deletedAt: null, session: { userId } },
+      where: { ...where, deletedAt: null, session: { userId, deletedAt: null } },
       select: { id: true },
     });
     return !!token;
@@ -205,17 +206,23 @@ export class RefreshTokenRepository {
    * @returns The deleted refresh tokens.
    */
   async deleteMany(filter: RefreshTokenWhereInput): Promise<RefreshToken[]> {
-    const toDelete = await this.prisma.client.refreshToken.findMany({
-      where: filter,
+    const combinedWhere: RefreshTokenWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.refreshToken.findMany({
+        where: combinedWhere,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.refreshToken.deleteMany({
+        where: { id: { in: toDelete.map((row) => row.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.refreshToken.deleteMany({
-      where: { id: { in: toDelete.map((row) => row.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -236,22 +243,9 @@ export class RefreshTokenRepository {
    * @returns The deleted refresh tokens.
    */
   async softDeleteMany(where: RefreshTokenWhereInput): Promise<RefreshToken[]> {
-    const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.refreshToken.findMany({
-        where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.refreshToken.updateMany({
-        where: { id: { in: ids } },
-        data: { deletedAt },
-      });
-
-      return tx.refreshToken.findMany({
-        where: { id: { in: ids } },
-      });
+    return this.prisma.client.refreshToken.updateManyAndReturn({
+      where: { ...where, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -273,19 +267,9 @@ export class RefreshTokenRepository {
    * @returns The restored refresh tokens.
    */
   async restoreMany(where: RefreshTokenWhereInput): Promise<RefreshToken[]> {
-    const toRestore = await this.prisma.client.refreshToken.findMany({
+    return this.prisma.client.refreshToken.updateManyAndReturn({
       where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
-
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.refreshToken.updateMany({
-      where: { id: { in: ids } },
       data: { deletedAt: null },
-    });
-
-    return this.prisma.client.refreshToken.findMany({
-      where: { id: { in: ids } },
     });
   }
 
@@ -294,13 +278,19 @@ export class RefreshTokenRepository {
    * @param id - The id of token that should be revoked.
    * @returns The revoked refresh token.
    */
-  async revoke(id: string): Promise<RefreshToken> {
-    return this.prisma.client.refreshToken.update({
+  async revoke(id: string): Promise<RefreshToken | null> {
+    const revokedAt = new Date();
+    const result = await this.prisma.client.refreshToken.updateMany({
       where: { id, deletedAt: null, revokedAt: null },
       data: {
-        revokedAt: new Date(),
+        revokedAt,
       },
     });
+    if (result.count === 0) {
+      return null;
+    }
+
+    return this.prisma.client.refreshToken.findUnique({ where: { id } });
   }
 
   /**

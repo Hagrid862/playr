@@ -8,6 +8,7 @@ import {
   EmailAddressOrderByWithRelationInput,
   EmailAddressUpdateInput,
   EmailAddressWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -190,17 +191,19 @@ export class EmailAddressRepository {
    * @returns The deleted email addresses.
    */
   async deleteMany(filter: EmailAddressWhereInput): Promise<EmailAddress[]> {
-    const toDelete = await this.prisma.client.emailAddress.findMany({
-      where: filter,
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.emailAddress.findMany({
+        where: filter,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.emailAddress.deleteMany({
+        where: { id: { in: toDelete.map((a) => a.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.emailAddress.deleteMany({
-      where: { id: { in: toDelete.map((a) => a.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -258,19 +261,19 @@ export class EmailAddressRepository {
    * @returns The restored email addresses.
    */
   async restoreMany(where: EmailAddressWhereInput): Promise<EmailAddress[]> {
-    const toRestore = await this.prisma.client.emailAddress.findMany({
-      where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toRestore = await tx.emailAddress.findMany({
+        where: { ...where, deletedAt: { not: null } },
+      });
+      if (toRestore.length === 0) return [];
 
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.emailAddress.updateMany({
-      where: { id: { in: ids } },
-      data: { deletedAt: null },
-    });
+      const ids = toRestore.map((row) => row.id);
+      await tx.emailAddress.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt: null },
+      });
 
-    return this.prisma.client.emailAddress.findMany({
-      where: { id: { in: ids } },
+      return toRestore.map((row) => ({ ...row, deletedAt: null }));
     });
   }
 }

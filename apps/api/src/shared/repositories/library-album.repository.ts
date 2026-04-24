@@ -8,6 +8,7 @@ import {
   LibraryAlbumOrderByWithRelationInput,
   LibraryAlbumUpdateInput,
   LibraryAlbumWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -196,17 +197,19 @@ export class LibraryAlbumRepository {
    * @returns The deleted library albums.
    */
   async deleteMany(filter: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
-    const toDelete = await this.prisma.client.libraryAlbum.findMany({
-      where: filter,
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.libraryAlbum.findMany({
+        where: filter,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.libraryAlbum.deleteMany({
+        where: { id: { in: toDelete.map((row) => row.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.libraryAlbum.deleteMany({
-      where: { id: { in: toDelete.map((row) => row.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -264,19 +267,19 @@ export class LibraryAlbumRepository {
    * @returns The restored library albums.
    */
   async restoreMany(where: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
-    const toRestore = await this.prisma.client.libraryAlbum.findMany({
-      where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toRestore = await tx.libraryAlbum.findMany({
+        where: { ...where, deletedAt: { not: null } },
+      });
+      if (toRestore.length === 0) return [];
 
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.libraryAlbum.updateMany({
-      where: { id: { in: ids } },
-      data: { deletedAt: null },
-    });
+      const ids = toRestore.map((row) => row.id);
+      await tx.libraryAlbum.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt: null },
+      });
 
-    return this.prisma.client.libraryAlbum.findMany({
-      where: { id: { in: ids } },
+      return toRestore.map((row) => ({ ...row, deletedAt: null }));
     });
   }
 }

@@ -8,6 +8,7 @@ import {
   AlbumUpdateInput,
   AlbumWhereInput,
   Album,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -125,33 +126,37 @@ export class AlbumRepository {
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: AlbumWhereInput, userId?: string): Promise<boolean> {
-    const guestId = 'GUEST';
-    const activeUserId = userId ?? guestId;
-
-    const album = await this.prisma.client.album.findFirst({
-      where: {
-        ...where,
-        deletedAt: null,
-        OR: [
-          // 1. Is it Public?
-          { visibility: 'public' },
-          // 2. Direct Album Access? (viewer, editor, or owner)
-          {
-            access: {
-              some: { userId: activeUserId },
-            },
+    const { OR: callerOr, ...baseWhere } = where;
+    const accessOr: AlbumWhereInput[] = [{ visibility: 'public' }];
+    if (userId) {
+      accessOr.push(
+        {
+          access: {
+            some: { userId },
           },
-          // 3. Inherited Artist Access? (If you have access to the Artist, you have access to their albums)
-          {
-            artists: {
-              some: {
-                access: {
-                  some: { userId: activeUserId },
-                },
+        },
+        {
+          artists: {
+            some: {
+              access: {
+                some: { userId },
               },
             },
           },
-        ],
+        },
+      );
+    }
+
+    const andClauses: AlbumWhereInput[] = [{ OR: accessOr }];
+    if (callerOr && callerOr.length > 0) {
+      andClauses.unshift({ OR: callerOr });
+    }
+
+    const album = await this.prisma.client.album.findFirst({
+      where: {
+        ...baseWhere,
+        deletedAt: null,
+        AND: andClauses,
       },
       select: { id: true },
     });
@@ -227,17 +232,19 @@ export class AlbumRepository {
    * @returns The deleted albums.
    */
   async deleteMany(filter: AlbumWhereInput): Promise<Album[]> {
-    const toDelete = await this.prisma.client.album.findMany({
-      where: filter,
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.album.findMany({
+        where: filter,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.album.deleteMany({
+        where: { id: { in: toDelete.map((a) => a.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.album.deleteMany({
-      where: { id: { in: toDelete.map((a) => a.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -328,19 +335,19 @@ export class AlbumRepository {
    * @returns The restored albums.
    */
   async restoreMany(where: AlbumWhereInput): Promise<Album[]> {
-    const albumsToRestore = await this.prisma.client.album.findMany({
-      where: { ...where, deletedAt: { not: null } },
-    });
-    if (albumsToRestore.length === 0) return [];
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const albumsToRestore = await tx.album.findMany({
+        where: { ...where, deletedAt: { not: null } },
+      });
+      if (albumsToRestore.length === 0) return [];
 
-    const albumIds = albumsToRestore.map((album) => album.id);
-    await this.prisma.client.album.updateMany({
-      where: { id: { in: albumIds } },
-      data: { deletedAt: null },
-    });
+      const albumIds = albumsToRestore.map((album) => album.id);
+      await tx.album.updateMany({
+        where: { id: { in: albumIds } },
+        data: { deletedAt: null },
+      });
 
-    return this.prisma.client.album.findMany({
-      where: { id: { in: albumIds } },
+      return albumsToRestore.map((album) => ({ ...album, deletedAt: null }));
     });
   }
 }

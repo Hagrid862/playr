@@ -8,6 +8,7 @@ import {
   ArtistUpdateInput,
   ArtistWhereInput,
   Artist,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -48,15 +49,12 @@ export class ArtistRepository {
   /**
    * Finds multiple artists by the given where conditions.
    * @param where - The where conditions to filter the artists by.
-   * @param options - The options for the query:
-   *   - `take` (number, optional): The maximum number of artists to return. Defaults to 10.
-   *   - `skip` (number, optional): The number of artists to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (ArtistOrderByWithRelationInput or array of it, optional): The order in which to sort the artists. Defaults to descending by `createdAt`.
+   * @param options - Optional query options (`take`, `skip`, `orderBy`).
    * @returns The found artists.
    */
   async findMany(
     where: ArtistWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: ArtistOrderByWithRelationInput | ArtistOrderByWithRelationInput[];
@@ -64,9 +62,9 @@ export class ArtistRepository {
   ): Promise<ArtistGetPayload<{ include: { avatar: true; banner: true } }>[]> {
     return this.prisma.client.artist.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { avatar: true, banner: true },
     });
   }
@@ -74,10 +72,7 @@ export class ArtistRepository {
   /**
    * Finds multiple artists by the given where conditions with relations.
    * @param where - The where conditions to filter the artists by.
-   * @param options - The options for the query:
-   *   - `take` (number, optional): The maximum number of artists to return. Defaults to 10.
-   *   - `skip` (number, optional): The number of artists to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (ArtistOrderByWithRelationInput or array of it, optional): The order in which to sort the artists. Defaults to descending by `createdAt`.
+   * @param options - Optional query options (`take`, `skip`, `orderBy`).
    * @param include - The relations to include in the result.
    * @returns The found artists with relations.
    */
@@ -125,21 +120,26 @@ export class ArtistRepository {
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: ArtistWhereInput, userId?: string): Promise<boolean> {
-    const guestId = 'GUEST';
-    const activeUserId = userId ?? guestId;
+    const { OR: callerOr, ...baseWhere } = where;
+    const accessOr: ArtistWhereInput[] = [{ visibility: 'public' }];
+    if (userId) {
+      accessOr.push({
+        access: {
+          some: { userId },
+        },
+      });
+    }
+
+    const andClauses: ArtistWhereInput[] = [{ OR: accessOr }];
+    if (callerOr && callerOr.length > 0) {
+      andClauses.unshift({ OR: callerOr });
+    }
 
     const artist = await this.prisma.client.artist.findFirst({
       where: {
-        ...where,
+        ...baseWhere,
         deletedAt: null,
-        OR: [
-          { visibility: 'public' },
-          {
-            access: {
-              some: { userId: activeUserId },
-            },
-          },
-        ],
+        AND: andClauses,
       },
       select: { id: true },
     });
@@ -215,17 +215,23 @@ export class ArtistRepository {
    * @returns The deleted artists.
    */
   async deleteMany(filter: ArtistWhereInput): Promise<Artist[]> {
-    const toDelete = await this.prisma.client.artist.findMany({
-      where: filter,
+    const combinedWhere: ArtistWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.artist.findMany({
+        where: combinedWhere,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.artist.deleteMany({
+        where: { id: { in: toDelete.map((a) => a.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.artist.deleteMany({
-      where: { id: { in: toDelete.map((a) => a.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -283,6 +289,30 @@ export class ArtistRepository {
           data: { deletedAt },
         });
       }
+
+      const directTracks =
+        (await tx.track.findMany({
+          where: {
+            deletedAt: null,
+            artists: { some: { id, deletedAt: null } },
+          },
+          select: { id: true },
+        })) ?? [];
+      const directTrackIds = directTracks
+        .map((track) => track.id)
+        .filter((trackId) => !trackIds.includes(trackId));
+
+      if (directTrackIds.length > 0) {
+        await tx.libraryTrack.updateMany({
+          where: { trackId: { in: directTrackIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+        await tx.track.updateMany({
+          where: { id: { in: directTrackIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+      }
+
       await tx.libraryArtist.updateMany({
         where: { artistId: id, deletedAt: null },
         data: { deletedAt },
@@ -301,22 +331,9 @@ export class ArtistRepository {
    * @returns The deleted artists.
    */
   async softDeleteMany(where: ArtistWhereInput): Promise<Artist[]> {
-    const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const artists = await tx.artist.findMany({
-        where: { ...where, deletedAt: null },
-      });
-      if (artists.length === 0) return [];
-
-      const artistIds = artists.map((artist) => artist.id);
-      await tx.artist.updateMany({
-        where: { id: { in: artistIds } },
-        data: { deletedAt },
-      });
-
-      return tx.artist.findMany({
-        where: { id: { in: artistIds } },
-      });
+    return this.prisma.client.artist.updateManyAndReturn({
+      where: { ...where, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -338,19 +355,9 @@ export class ArtistRepository {
    * @returns The restored artists.
    */
   async restoreMany(where: ArtistWhereInput): Promise<Artist[]> {
-    const artistsToRestore = await this.prisma.client.artist.findMany({
+    return this.prisma.client.artist.updateManyAndReturn({
       where: { ...where, deletedAt: { not: null } },
-    });
-    if (artistsToRestore.length === 0) return [];
-
-    const artistIds = artistsToRestore.map((artist) => artist.id);
-    await this.prisma.client.artist.updateMany({
-      where: { id: { in: artistIds } },
       data: { deletedAt: null },
-    });
-
-    return this.prisma.client.artist.findMany({
-      where: { id: { in: artistIds } },
     });
   }
 }

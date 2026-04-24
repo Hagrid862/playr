@@ -8,6 +8,7 @@ import {
   TrackOrderByWithRelationInput,
   TrackUpdateInput,
   TrackWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -128,37 +129,44 @@ export class TrackRepository {
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: TrackWhereInput, userId?: string): Promise<boolean> {
-    const guestId = 'GUEST';
-    const activeUserId = userId ?? guestId;
+    const { OR: callerOr, ...baseWhere } = where;
+    const accessOr: TrackWhereInput[] = [{ visibility: 'public' }];
+    if (userId) {
+      accessOr.push(
+        {
+          access: {
+            some: { userId },
+          },
+        },
+        {
+          album: {
+            access: {
+              some: { userId },
+            },
+          },
+        },
+        {
+          artists: {
+            some: {
+              access: {
+                some: { userId },
+              },
+            },
+          },
+        },
+      );
+    }
+
+    const andClauses: TrackWhereInput[] = [{ OR: accessOr }];
+    if (callerOr && callerOr.length > 0) {
+      andClauses.unshift({ OR: callerOr });
+    }
 
     const track = await this.prisma.client.track.findFirst({
       where: {
-        ...where,
+        ...baseWhere,
         deletedAt: null,
-        OR: [
-          { visibility: 'public' },
-          {
-            access: {
-              some: { userId: activeUserId },
-            },
-          },
-          {
-            album: {
-              access: {
-                some: { userId: activeUserId },
-              },
-            },
-          },
-          {
-            artists: {
-              some: {
-                access: {
-                  some: { userId: activeUserId },
-                },
-              },
-            },
-          },
-        ],
+        AND: andClauses,
       },
       select: { id: true },
     });
@@ -234,17 +242,19 @@ export class TrackRepository {
    * @returns The deleted tracks.
    */
   async deleteMany(filter: TrackWhereInput): Promise<Track[]> {
-    const toDelete = await this.prisma.client.track.findMany({
-      where: filter,
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.track.findMany({
+        where: filter,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.track.deleteMany({
+        where: { id: { in: toDelete.map((row) => row.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.track.deleteMany({
-      where: { id: { in: toDelete.map((row) => row.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -319,19 +329,19 @@ export class TrackRepository {
    * @returns The restored tracks.
    */
   async restoreMany(where: TrackWhereInput): Promise<Track[]> {
-    const toRestore = await this.prisma.client.track.findMany({
-      where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toRestore = await tx.track.findMany({
+        where: { ...where, deletedAt: { not: null } },
+      });
+      if (toRestore.length === 0) return [];
 
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.track.updateMany({
-      where: { id: { in: ids } },
-      data: { deletedAt: null },
-    });
+      const ids = toRestore.map((row) => row.id);
+      await tx.track.updateMany({
+        where: { id: { in: ids } },
+        data: { deletedAt: null },
+      });
 
-    return this.prisma.client.track.findMany({
-      where: { id: { in: ids } },
+      return toRestore.map((row) => ({ ...row, deletedAt: null }));
     });
   }
 }

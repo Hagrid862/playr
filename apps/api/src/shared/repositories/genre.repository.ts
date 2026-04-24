@@ -175,9 +175,7 @@ export class GenreRepository {
    * @returns The deleted genre.
    */
   async delete(id: string): Promise<Genre> {
-    return this.prisma.client.genre.delete({
-      where: { id },
-    });
+    return this.softDelete(id);
   }
 
   /**
@@ -186,17 +184,11 @@ export class GenreRepository {
    * @returns The deleted genres.
    */
   async deleteMany(filter: GenreWhereInput): Promise<Genre[]> {
-    const toDelete = await this.prisma.client.genre.findMany({
-      where: filter,
-    });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.genre.deleteMany({
-      where: { id: { in: toDelete.map((a) => a.id) } },
-    });
-
-    return toDelete;
+    const combinedWhere: GenreWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
+    return this.softDeleteMany(combinedWhere);
   }
 
   /**
@@ -217,22 +209,9 @@ export class GenreRepository {
    * @returns The deleted genres.
    */
   async softDeleteMany(where: GenreWhereInput): Promise<Genre[]> {
-    const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.genre.findMany({
-        where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.genre.updateMany({
-        where: { id: { in: ids } },
-        data: { deletedAt },
-      });
-
-      return tx.genre.findMany({
-        where: { id: { in: ids } },
-      });
+    return this.prisma.mainClient.genre.updateManyAndReturn({
+      where: { ...where, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -254,19 +233,9 @@ export class GenreRepository {
    * @returns The restored genres.
    */
   async restoreMany(where: GenreWhereInput): Promise<Genre[]> {
-    const toRestore = await this.prisma.client.genre.findMany({
+    return this.prisma.client.genre.updateManyAndReturn({
       where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
-
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.genre.updateMany({
-      where: { id: { in: ids } },
       data: { deletedAt: null },
-    });
-
-    return this.prisma.client.genre.findMany({
-      where: { id: { in: ids } },
     });
   }
 }

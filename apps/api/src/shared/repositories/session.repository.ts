@@ -8,6 +8,7 @@ import {
   SessionOrderByWithRelationInput,
   SessionUpdateInput,
   SessionWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -201,17 +202,23 @@ export class SessionRepository {
    * @returns The deleted sessions.
    */
   async deleteMany(filter: SessionWhereInput): Promise<Session[]> {
-    const toDelete = await this.prisma.client.session.findMany({
-      where: filter,
+    const combinedWhere: SessionWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.session.findMany({
+        where: combinedWhere,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.session.deleteMany({
+        where: { id: { in: toDelete.map((row) => row.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.session.deleteMany({
-      where: { id: { in: toDelete.map((row) => row.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
@@ -232,22 +239,9 @@ export class SessionRepository {
    * @returns The deleted sessions.
    */
   async softDeleteMany(where: SessionWhereInput): Promise<Session[]> {
-    const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.session.findMany({
-        where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.session.updateMany({
-        where: { id: { in: ids } },
-        data: { deletedAt },
-      });
-
-      return tx.session.findMany({
-        where: { id: { in: ids } },
-      });
+    return this.prisma.client.session.updateManyAndReturn({
+      where: { ...where, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -269,19 +263,9 @@ export class SessionRepository {
    * @returns The restored sessions.
    */
   async restoreMany(where: SessionWhereInput): Promise<Session[]> {
-    const toRestore = await this.prisma.client.session.findMany({
+    return this.prisma.client.session.updateManyAndReturn({
       where: { ...where, deletedAt: { not: null } },
-    });
-    if (toRestore.length === 0) return [];
-
-    const ids = toRestore.map((row) => row.id);
-    await this.prisma.client.session.updateMany({
-      where: { id: { in: ids } },
       data: { deletedAt: null },
-    });
-
-    return this.prisma.client.session.findMany({
-      where: { id: { in: ids } },
     });
   }
 
@@ -290,13 +274,19 @@ export class SessionRepository {
    * @param id - The id of session that should be revoked.
    * @returns The revoked session.
    */
-  async revoke(id: string): Promise<Session> {
-    return this.prisma.client.session.update({
+  async revoke(id: string): Promise<Session | null> {
+    const revokedAt = new Date();
+    const result = await this.prisma.client.session.updateMany({
       where: { id, deletedAt: null, revokedAt: null },
       data: {
-        revokedAt: new Date(),
+        revokedAt,
       },
     });
+    if (result.count === 0) {
+      return null;
+    }
+
+    return this.prisma.client.session.findUnique({ where: { id } });
   }
 
   /**
