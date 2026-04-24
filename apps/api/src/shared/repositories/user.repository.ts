@@ -8,6 +8,7 @@ import {
   UserOrderByWithRelationInput,
   UserUpdateInput,
   UserWhereInput,
+  Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -186,17 +187,23 @@ export class UserRepository {
    * @returns The deleted users.
    */
   async deleteMany(filter: UserWhereInput): Promise<User[]> {
-    const toDelete = await this.prisma.client.user.findMany({
-      where: filter,
+    const combinedWhere: UserWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
+    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
+      const toDelete = await tx.user.findMany({
+        where: combinedWhere,
+      });
+
+      if (toDelete.length === 0) return [];
+
+      await tx.user.deleteMany({
+        where: { id: { in: toDelete.map((row) => row.id) } },
+      });
+
+      return toDelete;
     });
-
-    if (toDelete.length === 0) return [];
-
-    await this.prisma.client.user.deleteMany({
-      where: { id: { in: toDelete.map((row) => row.id) } },
-    });
-
-    return toDelete;
   }
 
   /**
