@@ -68,6 +68,9 @@ export class TokenService {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
+      if (typeof payload.sub !== 'string' || typeof payload.sessionId !== 'string') {
+        throw new UnauthorizedException('Invalid token');
+      }
 
       const refreshTokenRecord = await this.refreshTokenRepository.findOne({ token });
 
@@ -139,7 +142,8 @@ export class TokenService {
     if (!user) {
       throw new UnauthorizedException('Invalid token');
     }
-    return { user, sessionId: payload.sessionId };
+    const { password: _password, ...principal } = user;
+    return { user: principal, sessionId: payload.sessionId };
   }
 
   async authenticateWithAccessToken(token: string): Promise<AuthenticatedUser> {
