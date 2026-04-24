@@ -78,7 +78,9 @@ describe('ImageRepository', () => {
     mockTx.image.createManyAndReturn.mockResolvedValue([row]);
     mockTx.image.update.mockResolvedValue(row);
     mockTx.image.delete.mockResolvedValue(row);
-    mockTx.$transaction.mockResolvedValue([row] as any);
+    mockTx.$transaction.mockImplementation(async (arg: any) =>
+      typeof arg === 'function' ? arg(mockTx) : arg,
+    );
     await repository.create({ key: 'k' } as any);
     await repository.createMany([{ key: 'k' } as any]);
     await repository.update('im1', { key: 'k2' } as any);

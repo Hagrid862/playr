@@ -44,11 +44,15 @@ describe('TrackRepository', () => {
       where: {
         id: 't1',
         deletedAt: null,
-        OR: [
-          { visibility: 'public' },
-          { access: { some: { userId: 'u1' } } },
-          { album: { access: { some: { userId: 'u1' } } } },
-          { artists: { some: { access: { some: { userId: 'u1' } } } } },
+        AND: [
+          {
+            OR: [
+              { visibility: 'public' },
+              { access: { some: { userId: 'u1' } } },
+              { album: { access: { some: { userId: 'u1' } } } },
+              { artists: { some: { access: { some: { userId: 'u1' } } } } },
+            ],
+          },
         ],
       },
       select: { id: true },

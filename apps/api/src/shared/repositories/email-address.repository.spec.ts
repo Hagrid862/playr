@@ -80,6 +80,15 @@ describe('EmailAddressRepository', () => {
     await expect(repository.exists({ id: 'e1' })).resolves.toBe(false);
     await expect(repository.exists({ id: 'e1' })).resolves.toBe(true);
     await expect(repository.count({ userId: 'u1' })).resolves.toBe(7);
+    expect(mockTx.emailAddress.count).toHaveBeenNthCalledWith(1, {
+      where: { id: 'e1', deletedAt: null },
+    });
+    expect(mockTx.emailAddress.count).toHaveBeenNthCalledWith(2, {
+      where: { id: 'e1', deletedAt: null },
+    });
+    expect(mockTx.emailAddress.count).toHaveBeenNthCalledWith(3, {
+      where: { userId: 'u1', deletedAt: null },
+    });
   });
 
   it('create/update/delete variants are forwarded correctly', async () => {

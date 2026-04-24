@@ -83,10 +83,10 @@ describe('AlbumRepository', () => {
       where: {
         id: 'al1',
         deletedAt: null,
-        OR: [
-          { visibility: 'public' },
-          { access: { some: { userId: 'GUEST' } } },
-          { artists: { some: { access: { some: { userId: 'GUEST' } } } } },
+        AND: [
+          {
+            OR: [{ visibility: 'public' }],
+          },
         ],
       },
       select: { id: true },

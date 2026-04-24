@@ -24,7 +24,7 @@ describe('GenreRepository', () => {
       name: 'Rock',
       slug: 'rock',
       libraryId: 'l1',
-      isSystem: false,
+      kind: 'custom',
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
@@ -84,6 +84,15 @@ describe('GenreRepository', () => {
     await expect(repository.exists({ id: 'g1' })).resolves.toBe(false);
     await expect(repository.exists({ id: 'g1' })).resolves.toBe(true);
     await expect(repository.count({ libraryId: 'l1' })).resolves.toBe(9);
+    expect(mockTx.genre.count).toHaveBeenNthCalledWith(1, {
+      where: { id: 'g1', deletedAt: null },
+    });
+    expect(mockTx.genre.count).toHaveBeenNthCalledWith(2, {
+      where: { id: 'g1', deletedAt: null },
+    });
+    expect(mockTx.genre.count).toHaveBeenNthCalledWith(3, {
+      where: { libraryId: 'l1', deletedAt: null },
+    });
   });
 
   it('create/createMany/update/updateMany/delete map to prisma', async () => {
@@ -107,20 +116,24 @@ describe('GenreRepository', () => {
       where: { id: 'g1', deletedAt: null },
       data: { name: 'Metal' },
     });
-    expect(mockTx.genre.delete).toHaveBeenCalledWith({ where: { id: 'g1' } });
+    expect(mockTx.genre.update).toHaveBeenLastCalledWith({
+      where: { id: 'g1', deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
+    });
   });
 
   it('deleteMany covers empty and non-empty branches', async () => {
     await setup();
-    mockTx.genre.findMany.mockResolvedValueOnce([]);
+    mockTx.genre.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.deleteMany({})).resolves.toEqual([]);
     expect(mockTx.genre.deleteMany).not.toHaveBeenCalled();
 
     const rows = [genreRow('g1'), genreRow('g2')];
-    mockTx.genre.findMany.mockResolvedValueOnce(rows);
+    mockTx.genre.updateManyAndReturn.mockResolvedValueOnce(rows as any);
     await expect(repository.deleteMany({})).resolves.toEqual(rows);
-    expect(mockTx.genre.deleteMany).toHaveBeenCalledWith({
-      where: { id: { in: ['g1', 'g2'] } },
+    expect(mockTx.genre.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
     });
   });
 
@@ -139,23 +152,15 @@ describe('GenreRepository', () => {
       data: { deletedAt: null },
     });
 
-    const txEmpty = { genre: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.genre.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({ libraryId: 'l1' })).resolves.toEqual([]);
 
-    const txRows = {
-      genre: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.genre.updateManyAndReturn.mockResolvedValueOnce([row] as any);
     await expect(repository.softDeleteMany({ libraryId: 'l1' })).resolves.toEqual([row]);
 
-    mockTx.genre.findMany.mockResolvedValueOnce([]);
+    mockTx.genre.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({ libraryId: 'l1' })).resolves.toEqual([]);
-    mockTx.genre.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.genre.updateMany.mockResolvedValue({ count: 1 } as any);
+    mockTx.genre.updateManyAndReturn.mockResolvedValueOnce([row] as any);
     await expect(repository.restoreMany({ libraryId: 'l1' })).resolves.toEqual([row]);
   });
 });

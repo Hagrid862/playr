@@ -37,6 +37,15 @@ describe('SessionRepository', () => {
     await expect(repository.exists({ id: 's1' })).resolves.toBe(false);
     await expect(repository.exists({ id: 's1' })).resolves.toBe(true);
     await expect(repository.count({})).resolves.toBe(4);
+    expect(mockTx.session.count).toHaveBeenNthCalledWith(1, {
+      where: { id: 's1', deletedAt: null },
+    });
+    expect(mockTx.session.count).toHaveBeenNthCalledWith(2, {
+      where: { id: 's1', deletedAt: null },
+    });
+    expect(mockTx.session.count).toHaveBeenNthCalledWith(3, {
+      where: { deletedAt: null },
+    });
 
     await expect(repository.checkAccess({ id: 's1' })).resolves.toBe(false);
     mockTx.session.findFirst.mockResolvedValueOnce({ id: 's1' } as any);
@@ -60,6 +69,9 @@ describe('SessionRepository', () => {
 
   it('delete/softDelete/restore many branches', async () => {
     await setup();
+    mockTx.$transaction.mockImplementation(async (arg: any) =>
+      typeof arg === 'function' ? arg(mockTx) : arg,
+    );
     mockTx.session.findMany.mockResolvedValueOnce([]);
     await expect(repository.deleteMany({})).resolves.toEqual([]);
     const row = sessionBuilder({ id: 's1' });
@@ -70,22 +82,14 @@ describe('SessionRepository', () => {
     await repository.softDelete('s1');
     await repository.restore('s1');
 
-    const txEmpty = { session: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.session.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
-    const txRows = {
-      session: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.session.updateManyAndReturn.mockResolvedValueOnce([row] as any);
     await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
 
-    mockTx.session.findMany.mockResolvedValueOnce([]);
+    mockTx.session.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
-    mockTx.session.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.session.updateMany.mockResolvedValue({ count: 1 } as any);
+    mockTx.session.updateManyAndReturn.mockResolvedValueOnce([row] as any);
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
   });
 });

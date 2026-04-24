@@ -118,7 +118,7 @@ describe('ArtistRepository', () => {
       where: {
         id: 'a1',
         deletedAt: null,
-        OR: [{ visibility: 'public' }, { access: { some: { userId: 'GUEST' } } }],
+        AND: [{ OR: [{ visibility: 'public' }] }],
       },
       select: { id: true },
     });
@@ -128,7 +128,7 @@ describe('ArtistRepository', () => {
       where: {
         id: 'a1',
         deletedAt: null,
-        OR: [{ visibility: 'public' }, { access: { some: { userId: 'u1' } } }],
+        AND: [{ OR: [{ visibility: 'public' }, { access: { some: { userId: 'u1' } } }] }],
       },
       select: { id: true },
     });
@@ -194,7 +194,7 @@ describe('ArtistRepository', () => {
     mockTx.$transaction.mockImplementation(async (cb: any) =>
       cb({
         album: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
-        track: { findMany: vi.fn(), updateMany: vi.fn() },
+        track: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
         libraryTrack: { updateMany: vi.fn() },
         libraryAlbum: { updateMany: vi.fn() },
         libraryArtist: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
@@ -234,27 +234,14 @@ describe('ArtistRepository', () => {
 
   it('softDeleteMany returns empty when none found', async () => {
     await setup();
-    mockTx.$transaction.mockImplementation(async (cb: any) =>
-      cb({
-        artist: {
-          findMany: vi.fn().mockResolvedValue([]),
-          updateMany: vi.fn(),
-        },
-      }),
-    );
+    mockTx.artist.updateManyAndReturn.mockResolvedValue([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
   });
 
   it('softDeleteMany updates and returns rows', async () => {
     await setup();
     const rows = [artistBuilder({ id: 'a1' })];
-    const tx = {
-      artist: {
-        findMany: vi.fn().mockResolvedValueOnce(rows).mockResolvedValueOnce(rows),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementation(async (cb: any) => cb(tx));
+    mockTx.artist.updateManyAndReturn.mockResolvedValue(rows as any);
     await expect(repository.softDeleteMany({})).resolves.toEqual(rows);
   });
 
@@ -268,14 +255,13 @@ describe('ArtistRepository', () => {
       data: { deletedAt: null },
     });
 
-    mockTx.artist.findMany.mockResolvedValueOnce([]);
+    mockTx.artist.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
 
-    mockTx.artist.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.artist.updateMany.mockResolvedValue({ count: 1 } as any);
+    mockTx.artist.updateManyAndReturn.mockResolvedValueOnce([row] as any);
     await expect(repository.restoreMany({})).resolves.toEqual([row]);
-    expect(mockTx.artist.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['a1'] } },
+    expect(mockTx.artist.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: { not: null } },
       data: { deletedAt: null },
     });
   });
