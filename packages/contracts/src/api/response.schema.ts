@@ -36,9 +36,9 @@ export const createPaginatedResponseSchema = <T extends z.ZodTypeAny>(
 ) =>
   z.object({
     items: z.array(itemSchema),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1),
   });
 export type PaginatedResponse<T extends z.ZodTypeAny> = z.infer<
   ReturnType<typeof createPaginatedResponseSchema<T>>
