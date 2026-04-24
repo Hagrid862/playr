@@ -3,7 +3,7 @@ import { OtpCodeService } from '@/features/auth/services/otp-code.service';
 import { MailService } from '@/shared/services/mail.service';
 import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 import type { EmailAddress } from '@repo/db';
-import {OTP_CODE_TTL} from "@/features/auth/constants/auth.constants";
+import { OTP_CODE_TTL } from '@/features/auth/constants/auth.constants';
 
 @Injectable()
 export class EmailAuthService {
@@ -18,7 +18,11 @@ export class EmailAuthService {
   async beginEmailVerification(email: EmailAddress): Promise<boolean> {
     try {
       const otpCode = await this.otpCodeService.generateOTPCode(email, 'emailVerification');
-      const emailSent = await this.mailService.sendEmailVerificationCode(email, otpCode, OTP_CODE_TTL);
+      const emailSent = await this.mailService.sendEmailVerificationCode(
+        email,
+        otpCode,
+        OTP_CODE_TTL,
+      );
 
       if (emailSent) {
         await this.emailAddressRepository.edit(email.id, { status: 'pending' });

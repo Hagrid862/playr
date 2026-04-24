@@ -11,7 +11,6 @@ type VerifyEmailData = VerifyEmailResponse['data'];
 
 @CommandHandler(VerifyEmailCommand)
 export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand> {
-
   constructor(
     private readonly otpCodeService: OtpCodeService,
     private readonly emailAddressRepository: EmailAddressRepository,

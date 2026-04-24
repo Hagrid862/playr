@@ -8,7 +8,11 @@ export class MailService {
 
   constructor(private readonly mailerService: MailerService) {}
 
-  async sendEmailVerificationCode(email: EmailAddress, otpCode: string, ttl: number): Promise<boolean> {
+  async sendEmailVerificationCode(
+    email: EmailAddress,
+    otpCode: string,
+    ttl: number,
+  ): Promise<boolean> {
     try {
       await this.mailerService.sendMail({
         to: email.email,

@@ -3,7 +3,7 @@ import { HashingService } from '@/shared/services/hashing.service';
 import { Redis } from 'ioredis';
 import * as crypto from 'crypto';
 import type { EmailAddress } from '@repo/db';
-import {OTP_CODE_TTL} from "@/features/auth/constants/auth.constants";
+import { OTP_CODE_TTL } from '@/features/auth/constants/auth.constants';
 
 @Injectable()
 export class OtpCodeService {
