@@ -1,6 +1,8 @@
 import { User } from '@repo/db';
 
+export type AuthenticatedPrincipal = Omit<User, 'password'>;
+
 export interface AuthenticatedUser {
-  user: User;
+  user: AuthenticatedPrincipal;
   sessionId?: string;
 }
