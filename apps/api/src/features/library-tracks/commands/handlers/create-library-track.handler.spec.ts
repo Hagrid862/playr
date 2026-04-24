@@ -83,7 +83,7 @@ describe('CreateLibraryTrackHandler', () => {
     genreResolutionService = createMock<GenreResolutionService>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -173,7 +173,7 @@ describe('CreateLibraryTrackHandler', () => {
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
     trackRepository.create.mockResolvedValue(mockTrack);
 
     await handler.execute(genreCommand);

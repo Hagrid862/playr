@@ -55,8 +55,9 @@ describe('CreateLibraryHandler', () => {
 
     libraryRepository.findOne.mockResolvedValue(existingLibrary);
 
-    await expect(handler.execute(command)).rejects.toThrow(ConflictException);
-    await expect(handler.execute(command)).rejects.toThrow('Library already exists');
+    const result = handler.execute(command);
+    await expect(result).rejects.toThrow(ConflictException);
+    await expect(result).rejects.toThrow('Library already exists');
     expect(libraryRepository.create).not.toHaveBeenCalled();
   });
 });

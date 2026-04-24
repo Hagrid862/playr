@@ -62,7 +62,7 @@ describe('CreateLibraryAlbumHandler', () => {
     libraryAlbumRepository = createMock<LibraryAlbumRepository>();
     genreResolutionService = createMock<GenreResolutionService>();
 
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -158,7 +158,7 @@ describe('CreateLibraryAlbumHandler', () => {
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOneWithInclude.mockResolvedValue(null);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
     albumRepository.create.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
 

@@ -52,7 +52,7 @@ describe('CreateLibraryArtistHandler', () => {
     libraryRepository = createMock<LibraryRepository>();
     libraryArtistRepository = createMock<LibraryArtistRepository>();
 
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
 
     // Mock unit of work to just execute the callback
     unitOfWork.runInTransaction.mockImplementation((cb) => cb());
@@ -82,7 +82,7 @@ describe('CreateLibraryArtistHandler', () => {
     );
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
     artistRepository.findOne.mockResolvedValue(null);
     artistRepository.create.mockResolvedValue(mockArtist);
 
@@ -109,7 +109,7 @@ describe('CreateLibraryArtistHandler', () => {
     );
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
     artistRepository.findOne.mockResolvedValue(null);
     artistRepository.create.mockResolvedValue(mockArtist);
 

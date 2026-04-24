@@ -23,6 +23,7 @@ describe('ValidateUserHandler', () => {
     birthDate: '2000-01-01',
     gender: Gender.male,
   });
+  const { password: _password, ...expectedPrincipal } = mockUser;
 
   beforeEach(async () => {
     emailAddressRepository = createMock<EmailAddressRepository>();
@@ -51,7 +52,8 @@ describe('ValidateUserHandler', () => {
       hashingService.compare.mockResolvedValue(true);
 
       const result = await handler.execute(new ValidateUserQuery('test@example.com', 'password'));
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual(expect.objectContaining(expectedPrincipal));
+      expect(result).not.toHaveProperty('password');
     });
 
     it('should return null if user not found', async () => {
@@ -121,7 +123,7 @@ describe('ValidateUserHandler', () => {
       ).rejects.toThrow('Hashing Error');
     });
 
-    it('should strip emailStatus from the returned user object', async () => {
+    it('returns nested user from email-address aggregate when credentials valid and email verified', async () => {
       // Arrange
       emailAddressRepository.findOneWithInclude.mockResolvedValue(
         Object.assign(emailAddressBuilder(), { user: mockUser, status: EmailStatus.verified }),
@@ -132,7 +134,8 @@ describe('ValidateUserHandler', () => {
       const result = await handler.execute(new ValidateUserQuery('test@example.com', 'password'));
 
       // Assert
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual(expect.objectContaining(expectedPrincipal));
+      expect(result).not.toHaveProperty('password');
     });
 
     it('should handle mixed-case email by relying on repository normalization', async () => {
@@ -156,7 +159,8 @@ describe('ValidateUserHandler', () => {
           user: true,
         },
       );
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual(expect.objectContaining(expectedPrincipal));
+      expect(result).not.toHaveProperty('password');
     });
 
     it('should return null if password is an empty string', async () => {

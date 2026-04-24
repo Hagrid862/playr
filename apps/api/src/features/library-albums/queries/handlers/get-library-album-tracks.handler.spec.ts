@@ -1,9 +1,10 @@
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { PreconditionFailedException } from '@nestjs/common';
+import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Visibility } from '@repo/db';
 import {
+  albumBuilder,
   libraryBuilder,
   libraryTrackBuilder,
   trackBuilder,
@@ -36,13 +37,18 @@ describe('GetLibraryAlbumTracksHandler', () => {
     duration: 180,
     visibility: Visibility.private,
   });
+  const mockTrackWithRelations = {
+    ...mockTrack,
+    artists: [],
+    album: { ...albumBuilder({ id: albumId }), cover: null },
+  };
   const mockLibraryTrack = {
     ...libraryTrackBuilder({
       id: 'lib-track-123',
       libraryId: mockLibrary.id,
       trackId: mockTrack.id,
     }),
-    track: mockTrack,
+    track: mockTrackWithRelations,
   };
 
   beforeEach(async () => {
@@ -66,11 +72,11 @@ describe('GetLibraryAlbumTracksHandler', () => {
 
   it('should return album tracks for a user library', async () => {
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    libraryTrackRepository.findManyWithInclude.mockResolvedValue([mockLibraryTrack] as never);
+    libraryTrackRepository.findManyWithInclude.mockResolvedValue([mockLibraryTrack]);
 
     const result = await handler.execute(query);
 
-    expect(result).toEqual([mockTrack]);
+    expect(result).toEqual([mockTrackWithRelations]);
     expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(libraryTrackRepository.findManyWithInclude).toHaveBeenCalledWith(
       {
@@ -99,5 +105,14 @@ describe('GetLibraryAlbumTracksHandler', () => {
     libraryRepository.findOne.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
+  });
+
+  it('should throw InternalServerErrorException when track parsing fails', async () => {
+    libraryRepository.findOne.mockResolvedValue(mockLibrary);
+    libraryTrackRepository.findManyWithInclude.mockResolvedValue([
+      { ...mockLibraryTrack, track: { ...mockTrackWithRelations, title: 123 } as never },
+    ]);
+
+    await expect(handler.execute(query)).rejects.toThrow(InternalServerErrorException);
   });
 });

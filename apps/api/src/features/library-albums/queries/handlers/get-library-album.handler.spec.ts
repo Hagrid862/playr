@@ -48,7 +48,23 @@ describe('GetLibraryAlbumHandler', () => {
     const result = await handler.execute(query);
 
     expect(result.id).toBe(mockAlbumId);
-    expect(albumRepository.findOneWithInclude).toHaveBeenCalled();
+    expect(albumRepository.findOneWithInclude).toHaveBeenCalledWith(
+      { id: mockAlbumId },
+      {
+        cover: true,
+        access: true,
+        tracks: {
+          where: { deletedAt: null },
+          include: {
+            artists: true,
+            album: {
+              include: { cover: true },
+            },
+          },
+        },
+        artists: true,
+      },
+    );
   });
 
   it('should throw NotFoundException if album not found', async () => {

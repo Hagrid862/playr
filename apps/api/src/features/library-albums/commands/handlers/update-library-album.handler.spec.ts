@@ -46,7 +46,7 @@ describe('UpdateLibraryAlbumHandler', () => {
       ...libraryBuilder({ id: 'library-123', userId: mockUserId }),
       user: userBuilder({ id: mockUserId }),
     } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

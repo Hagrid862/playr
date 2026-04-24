@@ -45,6 +45,11 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     mimeType: 'image/webp',
     uploadStatus: ImageUploadStatus.uploaded,
   });
+  const oldCoverImage = imageBuilder({
+    id: 'old-cover-id',
+    bucket: FileBucket.public,
+    key: 'old-key',
+  });
 
   beforeEach(async () => {
     albumRepository = createMock<AlbumRepository>();
@@ -122,7 +127,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     const mockAlbumWithCover = {
       ...albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' }),
       access: [],
-      cover: null,
+      cover: oldCoverImage,
     } as AlbumWithRelations;
 
     albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
@@ -172,7 +177,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     const mockAlbumWithCover = {
       ...albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' }),
       access: [],
-      cover: null,
+      cover: oldCoverImage,
     } as AlbumWithRelations;
 
     albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
@@ -254,7 +259,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     const mockAlbumWithCover = {
       ...albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' }),
       access: [],
-      cover: null,
+      cover: oldCoverImage,
     } as AlbumWithRelations;
 
     albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);

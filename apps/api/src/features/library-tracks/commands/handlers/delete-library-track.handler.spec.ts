@@ -158,9 +158,18 @@ describe('DeleteLibraryTrackHandler', () => {
       status: ProcessingStatus.complete,
     });
     const mockAudioFile2 = buildAudioFileWithTrack({
-      ...mockAudioFile1,
       id: 'audio-2',
+      trackId,
+      bucket: FileBucket.private,
       key: 'audio/key2',
+      mimeType: 'audio/mpeg',
+      size: 1000,
+      format: AudioFormat.mp3,
+      duration: 180,
+      bitrate: 320,
+      sampleRate: 44100,
+      channels: 2,
+      status: ProcessingStatus.complete,
     });
     trackRepository.findOne.mockResolvedValue(mockTrack);
     audioFileRepository.findMany.mockResolvedValue([mockAudioFile1, mockAudioFile2]);

@@ -63,7 +63,7 @@ describe('UpdateLibraryTrackHandler', () => {
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,7 +84,8 @@ describe('UpdateLibraryTrackHandler', () => {
 
   it('should update track and artists', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    const { access: _ignoredAccess, ...baseTrack } = mockTrack;
+    const baseTrack = { ...mockTrack };
+    delete (baseTrack as { access?: unknown }).access;
     const updatedTrack = { ...baseTrack, title: 'Updated Title' };
     trackRepository.update.mockResolvedValue(updatedTrack);
 
@@ -108,7 +109,8 @@ describe('UpdateLibraryTrackHandler', () => {
 
   it('should update track without artists if artistIds not provided', async () => {
     trackRepository.findOne.mockResolvedValue(mockTrack);
-    const { access: _ignoredAccess, ...baseTrack } = mockTrack;
+    const baseTrack = { ...mockTrack };
+    delete (baseTrack as { access?: unknown }).access;
     const updatedTrack = { ...baseTrack, title: 'Updated Title' };
     trackRepository.update.mockResolvedValue(updatedTrack);
 

@@ -86,7 +86,7 @@ describe('UpdateLibraryArtistHandler', () => {
 
     artistRepository.findOne.mockResolvedValue(mockArtistWithMedia);
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
     artistRepository.update.mockResolvedValue(mockArtist);
 
     await handler.execute(command);
@@ -109,14 +109,14 @@ describe('UpdateLibraryArtistHandler', () => {
 
     artistRepository.findOne.mockResolvedValue(mockArtistWithMedia);
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
-    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    genreResolutionService.assertGenreIdsAssignableToLibrary.mockResolvedValue(undefined);
     artistRepository.update.mockResolvedValue(mockUpdatedArtist);
 
     await handler.execute(command);
 
     expect(genreResolutionService.assertGenreIdsAssignableToLibrary).toHaveBeenCalledWith(
       mockLibrary.id,
-      ['genre-1', 'genre-1', 'genre-2'],
+      ['genre-1', 'genre-2'],
     );
     expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
       name: undefined,
