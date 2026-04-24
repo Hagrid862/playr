@@ -46,7 +46,7 @@ export class RefreshTokenRepository {
     });
   }
 
-  /** 
+  /**
    * Finds multiple refresh tokens by the given where conditions.
    * @param where - The where conditions to filter the refresh tokens by.
    * @param options - The options for the query:

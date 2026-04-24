@@ -139,16 +139,16 @@ test.describe("Playback Functionality", () => {
       // Reload at most every few seconds; between reloads, let Playwright
       // auto-wait for the "Processing" label to disappear. "Processing failed" is terminal — fail fast, do not reload until it vanishes.
       while (Date.now() < deadline) {
-        await expect(trackRow.getByLabel("Processing")).toHaveCount(0, {
-          timeout: 5_000,
-        }).catch(() => {});
+        await expect(trackRow.getByLabel("Processing"))
+          .toHaveCount(0, {
+            timeout: 5_000,
+          })
+          .catch(() => {});
         const failedCount = await trackRow
           .getByLabel("Processing failed")
           .count();
         if (failedCount > 0) throw processingFailedError();
-        const processingCount = await trackRow
-          .getByLabel("Processing")
-          .count();
+        const processingCount = await trackRow.getByLabel("Processing").count();
         if (processingCount === 0) break;
         await page.reload({ waitUntil: "networkidle" });
       }

@@ -158,11 +158,11 @@ export class TrackRepository {
     }
 
     const andClauses: TrackWhereInput[] = [{ OR: accessOr }];
-    if (callerOr) {  
-      const orList = Array.isArray(callerOr) ? callerOr : [callerOr];  
-      if (orList.length > 0) {  
-        andClauses.unshift({ OR: orList });  
-      }  
+    if (callerOr) {
+      const orList = Array.isArray(callerOr) ? callerOr : [callerOr];
+      if (orList.length > 0) {
+        andClauses.unshift({ OR: orList });
+      }
     }
     if (callerAnd) {
       andClauses.unshift(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
@@ -246,7 +246,7 @@ export class TrackRepository {
     });
   }
 
-  /** 
+  /**
    * WARNING: This method performs a permanent (hard) delete and purges the tracks from the database without checking or respecting the deletedAt field.
    * Deletes multiple tracks by the given where conditions.
    * @param filter - The where conditions to filter the tracks by.
@@ -256,7 +256,7 @@ export class TrackRepository {
     const combinedWhere: TrackWhereInput = {
       ...filter,
       deletedAt: filter.deletedAt ?? null,
-    }
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.track.findMany({
         where: combinedWhere,
