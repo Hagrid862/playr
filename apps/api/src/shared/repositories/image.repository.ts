@@ -57,7 +57,7 @@ export class ImageRepository {
    */
   async findMany(
     where: ImageWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: ImageOrderByWithRelationInput | ImageOrderByWithRelationInput[];
@@ -65,9 +65,9 @@ export class ImageRepository {
   ): Promise<ImageGetPayload<{ include: { variants: true } }>[]> {
     return this.prisma.client.image.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { variants: true },
     });
   }
@@ -84,18 +84,18 @@ export class ImageRepository {
    */
   async findManyWithInclude<I extends ImageInclude>(
     where: ImageWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: ImageOrderByWithRelationInput | ImageOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<ImageGetPayload<{ include: I }>[]> {
     return this.prisma.client.image.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -229,22 +229,12 @@ export class ImageRepository {
    */
   async softDeleteMany(where: ImageWhereInput): Promise<Image[]> {
     const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.image.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.image.updateManyAndReturn({
         where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.image.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt },
-      });
-
-      return tx.image.findMany({
-        where: { id: { in: ids } },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -265,19 +255,11 @@ export class ImageRepository {
    * @returns The restored images.
    */
   async restoreMany(where: ImageWhereInput): Promise<Image[]> {
-    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const toRestore = await tx.image.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.image.updateManyAndReturn({
         where: { ...where, deletedAt: { not: null } },
-      });
-      if (toRestore.length === 0) return [];
-
-      const ids = toRestore.map((row) => row.id);
-      await tx.image.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt: null },
-      });
-
-      return toRestore.map((row) => ({ ...row, deletedAt: null }));
-    });
+      }),
+    );
   }
 }

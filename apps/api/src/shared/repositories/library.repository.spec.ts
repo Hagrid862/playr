@@ -29,11 +29,11 @@ describe('LibraryRepository', () => {
     await repository.findOne({ id: 'l1' });
     await repository.findOneWithInclude({ id: 'l1' }, { user: true });
     await repository.findMany({ userId: 'u1' }, {});
-    await repository.findManyWithInclude({ userId: 'u1' }, {}, { user: true });
+    await repository.findManyWithInclude({ userId: 'u1' }, { user: true }, {});
     await repository.findManyWithInclude(
       { userId: 'u1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { user: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
 
     expect(mockTx.library.findFirst).toHaveBeenNthCalledWith(1, {
@@ -82,10 +82,32 @@ describe('LibraryRepository', () => {
     mockTx.$transaction.mockResolvedValue([row] as any);
 
     await repository.create({ userId: 'u1' } as any);
+    expect(mockTx.library.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.library.create).toHaveBeenCalledWith({ data: { userId: 'u1' } });
+
     await repository.createMany([{ userId: 'u1' } as any]);
+    expect(mockTx.library.createManyAndReturn).toHaveBeenCalledWith({ data: [{ userId: 'u1' }] });
+
     await repository.update('l1', { name: 'My Library' } as any);
+    expect(mockTx.library.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'l1', deletedAt: null },
+      data: { name: 'My Library' },
+    });
+
     await repository.updateMany([{ id: 'l1', data: { name: 'My Library' } as any }]);
+    expect(mockTx.library.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 'l1', deletedAt: null },
+      data: { name: 'My Library' },
+    });
+    expect(mockTx.$transaction).toHaveBeenCalledTimes(1);
+    const txArg = mockTx.$transaction.mock.calls[0]?.[0];
+    expect(Array.isArray(txArg)).toBe(true);
+    if (Array.isArray(txArg)) {
+      expect(txArg).toHaveLength(1);
+    }
+
     await repository.delete('l1');
+    expect(mockTx.library.delete).toHaveBeenCalledWith({ where: { id: 'l1' } });
   });
 
   it('deleteMany and soft/restore many branches', async () => {
@@ -102,23 +124,16 @@ describe('LibraryRepository', () => {
     await repository.softDelete('l1');
     await repository.restore('l1');
 
-    const txEmpty = { library: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.library.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
 
-    const txRows = {
-      library: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.library.updateManyAndReturn.mockResolvedValueOnce([row]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
 
-    mockTx.library.findMany.mockResolvedValueOnce([]);
+    mockTx.library.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
-    mockTx.library.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.library.updateMany.mockResolvedValue({ count: 1 } as any);
-    await expect(repository.restoreMany({})).resolves.toEqual([row]);
+
+    mockTx.library.updateManyAndReturn.mockResolvedValueOnce([{ ...row, deletedAt: null }]);
+    await expect(repository.restoreMany({})).resolves.toEqual([{ ...row, deletedAt: null }]);
   });
 });

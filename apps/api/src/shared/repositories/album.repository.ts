@@ -57,7 +57,7 @@ export class AlbumRepository {
    */
   async findMany(
     where: AlbumWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: AlbumOrderByWithRelationInput | AlbumOrderByWithRelationInput[];
@@ -65,9 +65,9 @@ export class AlbumRepository {
   ): Promise<AlbumGetPayload<{ include: { access: true; cover: true } }>[]> {
     return this.prisma.client.album.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { access: true, cover: true },
     });
   }
@@ -84,18 +84,18 @@ export class AlbumRepository {
    */
   async findManyWithInclude<I extends AlbumInclude>(
     where: AlbumWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: AlbumOrderByWithRelationInput | AlbumOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<AlbumGetPayload<{ include: I }>[]> {
     return this.prisma.client.album.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -259,10 +259,10 @@ export class AlbumRepository {
   /**
    * Soft deletes an album by the given ID.
    * @param id - The ID of the album to soft delete.
-   * @param cascade - Option to delete related tracks and library links
+   * @param options - Set `{ cascade: true }` to soft delete related tracks and library links.
    * @returns The deleted album.
    */
-  async softDelete(id: string, cascade: boolean = false): Promise<Album> {
+  async softDelete(id: string, { cascade = false }: { cascade?: boolean } = {}): Promise<Album> {
     if (!cascade) {
       return this.prisma.client.album.update({
         where: { id, deletedAt: null },
@@ -308,22 +308,12 @@ export class AlbumRepository {
    */
   async softDeleteMany(where: AlbumWhereInput): Promise<Album[]> {
     const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const albums = await tx.album.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.album.updateManyAndReturn({
         where: { ...where, deletedAt: null },
-      });
-      if (albums.length === 0) return [];
-
-      const albumIds = albums.map((album) => album.id);
-      await tx.album.updateMany({
-        where: { id: { in: albumIds } },
         data: { deletedAt },
-      });
-
-      return tx.album.findMany({
-        where: { id: { in: albumIds } },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -344,19 +334,11 @@ export class AlbumRepository {
    * @returns The restored albums.
    */
   async restoreMany(where: AlbumWhereInput): Promise<Album[]> {
-    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const albumsToRestore = await tx.album.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.album.updateManyAndReturn({
         where: { ...where, deletedAt: { not: null } },
-      });
-      if (albumsToRestore.length === 0) return [];
-
-      const albumIds = albumsToRestore.map((album) => album.id);
-      await tx.album.updateMany({
-        where: { id: { in: albumIds } },
         data: { deletedAt: null },
-      });
-
-      return albumsToRestore.map((album) => ({ ...album, deletedAt: null }));
-    });
+      }),
+    );
   }
 }

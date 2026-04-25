@@ -26,11 +26,11 @@ describe('UserRepository', () => {
     await repository.findOne({ id: 'u1' });
     await repository.findOneWithInclude({ id: 'u1' }, { avatar: true });
     await repository.findMany({ username: { contains: 'a' } }, {});
-    await repository.findManyWithInclude({ id: 'u1' }, {}, { avatar: true });
+    await repository.findManyWithInclude({ id: 'u1' }, { avatar: true }, {});
     await repository.findManyWithInclude(
       { id: 'u1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { avatar: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
 
     mockTx.user.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1).mockResolvedValueOnce(5);
@@ -49,6 +49,66 @@ describe('UserRepository', () => {
     await repository.update('u1', { username: 'u2' } as any);
     await repository.updateMany([{ id: 'u1', data: { username: 'u3' } as any }]);
     await repository.delete('u1');
+
+    expect(mockTx.user.findFirst).toHaveBeenCalledTimes(2);
+    expect(mockTx.user.findFirst).toHaveBeenNthCalledWith(1, {
+      where: { id: 'u1', deletedAt: null },
+      include: { avatar: true },
+    });
+    expect(mockTx.user.findFirst).toHaveBeenNthCalledWith(2, {
+      where: { id: 'u1', deletedAt: null },
+      include: { avatar: true },
+    });
+
+    expect(mockTx.user.findMany).toHaveBeenCalledTimes(3);
+    expect(mockTx.user.findMany).toHaveBeenNthCalledWith(1, {
+      where: { username: { contains: 'a' }, deletedAt: null },
+      take: 10,
+      skip: 0,
+      orderBy: { createdAt: 'desc' },
+      include: { avatar: true },
+    });
+    expect(mockTx.user.findMany).toHaveBeenNthCalledWith(2, {
+      where: { id: 'u1', deletedAt: null },
+      take: 10,
+      skip: 0,
+      orderBy: { createdAt: 'desc' },
+      include: { avatar: true },
+    });
+    expect(mockTx.user.findMany).toHaveBeenNthCalledWith(3, {
+      where: { id: 'u1', deletedAt: null },
+      take: 2,
+      skip: 1,
+      orderBy: { createdAt: 'asc' },
+      include: { avatar: true },
+    });
+
+    expect(mockTx.user.count).toHaveBeenCalledTimes(3);
+    expect(mockTx.user.count).toHaveBeenNthCalledWith(1, { where: { id: 'u1', deletedAt: null } });
+    expect(mockTx.user.count).toHaveBeenNthCalledWith(2, { where: { id: 'u1', deletedAt: null } });
+    expect(mockTx.user.count).toHaveBeenNthCalledWith(3, { where: { deletedAt: null } });
+
+    expect(mockTx.user.create).toHaveBeenCalledWith({ data: { username: 'u' } });
+    expect(mockTx.user.createManyAndReturn).toHaveBeenCalledWith({ data: [{ username: 'u' }] });
+
+    expect(mockTx.user.update).toHaveBeenCalledTimes(2);
+    expect(mockTx.user.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'u1', deletedAt: null },
+      data: { username: 'u2' },
+    });
+    expect(mockTx.user.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 'u1', deletedAt: null },
+      data: { username: 'u3' },
+    });
+
+    expect(mockTx.$transaction).toHaveBeenCalledTimes(1);
+    const txArg = mockTx.$transaction.mock.calls[0]?.[0];
+    expect(Array.isArray(txArg)).toBe(true);
+    if (Array.isArray(txArg)) {
+      expect(txArg).toHaveLength(1);
+    }
+
+    expect(mockTx.user.delete).toHaveBeenCalledWith({ where: { id: 'u1' } });
   });
 
   it('deleteMany/softDeleteMany/restoreMany empty and non-empty paths', async () => {

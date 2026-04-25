@@ -39,11 +39,11 @@ describe('LibraryAlbumRepository', () => {
     });
 
     await repository.findMany({ libraryId: 'l1' }, {});
-    await repository.findManyWithInclude({ libraryId: 'l1' }, {}, { album: true });
+    await repository.findManyWithInclude({ libraryId: 'l1' }, { album: true }, {});
     await repository.findManyWithInclude(
       { libraryId: 'l1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { album: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
     expect(mockTx.libraryAlbum.findMany).toHaveBeenNthCalledWith(1, {
       where: { libraryId: 'l1', deletedAt: null },
@@ -124,25 +124,18 @@ describe('LibraryAlbumRepository', () => {
     await repository.softDelete('la1');
     await repository.restore('la1');
 
-    const txEmpty = {
-      libraryAlbum: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.libraryAlbum.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({ libraryId: 'l1' })).resolves.toEqual([]);
 
-    const txRows = {
-      libraryAlbum: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.libraryAlbum.updateManyAndReturn.mockResolvedValueOnce([row]);
     await expect(repository.softDeleteMany({ libraryId: 'l1' })).resolves.toEqual([row]);
 
-    mockTx.libraryAlbum.findMany.mockResolvedValueOnce([]);
+    mockTx.libraryAlbum.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({ libraryId: 'l1' })).resolves.toEqual([]);
-    mockTx.libraryAlbum.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 1 } as any);
-    await expect(repository.restoreMany({ libraryId: 'l1' })).resolves.toEqual([row]);
+
+    mockTx.libraryAlbum.updateManyAndReturn.mockResolvedValueOnce([{ ...row, deletedAt: null }]);
+    await expect(repository.restoreMany({ libraryId: 'l1' })).resolves.toEqual([
+      { ...row, deletedAt: null },
+    ]);
   });
 });

@@ -59,7 +59,7 @@ export class TrackRepository {
    */
   async findMany(
     where: TrackWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: TrackOrderByWithRelationInput | TrackOrderByWithRelationInput[];
@@ -67,9 +67,9 @@ export class TrackRepository {
   ): Promise<TrackGetPayload<{ include: { access: true } }>[]> {
     return this.prisma.client.track.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { access: true },
     });
   }
@@ -86,18 +86,18 @@ export class TrackRepository {
    */
   async findManyWithInclude<I extends TrackInclude>(
     where: TrackWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: TrackOrderByWithRelationInput | TrackOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<TrackGetPayload<{ include: I }>[]> {
     return this.prisma.client.track.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -275,10 +275,10 @@ export class TrackRepository {
   /**
    * Soft deletes a track by the given ID.
    * @param id - The ID of the track to soft delete.
-   * @param cascade - Option to delete related library links
+   * @param options - Set `{ cascade: true }` to soft delete related library-track links in the same transaction.
    * @returns The deleted track.
    */
-  async softDelete(id: string, cascade: boolean = false): Promise<Track> {
+  async softDelete(id: string, { cascade = false }: { cascade?: boolean } = {}): Promise<Track> {
     if (!cascade) {
       return this.prisma.client.track.update({
         where: { id, deletedAt: null },
@@ -308,22 +308,12 @@ export class TrackRepository {
    */
   async softDeleteMany(where: TrackWhereInput): Promise<Track[]> {
     const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.track.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.track.updateManyAndReturn({
         where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.track.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt },
-      });
-
-      return tx.track.findMany({
-        where: { id: { in: ids } },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -344,19 +334,11 @@ export class TrackRepository {
    * @returns The restored tracks.
    */
   async restoreMany(where: TrackWhereInput): Promise<Track[]> {
-    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const toRestore = await tx.track.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.track.updateManyAndReturn({
         where: { ...where, deletedAt: { not: null } },
-      });
-      if (toRestore.length === 0) return [];
-
-      const ids = toRestore.map((row) => row.id);
-      await tx.track.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt: null },
-      });
-
-      return toRestore.map((row) => ({ ...row, deletedAt: null }));
-    });
+      }),
+    );
   }
 }

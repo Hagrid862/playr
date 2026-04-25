@@ -61,7 +61,7 @@ export class LibraryTrackRepository {
    */
   async findMany(
     where: LibraryTrackWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
@@ -69,9 +69,9 @@ export class LibraryTrackRepository {
   ): Promise<LibraryTrackGetPayload<{ include: typeof defaultLibraryTrackFindInclude }>[]> {
     return this.prisma.client.libraryTrack.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: defaultLibraryTrackFindInclude,
     });
   }
@@ -88,18 +88,18 @@ export class LibraryTrackRepository {
    */
   async findManyWithInclude<I extends LibraryTrackInclude>(
     where: LibraryTrackWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<LibraryTrackGetPayload<{ include: I }>[]> {
     return this.prisma.client.libraryTrack.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -237,22 +237,12 @@ export class LibraryTrackRepository {
    */
   async softDeleteMany(where: LibraryTrackWhereInput): Promise<LibraryTrack[]> {
     const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.libraryTrack.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.libraryTrack.updateManyAndReturn({
         where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.libraryTrack.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt },
-      });
-
-      return tx.libraryTrack.findMany({
-        where: { id: { in: ids } },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -273,17 +263,11 @@ export class LibraryTrackRepository {
    * @returns The restored library tracks.
    */
   async restoreMany(where: LibraryTrackWhereInput): Promise<LibraryTrack[]> {
-    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const toRestore = await tx.libraryTrack.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.libraryTrack.updateManyAndReturn({
         where: { ...where, deletedAt: { not: null } },
-      });
-      if (toRestore.length === 0) return [];
-      const ids = toRestore.map((row) => row.id);
-      await tx.libraryTrack.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt: null },
-      });
-      return tx.libraryTrack.findMany({ where: { id: { in: ids } } });
-    });
+      }),
+    );
   }
 }

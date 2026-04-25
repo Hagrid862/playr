@@ -255,7 +255,10 @@ export class GenreResolutionService {
     const unique = [...new Set(genreIds)];
     const assignableCount = await this.genreRepository.count({
       id: { in: unique },
-      OR: [{ kind: 'system', libraryId: null }, { libraryId: libraryId }],
+      OR: [
+        { kind: 'system', libraryId: null },
+        { kind: 'custom', libraryId: libraryId },
+      ],
     });
 
     if (assignableCount !== unique.length) {

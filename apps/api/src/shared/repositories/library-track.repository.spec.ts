@@ -29,11 +29,11 @@ describe('LibraryTrackRepository', () => {
     await repository.findOne({ id: 'lt1' });
     await repository.findOneWithInclude({ id: 'lt1' }, { track: true });
     await repository.findMany({ libraryId: 'l1' }, {});
-    await repository.findManyWithInclude({ libraryId: 'l1' }, {}, { track: true });
+    await repository.findManyWithInclude({ libraryId: 'l1' }, { track: true }, {});
     await repository.findManyWithInclude(
       { libraryId: 'l1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { track: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
 
     expect(mockTx.libraryTrack.findFirst).toHaveBeenNthCalledWith(1, {
@@ -44,6 +44,32 @@ describe('LibraryTrackRepository', () => {
     });
     expect(mockTx.libraryTrack.findFirst).toHaveBeenNthCalledWith(2, {
       where: { id: 'lt1', deletedAt: null },
+      include: { track: true },
+    });
+
+    const defaultTrackInclude = {
+      track: { include: { artists: true, album: true, genres: { include: { genre: true } } } },
+    };
+
+    expect(mockTx.libraryTrack.findMany).toHaveBeenNthCalledWith(1, {
+      where: { libraryId: 'l1', deletedAt: null },
+      take: 10,
+      skip: 0,
+      orderBy: { createdAt: 'desc' },
+      include: defaultTrackInclude,
+    });
+    expect(mockTx.libraryTrack.findMany).toHaveBeenNthCalledWith(2, {
+      where: { libraryId: 'l1', deletedAt: null },
+      take: 10,
+      skip: 0,
+      orderBy: { createdAt: 'desc' },
+      include: { track: true },
+    });
+    expect(mockTx.libraryTrack.findMany).toHaveBeenNthCalledWith(3, {
+      where: { libraryId: 'l1', deletedAt: null },
+      take: 2,
+      skip: 1,
+      orderBy: { createdAt: 'asc' },
       include: { track: true },
     });
   });
@@ -83,25 +109,30 @@ describe('LibraryTrackRepository', () => {
     await repository.softDelete('lt1');
     await repository.restore('lt1');
 
-    const txEmpty = {
-      libraryTrack: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.libraryTrack.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
 
-    const txRows = {
-      libraryTrack: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.libraryTrack.updateManyAndReturn.mockResolvedValueOnce([row]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
+    expect(mockTx.libraryTrack.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
+    });
 
-    mockTx.libraryTrack.findMany.mockResolvedValueOnce([]);
+    vi.mocked(mockTx.libraryTrack.updateManyAndReturn).mockClear();
+    mockTx.libraryTrack.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
-    mockTx.libraryTrack.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.libraryTrack.updateMany.mockResolvedValue({ count: 1 } as any);
-    await expect(repository.restoreMany({})).resolves.toEqual([row]);
+    expect(mockTx.libraryTrack.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: { not: null } },
+      data: { deletedAt: null },
+    });
+
+    vi.mocked(mockTx.libraryTrack.updateManyAndReturn).mockClear();
+    mockTx.libraryTrack.updateManyAndReturn.mockResolvedValueOnce([{ ...row, deletedAt: null }]);
+    await expect(repository.restoreMany({})).resolves.toEqual([{ ...row, deletedAt: null }]);
+    expect(mockTx.libraryTrack.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: { not: null } },
+      data: { deletedAt: null },
+    });
   });
 });

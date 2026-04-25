@@ -78,18 +78,18 @@ export class ArtistRepository {
    */
   async findManyWithInclude<I extends ArtistInclude>(
     where: ArtistWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: ArtistOrderByWithRelationInput | ArtistOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<ArtistGetPayload<{ include: I }>[]> {
     return this.prisma.client.artist.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -239,10 +239,10 @@ export class ArtistRepository {
   /**
    * Soft deletes an artist by the given ID.
    * @param id - The ID of the artist to soft delete.
-   * @param cascade - Option to delete related albums, tracks and library links
+   * @param options - Set `{ cascade: true }` to soft delete related albums, tracks and library links.
    * @returns The deleted artist.
    */
-  async softDelete(id: string, cascade: boolean = false): Promise<Artist> {
+  async softDelete(id: string, { cascade = false }: { cascade?: boolean } = {}): Promise<Artist> {
     if (!cascade) {
       return this.prisma.client.artist.update({
         where: { id, deletedAt: null },

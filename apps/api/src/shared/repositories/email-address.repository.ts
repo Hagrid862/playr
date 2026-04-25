@@ -49,15 +49,12 @@ export class EmailAddressRepository {
   /**
    * Finds multiple email addresses by the given where conditions.
    * @param where - The where conditions to filter the email addresses by.
-   * @param options - The options for the query:
-   *   - `take` (number, optional): The maximum number of email addresses to return. Defaults to 10.
-   *   - `skip` (number, optional): The number of email addresses to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (EmailAddressOrderByWithRelationInput, optional): The order in which to sort the email addresses. Defaults to descending by `createdAt`.
+   * @param options - Optional. Pagination and sort; defaults: take 10, skip 0, order by `createdAt` desc.
    * @returns The found email addresses.
    */
   async findMany(
     where: EmailAddressWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: EmailAddressOrderByWithRelationInput | EmailAddressOrderByWithRelationInput[];
@@ -65,9 +62,9 @@ export class EmailAddressRepository {
   ): Promise<EmailAddressGetPayload<{ include: { user: true } }>[]> {
     return this.prisma.client.emailAddress.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { user: true },
     });
   }
@@ -75,27 +72,24 @@ export class EmailAddressRepository {
   /**
    * Finds multiple email addresses by the given where conditions with relations.
    * @param where - The where conditions to filter the email addresses by.
-   * @param options - The options for the query:
-   *   - `take` (number, optional): The maximum number of email addresses to return. Defaults to 10.
-   *   - `skip` (number, optional): The number of email addresses to skip before starting to collect the result set. Defaults to 0.
-   *   - `orderBy` (EmailAddressOrderByWithRelationInput or array of it, optional): The order in which to sort the email addresses. Defaults to descending by `createdAt`.
    * @param include - The relations to include in the result.
+   * @param options - Optional. Pagination and sort; defaults: take 10, skip 0, order by `createdAt` desc.
    * @returns The found email addresses with relations.
    */
   async findManyWithInclude<I extends EmailAddressInclude>(
     where: EmailAddressWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: EmailAddressOrderByWithRelationInput | EmailAddressOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<EmailAddressGetPayload<{ include: I }>[]> {
     return this.prisma.client.emailAddress.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -227,22 +221,12 @@ export class EmailAddressRepository {
    */
   async softDeleteMany(where: EmailAddressWhereInput): Promise<EmailAddress[]> {
     const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.emailAddress.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.emailAddress.updateManyAndReturn({
         where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.emailAddress.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt },
-      });
-
-      return tx.emailAddress.findMany({
-        where: { id: { in: ids } },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -263,19 +247,11 @@ export class EmailAddressRepository {
    * @returns The restored email addresses.
    */
   async restoreMany(where: EmailAddressWhereInput): Promise<EmailAddress[]> {
-    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const toRestore = await tx.emailAddress.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.emailAddress.updateManyAndReturn({
         where: { ...where, deletedAt: { not: null } },
-      });
-      if (toRestore.length === 0) return [];
-
-      const ids = toRestore.map((row) => row.id);
-      await tx.emailAddress.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt: null },
-      });
-
-      return toRestore.map((row) => ({ ...row, deletedAt: null }));
-    });
+      }),
+    );
   }
 }

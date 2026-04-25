@@ -46,7 +46,6 @@ describe('AuthController (Integration)', () => {
 
     it('should register a new user successfully (201)', async () => {
       // Mock repository checks (no existing user/email)
-      prismaMock.client.user.findUnique.mockResolvedValue(null);
       prismaMock.client.user.findFirst.mockResolvedValue(null as any);
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 

@@ -30,19 +30,19 @@ export class GetLibraryArtistAlbumsHandler implements IQueryHandler<GetLibraryAr
           album: { artists: { some: { id: artistId } }, type: type },
         },
         {
+          album: {
+            include: {
+              artists: true,
+              cover: true,
+            },
+          },
+        },
+        {
           take: limit,
           skip: (page - 1) * limit,
           orderBy: {
             album: {
               releaseDate: 'desc',
-            },
-          },
-        },
-        {
-          album: {
-            include: {
-              artists: true,
-              cover: true,
             },
           },
         },

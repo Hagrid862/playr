@@ -57,7 +57,7 @@ export class RefreshTokenRepository {
    */
   async findMany(
     where: RefreshTokenWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[];
@@ -65,9 +65,9 @@ export class RefreshTokenRepository {
   ): Promise<RefreshTokenGetPayload<{ include: { session: true } }>[]> {
     return this.prisma.client.refreshToken.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { session: true },
     });
   }
@@ -84,18 +84,18 @@ export class RefreshTokenRepository {
    */
   async findManyWithInclude<I extends RefreshTokenInclude>(
     where: RefreshTokenWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<RefreshTokenGetPayload<{ include: I }>[]> {
     return this.prisma.client.refreshToken.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -282,17 +282,13 @@ export class RefreshTokenRepository {
    */
   async revoke(id: string): Promise<RefreshToken | null> {
     const revokedAt = new Date();
-    const result = await this.prisma.client.refreshToken.updateMany({
+    const updated = await this.prisma.client.refreshToken.updateManyAndReturn({
       where: { id, deletedAt: null, revokedAt: null },
       data: {
         revokedAt,
       },
     });
-    if (result.count === 0) {
-      return null;
-    }
-
-    return this.prisma.client.refreshToken.findUnique({ where: { id } });
+    return updated[0] ?? null;
   }
 
   /**

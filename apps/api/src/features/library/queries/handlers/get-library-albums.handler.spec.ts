@@ -67,7 +67,6 @@ describe('GetLibraryAlbumsHandler', () => {
     expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(libraryAlbumRepository.findManyWithInclude).toHaveBeenCalledWith(
       { libraryId: library.id },
-      { take: 10, skip: 0 },
       {
         album: {
           include: {
@@ -76,6 +75,7 @@ describe('GetLibraryAlbumsHandler', () => {
           },
         },
       },
+      { take: 10, skip: 0 },
     );
     expect(libraryAlbumRepository.count).toHaveBeenCalledWith({ libraryId: library.id });
     expect(result).toEqual({

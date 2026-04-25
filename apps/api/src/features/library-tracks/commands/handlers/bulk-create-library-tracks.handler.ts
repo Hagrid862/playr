@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TrackSchema, ZodTrack } from '@repo/contracts';
-import { Visibility } from '@repo/db';
+import { GenreKind, Visibility } from '@repo/db';
 import { BulkCreateLibraryTracksCommand } from '../impl/bulk-create-library-tracks.command';
 
 @CommandHandler(BulkCreateLibraryTracksCommand)
@@ -42,13 +42,18 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
     const allGenreIds = body.tracks.flatMap((t) => t.genreIds ?? []);
     if (allGenreIds.length > 0) {
       const uniqueGenreIds = [...new Set(allGenreIds)];
-      const assignableCount = await this.genreRepository.count({
+      const genreWhere = {
         id: { in: uniqueGenreIds },
-        OR: [{ kind: 'system', libraryId: null }, { libraryId: library.id }],
+        OR: [{ kind: GenreKind.system, libraryId: null }, { libraryId: library.id }],
+      };
+      const assignableGenres = await this.genreRepository.findMany(genreWhere, {
+        take: uniqueGenreIds.length,
       });
-      if (assignableCount !== uniqueGenreIds.length) {
+      const assignableIdSet = new Set(assignableGenres.map((g) => g.id));
+      const missingGenreIds = uniqueGenreIds.filter((id) => !assignableIdSet.has(id));
+      if (missingGenreIds.length > 0) {
         throw new BadRequestException(
-          'One or more genres are invalid or not available to your library.',
+          `Invalid or unavailable genre IDs: ${missingGenreIds.join(', ')}`,
         );
       }
     }

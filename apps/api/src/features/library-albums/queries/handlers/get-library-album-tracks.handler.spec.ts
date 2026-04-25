@@ -84,9 +84,6 @@ describe('GetLibraryAlbumTracksHandler', () => {
         track: { albumId },
       },
       {
-        orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
-      },
-      {
         track: {
           include: {
             artists: true,
@@ -97,6 +94,9 @@ describe('GetLibraryAlbumTracksHandler', () => {
             },
           },
         },
+      },
+      {
+        orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
       },
     );
   });

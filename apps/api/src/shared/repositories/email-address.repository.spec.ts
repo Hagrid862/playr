@@ -38,7 +38,7 @@ describe('EmailAddressRepository', () => {
       include: { user: true },
     });
 
-    await repository.findMany({ userId: 'u1' }, {});
+    await repository.findMany({ userId: 'u1' });
     expect(mockTx.emailAddress.findMany).toHaveBeenNthCalledWith(1, {
       where: { userId: 'u1', deletedAt: null },
       take: 10,
@@ -47,7 +47,7 @@ describe('EmailAddressRepository', () => {
       include: { user: true },
     });
 
-    await repository.findManyWithInclude({ userId: 'u1' }, {}, { user: true });
+    await repository.findManyWithInclude({ userId: 'u1' }, { user: true });
     expect(mockTx.emailAddress.findMany).toHaveBeenNthCalledWith(2, {
       where: { userId: 'u1', deletedAt: null },
       take: 10,
@@ -58,8 +58,8 @@ describe('EmailAddressRepository', () => {
 
     await repository.findManyWithInclude(
       { userId: 'u1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { user: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
     expect(mockTx.emailAddress.findMany).toHaveBeenNthCalledWith(3, {
       where: { userId: 'u1', deletedAt: null },
@@ -155,32 +155,25 @@ describe('EmailAddressRepository', () => {
     await setup();
     const row = emailAddressBuilder({ id: 'e1' });
 
-    const txEmpty = {
-      emailAddress: {
-        findMany: vi.fn().mockResolvedValue([]),
-        updateMany: vi.fn(),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.emailAddress.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({ userId: 'u1' })).resolves.toEqual([]);
 
-    const txRows = {
-      emailAddress: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.emailAddress.updateManyAndReturn.mockResolvedValueOnce([row]);
     await expect(repository.softDeleteMany({ userId: 'u1' })).resolves.toEqual([row]);
+    expect(mockTx.emailAddress.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { userId: 'u1', deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
+    });
 
-    mockTx.emailAddress.findMany.mockResolvedValueOnce([]);
+    mockTx.emailAddress.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({ userId: 'u1' })).resolves.toEqual([]);
 
-    mockTx.emailAddress.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.emailAddress.updateMany.mockResolvedValue({ count: 1 } as any);
-    await expect(repository.restoreMany({ userId: 'u1' })).resolves.toEqual([row]);
-    expect(mockTx.emailAddress.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['e1'] } },
+    mockTx.emailAddress.updateManyAndReturn.mockResolvedValueOnce([{ ...row, deletedAt: null }]);
+    await expect(repository.restoreMany({ userId: 'u1' })).resolves.toEqual([
+      { ...row, deletedAt: null },
+    ]);
+    expect(mockTx.emailAddress.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { userId: 'u1', deletedAt: { not: null } },
       data: { deletedAt: null },
     });
   });

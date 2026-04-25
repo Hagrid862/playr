@@ -2,6 +2,7 @@ import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repo
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { LibraryAlbumGetPayload } from '@repo/db';
 import {
   albumBuilder,
   artistBuilder,
@@ -13,6 +14,11 @@ import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryArtistAlbumsQuery } from '../impl/get-library-artist-albums.query';
 import { GetLibraryArtistAlbumsHandler } from './get-library-artist-albums.handler';
+
+/** Matches the `include` shape passed in `get-library-artist-albums.handler` → `findManyWithInclude`. */
+type LibraryAlbumWithHandlerInclude = LibraryAlbumGetPayload<{
+  include: { album: { include: { artists: true; cover: true } } };
+}>;
 
 describe('GetLibraryArtistAlbumsHandler', () => {
   let handler: GetLibraryArtistAlbumsHandler;
@@ -26,7 +32,7 @@ describe('GetLibraryArtistAlbumsHandler', () => {
     ...libraryBuilder({ id: libraryId, userId }),
     user: userBuilder({ id: userId }),
   } as NonNullable<Awaited<ReturnType<LibraryRepository['findOne']>>>;
-  const mockAlbums = [
+  const mockAlbums: LibraryAlbumWithHandlerInclude[] = [
     {
       ...libraryAlbumBuilder({ id: 'la-1', libraryId, albumId: 'a-1' }),
       album: {
@@ -35,7 +41,7 @@ describe('GetLibraryArtistAlbumsHandler', () => {
         cover: null,
       },
     },
-  ] as Awaited<ReturnType<LibraryAlbumRepository['findManyWithInclude']>>;
+  ];
   const mockTotal = 1;
 
   beforeEach(async () => {
@@ -79,19 +85,19 @@ describe('GetLibraryArtistAlbumsHandler', () => {
         album: { artists: { some: { id: artistId } }, type: 'album' },
       },
       {
+        album: {
+          include: {
+            artists: true,
+            cover: true,
+          },
+        },
+      },
+      {
         take: 10,
         skip: 0,
         orderBy: {
           album: {
             releaseDate: 'desc',
-          },
-        },
-      },
-      {
-        album: {
-          include: {
-            artists: true,
-            cover: true,
           },
         },
       },

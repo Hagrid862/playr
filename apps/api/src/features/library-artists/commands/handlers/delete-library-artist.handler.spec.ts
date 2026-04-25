@@ -58,7 +58,7 @@ describe('DeleteLibraryArtistHandler', () => {
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockDeletedArtist);
-    expect(artistRepository.softDelete).toHaveBeenCalledWith(mockArtistId, true);
+    expect(artistRepository.softDelete).toHaveBeenCalledWith(mockArtistId, { cascade: true });
   });
 
   it('should throw NotFoundException if artist is missing or permission denied', async () => {

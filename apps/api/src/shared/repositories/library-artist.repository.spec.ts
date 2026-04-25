@@ -57,7 +57,7 @@ describe('LibraryArtistRepository', () => {
     });
 
     // findManyWithInclude (defaults)
-    await repository.findManyWithInclude({ libraryId: 'l1' }, {}, { artist: true });
+    await repository.findManyWithInclude({ libraryId: 'l1' }, { artist: true }, {});
     expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null, libraryId: 'l1' },
       take: 10,
@@ -69,8 +69,8 @@ describe('LibraryArtistRepository', () => {
     // findManyWithInclude (custom pagination, custom include)
     await repository.findManyWithInclude(
       { libraryId: 'l1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { artist: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
     expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null, libraryId: 'l1' },
@@ -181,54 +181,31 @@ describe('LibraryArtistRepository', () => {
       data: { deletedAt: null },
     });
 
-    const txEmpty = {
-      libraryArtist: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.libraryArtist.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
-    expect(txEmpty.libraryArtist.findMany).toHaveBeenCalledWith({
-      where: { ...{}, deletedAt: null },
-    });
-
-    const txRows = {
-      libraryArtist: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
-    await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
-    expect(txRows.libraryArtist.findMany).toHaveBeenCalledWith({
-      where: { ...{}, deletedAt: null },
-    });
-    expect(txRows.libraryArtist.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['la1'] } },
+    expect(mockTx.libraryArtist.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: null },
       data: { deletedAt: expect.any(Date) },
     });
 
-    const txRestoreEmpty = {
-      libraryArtist: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRestoreEmpty));
-    await expect(repository.restoreMany({})).resolves.toEqual([]);
-    expect(txRestoreEmpty.libraryArtist.findMany).toHaveBeenCalledWith({
-      where: { ...{}, deletedAt: { not: null } },
+    mockTx.libraryArtist.updateManyAndReturn.mockResolvedValueOnce([row]);
+    await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
+    expect(mockTx.libraryArtist.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
     });
-    expect(txRestoreEmpty.libraryArtist.updateMany).not.toHaveBeenCalled();
 
-    const txRestoreRows = {
-      libraryArtist: {
-        findMany: vi.fn().mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRestoreRows));
-    await expect(repository.restoreMany({})).resolves.toEqual([row]);
-    expect(txRestoreRows.libraryArtist.findMany).toHaveBeenCalledWith({
-      where: { ...{}, deletedAt: { not: null } },
+    mockTx.libraryArtist.updateManyAndReturn.mockResolvedValueOnce([]);
+    await expect(repository.restoreMany({})).resolves.toEqual([]);
+    expect(mockTx.libraryArtist.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: { not: null } },
+      data: { deletedAt: null },
     });
-    expect(txRestoreRows.libraryArtist.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['la1'] } },
+
+    mockTx.libraryArtist.updateManyAndReturn.mockResolvedValueOnce([{ ...row, deletedAt: null }]);
+    await expect(repository.restoreMany({})).resolves.toEqual([{ ...row, deletedAt: null }]);
+    expect(mockTx.libraryArtist.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: { not: null } },
       data: { deletedAt: null },
     });
   });

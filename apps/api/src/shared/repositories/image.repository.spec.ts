@@ -28,11 +28,11 @@ describe('ImageRepository', () => {
     await repository.findOne({ id: 'im1' });
     await repository.findOneWithInclude({ id: 'im1' }, { variants: true });
     await repository.findMany({ id: 'im1' }, {});
-    await repository.findManyWithInclude({ id: 'im1' }, {}, { variants: true });
+    await repository.findManyWithInclude({ id: 'im1' }, { variants: true }, {});
     await repository.findManyWithInclude(
       { id: 'im1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { variants: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
 
     expect(mockTx.image.findFirst).toHaveBeenNthCalledWith(1, {
@@ -102,23 +102,16 @@ describe('ImageRepository', () => {
     await repository.softDelete('im1');
     await repository.restore('im1');
 
-    const txEmpty = { image: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.image.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
 
-    const txRows = {
-      image: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.image.updateManyAndReturn.mockResolvedValueOnce([row]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
 
-    mockTx.image.findMany.mockResolvedValueOnce([]);
+    mockTx.image.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
-    mockTx.image.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.image.updateMany.mockResolvedValue({ count: 1 } as any);
-    await expect(repository.restoreMany({})).resolves.toEqual([row]);
+
+    mockTx.image.updateManyAndReturn.mockResolvedValueOnce([{ ...row, deletedAt: null }]);
+    await expect(repository.restoreMany({})).resolves.toEqual([{ ...row, deletedAt: null }]);
   });
 });

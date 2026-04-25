@@ -61,7 +61,7 @@ export class LibraryAlbumRepository {
    */
   async findMany(
     where: LibraryAlbumWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: LibraryAlbumOrderByWithRelationInput | LibraryAlbumOrderByWithRelationInput[];
@@ -69,9 +69,9 @@ export class LibraryAlbumRepository {
   ): Promise<LibraryAlbumGetPayload<{ include: typeof defaultLibraryAlbumFindInclude }>[]> {
     return this.prisma.client.libraryAlbum.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: defaultLibraryAlbumFindInclude,
     });
   }
@@ -88,18 +88,18 @@ export class LibraryAlbumRepository {
    */
   async findManyWithInclude<I extends LibraryAlbumInclude>(
     where: LibraryAlbumWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: LibraryAlbumOrderByWithRelationInput | LibraryAlbumOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<LibraryAlbumGetPayload<{ include: I }>[]> {
     return this.prisma.client.libraryAlbum.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -233,22 +233,12 @@ export class LibraryAlbumRepository {
    */
   async softDeleteMany(where: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
     const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.libraryAlbum.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.libraryAlbum.updateManyAndReturn({
         where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.libraryAlbum.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt },
-      });
-
-      return tx.libraryAlbum.findMany({
-        where: { id: { in: ids } },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -269,19 +259,11 @@ export class LibraryAlbumRepository {
    * @returns The restored library albums.
    */
   async restoreMany(where: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
-    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const toRestore = await tx.libraryAlbum.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.libraryAlbum.updateManyAndReturn({
         where: { ...where, deletedAt: { not: null } },
-      });
-      if (toRestore.length === 0) return [];
-
-      const ids = toRestore.map((row) => row.id);
-      await tx.libraryAlbum.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt: null },
-      });
-
-      return toRestore.map((row) => ({ ...row, deletedAt: null }));
-    });
+      }),
+    );
   }
 }

@@ -52,7 +52,7 @@ describe('AudioFileRepository', () => {
       include: { track: true },
     });
 
-    await repository.findManyWithInclude({ trackId: 't1' }, {}, { track: true });
+    await repository.findManyWithInclude({ trackId: 't1' }, { track: true }, {});
     expect(mockTx.audioFile.findMany).toHaveBeenNthCalledWith(2, {
       where: { trackId: 't1' },
       take: 10,
@@ -63,8 +63,8 @@ describe('AudioFileRepository', () => {
 
     await repository.findManyWithInclude(
       { trackId: 't1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { track: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
     expect(mockTx.audioFile.findMany).toHaveBeenNthCalledWith(3, {
       where: { trackId: 't1' },

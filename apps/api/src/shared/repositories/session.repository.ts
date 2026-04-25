@@ -57,7 +57,7 @@ export class SessionRepository {
    */
   async findMany(
     where: SessionWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: SessionOrderByWithRelationInput | SessionOrderByWithRelationInput[];
@@ -65,9 +65,9 @@ export class SessionRepository {
   ): Promise<SessionGetPayload<{ include: { user: true } }>[]> {
     return this.prisma.client.session.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { user: true },
     });
   }
@@ -84,18 +84,18 @@ export class SessionRepository {
    */
   async findManyWithInclude<I extends SessionInclude>(
     where: SessionWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: SessionOrderByWithRelationInput | SessionOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<SessionGetPayload<{ include: I }>[]> {
     return this.prisma.client.session.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -283,17 +283,13 @@ export class SessionRepository {
    */
   async revoke(id: string): Promise<Session | null> {
     const revokedAt = new Date();
-    const result = await this.prisma.client.session.updateMany({
+    const updated = await this.prisma.client.session.updateManyAndReturn({
       where: { id, deletedAt: null, revokedAt: null },
       data: {
         revokedAt,
       },
     });
-    if (result.count === 0) {
-      return null;
-    }
-
-    return this.prisma.client.session.findUnique({ where: { id } });
+    return updated[0] ?? null;
   }
 
   /**

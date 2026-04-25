@@ -56,7 +56,7 @@ export class GenreRepository {
    */
   async findMany(
     where: GenreWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: GenreOrderByWithRelationInput | GenreOrderByWithRelationInput[];
@@ -64,9 +64,9 @@ export class GenreRepository {
   ): Promise<GenreGetPayload<{ include: { library: true } }>[]> {
     return this.prisma.client.genre.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { library: true },
     });
   }
@@ -83,18 +83,18 @@ export class GenreRepository {
    */
   async findManyWithInclude<I extends GenreInclude>(
     where: GenreWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: GenreOrderByWithRelationInput | GenreOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<GenreGetPayload<{ include: I }>[]> {
     return this.prisma.client.genre.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }

@@ -76,7 +76,6 @@ describe('GetLibraryTracksHandler', () => {
     expect(libraryRepository.findOne).toHaveBeenCalledWith({ userId });
     expect(libraryTrackRepository.findManyWithInclude).toHaveBeenCalledWith(
       { libraryId: mockLibrary.id, track: undefined },
-      { take: 10, skip: 0, orderBy: { track: { trackNumber: 'asc' } } },
       {
         track: {
           include: {
@@ -85,6 +84,7 @@ describe('GetLibraryTracksHandler', () => {
           },
         },
       },
+      { take: 10, skip: 0, orderBy: { track: { trackNumber: 'asc' } } },
     );
   });
 

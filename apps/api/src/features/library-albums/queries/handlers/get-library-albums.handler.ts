@@ -27,16 +27,16 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
       this.libraryAlbumRepository.findManyWithInclude(
         { libraryId: library.id },
         {
-          take: limit,
-          skip: (page - 1) * limit,
-        },
-        {
           album: {
             include: {
               artists: true,
               cover: true,
             },
           },
+        },
+        {
+          take: limit,
+          skip: (page - 1) * limit,
         },
       ),
       this.libraryAlbumRepository.count({ libraryId: library.id }),

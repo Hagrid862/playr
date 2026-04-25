@@ -29,9 +29,6 @@ export class GetLibraryAlbumTracksHandler implements IQueryHandler<GetLibraryAlb
         },
       },
       {
-        orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
-      },
-      {
         track: {
           include: {
             artists: true,
@@ -42,6 +39,9 @@ export class GetLibraryAlbumTracksHandler implements IQueryHandler<GetLibraryAlb
             },
           },
         },
+      },
+      {
+        orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
       },
     );
 

@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrackSchema } from '@repo/contracts';
-import { AlbumType, Track, Visibility } from '@repo/db';
+import { AlbumType, GenreKind, Track, Visibility } from '@repo/db';
 import { albumBuilder, libraryBuilder, trackBuilder, userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -106,7 +106,6 @@ describe('BulkCreateLibraryTracksHandler', () => {
     genreRepository = createMock<GenreRepository>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
-    genreRepository.count.mockResolvedValue(1);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -270,9 +269,10 @@ describe('BulkCreateLibraryTracksHandler', () => {
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
-    genreRepository.count.mockResolvedValue(0);
+    genreRepository.findMany.mockResolvedValue([]);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+    await expect(handler.execute(command)).rejects.toThrow('Invalid or unavailable genre IDs: g1');
     expect(trackRepository.create).not.toHaveBeenCalled();
   });
 
@@ -287,6 +287,26 @@ describe('BulkCreateLibraryTracksHandler', () => {
 
     libraryRepository.findOne.mockResolvedValue(mockLibrary);
     albumRepository.findOne.mockResolvedValue(mockAlbum);
+    genreRepository.findMany.mockResolvedValue([
+      {
+        id: 'g1',
+        name: 'Genre 1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        description: 'Test Genre',
+        kind: GenreKind.system,
+        slug: 'genre-1',
+        libraryId: mockLibrary.id,
+        library: {
+          id: mockLibrary.id,
+          userId: mockLibrary.userId,
+          createdAt: mockLibrary.createdAt,
+          updatedAt: mockLibrary.updatedAt,
+          deletedAt: mockLibrary.deletedAt,
+        },
+      },
+    ]);
     trackRepository.create.mockResolvedValue(mockTrack1);
 
     await handler.execute(command);

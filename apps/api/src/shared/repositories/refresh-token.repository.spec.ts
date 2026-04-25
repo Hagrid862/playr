@@ -26,11 +26,11 @@ describe('RefreshTokenRepository', () => {
     await repository.findOne({ id: 'rt1' });
     await repository.findOneWithInclude({ id: 'rt1' }, { session: true });
     await repository.findMany({ sessionId: 's1' }, {});
-    await repository.findManyWithInclude({ sessionId: 's1' }, {}, { session: true });
+    await repository.findManyWithInclude({ sessionId: 's1' }, { session: true }, {});
     await repository.findManyWithInclude(
       { sessionId: 's1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { session: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
 
     mockTx.refreshToken.count

@@ -28,11 +28,6 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
           track: albumId ? { albumId } : undefined,
         },
         {
-          take: limit,
-          skip: (page - 1) * limit,
-          orderBy: { track: { trackNumber: 'asc' } },
-        },
-        {
           track: {
             include: {
               album: {
@@ -41,6 +36,11 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
               artists: true,
             },
           },
+        },
+        {
+          take: limit,
+          skip: (page - 1) * limit,
+          orderBy: { track: { trackNumber: 'asc' } },
         },
       ),
       this.libraryTrackRepository.count({

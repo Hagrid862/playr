@@ -61,7 +61,7 @@ export class LibraryArtistRepository {
    */
   async findMany(
     where: LibraryArtistWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: LibraryArtistOrderByWithRelationInput | LibraryArtistOrderByWithRelationInput[];
@@ -69,9 +69,9 @@ export class LibraryArtistRepository {
   ): Promise<LibraryArtistGetPayload<{ include: typeof defaultLibraryArtistFindInclude }>[]> {
     return this.prisma.client.libraryArtist.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: defaultLibraryArtistFindInclude,
     });
   }
@@ -88,18 +88,18 @@ export class LibraryArtistRepository {
    */
   async findManyWithInclude<I extends LibraryArtistInclude>(
     where: LibraryArtistWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: LibraryArtistOrderByWithRelationInput | LibraryArtistOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<LibraryArtistGetPayload<{ include: I }>[]> {
     return this.prisma.client.libraryArtist.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
@@ -231,22 +231,12 @@ export class LibraryArtistRepository {
    */
   async softDeleteMany(where: LibraryArtistWhereInput): Promise<LibraryArtist[]> {
     const deletedAt = new Date();
-    return await this.prisma.mainClient.$transaction(async (tx) => {
-      const rows = await tx.libraryArtist.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.libraryArtist.updateManyAndReturn({
         where: { ...where, deletedAt: null },
-      });
-      if (rows.length === 0) return [];
-
-      const ids = rows.map((row) => row.id);
-      await tx.libraryArtist.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt },
-      });
-
-      return tx.libraryArtist.findMany({
-        where: { id: { in: ids } },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -267,19 +257,11 @@ export class LibraryArtistRepository {
    * @returns The restored library artists.
    */
   async restoreMany(where: LibraryArtistWhereInput): Promise<LibraryArtist[]> {
-    return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const toRestore = await tx.libraryArtist.findMany({
+    return this.prisma.mainClient.$transaction((tx) =>
+      tx.libraryArtist.updateManyAndReturn({
         where: { ...where, deletedAt: { not: null } },
-      });
-      if (toRestore.length === 0) return [];
-
-      const ids = toRestore.map((row) => row.id);
-      await tx.libraryArtist.updateMany({
-        where: { id: { in: ids } },
         data: { deletedAt: null },
-      });
-
-      return toRestore.map((row) => ({ ...row, deletedAt: null }));
-    });
+      }),
+    );
   }
 }

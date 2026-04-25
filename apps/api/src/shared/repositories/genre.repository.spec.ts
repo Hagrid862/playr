@@ -49,11 +49,11 @@ describe('GenreRepository', () => {
     });
 
     await repository.findMany({ name: { contains: 'r' } }, {});
-    await repository.findManyWithInclude({ libraryId: 'l1' }, {}, { library: true });
+    await repository.findManyWithInclude({ libraryId: 'l1' }, { library: true }, {});
     await repository.findManyWithInclude(
       { libraryId: 'l1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { library: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
     expect(mockTx.genre.findMany).toHaveBeenNthCalledWith(1, {
       where: { name: { contains: 'r' }, deletedAt: null },

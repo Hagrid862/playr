@@ -47,7 +47,7 @@ describe('AlbumRepository', () => {
       include: { access: true, cover: true },
     });
 
-    await repository.findManyWithInclude({ id: 'al1' }, {}, { artists: true });
+    await repository.findManyWithInclude({ id: 'al1' }, { artists: true }, {});
     expect(mockTx.album.findMany).toHaveBeenNthCalledWith(2, {
       where: { id: 'al1', deletedAt: null },
       take: 10,
@@ -58,8 +58,8 @@ describe('AlbumRepository', () => {
 
     await repository.findManyWithInclude(
       { id: 'al1' },
-      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
       { artists: true },
+      { take: 2, skip: 1, orderBy: { createdAt: 'asc' } },
     );
     expect(mockTx.album.findMany).toHaveBeenNthCalledWith(3, {
       where: { id: 'al1', deletedAt: null },
@@ -137,7 +137,7 @@ describe('AlbumRepository', () => {
     await setup();
     const row = albumBuilder({ id: 'al1' });
     mockTx.album.update.mockResolvedValue(row);
-    await repository.softDelete('al1', false);
+    await repository.softDelete('al1', { cascade: false });
     expect(mockTx.album.update).toHaveBeenCalledWith({
       where: { id: 'al1', deletedAt: null },
       data: { deletedAt: expect.any(Date) },
@@ -154,7 +154,7 @@ describe('AlbumRepository', () => {
       album: { update: vi.fn().mockResolvedValue(row) },
     };
     mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txNoTracks));
-    await expect(repository.softDelete('al1', true)).resolves.toEqual(row);
+    await expect(repository.softDelete('al1', { cascade: true })).resolves.toEqual(row);
     expect(txNoTracks.libraryTrack.updateMany).not.toHaveBeenCalled();
 
     const txTracks = {
@@ -167,7 +167,7 @@ describe('AlbumRepository', () => {
       album: { update: vi.fn().mockResolvedValue(row) },
     };
     mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txTracks));
-    await expect(repository.softDelete('al1', true)).resolves.toEqual(row);
+    await expect(repository.softDelete('al1', { cascade: true })).resolves.toEqual(row);
     expect(txTracks.libraryTrack.updateMany).toHaveBeenCalled();
     expect(txTracks.track.updateMany).toHaveBeenCalled();
   });
@@ -176,27 +176,27 @@ describe('AlbumRepository', () => {
     await setup();
     const row = albumBuilder({ id: 'al1' });
 
-    const txEmpty = { album: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() } };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txEmpty));
+    mockTx.album.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([]);
 
-    const txRows = {
-      album: {
-        findMany: vi.fn().mockResolvedValueOnce([row]).mockResolvedValueOnce([row]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-    };
-    mockTx.$transaction.mockImplementationOnce(async (cb: any) => cb(txRows));
+    mockTx.album.updateManyAndReturn.mockResolvedValueOnce([row]);
     await expect(repository.softDeleteMany({})).resolves.toEqual([row]);
+    expect(mockTx.album.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
+    });
 
     mockTx.album.update.mockResolvedValue(row);
     await expect(repository.restore('al1')).resolves.toEqual(row);
 
-    mockTx.album.findMany.mockResolvedValueOnce([]);
+    mockTx.album.updateManyAndReturn.mockResolvedValueOnce([]);
     await expect(repository.restoreMany({})).resolves.toEqual([]);
 
-    mockTx.album.findMany.mockResolvedValueOnce([row]).mockResolvedValueOnce([row]);
-    mockTx.album.updateMany.mockResolvedValue({ count: 1 } as any);
-    await expect(repository.restoreMany({})).resolves.toEqual([row]);
+    mockTx.album.updateManyAndReturn.mockResolvedValueOnce([{ ...row, deletedAt: null }]);
+    await expect(repository.restoreMany({})).resolves.toEqual([{ ...row, deletedAt: null }]);
+    expect(mockTx.album.updateManyAndReturn).toHaveBeenLastCalledWith({
+      where: { deletedAt: { not: null } },
+      data: { deletedAt: null },
+    });
   });
 });

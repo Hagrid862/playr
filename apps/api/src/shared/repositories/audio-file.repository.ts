@@ -57,7 +57,7 @@ export class AudioFileRepository {
    */
   async findMany(
     where: AudioFileWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: AudioFileOrderByWithRelationInput | AudioFileOrderByWithRelationInput[];
@@ -65,9 +65,9 @@ export class AudioFileRepository {
   ): Promise<AudioFileGetPayload<{ include: { track: true } }>[]> {
     return this.prisma.client.audioFile.findMany({
       where,
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { track: true },
     });
   }
@@ -84,18 +84,18 @@ export class AudioFileRepository {
    */
   async findManyWithInclude<I extends AudioFileInclude>(
     where: AudioFileWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: AudioFileOrderByWithRelationInput | AudioFileOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<AudioFileGetPayload<{ include: I }>[]> {
     return this.prisma.client.audioFile.findMany({
       where,
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }

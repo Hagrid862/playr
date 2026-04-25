@@ -57,7 +57,7 @@ export class UserRepository {
    */
   async findMany(
     where: UserWhereInput,
-    options: {
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[];
@@ -65,9 +65,9 @@ export class UserRepository {
   ): Promise<UserGetPayload<{ include: { avatar: true } }>[]> {
     return this.prisma.client.user.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: { avatar: true },
     });
   }
@@ -84,18 +84,18 @@ export class UserRepository {
    */
   async findManyWithInclude<I extends UserInclude>(
     where: UserWhereInput,
-    options: {
+    include: I,
+    options?: {
       take?: number;
       skip?: number;
       orderBy?: UserOrderByWithRelationInput | UserOrderByWithRelationInput[];
     },
-    include: I,
   ): Promise<UserGetPayload<{ include: I }>[]> {
     return this.prisma.client.user.findMany({
       where: { ...where, deletedAt: null },
-      take: options.take ?? 10,
-      skip: options.skip ?? 0,
-      orderBy: options.orderBy ?? { createdAt: 'desc' },
+      take: options?.take ?? 10,
+      skip: options?.skip ?? 0,
+      orderBy: options?.orderBy ?? { createdAt: 'desc' },
       include: include,
     });
   }
