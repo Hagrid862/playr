@@ -214,16 +214,21 @@ export class ArtistRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the artists from the database without checking or respecting the deletedAt field.
-   * Deletes multiple artists by the given where conditions.
+   * WARNING: This method performs a permanent (hard) delete and purges the artists from the database.
+   * By default, it only targets active rows (deletedAt: null) to prevent accidental double-deletion or purging already soft-deleted data.
+   * Pass an explicit `deletedAt` filter if you intend to purge soft-deleted rows.
+   *
    * @param filter - The where conditions to filter the artists by.
    * @returns The deleted artists.
    */
-
   async deleteMany(filter: ArtistWhereInput): Promise<Artist[]> {
+    const combinedWhere: ArtistWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.artist.findMany({
-        where: filter,
+        where: combinedWhere,
       });
 
       if (toDelete.length === 0) return [];
@@ -304,10 +309,11 @@ export class ArtistRepository {
           },
           select: { id: true },
         })) ?? [];
+      const trackIdsSet = new Set(trackIds);
       // Exclude tracks that were already soft-deleted as album tracks above
       const directTrackIds = directTracks
         .map((track) => track.id)
-        .filter((trackId) => !trackIds.includes(trackId));
+        .filter((trackId) => !trackIdsSet.has(trackId));
 
       if (directTrackIds.length > 0) {
         await tx.libraryTrack.updateMany({

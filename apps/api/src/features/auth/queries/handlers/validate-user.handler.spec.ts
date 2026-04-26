@@ -152,7 +152,7 @@ describe('ValidateUserHandler', () => {
       // Assert
       expect(emailAddressRepository.findOneWithInclude).toHaveBeenCalledWith(
         {
-          email: 'TEST@Example.Com',
+          email: 'test@example.com',
           type: 'primary',
           deletedAt: null,
         },

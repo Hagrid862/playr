@@ -193,15 +193,21 @@ export class LibraryAlbumRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the library albums from the database without checking or respecting the deletedAt field.
-   * Deletes multiple library albums by the given where conditions.
+   * WARNING: This method performs a permanent (hard) delete and purges the library albums from the database.
+   * By default, it only targets active rows (deletedAt: null) to prevent accidental double-deletion or purging already soft-deleted data.
+   * Pass an explicit `deletedAt` filter if you intend to purge soft-deleted rows.
+   *
    * @param filter - The where conditions to filter the library albums by.
    * @returns The deleted library albums.
    */
   async deleteMany(filter: LibraryAlbumWhereInput): Promise<LibraryAlbum[]> {
+    const combinedWhere: LibraryAlbumWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.libraryAlbum.findMany({
-        where: filter,
+        where: combinedWhere,
       });
 
       if (toDelete.length === 0) return [];

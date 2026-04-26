@@ -203,7 +203,7 @@ export class SessionRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the sessions from the database without checking or respecting the deletedAt field.
+   * WARNING: This method performs a permanent (hard) delete. By default, it targets active (non-deleted) rows by applying `deletedAt: null` unless a different `deletedAt` predicate is provided in the filter.
    * Deletes multiple sessions by the given where conditions.
    * @param filter - The where conditions to filter the sessions by.
    * @returns The deleted sessions.

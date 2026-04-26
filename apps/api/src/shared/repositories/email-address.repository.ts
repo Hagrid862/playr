@@ -180,15 +180,21 @@ export class EmailAddressRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the email address from the database without checking or respecting the deletedAt field.
-   * Deletes multiple email addresses by the given where conditions.
+   * WARNING: This method performs a permanent (hard) delete and purges the email addresses from the database.
+   * By default, it only targets active rows (deletedAt: null) to prevent accidental double-deletion or purging already soft-deleted data.
+   * Pass an explicit `deletedAt` filter if you intend to purge soft-deleted rows.
+   *
    * @param filter - The where conditions to filter the email addresses by.
    * @returns The deleted email addresses.
    */
   async deleteMany(filter: EmailAddressWhereInput): Promise<EmailAddress[]> {
+    const combinedWhere: EmailAddressWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.emailAddress.findMany({
-        where: filter,
+        where: combinedWhere,
       });
 
       if (toDelete.length === 0) return [];

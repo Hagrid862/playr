@@ -3,7 +3,7 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetLibraryAlbumsQuery } from '../impl/get-library-albums.query';
-import { LibraryAlbumSchema, PaginatedResponse } from '@repo/contracts';
+import { GetLibraryAlbumsResponse } from '@repo/contracts';
 
 @QueryHandler(GetLibraryAlbumsQuery)
 export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQuery> {
@@ -12,9 +12,7 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
   ) {}
 
-  async execute(
-    query: GetLibraryAlbumsQuery,
-  ): Promise<PaginatedResponse<typeof LibraryAlbumSchema>> {
+  async execute(query: GetLibraryAlbumsQuery): Promise<GetLibraryAlbumsResponse['data']> {
     const { userId, page, limit } = query;
 
     const library = await this.libraryRepository.findOne({ userId });

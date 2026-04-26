@@ -306,14 +306,44 @@ export class AlbumRepository {
    * @param where - The where conditions to filter the albums by.
    * @returns The deleted albums.
    */
-  async softDeleteMany(where: AlbumWhereInput): Promise<Album[]> {
+  async softDeleteMany(
+    where: AlbumWhereInput,
+    { cascade = false }: { cascade?: boolean } = {},
+  ): Promise<Album[]> {
     const deletedAt = new Date();
-    return this.prisma.mainClient.$transaction((tx) =>
-      tx.album.updateManyAndReturn({
+    return this.prisma.mainClient.$transaction(async (tx) => {
+      const updatedAlbums = await tx.album.updateManyAndReturn({
         where: { ...where, deletedAt: null },
         data: { deletedAt },
-      }),
-    );
+      });
+
+      if (cascade && updatedAlbums.length > 0) {
+        const albumIds = updatedAlbums.map((a) => a.id);
+        const tracks = await tx.track.findMany({
+          where: { albumId: { in: albumIds }, deletedAt: null },
+          select: { id: true },
+        });
+        const trackIds = tracks.map((t) => t.id);
+
+        if (trackIds.length > 0) {
+          await tx.libraryTrack.updateMany({
+            where: { trackId: { in: trackIds }, deletedAt: null },
+            data: { deletedAt },
+          });
+          await tx.track.updateMany({
+            where: { id: { in: trackIds }, deletedAt: null },
+            data: { deletedAt },
+          });
+        }
+
+        await tx.libraryAlbum.updateMany({
+          where: { albumId: { in: albumIds }, deletedAt: null },
+          data: { deletedAt },
+        });
+      }
+
+      return updatedAlbums;
+    });
   }
 
   /**
@@ -334,11 +364,9 @@ export class AlbumRepository {
    * @returns The restored albums.
    */
   async restoreMany(where: AlbumWhereInput): Promise<Album[]> {
-    return this.prisma.mainClient.$transaction((tx) =>
-      tx.album.updateManyAndReturn({
-        where: { ...where, deletedAt: { not: null } },
-        data: { deletedAt: null },
-      }),
-    );
+    return this.prisma.client.album.updateManyAndReturn({
+      where: { ...where, deletedAt: { not: null } },
+      data: { deletedAt: null },
+    });
   }
 }

@@ -4,7 +4,7 @@ import { StorageService } from '@/shared/services/storage.service';
 import { Logger, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccessRole, AudioFormat, AudioQuality, ProcessingStatus } from '@repo/db';
-import { audioFileBuilder, trackBuilder, trackWithAccessBuilder } from '@repo/testing/builders';
+import { audioFileBuilder, trackWithAccessBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Job } from 'bullmq';
 import * as fs from 'fs/promises';
@@ -27,11 +27,7 @@ type AudioFileWithTrack = NonNullable<Awaited<ReturnType<AudioFileRepository['fi
 const audioFileWithTrackBuilder = (
   overrides?: Parameters<typeof audioFileBuilder>[0],
 ): AudioFileWithTrack => {
-  const audioFile = audioFileBuilder(overrides);
-  return {
-    ...audioFile,
-    track: trackBuilder({ id: audioFile.trackId }),
-  };
+  return audioFileBuilder(overrides) as AudioFileWithTrack;
 };
 
 describe('AudioProcessingWorker', () => {

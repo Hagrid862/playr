@@ -4,7 +4,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StreamAudioQuality, StreamPreferredFormat } from '@repo/contracts';
 import { AudioFormat, AudioQuality, FileBucket } from '@repo/db';
-import { audioFileBuilder, trackBuilder } from '@repo/testing/builders';
+import { audioFileBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetTrackStreamQuery } from '../impl/get-track-stream.query';
@@ -42,10 +42,7 @@ describe('GetTrackStreamHandler', () => {
     const mockTrackId = 'track-1';
     const buildAudioFileWithTrack = (
       overrides?: Parameters<typeof audioFileBuilder>[0],
-    ): Awaited<ReturnType<AudioFileRepository['findMany']>>[number] => ({
-      ...audioFileBuilder(overrides),
-      track: trackBuilder({ id: mockTrackId }),
-    });
+    ): Awaited<ReturnType<AudioFileRepository['findMany']>>[number] => audioFileBuilder(overrides);
 
     it('should throw NotFoundException if no processed audio files exist', async () => {
       audioFileRepository.findMany.mockResolvedValue([]);

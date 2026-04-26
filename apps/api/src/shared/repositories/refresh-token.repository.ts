@@ -202,7 +202,7 @@ export class RefreshTokenRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the refresh tokens from the database without checking or respecting the deletedAt field.
+   * WARNING: This method performs a permanent (hard) delete. By default, it targets active (non-deleted) rows by applying `deletedAt: null` unless a different `deletedAt` predicate is provided in the filter.
    * Deletes multiple refresh tokens by the given where conditions.
    * @param filter - The where conditions to filter the refresh tokens by.
    * @returns The deleted refresh tokens.

@@ -38,10 +38,7 @@ describe('DeleteLibraryTrackHandler', () => {
   } as NonNullable<Awaited<ReturnType<TrackRepository['findOne']>>>;
   const buildAudioFileWithTrack = (
     overrides?: Parameters<typeof audioFileBuilder>[0],
-  ): Awaited<ReturnType<AudioFileRepository['findMany']>>[number] => ({
-    ...audioFileBuilder(overrides),
-    track: trackBuilder({ id: trackId }),
-  });
+  ): Awaited<ReturnType<AudioFileRepository['findMany']>>[number] => audioFileBuilder(overrides);
 
   beforeEach(async () => {
     unitOfWork = createMock<UnitOfWorkService>();

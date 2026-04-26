@@ -123,9 +123,8 @@ export class TrackRepository {
 
   /**
    * Checks if a user has access to a track (public, direct track access, album access, or artist access).
-   * Guest access uses user id `GUEST` when `userId` is omitted.
    * @param where - The where conditions to filter the tracks by.
-   * @param userId - The ID of the user to check (optional; defaults to guest).
+   * @param userId - The ID of the user to check (optional).
    * @returns True if the user has access, false otherwise.
    */
   async checkAccess(where: TrackWhereInput, userId?: string): Promise<boolean> {
@@ -163,9 +162,6 @@ export class TrackRepository {
       if (orList.length > 0) {
         andClauses.unshift({ OR: orList });
       }
-    }
-    if (callerAnd) {
-      andClauses.unshift(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
     }
     if (callerAnd) {
       andClauses.unshift(...(Array.isArray(callerAnd) ? callerAnd : [callerAnd]));
@@ -247,7 +243,7 @@ export class TrackRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the tracks from the database without checking or respecting the deletedAt field.
+   * WARNING: This method performs a permanent (hard) delete. By default, it targets active (non-deleted) rows by applying `deletedAt: null` unless a different `deletedAt` predicate is provided in the filter.
    * Deletes multiple tracks by the given where conditions.
    * @param filter - The where conditions to filter the tracks by.
    * @returns The deleted tracks.

@@ -21,12 +21,9 @@ export class AudioFileRepository {
    * @param where - The where conditions to filter the audio files by.
    * @returns The found audio file or null if not found.
    */
-  async findOne(
-    where: AudioFileWhereInput,
-  ): Promise<AudioFileGetPayload<{ include: { track: true } }> | null> {
+  async findOne(where: AudioFileWhereInput): Promise<AudioFileGetPayload<{ include: {} }> | null> {
     return this.prisma.client.audioFile.findFirst({
       where,
-      include: { track: true },
     });
   }
 
@@ -62,24 +59,23 @@ export class AudioFileRepository {
       skip?: number;
       orderBy?: AudioFileOrderByWithRelationInput | AudioFileOrderByWithRelationInput[];
     },
-  ): Promise<AudioFileGetPayload<{ include: { track: true } }>[]> {
+  ): Promise<AudioFileGetPayload<{ include: {} }>[]> {
     return this.prisma.client.audioFile.findMany({
       where,
       take: options?.take ?? 10,
       skip: options?.skip ?? 0,
       orderBy: options?.orderBy ?? { createdAt: 'desc' },
-      include: { track: true },
     });
   }
 
   /**
    * Finds multiple audio files by the given where conditions with relations.
    * @param where - The where conditions to filter the audio files by.
+   * @param include - The relations to include in the result.
    * @param options - The options for the query:
    *   - `take` (number, optional): The maximum number of audio files to return. Defaults to 10.
    *   - `skip` (number, optional): The number of audio files to skip before starting to collect the result set. Defaults to 0.
    *   - `orderBy` (AudioFileOrderByWithRelationInput or array of it, optional): The order in which to sort the audio files. Defaults to descending by `createdAt`.
-   * @param include - The relations to include in the result.
    * @returns The found audio files with relations.
    */
   async findManyWithInclude<I extends AudioFileInclude>(
@@ -184,7 +180,8 @@ export class AudioFileRepository {
   }
 
   /**
-   * Deletes multiple audio files by the given where conditions.
+   * WARNING: This method performs a permanent (hard) delete and purges the audio files from the database.
+   *
    * @param filter - The where conditions to filter the audio files by.
    * @returns The deleted audio files.
    */

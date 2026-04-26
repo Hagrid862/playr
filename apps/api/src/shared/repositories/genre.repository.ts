@@ -172,6 +172,7 @@ export class GenreRepository {
 
   /**
    * WARNING: This method marks the genre as deleted by setting the `deletedAt` field to the current date/time.
+   * It performs a soft delete rather than a hard delete to maintain referential integrity with related records.
    * Deletes a genre by the given ID.
    * @param id - The ID of the genre to delete.
    * @returns The deleted genre.
@@ -182,7 +183,7 @@ export class GenreRepository {
 
   /**
    * Soft deletes multiple genres by the given filter conditions.
-   * Note: This sets the `deletedAt` field to the current date/time.
+   * Note: This sets the `deletedAt` field to the current date/time to maintain referential integrity.
    * @param filter - The filter conditions to select genres to soft delete.
    * @returns The soft-deleted genres.
    */
@@ -192,6 +193,7 @@ export class GenreRepository {
 
   /**
    * Soft deletes a genre by the given ID.
+   * Soft deletion is used here to maintain referential integrity with related records.
    * @param id - The ID of the genre to soft delete.
    * @returns The deleted genre.
    */
@@ -204,6 +206,7 @@ export class GenreRepository {
 
   /**
    * Soft deletes multiple genres by the given where conditions.
+   * Soft deletion is used here to maintain referential integrity with related records.
    * @param where - The where conditions to filter the genres by.
    * @returns The deleted genres.
    */

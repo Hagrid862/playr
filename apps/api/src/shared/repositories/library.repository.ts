@@ -183,8 +183,10 @@ export class LibraryRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the libraries from the database without checking or respecting the deletedAt field.
-   * Deletes multiple libraries by the given where conditions.
+   * WARNING: This method performs a permanent (hard) delete and purges the libraries from the database.
+   * By default, it only targets active rows (deletedAt: null) to prevent accidental double-deletion or purging already soft-deleted data.
+   * Pass an explicit `deletedAt` filter if you intend to purge soft-deleted rows.
+   *
    * @param filter - The where conditions to filter the libraries by.
    * @returns The deleted libraries.
    */

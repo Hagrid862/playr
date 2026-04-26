@@ -15,9 +15,10 @@ export class ValidateUserHandler implements IQueryHandler<ValidateUserQuery> {
 
   async execute(query: ValidateUserQuery): Promise<AuthenticatedPrincipal | null> {
     const { email, password } = query;
+    const normalizedEmail = email.toLowerCase().trim();
     const emailAddress = await this.emailAddressRepository.findOneWithInclude(
       {
-        email,
+        email: normalizedEmail,
         type: 'primary',
         deletedAt: null,
       },

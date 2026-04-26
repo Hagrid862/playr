@@ -191,15 +191,19 @@ export class LibraryArtistRepository {
   }
 
   /**
-   * WARNING: This method performs a permanent (hard) delete and purges the library artists from the database without checking or respecting the deletedAt field.
+   * WARNING: This method performs a permanent (hard) delete. By default, it targets active (non-deleted) rows by applying `deletedAt: null` unless a different `deletedAt` predicate is provided in the filter.
    * Deletes multiple library artists by the given where conditions.
    * @param filter - The where conditions to filter the library artists by.
    * @returns The deleted library artists.
    */
   async deleteMany(filter: LibraryArtistWhereInput): Promise<LibraryArtist[]> {
+    const combinedWhere: LibraryArtistWhereInput = {
+      ...filter,
+      deletedAt: filter.deletedAt ?? null,
+    };
     return this.prisma.mainClient.$transaction(async (tx: Prisma.TransactionClient) => {
       const toDelete = await tx.libraryArtist.findMany({
-        where: filter,
+        where: combinedWhere,
       });
 
       if (toDelete.length === 0) return [];
