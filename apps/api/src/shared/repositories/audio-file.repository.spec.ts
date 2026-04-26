@@ -27,7 +27,6 @@ describe('AudioFileRepository', () => {
     await repository.findOne({ id: 'f1' });
     expect(mockTx.audioFile.findFirst).toHaveBeenNthCalledWith(1, {
       where: { id: 'f1' },
-      include: { track: true },
     });
 
     await repository.findOneWithInclude({ id: 'f1' }, {
@@ -49,7 +48,6 @@ describe('AudioFileRepository', () => {
       take: 10,
       skip: 0,
       orderBy: { createdAt: 'desc' },
-      include: { track: true },
     });
 
     await repository.findManyWithInclude({ trackId: 't1' }, { track: true }, {});

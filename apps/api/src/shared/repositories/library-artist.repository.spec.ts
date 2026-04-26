@@ -155,14 +155,14 @@ describe('LibraryArtistRepository', () => {
     mockTx.libraryArtist.findMany.mockResolvedValueOnce([]);
     await expect(repository.deleteMany({})).resolves.toEqual([]);
     expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
-      where: {},
+      where: { deletedAt: null },
     });
 
     const row = libraryArtistBuilder({ id: 'la1' });
     mockTx.libraryArtist.findMany.mockResolvedValueOnce([row]);
     await expect(repository.deleteMany({})).resolves.toEqual([row]);
     expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
-      where: {},
+      where: { deletedAt: null },
     });
     expect(mockTx.libraryArtist.deleteMany).toHaveBeenCalledWith({
       where: { id: { in: ['la1'] } },
