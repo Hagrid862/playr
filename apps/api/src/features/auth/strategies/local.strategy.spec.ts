@@ -43,14 +43,15 @@ describe('LocalStrategy', () => {
   describe('validate', () => {
     it('should return user if validation query succeeds', async () => {
       // Arrange
-      queryBus.execute.mockResolvedValue(mockUser);
+      const authenticatedUser = { user: mockUser, isEmailVerified: true };
+      queryBus.execute.mockResolvedValue(authenticatedUser);
 
       // Act
       const result = await strategy.validate('test@example.com', 'password');
 
       // Assert
       expect(queryBus.execute).toHaveBeenCalledWith(expect.any(ValidateUserQuery));
-      expect(result).toEqual({ user: mockUser });
+      expect(result).toEqual(authenticatedUser);
     });
 
     it('should throw UnauthorizedException if validation query returns null', async () => {

@@ -56,13 +56,13 @@ describe('AuthController', () => {
   describe('login', () => {
     it('should execute LoginCommand with user from request', async () => {
       const mockUser = { id: 'user-id' } as any;
-      const req = { user: { user: mockUser } } as any;
-      const expectedResult = { accessToken: 'token' };
+      const req = { user: { user: mockUser, isEmailVerified: false } } as any;
+      const expectedResult = { outcome: 'unauthenticated' };
       commandBus.execute.mockResolvedValue(expectedResult);
 
       const result = await controller.login(req);
 
-      expect(commandBus.execute).toHaveBeenCalledWith(new LoginCommand(mockUser));
+      expect(commandBus.execute).toHaveBeenCalledWith(new LoginCommand(mockUser, false));
       expect(result).toBe(expectedResult);
     });
   });
