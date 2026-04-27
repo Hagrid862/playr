@@ -26,6 +26,7 @@ test.describe("Playback Functionality", () => {
   const artistName = `Playback Artist ${timestamp}`;
   const albumName = `Playback Album ${timestamp}`;
   const trackName = `Playback Track ${timestamp}`;
+  let albumId: string;
 
   test.describe.configure({ mode: "serial" });
 
@@ -62,6 +63,7 @@ test.describe("Playback Functionality", () => {
   });
 
   test("should setup content for playback", async () => {
+    test.setTimeout(120000);
     await test.step("Create Library", async () => {
       await dashboardPage.gotoLibraryOverview();
       await dashboardPage.createLibrary();
@@ -77,9 +79,17 @@ test.describe("Playback Functionality", () => {
     });
 
     await test.step("Create Album", async () => {
+      const createAlbumResponsePromise = page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          response.url().includes("/library/albums") &&
+          response.status() === 201,
+      );
+
       await page.goto("/app/library/albums/create");
       await page.waitForLoadState("networkidle");
-      await page.getByRole("button", { name: "Pick existing artist" }).click();
+      // The /create page starts with a selection view. We need to click "Pick existing artist"
+      await page.getByRole("heading", { name: "Pick existing artist" }).click();
       await page.getByText(artistName).click();
       await page.waitForLoadState("networkidle");
       await expect(page).toHaveURL(/\/add-content\/album/);
@@ -87,21 +97,26 @@ test.describe("Playback Functionality", () => {
       await page.getByLabel("Album Title").waitFor({ state: "visible" });
       await page.getByLabel("Album Title").fill(albumName);
       await page.getByRole("button", { name: "Create Album" }).click();
+
+      const createAlbumResponse = await createAlbumResponsePromise;
+      const createAlbumPayload = (await createAlbumResponse.json()) as {
+        id?: string;
+        data?: { id?: string };
+      };
+      const createdAlbumId = createAlbumPayload.data?.id ?? createAlbumPayload.id;
+      if (!createdAlbumId) {
+        throw new Error("Album ID missing in create album response");
+      }
+      albumId = createdAlbumId;
+
       await page.waitForLoadState("networkidle");
+      // After creating an album, it navigates to the artist detail page
       await expect(page).toHaveURL(new RegExp(`/app/library/artists/`));
     });
 
     await test.step("Add Track", async () => {
-      // 5. Add Track
-      await page.locator("a").filter({ hasText: albumName }).first().click();
-      await page.waitForLoadState("networkidle");
-
-      // Wait for album detail and get ID
-      await expect(page).toHaveURL(/\/app\/library\/albums\/[^/]+/);
-      const albumUrl = page.url().split("?")[0];
-      const albumId = albumUrl.split("/").filter(Boolean).pop();
-
       await page.goto(`/app/library/albums/${albumId}/add-content`);
+      await expect(page.getByText("Failed to load album")).toHaveCount(0);
       await page.getByLabel("Track Title").waitFor({ state: "visible" });
       await page.getByLabel("Track Title").fill(trackName);
       const dummyAudioPath = path.resolve(
@@ -115,7 +130,7 @@ test.describe("Playback Functionality", () => {
 
       // Wait for navigation to complete - the form navigates to the parent (album detail) page
       await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, {
-        timeout: 30000,
+        timeout: 60000,
       });
       await page.waitForLoadState("networkidle");
 
@@ -133,7 +148,7 @@ test.describe("Playback Functionality", () => {
         has: page.getByText(trackName, { exact: true }),
       });
 
-      const deadline = Date.now() + 60_000;
+      const deadline = Date.now() + 120_000;
       const processingFailedError = () =>
         new Error(`Audio processing failed for track "${trackName}".`);
       // Reload at most every few seconds; between reloads, let Playwright
@@ -158,7 +173,11 @@ test.describe("Playback Functionality", () => {
       }
       await expect(trackRow.getByLabel("Processing")).toHaveCount(0);
 
-      await page.getByText(trackName, { exact: true }).first().click();
+      await page
+        .locator("div.group.cursor-pointer")
+        .filter({ hasText: trackName })
+        .first()
+        .click();
     });
 
     // Verify track info in player

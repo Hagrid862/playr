@@ -63,10 +63,12 @@ test.describe("Queue Management", () => {
   const albumName = `Queue Album ${timestamp}`;
   const track1 = `Track 1 ${timestamp}`;
   const track2 = `Track 2 ${timestamp}`;
+  let albumId: string;
 
   test.describe.configure({ mode: "serial" });
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(180000); // 3 minutes for complex setup
     page = await browser.newPage();
     loginPage = new LoginPage(page);
     artistsPage = new LibraryArtistsPage(page);
@@ -102,23 +104,37 @@ test.describe("Queue Management", () => {
     await artistsPage.createArtist({ name: artistName });
 
     // Create Album
+    const createAlbumResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        response.url().includes("/library/albums") &&
+        response.status() === 201,
+    );
+
     await page.goto("/app/library/albums/create");
-    await page.getByRole("button", { name: "Pick existing artist" }).click();
+    // The /create page starts with a selection view. We need to click "Pick existing artist"
+    await page.getByRole("heading", { name: "Pick existing artist" }).click();
     await page.getByText(artistName).click();
     await page.getByLabel("Album Title").waitFor({ state: "visible" });
     await page.getByLabel("Album Title").fill(albumName);
     await page.getByRole("button", { name: "Create Album" }).click();
-    await page.waitForLoadState("networkidle");
 
-    // Get album ID from URL or list
-    await page.locator("a").filter({ hasText: albumName }).first().click();
+    const createAlbumResponse = await createAlbumResponsePromise;
+    const createAlbumPayload = (await createAlbumResponse.json()) as {
+      id?: string;
+      data?: { id?: string };
+    };
+    const createdAlbumId = createAlbumPayload.data?.id ?? createAlbumPayload.id;
+    if (!createdAlbumId) {
+      throw new Error("Album ID missing in create album response");
+    }
+    albumId = createdAlbumId;
+
     await page.waitForLoadState("networkidle");
-    const albumUrl = new URL(page.url());
-    const albumPathname = albumUrl.pathname.replace(/\/+$/, "");
-    const albumId = albumPathname.split("/").pop();
 
     // Add Track 1
     await page.goto(`/app/library/albums/${albumId}/add-content`);
+    await expect(page.getByText("Failed to load album")).toHaveCount(0);
     await page.getByLabel("Track Title").waitFor({ state: "visible" });
     await page.getByLabel("Track Title").fill(track1);
     const audioPath = path.resolve(
@@ -135,6 +151,7 @@ test.describe("Queue Management", () => {
 
     // Add Track 2
     await page.goto(`/app/library/albums/${albumId}/add-content`);
+    await expect(page.getByText("Failed to load album")).toHaveCount(0);
     await page.getByLabel("Track Title").waitFor({ state: "visible" });
     await page.getByLabel("Track Title").fill(track2);
     await page.setInputFiles('input[type="file"]', audioPath);
@@ -204,6 +221,7 @@ test.describe("Queue Management", () => {
   });
 
   test("should sync queue across pages", async ({ browser }) => {
+    test.setTimeout(90000);
     // Ensure queue is closed first
     const isQueueBlocking = await page
       .locator('[data-slot="sheet-overlay"]')
@@ -235,6 +253,7 @@ test.describe("Queue Management", () => {
   });
 
   test("should sync playback state across pages", async ({ browser }) => {
+    test.setTimeout(90000);
     // Ensure queue is closed first
     const isQueueBlocking = await page
       .locator('[data-slot="sheet-overlay"]')

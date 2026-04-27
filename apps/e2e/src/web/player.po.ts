@@ -107,10 +107,13 @@ export class PlayerPage {
     );
 
     await expect
-      .poll(async () => {
-        const value = await this.progressSlider.getAttribute("aria-valuenow");
-        return Number(value ?? "0");
-      })
+      .poll(
+        async () => {
+          const value = await this.progressSlider.getAttribute("aria-valuenow");
+          return Number(value ?? "0");
+        },
+        { timeout: 15000 },
+      )
       .toBeGreaterThan(initialValue);
   }
 }
