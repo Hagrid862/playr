@@ -103,7 +103,8 @@ test.describe("Playback Functionality", () => {
         id?: string;
         data?: { id?: string };
       };
-      const createdAlbumId = createAlbumPayload.data?.id ?? createAlbumPayload.id;
+      const createdAlbumId =
+        createAlbumPayload.data?.id ?? createAlbumPayload.id;
       if (!createdAlbumId) {
         throw new Error("Album ID missing in create album response");
       }
