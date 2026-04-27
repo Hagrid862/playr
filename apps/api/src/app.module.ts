@@ -62,7 +62,6 @@ import { join } from 'path';
             adapter: new HandlebarsAdapter(),
             options: {
               strict: true,
-              layout: 'layout',
             },
           },
           options: {

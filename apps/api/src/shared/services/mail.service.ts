@@ -21,7 +21,7 @@ export class MailService {
         context: {
           code: otpCode,
           ttlMinutes: ttl,
-          HtmlTitle: 'Playr - Verify your email',
+          htmlTitle: 'Playr - Verify your email',
         },
       });
 
