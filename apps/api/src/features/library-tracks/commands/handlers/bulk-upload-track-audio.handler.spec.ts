@@ -169,7 +169,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         [file1, invalidMimeFile],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
+      trackRepository.getById.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
       audioFileRepository.create.mockResolvedValue(mockAudioFileForTrack('af-1', trackId1));
 
@@ -194,7 +194,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue(null);
+      trackRepository.getById.mockResolvedValue(null);
 
       await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
       await expect(handler.execute(command)).rejects.toThrow(`Track ${trackId1} not found`);
@@ -207,7 +207,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, 'other-album-id'));
+      trackRepository.getById.mockResolvedValue(mockTrackWithAccess(trackId1, 'other-album-id'));
 
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -228,7 +228,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         userId: 'other-user',
         role: AccessRole.owner,
       });
-      trackRepository.findOne.mockResolvedValue(trackWithOtherOwner);
+      trackRepository.getById.mockResolvedValue(trackWithOtherOwner);
 
       await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -249,7 +249,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         userId,
         role: AccessRole.viewer,
       });
-      trackRepository.findOne.mockResolvedValue(trackWithViewerAccess);
+      trackRepository.getById.mockResolvedValue(trackWithViewerAccess);
 
       await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -269,7 +269,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         albumId,
         access: [],
       });
-      trackRepository.findOne.mockResolvedValue(trackWithoutAccess);
+      trackRepository.getById.mockResolvedValue(trackWithoutAccess);
 
       await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
       await expect(handler.execute(command)).rejects.toThrow(
@@ -286,14 +286,16 @@ describe('BulkUploadTrackAudioHandler', () => {
         userId,
         role: AccessRole.editor,
       });
-      trackRepository.findOne.mockResolvedValue(trackWithEditorAccess);
+      trackRepository.getById.mockResolvedValue(trackWithEditorAccess);
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
       audioFileRepository.create.mockResolvedValue(mockAudioFileForTrack('af-1', trackId1));
 
       const result = await handler.execute(command);
 
       expect(result.audioFiles).toHaveLength(1);
-      expect(trackRepository.findOne).toHaveBeenCalledWith({ id: trackId1 }, true);
+      expect(trackRepository.getById).toHaveBeenCalledWith(trackId1, {
+        include: { access: true },
+      });
       expect(storageService.uploadFile).toHaveBeenCalled();
       expect(audioFileRepository.create).toHaveBeenCalled();
       expect(processingQueue.add).toHaveBeenCalledWith('process-audio', {
@@ -306,7 +308,7 @@ describe('BulkUploadTrackAudioHandler', () => {
     it('should succeed when file size is exactly 100MB', async () => {
       const file = createMockFile({ size: 100 * 1024 * 1024 });
       const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
+      trackRepository.getById.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
       audioFileRepository.create.mockResolvedValue(mockAudioFileForTrack('af-1', trackId1));
 
@@ -327,7 +329,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         userId,
       );
 
-      trackRepository.findOne
+      trackRepository.getById
         .mockResolvedValueOnce(mockTrackWithAccess(trackId1, albumId))
         .mockResolvedValueOnce(mockTrackWithAccess(trackId2, albumId));
 
@@ -340,7 +342,7 @@ describe('BulkUploadTrackAudioHandler', () => {
       const result = await handler.execute(command);
 
       expect(result.audioFiles).toHaveLength(2);
-      expect(trackRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(trackRepository.getById).toHaveBeenCalledTimes(2);
       expect(storageService.uploadFile).toHaveBeenCalledTimes(2);
       expect(audioFileRepository.create).toHaveBeenCalledTimes(2);
       expect(processingQueue.add).toHaveBeenCalledTimes(2);
@@ -393,7 +395,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         [createMockFile()],
         userId,
       );
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
+      trackRepository.getById.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
       storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
       audioFileRepository.create.mockResolvedValue(audioFileBuilder({ id: 'af-1' }));
 
@@ -418,7 +420,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         userId,
       );
 
-      trackRepository.findOne
+      trackRepository.getById
         .mockResolvedValueOnce(mockTrackWithAccess(trackId1, albumId))
         .mockResolvedValueOnce(null);
 
@@ -534,7 +536,7 @@ describe('BulkUploadTrackAudioHandler', () => {
       const file = createMockFile({ mimetype, originalname });
       const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
 
-      trackRepository.findOne.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
+      trackRepository.getById.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
       storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
       audioFileRepository.create.mockResolvedValue(mockAudioFileForTrack('af-1', trackId1));
 

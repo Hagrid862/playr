@@ -105,7 +105,7 @@ describe('TokenService', () => {
 
       // Assert
       expect(sessionRepository.create).not.toHaveBeenCalled();
-      expect(refreshTokenRepository.revoke).toHaveBeenCalledWith(oldToken);
+      expect(refreshTokenRepository.revokeByToken).toHaveBeenCalledWith(oldToken);
       expect(refreshTokenRepository.create).toHaveBeenCalledWith({
         token: 'new-token',
         session: { connect: { id: sessionId } },

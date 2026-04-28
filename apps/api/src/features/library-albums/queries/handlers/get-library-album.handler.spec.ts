@@ -36,25 +36,28 @@ describe('GetLibraryAlbumHandler', () => {
 
   it('should return album successfully', async () => {
     const query = new GetLibraryAlbumQuery(mockAlbumId, mockUserId);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
 
     const result = await handler.execute(query);
 
     expect(result.id).toBe(mockAlbumId);
-    expect(albumRepository.findOne).toHaveBeenCalledWith({ id: mockAlbumId }, true);
+    expect(albumRepository.getById).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({ include: expect.any(Object) }),
+    );
   });
 
   it('should throw NotFoundException if album not found', async () => {
     const query = new GetLibraryAlbumQuery(mockAlbumId, mockUserId);
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getById.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw InternalServerErrorException if result parsing fails', async () => {
     const query = new GetLibraryAlbumQuery(mockAlbumId, mockUserId);
-    albumRepository.findOne.mockResolvedValue({ invalid: 'data' } as any);
+    albumRepository.getById.mockResolvedValue({ invalid: 'data' } as any);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
       success: false,
       error: { format: () => ({}) },

@@ -1,9 +1,10 @@
+import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
-import { PreconditionFailedException } from '@nestjs/common';
+import { NotFoundException, PreconditionFailedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Visibility } from '@repo/db';
-import { libraryBuilder, libraryTrackBuilder, trackBuilder } from '@repo/testing/builders';
+import { albumBuilder, libraryBuilder, libraryTrackBuilder, trackBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.query';
@@ -12,6 +13,7 @@ import { GetLibraryAlbumTracksHandler } from './get-library-album-tracks.handler
 describe('GetLibraryAlbumTracksHandler', () => {
   let handler: GetLibraryAlbumTracksHandler;
   let libraryRepository: DeepMocked<LibraryRepository>;
+  let albumRepository: DeepMocked<AlbumRepository>;
   let libraryTrackRepository: DeepMocked<LibraryTrackRepository>;
 
   const userId = 'user-123';
@@ -39,12 +41,14 @@ describe('GetLibraryAlbumTracksHandler', () => {
 
   beforeEach(async () => {
     libraryRepository = createMock<LibraryRepository>();
+    albumRepository = createMock<AlbumRepository>();
     libraryTrackRepository = createMock<LibraryTrackRepository>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetLibraryAlbumTracksHandler,
         { provide: LibraryRepository, useValue: libraryRepository },
+        { provide: AlbumRepository, useValue: albumRepository },
         { provide: LibraryTrackRepository, useValue: libraryTrackRepository },
       ],
     }).compile();
@@ -58,25 +62,33 @@ describe('GetLibraryAlbumTracksHandler', () => {
 
   it('should return album tracks for a user library', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryTrackRepository.findMany.mockResolvedValue([mockLibraryTrack]);
-    libraryTrackRepository.count.mockResolvedValue(1);
-
+    albumRepository.getById.mockResolvedValue(albumBuilder({ id: albumId }));
+    libraryTrackRepository.listByLibraryAndAlbum.mockResolvedValue([mockLibraryTrack]);
     const result = await handler.execute(query);
 
     expect(result).toEqual([mockTrack]);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryTrackRepository.findMany).toHaveBeenCalledWith({
-      where: {
-        libraryId: mockLibrary.id,
-        track: { albumId },
+    expect(albumRepository.getById).toHaveBeenCalledWith(albumId);
+    expect(libraryTrackRepository.listByLibraryAndAlbum).toHaveBeenCalledWith(
+      mockLibrary.id,
+      albumId,
+      {
+        orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
+        include: expect.any(Object),
       },
-      orderBy: [{ track: { diskNumber: 'asc' } }, { track: { trackNumber: 'asc' } }],
-    });
+    );
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
     libraryRepository.getByUserId.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
+  });
+
+  it('should throw NotFoundException if album not found', async () => {
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.getById.mockResolvedValue(null);
+
+    await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
   });
 });

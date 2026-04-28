@@ -75,7 +75,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockUserId,
     );
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({
@@ -115,7 +115,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     );
     const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
 
-    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({
@@ -161,7 +161,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     );
     const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
 
-    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -187,7 +187,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -199,7 +199,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockMimeType,
       mockUserId,
     );
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
@@ -213,7 +213,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockUserId,
     );
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({
@@ -239,7 +239,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
     );
     const mockAlbumWithCover = albumBuilder({ id: mockAlbumId, coverId: 'old-cover-id' });
 
-    albumRepository.findOne.mockResolvedValue(mockAlbumWithCover);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbumWithCover);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -276,7 +276,7 @@ describe('UploadLibraryAlbumCoverHandler', () => {
       mockUserId,
     );
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(mockBuffer);
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });

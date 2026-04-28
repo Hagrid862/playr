@@ -99,14 +99,14 @@ describe('CreateLibraryTrackHandler', () => {
 
   it('should create a track and link to library', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockTrack);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(albumRepository.findOne).toHaveBeenCalledWith({ id: command.body.albumId });
+    expect(albumRepository.getById).toHaveBeenCalledWith(command.body.albumId);
     expect(trackRepository.create).toHaveBeenCalled();
     expect(libraryTrackRepository.create).toHaveBeenCalledWith({
       track: { connect: { id: mockTrack.id } },
@@ -122,16 +122,15 @@ describe('CreateLibraryTrackHandler', () => {
 
   it('should throw PreconditionFailedException if album not found', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getById.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
   });
 
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
-    // @ts-expect-error - we are testing the validation failure
-    trackRepository.create.mockResolvedValue({ ...mockTrack, title: 123 });
+    albumRepository.getById.mockResolvedValue(mockAlbum);
+    trackRepository.create.mockResolvedValue({ ...mockTrack, title: 123 } as unknown as Track);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
   });
@@ -146,7 +145,7 @@ describe('CreateLibraryTrackHandler', () => {
     );
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
 
     await expect(handler.execute(genreCommand)).rejects.toThrow(BadRequestException);
@@ -163,7 +162,7 @@ describe('CreateLibraryTrackHandler', () => {
     );
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
     trackRepository.create.mockResolvedValue(mockTrack);
 

@@ -44,17 +44,19 @@ describe('GetLibraryAlbumsHandler', () => {
     const total = 2;
 
     libraryRepository.getByUserId.mockResolvedValue(library);
-    libraryAlbumRepository.findMany.mockResolvedValue(albums);
+    libraryAlbumRepository.getPaginated.mockResolvedValue(albums);
     libraryAlbumRepository.count.mockResolvedValue(total);
 
     const result = await handler.execute(query);
 
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryAlbumRepository.findMany).toHaveBeenCalledWith({
-      where: { libraryId: library.id },
-      take: 10,
-      skip: 0,
-    });
+    expect(libraryAlbumRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      { libraryId: library.id },
+      undefined,
+      { include: expect.any(Object) },
+    );
     expect(libraryAlbumRepository.count).toHaveBeenCalledWith({ libraryId: library.id });
     expect(result).toEqual({
       items: albums,
@@ -82,7 +84,7 @@ describe('GetLibraryAlbumsHandler', () => {
     const total = 1;
 
     libraryRepository.getByUserId.mockResolvedValue(library);
-    libraryAlbumRepository.findMany.mockResolvedValue(invalidAlbums);
+    libraryAlbumRepository.getPaginated.mockResolvedValue(invalidAlbums);
     libraryAlbumRepository.count.mockResolvedValue(total);
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);

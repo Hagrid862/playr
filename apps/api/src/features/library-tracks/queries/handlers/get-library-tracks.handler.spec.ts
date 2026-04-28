@@ -61,7 +61,7 @@ describe('GetLibraryTracksHandler', () => {
       track: mockTrack,
     };
 
-    libraryTrackRepository.findMany.mockResolvedValue([mockItem]);
+    libraryTrackRepository.getPaginated.mockResolvedValue([mockItem]);
     libraryTrackRepository.count.mockResolvedValue(1);
 
     const result = await handler.execute(query);
@@ -69,30 +69,33 @@ describe('GetLibraryTracksHandler', () => {
     expect(result.items).toEqual([mockTrack]);
     expect(result.total).toBe(1);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryTrackRepository.findMany).toHaveBeenCalledWith({
-      where: { libraryId: mockLibrary.id, track: undefined },
-      take: 10,
-      skip: 0,
-      orderBy: { track: { trackNumber: 'asc' } },
-    });
+    expect(libraryTrackRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      { libraryId: mockLibrary.id, track: undefined },
+      { track: { trackNumber: 'asc' } },
+      { include: expect.any(Object) },
+    );
   });
 
   it('should filter by albumId if provided', async () => {
     const albumQuery = new GetLibraryTracksQuery(userId, 1, 10, 'album-123');
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
-    libraryTrackRepository.findMany.mockResolvedValue([mockItem]);
+    libraryTrackRepository.getPaginated.mockResolvedValue([mockItem]);
     libraryTrackRepository.count.mockResolvedValue(1);
 
     await handler.execute(albumQuery);
 
-    expect(libraryTrackRepository.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          libraryId: mockLibrary.id,
-          track: { albumId: 'album-123' },
-        },
-      }),
+    expect(libraryTrackRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      {
+        libraryId: mockLibrary.id,
+        track: { albumId: 'album-123' },
+      },
+      { track: { trackNumber: 'asc' } },
+      expect.objectContaining({ include: expect.any(Object) }),
     );
   });
 

@@ -1,8 +1,8 @@
-import { UserRepository } from '@/shared/repositories/user.repository';
+import { EmailAddressRepository } from '@/shared/repositories/email-address.repository';
 import { HashingService } from '@/shared/services/hashing.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EmailStatus, Gender } from '@repo/db';
+import { EmailStatus, EmailType, Gender } from '@repo/db';
 import { userBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,7 @@ import { ValidateUserHandler } from './validate-user.handler';
 
 describe('ValidateUserHandler', () => {
   let handler: ValidateUserHandler;
-  let userRepository: DeepMocked<UserRepository>;
+  let emailAddressRepository: DeepMocked<EmailAddressRepository>;
   let hashingService: DeepMocked<HashingService>;
 
   const mockUser = userBuilder({
@@ -24,14 +24,28 @@ describe('ValidateUserHandler', () => {
     gender: Gender.male,
   });
 
+  const primaryEmailRow = (status: EmailStatus, user = mockUser) =>
+    ({
+      id: 'ea-1',
+      email: 'test@example.com',
+      type: EmailType.primary,
+      status,
+      userId: user.id,
+      user,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      verifiedAt: null,
+      deletedAt: null,
+    }) as Awaited<ReturnType<EmailAddressRepository['getPrimaryByEmailWithUser']>>;
+
   beforeEach(async () => {
-    userRepository = createMock<UserRepository>();
+    emailAddressRepository = createMock<EmailAddressRepository>();
     hashingService = createMock<HashingService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ValidateUserHandler,
-        { provide: UserRepository, useValue: userRepository },
+        { provide: EmailAddressRepository, useValue: emailAddressRepository },
         { provide: HashingService, useValue: hashingService },
       ],
     }).compile();
@@ -45,8 +59,8 @@ describe('ValidateUserHandler', () => {
 
   describe('execute', () => {
     it('should return user if credentials are valid and email is verified', async () => {
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, { emailStatus: EmailStatus.verified }),
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.verified),
       );
       hashingService.compare.mockResolvedValue(true);
 
@@ -55,15 +69,15 @@ describe('ValidateUserHandler', () => {
     });
 
     it('should return null if user not found', async () => {
-      userRepository.getByEmailWithStatus.mockResolvedValue(null);
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(null);
 
       const result = await handler.execute(new ValidateUserQuery('test@example.com', 'password'));
       expect(result).toBeNull();
     });
 
     it('should return null if password invalid', async () => {
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, { emailStatus: EmailStatus.verified }),
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.verified),
       );
       hashingService.compare.mockResolvedValue(false);
 
@@ -72,8 +86,8 @@ describe('ValidateUserHandler', () => {
     });
 
     it('should return user with isEmailVerified false if email not verified', async () => {
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, { emailStatus: EmailStatus.pending }),
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.pending),
       );
       hashingService.compare.mockResolvedValue(true);
 
@@ -82,11 +96,8 @@ describe('ValidateUserHandler', () => {
     });
 
     it('should throw UnauthorizedException if account is deleted', async () => {
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, {
-          emailStatus: EmailStatus.verified,
-          deletedAt: new Date(),
-        }),
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.verified, { ...mockUser, deletedAt: new Date() }),
       );
       hashingService.compare.mockResolvedValue(true);
 
@@ -99,7 +110,7 @@ describe('ValidateUserHandler', () => {
     });
 
     it('should throw error if repository fails', async () => {
-      userRepository.getByEmailWithStatus.mockRejectedValue(new Error('DB Error'));
+      emailAddressRepository.getPrimaryByEmailWithUser.mockRejectedValue(new Error('DB Error'));
 
       await expect(
         handler.execute(new ValidateUserQuery('test@example.com', 'password')),
@@ -107,8 +118,8 @@ describe('ValidateUserHandler', () => {
     });
 
     it('should throw error if hashing service fails', async () => {
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, { emailStatus: EmailStatus.verified }),
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.verified),
       );
       hashingService.compare.mockRejectedValue(new Error('Hashing Error'));
 
@@ -117,47 +128,41 @@ describe('ValidateUserHandler', () => {
       ).rejects.toThrow('Hashing Error');
     });
 
-    it('should strip emailStatus from the returned user object', async () => {
-      // Arrange
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, { emailStatus: EmailStatus.verified }),
+    it('should return User without email row fields', async () => {
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.verified),
       );
       hashingService.compare.mockResolvedValue(true);
 
-      // Act
       const result = await handler.execute(new ValidateUserQuery('test@example.com', 'password'));
 
-      // Assert
       expect(result?.user).not.toHaveProperty('emailStatus');
+      expect(result).not.toHaveProperty('status');
       expect(result).toEqual({ user: mockUser, isEmailVerified: true });
     });
 
     it('should handle mixed-case email by relying on repository normalization', async () => {
-      // Arrange
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, { emailStatus: EmailStatus.verified }),
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.verified),
       );
       hashingService.compare.mockResolvedValue(true);
 
-      // Act
       const result = await handler.execute(new ValidateUserQuery('TEST@Example.Com', 'password'));
 
-      // Assert
-      expect(userRepository.getByEmailWithStatus).toHaveBeenCalledWith('TEST@Example.Com');
+      expect(emailAddressRepository.getPrimaryByEmailWithUser).toHaveBeenCalledWith(
+        'TEST@Example.Com',
+      );
       expect(result).toEqual({ user: mockUser, isEmailVerified: true });
     });
 
     it('should return null if password is an empty string', async () => {
-      // Arrange
-      userRepository.getByEmailWithStatus.mockResolvedValue(
-        Object.assign({}, mockUser, { emailStatus: EmailStatus.verified }),
+      emailAddressRepository.getPrimaryByEmailWithUser.mockResolvedValue(
+        primaryEmailRow(EmailStatus.verified),
       );
       hashingService.compare.mockResolvedValue(false);
 
-      // Act
       const result = await handler.execute(new ValidateUserQuery('test@example.com', ''));
 
-      // Assert
       expect(hashingService.compare).toHaveBeenCalledWith('', mockUser.password);
       expect(result).toBeNull();
     });

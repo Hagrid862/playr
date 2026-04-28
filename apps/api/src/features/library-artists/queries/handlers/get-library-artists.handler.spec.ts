@@ -45,7 +45,7 @@ describe('GetLibraryArtistsHandler', () => {
 
   it('should return library artists list with metadata', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryArtistRepository.findMany.mockResolvedValue(mockItems);
+    libraryArtistRepository.getPaginated.mockResolvedValue(mockItems);
     libraryArtistRepository.count.mockResolvedValue(mockTotal);
 
     const query = new GetLibraryArtistsQuery(userId, page, limit);
@@ -58,11 +58,13 @@ describe('GetLibraryArtistsHandler', () => {
       limit,
     });
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.findMany).toHaveBeenCalledWith({
-      where: { libraryId },
-      skip: 0,
-      take: limit,
-    });
+    expect(libraryArtistRepository.getPaginated).toHaveBeenCalledWith(
+      page,
+      limit,
+      { libraryId },
+      undefined,
+      { include: expect.any(Object) },
+    );
     expect(libraryArtistRepository.count).toHaveBeenCalledWith({ libraryId });
   });
 
@@ -73,7 +75,7 @@ describe('GetLibraryArtistsHandler', () => {
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.findMany).not.toHaveBeenCalled();
+    expect(libraryArtistRepository.getPaginated).not.toHaveBeenCalled();
     expect(libraryArtistRepository.count).not.toHaveBeenCalled();
   });
 });

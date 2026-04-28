@@ -56,16 +56,12 @@ describe('GetLibraryGenreHandler', () => {
   it('should return parsed genre', async () => {
     const query = new GetLibraryGenreQuery(userId, 'g1');
     libraryRepository.getByUserId.mockResolvedValue(library);
-    genreRepository.findOne.mockResolvedValue(mockGenre as any);
+    genreRepository.getGenreForLibrary.mockResolvedValue(mockGenre as any);
 
     const result = await handler.execute(query);
 
     expect(result.id).toBe('g1');
-    expect(genreRepository.findOne).toHaveBeenCalledWith({
-      id: 'g1',
-      deletedAt: null,
-      OR: [{ libraryId: null }, { libraryId: library.id }],
-    });
+    expect(genreRepository.getGenreForLibrary).toHaveBeenCalledWith('g1', library.id);
   });
 
   it('should throw PreconditionFailedException when no library', async () => {
@@ -78,7 +74,7 @@ describe('GetLibraryGenreHandler', () => {
   it('should throw NotFoundException when genre missing', async () => {
     const query = new GetLibraryGenreQuery(userId, 'g1');
     libraryRepository.getByUserId.mockResolvedValue(library);
-    genreRepository.findOne.mockResolvedValue(null);
+    genreRepository.getGenreForLibrary.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
   });
@@ -86,7 +82,7 @@ describe('GetLibraryGenreHandler', () => {
   it('should throw InternalServerErrorException when GenreSchema fails', async () => {
     const query = new GetLibraryGenreQuery(userId, 'g1');
     libraryRepository.getByUserId.mockResolvedValue(library);
-    genreRepository.findOne.mockResolvedValue({ bad: true } as any);
+    genreRepository.getGenreForLibrary.mockResolvedValue({ bad: true } as any);
     const safeParseSpy = vi.spyOn(GenreSchema, 'safeParse').mockReturnValue({
       success: false,
       error: { format: () => '' },

@@ -72,17 +72,14 @@ describe('UpdateLibraryTrackHandler', () => {
   });
 
   it('should update track and artists', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
     const updatedTrack = { ...mockTrack, title: 'Updated Title' };
     trackRepository.update.mockResolvedValue(updatedTrack);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(updatedTrack);
-    expect(trackRepository.findOne).toHaveBeenCalledWith({
-      id: trackId,
-      access: { some: { userId, role: 'owner' } },
-    });
+    expect(trackRepository.getByIdForOwner).toHaveBeenCalledWith(trackId, userId);
 
     // Check update payload structure (artistIds Connect/Disconnect logic)
     expect(trackRepository.update).toHaveBeenCalledWith(
@@ -95,7 +92,7 @@ describe('UpdateLibraryTrackHandler', () => {
   });
 
   it('should update track without artists if artistIds not provided', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
     const updatedTrack = { ...mockTrack, title: 'Updated Title' };
     trackRepository.update.mockResolvedValue(updatedTrack);
 
@@ -117,21 +114,20 @@ describe('UpdateLibraryTrackHandler', () => {
   });
 
   it('should throw NotFoundException if track not found or access denied', async () => {
-    trackRepository.findOne.mockResolvedValue(null);
+    trackRepository.getByIdForOwner.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
-    // @ts-expect-error - we are testing the validation failure
-    trackRepository.update.mockResolvedValue({ ...mockTrack, title: 123 });
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
+    trackRepository.update.mockResolvedValue({ ...mockTrack, title: 123 } as unknown as Track);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
   });
 
   it('should throw PreconditionFailedException when genreIds set but library missing', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
     libraryRepository.getByUserId.mockResolvedValue(null);
     const cmd = new UpdateLibraryTrackCommand(trackId, { genreIds: ['g1'] }, userId);
 
@@ -139,7 +135,7 @@ describe('UpdateLibraryTrackHandler', () => {
   });
 
   it('should throw BadRequestException when genres are not assignable', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
     libraryRepository.getByUserId.mockResolvedValue({ id: 'library-123', userId } as any);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
     const cmd = new UpdateLibraryTrackCommand(trackId, { genreIds: ['g1'] }, userId);
@@ -148,7 +144,7 @@ describe('UpdateLibraryTrackHandler', () => {
   });
 
   it('should replace genres with deduped ids', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
     const updatedTrack = { ...mockTrack };
     trackRepository.update.mockResolvedValue(updatedTrack);
     const cmd = new UpdateLibraryTrackCommand(trackId, { genreIds: ['g1', 'g2', 'g1'] }, userId);
@@ -171,7 +167,7 @@ describe('UpdateLibraryTrackHandler', () => {
   });
 
   it('should clear genres when genreIds is empty', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
     trackRepository.update.mockResolvedValue(mockTrack);
     const cmd = new UpdateLibraryTrackCommand(trackId, { genreIds: [] }, userId);
 

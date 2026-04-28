@@ -45,17 +45,18 @@ describe('GetLibraryArtistHandler', () => {
 
   it('should return library artist if found', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryArtistRepository.findOne.mockResolvedValue(mockLibraryArtist);
+    libraryArtistRepository.getByLibraryAndArtist.mockResolvedValue(mockLibraryArtist);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
     const result = await handler.execute(query);
 
     expect(result).toEqual(mockLibraryArtist);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.findOne).toHaveBeenCalledWith({
+    expect(libraryArtistRepository.getByLibraryAndArtist).toHaveBeenCalledWith(
       libraryId,
       artistId,
-    });
+      { include: expect.any(Object) },
+    );
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
@@ -65,20 +66,21 @@ describe('GetLibraryArtistHandler', () => {
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.findOne).not.toHaveBeenCalled();
+    expect(libraryArtistRepository.getByLibraryAndArtist).not.toHaveBeenCalled();
   });
 
   it('should throw NotFoundException if artist not found in library', async () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryArtistRepository.findOne.mockResolvedValue(null);
+    libraryArtistRepository.getByLibraryAndArtist.mockResolvedValue(null);
 
     const query = new GetLibraryArtistQuery(userId, artistId);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryArtistRepository.findOne).toHaveBeenCalledWith({
+    expect(libraryArtistRepository.getByLibraryAndArtist).toHaveBeenCalledWith(
       libraryId,
       artistId,
-    });
+      { include: expect.any(Object) },
+    );
   });
 });

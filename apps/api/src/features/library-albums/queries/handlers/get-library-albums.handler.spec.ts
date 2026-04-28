@@ -45,7 +45,7 @@ describe('GetLibraryAlbumsHandler', () => {
     const query = new GetLibraryAlbumsQuery(mockUserId, 1, 10);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryAlbumRepository.findMany.mockResolvedValue(mockItems as any);
+    libraryAlbumRepository.getPaginated.mockResolvedValue(mockItems as any);
     libraryAlbumRepository.count.mockResolvedValue(mockTotal);
 
     const result = await handler.execute(query);

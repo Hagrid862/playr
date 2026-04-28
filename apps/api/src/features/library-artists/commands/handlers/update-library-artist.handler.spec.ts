@@ -62,8 +62,8 @@ describe('UpdateLibraryArtistHandler', () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
-    artistRepository.findOne.mockResolvedValueOnce(mockArtist); // Check existence
-    artistRepository.findOne.mockResolvedValueOnce(null); // Check name conflict
+    artistRepository.getByIdForOwner.mockResolvedValueOnce(mockArtist); // Check existence
+    artistRepository.getByNameForOwner.mockResolvedValueOnce(null); // Check name conflict
     artistRepository.update.mockResolvedValue(mockUpdatedArtist);
 
     const result = await handler.execute(command);
@@ -76,7 +76,7 @@ describe('UpdateLibraryArtistHandler', () => {
     const dto = { genreIds: [] as string[] };
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
 
-    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.getByIdForOwner.mockResolvedValue(mockArtist);
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
     artistRepository.update.mockResolvedValue(mockArtist);
@@ -96,7 +96,7 @@ describe('UpdateLibraryArtistHandler', () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist };
 
-    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.getByIdForOwner.mockResolvedValue(mockArtist);
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
     artistRepository.update.mockResolvedValue(mockUpdatedArtist);
@@ -126,14 +126,14 @@ describe('UpdateLibraryArtistHandler', () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
     const mockUpdatedArtist = { ...mockArtist, ...dto };
 
-    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.getByIdForOwner.mockResolvedValue(mockArtist);
     artistRepository.update.mockResolvedValue(mockUpdatedArtist);
 
     const result = await handler.execute(command);
 
     expect(result).toEqual(mockUpdatedArtist);
-    // Should call findOne only once for existence check
-    expect(artistRepository.findOne).toHaveBeenCalledTimes(1);
+    // Should call getByIdForOwner only once for existence check
+    expect(artistRepository.getByIdForOwner).toHaveBeenCalledTimes(1);
     expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
       name: undefined,
       description: 'New Description',
@@ -146,7 +146,7 @@ describe('UpdateLibraryArtistHandler', () => {
       { genreIds: ['genre-1'] },
       mockUserId,
     );
-    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.getByIdForOwner.mockResolvedValue(mockArtist);
     libraryRepository.getByUserId.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
@@ -158,7 +158,7 @@ describe('UpdateLibraryArtistHandler', () => {
       { genreIds: ['genre-1'] },
       mockUserId,
     );
-    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.getByIdForOwner.mockResolvedValue(mockArtist);
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
 
@@ -167,7 +167,7 @@ describe('UpdateLibraryArtistHandler', () => {
 
   it('should throw NotFoundException if artist is missing', async () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, {}, mockUserId);
-    artistRepository.findOne.mockResolvedValue(null);
+    artistRepository.getByIdForOwner.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -176,15 +176,17 @@ describe('UpdateLibraryArtistHandler', () => {
     const dto = { name: 'Taken Name' };
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
 
-    artistRepository.findOne.mockResolvedValueOnce(mockArtist); // Existence
-    artistRepository.findOne.mockResolvedValueOnce(artistBuilder({ id: 'other-artist' })); // Conflict
+    artistRepository.getByIdForOwner.mockResolvedValueOnce(mockArtist); // Existence
+    artistRepository.getByNameForOwner.mockResolvedValueOnce(
+      artistBuilder({ id: 'other-artist' }),
+    ); // Conflict
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
 
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, {}, mockUserId);
-    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.getByIdForOwner.mockResolvedValue(mockArtist);
     artistRepository.update.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);

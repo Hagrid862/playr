@@ -67,14 +67,15 @@ describe('GenreResolutionService', () => {
     });
 
     it('returns existing custom genre without creating', async () => {
-      genreRepository.findOne.mockResolvedValue(customGenre);
+      genreRepository.getCustomGenreBySlugForLibrary.mockResolvedValue(customGenre);
       const result = await service.ensureCustomGenre(libraryId, 'My Rock');
       expect(result).toBe(customGenre);
       expect(genreRepository.create).not.toHaveBeenCalled();
     });
 
     it('creates when no existing row', async () => {
-      genreRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      genreRepository.getCustomGenreBySlugForLibrary.mockResolvedValueOnce(null);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       genreRepository.create.mockResolvedValue(customGenre);
 
       const result = await service.ensureCustomGenre(libraryId, 'My Rock');
@@ -84,10 +85,10 @@ describe('GenreResolutionService', () => {
     });
 
     it('recovers from P2002 when another request created the row', async () => {
-      genreRepository.findOne
-        .mockResolvedValueOnce(null)
+      genreRepository.getCustomGenreBySlugForLibrary
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(customGenre);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       genreRepository.create.mockRejectedValue(prismaUnique());
 
       const result = await service.ensureCustomGenre(libraryId, 'My Rock');
@@ -95,9 +96,10 @@ describe('GenreResolutionService', () => {
       expect(result).toBe(customGenre);
     });
 
-    it('rethrows P2002 when recovery findOne returns null', async () => {
+    it('rethrows P2002 when recovery lookup returns null', async () => {
       const err = prismaUnique();
-      genreRepository.findOne.mockResolvedValue(null);
+      genreRepository.getCustomGenreBySlugForLibrary.mockResolvedValue(null);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       genreRepository.create.mockRejectedValue(err);
 
       await expect(service.ensureCustomGenre(libraryId, 'Unique Name Here')).rejects.toBe(err);
@@ -105,7 +107,8 @@ describe('GenreResolutionService', () => {
 
     it('rethrows non-unique errors from create', async () => {
       const err = new Error('db down');
-      genreRepository.findOne.mockResolvedValue(null);
+      genreRepository.getCustomGenreBySlugForLibrary.mockResolvedValue(null);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       genreRepository.create.mockRejectedValue(err);
 
       await expect(service.ensureCustomGenre(libraryId, 'Brand New')).rejects.toThrow('db down');
@@ -114,13 +117,10 @@ describe('GenreResolutionService', () => {
 
   describe('resolveRawTagsToGenreIds', () => {
     it('skips segments that normalize to empty keys', async () => {
-      genreRepository.findOne.mockImplementation(async (where: any) => {
-        if (where.libraryId === null && where.kind === 'system') {
-          return { id: 'sys-rock', slug: 'rock' } as any;
-        }
+      genreRepository.getSystemGenreBySlug.mockImplementation(async (slug: string) => {
+        if (slug === 'rock') return { id: 'sys-rock', slug: 'rock' } as any;
         return null;
       });
-      genreRepository.create.mockResolvedValue({ id: 'new1' } as any);
 
       const ids = await service.resolveRawTagsToGenreIds(libraryId, ['Rock', '@@@', 'Rock']);
 
@@ -129,12 +129,10 @@ describe('GenreResolutionService', () => {
 
     it('preserves order and collapses duplicate keys', async () => {
       let systemCalls = 0;
-      genreRepository.findOne.mockImplementation(async (where: any) => {
-        if (where.libraryId === null && where.kind === 'system') {
-          systemCalls += 1;
-          if (where.slug === 'rock') return { id: 's1', slug: 'rock' } as any;
-          if (where.slug === 'jazz') return { id: 's2', slug: 'jazz' } as any;
-        }
+      genreRepository.getSystemGenreBySlug.mockImplementation(async (slug: string) => {
+        systemCalls += 1;
+        if (slug === 'rock') return { id: 's1', slug: 'rock' } as any;
+        if (slug === 'jazz') return { id: 's2', slug: 'jazz' } as any;
         return null;
       });
 
@@ -146,11 +144,11 @@ describe('GenreResolutionService', () => {
 
     it('creates custom genre when no system match and recovers on P2002', async () => {
       const created = { id: 'cust1', slug: 'newtag' } as any;
-      genreRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null)
+      genreRepository.getSystemGenreBySlug.mockResolvedValue(null);
+      genreRepository.getCustomGenreBySlugForLibrary
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(created);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       genreRepository.create.mockRejectedValueOnce(prismaUnique());
 
       const ids = await service.resolveRawTagsToGenreIds(libraryId, 'NewTag');
@@ -165,7 +163,8 @@ describe('GenreResolutionService', () => {
         kind: 'custom' as const,
         libraryId,
       } as any;
-      genreRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(existing);
+      genreRepository.getSystemGenreBySlug.mockResolvedValueOnce(null);
+      genreRepository.getCustomGenreBySlugForLibrary.mockResolvedValueOnce(existing);
 
       const ids = await service.resolveRawTagsToGenreIds(libraryId, 'OnlyCustomGenre');
 
@@ -175,10 +174,9 @@ describe('GenreResolutionService', () => {
 
     it('rethrows non-unique errors from create in resolveOneTag', async () => {
       const err = new Error('db fail');
-      genreRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null);
+      genreRepository.getSystemGenreBySlug.mockResolvedValue(null);
+      genreRepository.getCustomGenreBySlugForLibrary.mockResolvedValue(null);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       genreRepository.create.mockRejectedValueOnce(err);
 
       await expect(service.resolveRawTagsToGenreIds(libraryId, 'ZetaUniqueTag')).rejects.toThrow(
@@ -186,13 +184,11 @@ describe('GenreResolutionService', () => {
       );
     });
 
-    it('rethrows P2002 when recovery findOne returns null in resolveOneTag', async () => {
+    it('rethrows P2002 when recovery lookup returns null in resolveOneTag', async () => {
       const err = prismaUnique();
-      genreRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null);
+      genreRepository.getSystemGenreBySlug.mockResolvedValue(null);
+      genreRepository.getCustomGenreBySlugForLibrary.mockResolvedValue(null);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       genreRepository.create.mockRejectedValueOnce(err);
 
       await expect(service.resolveRawTagsToGenreIds(libraryId, 'OmegaUniqueTag')).rejects.toBe(err);
@@ -209,7 +205,7 @@ describe('GenreResolutionService', () => {
 
     it('throws NotFoundException when genre missing', async () => {
       libraryRepository.getByUserId.mockResolvedValue(library);
-      genreRepository.findOne.mockResolvedValue(null);
+      genreRepository.getById.mockResolvedValue(null);
       await expect(service.assertEditableCustomGenreForUser('g1', userId)).rejects.toThrow(
         NotFoundException,
       );
@@ -217,7 +213,7 @@ describe('GenreResolutionService', () => {
 
     it('throws ForbiddenException when not custom or wrong library', async () => {
       libraryRepository.getByUserId.mockResolvedValue(library);
-      genreRepository.findOne.mockResolvedValue({
+      genreRepository.getById.mockResolvedValue({
         id: 'g1',
         kind: 'system',
         libraryId: null,
@@ -229,14 +225,14 @@ describe('GenreResolutionService', () => {
 
     it('returns genre when valid custom row', async () => {
       libraryRepository.getByUserId.mockResolvedValue(library);
-      genreRepository.findOne.mockResolvedValue(customGenre);
+      genreRepository.getById.mockResolvedValue(customGenre);
       const result = await service.assertEditableCustomGenreForUser(customGenre.id, userId);
       expect(result).toBe(customGenre);
     });
 
     it('uses custom forbidden message', async () => {
       libraryRepository.getByUserId.mockResolvedValue(library);
-      genreRepository.findOne.mockResolvedValue({
+      genreRepository.getById.mockResolvedValue({
         id: 'g1',
         kind: 'system',
         libraryId: null,
@@ -261,7 +257,7 @@ describe('GenreResolutionService', () => {
     });
 
     it('returns base slug when free', async () => {
-      genreRepository.findOne.mockResolvedValue(null);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       const slug = await service.allocateUniqueSlugForLibraryRename(libraryId, 'Fresh Name', 'g1');
       expect(slug).toMatch(/freshname/);
     });
@@ -269,7 +265,7 @@ describe('GenreResolutionService', () => {
 
   describe('allocateUniqueSlugInLibrary (via rename)', () => {
     it('appends suffix when base slug conflicts', async () => {
-      genreRepository.findOne
+      genreRepository.getGenreBySlugForLibrary
         .mockResolvedValueOnce({ id: 'other' } as any)
         .mockResolvedValueOnce(null);
       const slug = await service.allocateUniqueSlugForLibraryRename(libraryId, 'Taken', 'g99');
@@ -277,22 +273,22 @@ describe('GenreResolutionService', () => {
       expect(slug).not.toBe('taken');
     });
 
-    it('merges NOT filter when ignoreGenreId is set', async () => {
-      genreRepository.findOne.mockResolvedValue(null);
+    it('passes excludeGenreId when ignoreGenreId is set', async () => {
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue(null);
       await service.allocateUniqueSlugForLibraryRename(libraryId, 'Only', 'genre-self');
-      expect(genreRepository.findOne).toHaveBeenCalledWith(
-        expect.objectContaining({
-          NOT: { id: 'genre-self' },
-        }),
+      expect(genreRepository.getGenreBySlugForLibrary).toHaveBeenCalledWith(
+        libraryId,
+        expect.any(String),
+        { excludeGenreId: 'genre-self' },
       );
     });
 
     it('throws ConflictException when suffix exceeds 1000', async () => {
-      genreRepository.findOne.mockResolvedValue({ id: 'x' } as any);
+      genreRepository.getGenreBySlugForLibrary.mockResolvedValue({ id: 'x' } as any);
       await expect(
         service.allocateUniqueSlugForLibraryRename(libraryId, 'Collision', 'g1'),
       ).rejects.toThrow(ConflictException);
-      expect(genreRepository.findOne.mock.calls.length).toBeGreaterThan(1000);
+      expect(genreRepository.getGenreBySlugForLibrary.mock.calls.length).toBeGreaterThan(1000);
     });
   });
 });

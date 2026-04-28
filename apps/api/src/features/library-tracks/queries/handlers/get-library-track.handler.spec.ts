@@ -35,22 +35,28 @@ describe('GetLibraryTrackHandler', () => {
   });
 
   it('should return track details', async () => {
-    trackRepository.findOne.mockResolvedValue(mockTrack);
+    trackRepository.getById.mockResolvedValue(mockTrack);
 
     const result = await handler.execute(query);
 
     expect(result).toEqual(mockTrack);
-    expect(trackRepository.findOne).toHaveBeenCalledWith({ id: trackId }, true);
+    expect(trackRepository.getById).toHaveBeenCalledWith(trackId, {
+      include: {
+        album: true,
+        artists: true,
+        genres: { include: { genre: true } },
+      },
+    });
   });
 
   it('should throw NotFoundException if track not found', async () => {
-    trackRepository.findOne.mockResolvedValue(null);
+    trackRepository.getById.mockResolvedValue(null);
 
     await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw InternalServerErrorException if Zod validation fails', async () => {
-    trackRepository.findOne.mockResolvedValue(trackBuilder({ title: 123 } as any));
+    trackRepository.getById.mockResolvedValue(trackBuilder({ title: 123 } as any));
 
     await expect(handler.execute(query)).rejects.toThrow(InternalServerErrorException);
   });
