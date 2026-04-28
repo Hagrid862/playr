@@ -110,7 +110,7 @@ describe('LibraryTracksController (Integration)', () => {
 
       prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
-      prismaMock.client.album.findFirst.mockResolvedValue(mockTrack.album);
+      prismaMock.client.album.findUnique.mockResolvedValue(mockTrack.album);
       prismaMock.client.track.create.mockResolvedValue(mockTrack);
       prismaMock.client.libraryTrack.create.mockResolvedValue(mockLibraryTrack);
 
@@ -163,7 +163,7 @@ describe('LibraryTracksController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
-      prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
+      prismaMock.client.track.findUnique.mockResolvedValue(mockTrack);
 
       const response = await request(app.getHttpServer())
         .get(`/library/tracks/${mockTrack.id}`)
@@ -181,7 +181,7 @@ describe('LibraryTracksController (Integration)', () => {
       const updatedTrack = { ...mockTrack, title: 'Updated Title' };
 
       prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
-      prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
+      prismaMock.client.track.findUnique.mockResolvedValue(mockTrack);
       prismaMock.client.track.update.mockResolvedValue(updatedTrack);
 
       prismaMock.mainClient.$transaction.mockImplementation(
@@ -246,7 +246,7 @@ describe('LibraryTracksController (Integration)', () => {
 
     it('should return 404 if no processed audio file found', async () => {
       const authHeader = await getAuthHeader();
-      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.user.findFirst.mockResolvedValue(mockUser);
       prismaMock.client.audioFile.findMany.mockResolvedValue([]);
 
       await request(app.getHttpServer())
@@ -264,7 +264,7 @@ describe('LibraryTracksController (Integration)', () => {
         status: ProcessingStatus.complete,
       });
 
-      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.user.findFirst.mockResolvedValue(mockUser);
       prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
       prismaMock.client.audioFile.findMany.mockResolvedValue([mockAudioFile]);
 
@@ -291,7 +291,7 @@ describe('LibraryTracksController (Integration)', () => {
         status: ProcessingStatus.complete,
       });
 
-      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.user.findFirst.mockResolvedValue(mockUser);
       prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
       prismaMock.client.audioFile.findMany.mockResolvedValue([mockAudioFile]);
 
@@ -333,7 +333,7 @@ describe('LibraryTracksController (Integration)', () => {
         }),
       ];
 
-      prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.client.user.findFirst.mockResolvedValue(mockUser);
       prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
       prismaMock.client.audioFile.findMany.mockResolvedValue(mockFiles);
 

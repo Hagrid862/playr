@@ -56,7 +56,7 @@ describe('AuthController (Integration)', () => {
     it('should register a new user successfully (201)', async () => {
       // Mock repository checks (no existing user/email)
       prismaMock.client.user.findUnique.mockResolvedValue(null);
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(null);
 
       // Mock successful creation
       const user = userBuilder({
@@ -94,7 +94,7 @@ describe('AuthController (Integration)', () => {
         status: EmailStatus.verified,
         verifiedAt: new Date(),
       });
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue({
         ...existingEmail,
         user: userBuilder({ id: 'user-1' }),
       } as EmailAddress & { user: User });
@@ -108,7 +108,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 409 if username already exists', async () => {
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(null);
       prismaMock.client.user.findUnique.mockResolvedValue(
         userBuilder({ id: 'existing', username: validRegistration.username }),
       );
@@ -288,7 +288,7 @@ describe('AuthController (Integration)', () => {
       });
 
       // Mock repository response
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue({
         ...email,
         user: userBase,
       } as EmailAddress & { user: User });
@@ -320,7 +320,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 401 for invalid password', async () => {
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue({
         ...emailAddressBuilder({
           email: loginData.email,
           status: EmailStatus.verified,
