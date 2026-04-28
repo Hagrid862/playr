@@ -208,6 +208,23 @@ describe('RegisterHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow('Email service error');
     });
 
+    //This should Never ever happen, but we want 100% coverage, so we need this test
+    it('should throw error if user creation returns user without primary email (Zod validation)', async () => {
+      // Arrange
+      userRepository.getByEmail.mockResolvedValue(null);
+      userRepository.getByUsername.mockResolvedValue(null);
+      hashingService.hash.mockResolvedValue('hashed-password');
+
+      // Return user with no primary email - this will trigger a Zod validation error during parsing
+      const userWithNoEmails = { ...mockUser, emailAddresses: [] };
+      mockPrismaClient.user.create.mockResolvedValue(userWithNoEmails as any);
+
+      const command = new RegisterCommand(mockPayload);
+
+      // Act & Assert
+      await expect(handler.execute(command)).rejects.toThrow();
+    });
+
     it('should successfully register a user with minimal fields', async () => {
       // Arrange
       const minimalPayload = {
