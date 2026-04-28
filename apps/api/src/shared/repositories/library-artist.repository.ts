@@ -34,6 +34,12 @@ export class LibraryArtistRepository {
     id: string,
     options: { include: T },
   ): Promise<LibraryArtistGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by its ID.
+   * @param id Record identifier.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getById(
     id: string,
     options?: { include: Prisma.LibraryArtistInclude },
@@ -50,15 +56,19 @@ export class LibraryArtistRepository {
     return row;
   }
 
-  async getByLibraryAndArtist(
-    libraryId: string,
-    artistId: string,
-  ): Promise<LibraryArtist | null>;
+  async getByLibraryAndArtist(libraryId: string, artistId: string): Promise<LibraryArtist | null>;
   async getByLibraryAndArtist<T extends Prisma.LibraryArtistInclude>(
     libraryId: string,
     artistId: string,
     options: { include: T },
   ): Promise<LibraryArtistGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a library-artist link by library ID and artist ID.
+   * @param libraryId libraryId to match.
+   * @param artistId artistId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByLibraryAndArtist(
     libraryId: string,
     artistId: string,
@@ -85,6 +95,15 @@ export class LibraryArtistRepository {
     orderBy: LibraryArtistOrderByWithRelationInput | undefined,
     options: { include: T },
   ): Promise<LibraryArtistGetPayload<{ include: T }>[]>;
+  /**
+   * Returns a paginated list of matching records.
+   * @param page 1-based page index.
+   * @param limit Maximum rows to return.
+   * @param filter Filter criteria for matching rows.
+   * @param orderBy Sort order for the query.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async getPaginated(
     page: number,
     limit: number,
@@ -117,30 +136,41 @@ export class LibraryArtistRepository {
   // ─────────────────────────────────────────────────────────────
   // UTILS
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Checks whether a matching record currently exists.
+   * @param id Record identifier.
+   * @returns True when a matching record exists.
+   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.libraryArtist.count({
       where: { id, deletedAt: null },
     });
     return count > 0;
   }
-
+  /**
+   * Checks whether a library-artist link exists for the provided IDs.
+   * @param libraryId libraryId to match.
+   * @param artistId artistId to match.
+   * @returns True when a matching record exists.
+   */
   async existsForLibraryAndArtist(libraryId: string, artistId: string): Promise<boolean> {
     const count = await this.prisma.client.libraryArtist.count({
       where: mergeLibraryArtistWhere({ libraryId, artistId }),
     });
     return count > 0;
   }
-
+  /**
+   * Counts records that match the provided filters.
+   * @param where Where clause constraints.
+   * @returns Number of matching records.
+   */
   async count(where?: LibraryArtistWhereInput): Promise<number> {
     const { artist, ...rest } = where || {};
     return await this.prisma.client.libraryArtist.count({
       where: {
         ...rest,
         deletedAt:
-          where && 'deletedAt' in where && where.deletedAt !== undefined
-            ? where.deletedAt
-            : null,
+          where && 'deletedAt' in where && where.deletedAt !== undefined ? where.deletedAt : null,
         artist: {
           ...((artist as object) || {}),
           deletedAt: null,
@@ -158,12 +188,16 @@ export class LibraryArtistRepository {
     data: LibraryArtistCreateInput,
     options: { include: T },
   ): Promise<LibraryArtistGetPayload<{ include: T }>>;
+  /**
+   * Creates a new record with the provided data.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created record. Includes related entities when `options.include` is provided.
+   */
   async create(
     data: LibraryArtistCreateInput,
     options?: { include: Prisma.LibraryArtistInclude },
-  ): Promise<
-    LibraryArtist | LibraryArtistGetPayload<{ include: Prisma.LibraryArtistInclude }>
-  > {
+  ): Promise<LibraryArtist | LibraryArtistGetPayload<{ include: Prisma.LibraryArtistInclude }>> {
     return await this.prisma.client.libraryArtist.create({
       data,
       ...(options?.include ? { include: options.include } : {}),
@@ -175,6 +209,12 @@ export class LibraryArtistRepository {
     data: Prisma.LibraryArtistCreateManyInput[],
     options: { include: T },
   ): Promise<LibraryArtistGetPayload<{ include: T }>[]>;
+  /**
+   * Creates multiple records in a single operation.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created records. Includes related entities when `options.include` is provided.
+   */
   async createMany(
     data: Prisma.LibraryArtistCreateManyInput[],
     options?: { include: Prisma.LibraryArtistInclude },
@@ -197,20 +237,25 @@ export class LibraryArtistRepository {
     data: LibraryArtistUpdateInput,
     options: { include: T },
   ): Promise<LibraryArtistGetPayload<{ include: T }>>;
+  /**
+   * Updates an existing record with the provided data.
+   * @param id Record identifier.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Updated record. Includes related entities when `options.include` is provided.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async update(
     id: string,
     data: LibraryArtistUpdateInput,
     options?: { include: Prisma.LibraryArtistInclude },
-  ): Promise<
-    LibraryArtist | LibraryArtistGetPayload<{ include: Prisma.LibraryArtistInclude }>
-  > {
+  ): Promise<LibraryArtist | LibraryArtistGetPayload<{ include: Prisma.LibraryArtistInclude }>> {
     return await this.prisma.client.libraryArtist.update({
       data,
       where: { id },
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
   async updateMany(
     updates: { id: string; data: LibraryArtistUpdateInput }[],
   ): Promise<LibraryArtist[]>;
@@ -218,6 +263,12 @@ export class LibraryArtistRepository {
     updates: { id: string; data: LibraryArtistUpdateInput }[],
     options: { include: T },
   ): Promise<LibraryArtistGetPayload<{ include: T }>[]>;
+  /**
+   * Updates multiple existing records in a single operation.
+   * @param updates List of record IDs and update payloads to apply.
+   * @param options Optional include or query options.
+   * @returns Updated records. Includes related entities when `options.include` is provided.
+   */
   async updateMany(
     updates: { id: string; data: LibraryArtistUpdateInput }[],
     options?: { include: Prisma.LibraryArtistInclude },
@@ -238,19 +289,34 @@ export class LibraryArtistRepository {
   // ─────────────────────────────────────────────────────────────
   // DELETE
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Permanently deletes a single record by ID.
+   * @param id Record identifier.
+   * @returns Deleted record.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async delete(id: string): Promise<LibraryArtist> {
     return await this.prisma.client.libraryArtist.delete({ where: { id } });
   }
-
+  /**
+   * Soft-deletes a single record by setting its deletion timestamp.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async softDelete(id: string): Promise<LibraryArtist> {
     return await this.prisma.client.libraryArtist.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  /** Hard-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Permanently deletes multiple records by their IDs.
+   * @param ids Record identifiers to match.
+   * @returns Pre-delete snapshots of deleted records.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async deleteMany(ids: string[]): Promise<LibraryArtist[]> {
     if (ids.length === 0) {
       return [];
@@ -263,8 +329,11 @@ export class LibraryArtistRepository {
     });
     return rows;
   }
-
-  /** Soft-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Soft-deletes multiple records by setting their deletion timestamps.
+   * @param ids Record identifiers to match.
+   * @returns The resulting record after the write operation.
+   */
   async softDeleteMany(ids: string[]): Promise<LibraryArtist[]> {
     if (ids.length === 0) {
       return [];

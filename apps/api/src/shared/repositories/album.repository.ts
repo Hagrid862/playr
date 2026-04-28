@@ -10,13 +10,9 @@ import {
   Prisma,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
-
-/** Shared conventions: see docblock at top of `track.repository.ts` (getById, getPaginated, delete vs softDelete). */
 @Injectable()
 export class AlbumRepository {
   constructor(private readonly prisma: PrismaService) {}
-
-  /** Owner ACL on the album row, or owner ACL on a linked artist (library edit flows). */
   private ownerEditOr(userId: string) {
     return [
       { access: { some: { userId, role: AccessRole.owner } } },
@@ -33,6 +29,12 @@ export class AlbumRepository {
     id: string,
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by its ID.
+   * @param id Record identifier.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getById(
     id: string,
     options?: { include: Prisma.AlbumInclude },
@@ -47,15 +49,19 @@ export class AlbumRepository {
     return row;
   }
 
-  /**
-   * Album the user may edit via album owner ACL or artist owner ACL (update + name uniqueness).
-   */
   async getByIdForOwner(id: string, userId: string): Promise<Album | null>;
   async getByIdForOwner<T extends Prisma.AlbumInclude>(
     id: string,
     userId: string,
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by ID when the user is an owner.
+   * @param id Record identifier.
+   * @param userId userId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByIdForOwner(
     id: string,
     userId: string,
@@ -70,14 +76,19 @@ export class AlbumRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  /** Album where the user has owner ACL on the album row (covers, strict delete). */
   async getByIdForAlbumOwner(id: string, userId: string): Promise<Album | null>;
   async getByIdForAlbumOwner<T extends Prisma.AlbumInclude>(
     id: string,
     userId: string,
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single album by ID when the user owns that album.
+   * @param id Record identifier.
+   * @param userId userId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByIdForAlbumOwner(
     id: string,
     userId: string,
@@ -99,6 +110,13 @@ export class AlbumRepository {
     userId: string,
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by name when the user is an owner.
+   * @param name Name value to look up.
+   * @param userId userId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByNameForOwner(
     name: string,
     userId: string,
@@ -127,6 +145,15 @@ export class AlbumRepository {
     orderBy: AlbumOrderByWithRelationInput | undefined,
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }>[]>;
+  /**
+   * Returns a paginated list of matching records.
+   * @param page 1-based page index.
+   * @param limit Maximum rows to return.
+   * @param filter Filter criteria for matching rows.
+   * @param orderBy Sort order for the query.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async getPaginated(
     page: number,
     limit: number,
@@ -152,14 +179,22 @@ export class AlbumRepository {
   // ─────────────────────────────────────────────────────────────
   // UTILS
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Checks whether a matching record currently exists.
+   * @param id Record identifier.
+   * @returns True when a matching record exists.
+   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.album.count({
       where: { id, deletedAt: null },
     });
     return count > 0;
   }
-
+  /**
+   * Counts records that match the provided filters.
+   * @param filter Filter criteria for matching rows.
+   * @returns Number of matching records.
+   */
   async count(filter?: AlbumWhereInput): Promise<number> {
     return await this.prisma.client.album.count({
       where: {
@@ -168,7 +203,12 @@ export class AlbumRepository {
       },
     });
   }
-
+  /**
+   * Checks whether the user can access the requested record.
+   * @param id Record identifier.
+   * @param userId userId to match.
+   * @returns True when the principal is allowed to access the album.
+   */
   async checkAccess(id: string, userId?: string): Promise<boolean> {
     const guestId = 'GUEST';
     const activeUserId = userId ?? guestId;
@@ -210,6 +250,12 @@ export class AlbumRepository {
     data: AlbumCreateInput,
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }>>;
+  /**
+   * Creates a new record with the provided data.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created record. Includes related entities when `options.include` is provided.
+   */
   async create(
     data: AlbumCreateInput,
     options?: { include: Prisma.AlbumInclude },
@@ -225,6 +271,12 @@ export class AlbumRepository {
     data: Prisma.AlbumCreateManyInput[],
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }>[]>;
+  /**
+   * Creates multiple records in a single operation.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created records. Includes related entities when `options.include` is provided.
+   */
   async createMany(
     data: Prisma.AlbumCreateManyInput[],
     options?: { include: Prisma.AlbumInclude },
@@ -245,6 +297,14 @@ export class AlbumRepository {
     data: AlbumUpdateInput,
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }>>;
+  /**
+   * Updates an existing record with the provided data.
+   * @param id Record identifier.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Updated record. Includes related entities when `options.include` is provided.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async update(
     id: string,
     data: AlbumUpdateInput,
@@ -256,14 +316,17 @@ export class AlbumRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  async updateMany(
-    updates: { id: string; data: AlbumUpdateInput }[],
-  ): Promise<Album[]>;
+  async updateMany(updates: { id: string; data: AlbumUpdateInput }[]): Promise<Album[]>;
   async updateMany<T extends Prisma.AlbumInclude>(
     updates: { id: string; data: AlbumUpdateInput }[],
     options: { include: T },
   ): Promise<AlbumGetPayload<{ include: T }>[]>;
+  /**
+   * Updates multiple existing records in a single operation.
+   * @param updates List of record IDs and update payloads to apply.
+   * @param options Optional include or query options.
+   * @returns Updated records. Includes related entities when `options.include` is provided.
+   */
   async updateMany(
     updates: { id: string; data: AlbumUpdateInput }[],
     options?: { include: Prisma.AlbumInclude },
@@ -282,19 +345,34 @@ export class AlbumRepository {
   // ─────────────────────────────────────────────────────────────
   // DELETE
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Permanently deletes a single record by ID.
+   * @param id Record identifier.
+   * @returns Deleted record.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async delete(id: string): Promise<Album> {
     return await this.prisma.client.album.delete({ where: { id } });
   }
-
+  /**
+   * Soft-deletes a single record by setting its deletion timestamp.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async softDelete(id: string): Promise<Album> {
     return await this.prisma.client.album.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  /** Hard-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Permanently deletes multiple records by their IDs.
+   * @param ids Record identifiers to match.
+   * @returns Pre-delete snapshots of deleted records.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async deleteMany(ids: string[]): Promise<Album[]> {
     if (ids.length === 0) {
       return [];
@@ -307,8 +385,11 @@ export class AlbumRepository {
     });
     return albums;
   }
-
-  /** Soft-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Soft-deletes multiple records by setting their deletion timestamps.
+   * @param ids Record identifiers to match.
+   * @returns The resulting record after the write operation.
+   */
   async softDeleteMany(ids: string[]): Promise<Album[]> {
     if (ids.length === 0) {
       return [];
@@ -322,11 +403,12 @@ export class AlbumRepository {
     });
     return albums;
   }
-
   /**
-   * Hard-delete an album and dependent rows: report targets, then the album row (DB
-   * cascades tracks, audio files, playlist track links, library rows, album comments,
-   * genres, access, etc.). Deletes the cover {@link Image} row when present.
+   * Permanently deletes a record and its related cascade data.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
    */
   async deleteCascade(id: string): Promise<Album> {
     return await this.prisma.mainClient.$transaction(async (tx) => {
@@ -342,7 +424,6 @@ export class AlbumRepository {
       await tx.reportTarget.deleteMany({ where: { albumId: id } });
 
       const deleted = await tx.album.delete({ where: { id } });
-
       if (snapshot?.coverId) {
         await tx.image.deleteMany({ where: { id: snapshot.coverId } });
       }
@@ -350,11 +431,11 @@ export class AlbumRepository {
       return deleted;
     });
   }
-
   /**
-   * Soft-delete an album: report targets, library album links, pins on this album,
-   * album comments, playlist/library rows for tracks on this album, track comments,
-   * favorites, tracks (songs), cover image, then the album.
+   * Soft-deletes a record and related cascade data.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
    */
   async softDeleteCascade(id: string): Promise<Album> {
     const now = new Date();
@@ -364,8 +445,7 @@ export class AlbumRepository {
         where: { id },
         select: { coverId: true, deletedAt: true },
       });
-      const snapshot =
-        albumRow && !albumRow.deletedAt ? { coverId: albumRow.coverId } : null;
+      const snapshot = albumRow && !albumRow.deletedAt ? { coverId: albumRow.coverId } : null;
 
       await tx.reportTarget.updateMany({
         where: { albumId: id, deletedAt: null },
@@ -416,7 +496,6 @@ export class AlbumRepository {
         where: { albumId: id, deletedAt: null },
         data: { deletedAt: now },
       });
-
       if (snapshot?.coverId) {
         await tx.image.updateMany({
           where: { id: snapshot.coverId, deletedAt: null },

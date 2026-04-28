@@ -24,6 +24,12 @@ export class ArtistRepository {
     id: string,
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by its ID.
+   * @param id Record identifier.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getById(
     id: string,
     options?: { include: Prisma.ArtistInclude },
@@ -37,14 +43,19 @@ export class ArtistRepository {
     }
     return row;
   }
-
-  /** Artist row where the user has owner ACL (edit, delete, uploads). */
   async getByIdForOwner(id: string, userId: string): Promise<Artist | null>;
   async getByIdForOwner<T extends Prisma.ArtistInclude>(
     id: string,
     userId: string,
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by ID when the user is an owner.
+   * @param id Record identifier.
+   * @param userId userId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByIdForOwner(
     id: string,
     userId: string,
@@ -59,14 +70,19 @@ export class ArtistRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  /** Name collision within the user's owned artists. */
   async getByNameForOwner(name: string, userId: string): Promise<Artist | null>;
   async getByNameForOwner<T extends Prisma.ArtistInclude>(
     name: string,
     userId: string,
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by name when the user is an owner.
+   * @param name Name value to look up.
+   * @param userId userId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByNameForOwner(
     name: string,
     userId: string,
@@ -95,6 +111,15 @@ export class ArtistRepository {
     orderBy: ArtistOrderByWithRelationInput | undefined,
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }>[]>;
+  /**
+   * Returns a paginated list of matching records.
+   * @param page 1-based page index.
+   * @param limit Maximum rows to return.
+   * @param filter Filter criteria for matching rows.
+   * @param orderBy Sort order for the query.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async getPaginated(
     page: number,
     limit: number,
@@ -120,14 +145,22 @@ export class ArtistRepository {
   // ─────────────────────────────────────────────────────────────
   // UTILS
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Checks whether a matching record currently exists.
+   * @param id Record identifier.
+   * @returns True when a matching record exists.
+   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.artist.count({
       where: { id, deletedAt: null },
     });
     return count > 0;
   }
-
+  /**
+   * Counts records that match the provided filters.
+   * @param filter Filter criteria for matching rows.
+   * @returns Number of matching records.
+   */
   async count(filter?: ArtistWhereInput): Promise<number> {
     return await this.prisma.client.artist.count({
       where: {
@@ -136,7 +169,12 @@ export class ArtistRepository {
       },
     });
   }
-
+  /**
+   * Checks whether the user can access the requested record.
+   * @param id Record identifier.
+   * @param userId userId to match.
+   * @returns True when the principal is allowed to access the artist.
+   */
   async checkAccess(id: string, userId?: string): Promise<boolean> {
     const guestId = 'GUEST';
     const activeUserId = userId ?? guestId;
@@ -169,6 +207,12 @@ export class ArtistRepository {
     data: ArtistCreateInput,
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }>>;
+  /**
+   * Creates a new record with the provided data.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created record. Includes related entities when `options.include` is provided.
+   */
   async create(
     data: ArtistCreateInput,
     options?: { include: Prisma.ArtistInclude },
@@ -184,12 +228,16 @@ export class ArtistRepository {
     data: Prisma.ArtistCreateManyInput[],
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }>[]>;
+  /**
+   * Creates multiple records in a single operation.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created records. Includes related entities when `options.include` is provided.
+   */
   async createMany(
     data: Prisma.ArtistCreateManyInput[],
     options?: { include: Prisma.ArtistInclude },
-  ): Promise<
-    Artist[] | ArtistGetPayload<{ include: Prisma.ArtistInclude }>[]
-  > {
+  ): Promise<Artist[] | ArtistGetPayload<{ include: Prisma.ArtistInclude }>[]> {
     return await this.prisma.client.artist.createManyAndReturn({
       data,
       ...(options?.include ? { include: options.include } : {}),
@@ -206,6 +254,14 @@ export class ArtistRepository {
     data: ArtistUpdateInput,
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }>>;
+  /**
+   * Updates an existing record with the provided data.
+   * @param id Record identifier.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Updated record. Includes related entities when `options.include` is provided.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async update(
     id: string,
     data: ArtistUpdateInput,
@@ -217,20 +273,21 @@ export class ArtistRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  async updateMany(
-    updates: { id: string; data: ArtistUpdateInput }[],
-  ): Promise<Artist[]>;
+  async updateMany(updates: { id: string; data: ArtistUpdateInput }[]): Promise<Artist[]>;
   async updateMany<T extends Prisma.ArtistInclude>(
     updates: { id: string; data: ArtistUpdateInput }[],
     options: { include: T },
   ): Promise<ArtistGetPayload<{ include: T }>[]>;
+  /**
+   * Updates multiple existing records in a single operation.
+   * @param updates List of record IDs and update payloads to apply.
+   * @param options Optional include or query options.
+   * @returns Updated records. Includes related entities when `options.include` is provided.
+   */
   async updateMany(
     updates: { id: string; data: ArtistUpdateInput }[],
     options?: { include: Prisma.ArtistInclude },
-  ): Promise<
-    Artist[] | ArtistGetPayload<{ include: Prisma.ArtistInclude }>[]
-  > {
+  ): Promise<Artist[] | ArtistGetPayload<{ include: Prisma.ArtistInclude }>[]> {
     return await this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.artist.update({
@@ -245,19 +302,34 @@ export class ArtistRepository {
   // ─────────────────────────────────────────────────────────────
   // DELETE
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Permanently deletes a single record by ID.
+   * @param id Record identifier.
+   * @returns Deleted record.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async delete(id: string): Promise<Artist> {
     return await this.prisma.client.artist.delete({ where: { id } });
   }
-
+  /**
+   * Soft-deletes a single record by setting its deletion timestamp.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async softDelete(id: string): Promise<Artist> {
     return await this.prisma.client.artist.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  /** Hard-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Permanently deletes multiple records by their IDs.
+   * @param ids Record identifiers to match.
+   * @returns Pre-delete snapshots of deleted records.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async deleteMany(ids: string[]): Promise<Artist[]> {
     if (ids.length === 0) {
       return [];
@@ -270,8 +342,11 @@ export class ArtistRepository {
     });
     return artists;
   }
-
-  /** Soft-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Soft-deletes multiple records by setting their deletion timestamps.
+   * @param ids Record identifiers to match.
+   * @returns The resulting record after the write operation.
+   */
   async softDeleteMany(ids: string[]): Promise<Artist[]> {
     if (ids.length === 0) {
       return [];
@@ -285,12 +360,12 @@ export class ArtistRepository {
     });
     return artists;
   }
-
   /**
-   * Hard-delete an artist and associated domain data: playlists owned by the artist,
-   * report targets, library pins / library-artist rows, albums (and cascaded tracks,
-   * audio files, playlist entries, etc.), any remaining tracks crediting this artist,
-   * then the artist row. Clears optional `artistId` on artist/community profiles.
+   * Permanently deletes a record and its related cascade data.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
    */
   async deleteCascade(id: string): Promise<Artist> {
     return await this.prisma.mainClient.$transaction(async (tx) => {
@@ -316,7 +391,6 @@ export class ArtistRepository {
         select: { id: true },
       });
       const albumIds = albums.map((a) => a.id);
-
       if (albumIds.length > 0) {
         await tx.album.deleteMany({ where: { id: { in: albumIds } } });
       }
@@ -328,12 +402,11 @@ export class ArtistRepository {
       return tx.artist.delete({ where: { id } });
     });
   }
-
   /**
-   * Soft-delete an artist and associated data: playlists, report targets, library
-   * artist links and pins, albums and their tracks (plus any remaining tracks crediting
-   * this artist). Clears optional `artistId` on profiles; does not soft-delete entire
-   * community profiles.
+   * Soft-deletes a record and related cascade data.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
    */
   async softDeleteCascade(id: string): Promise<Artist> {
     const now = new Date();
@@ -374,7 +447,6 @@ export class ArtistRepository {
         select: { id: true },
       });
       const albumIds = albums.map((a) => a.id);
-
       if (albumIds.length > 0) {
         await tx.album.updateMany({
           where: { id: { in: albumIds }, deletedAt: null },

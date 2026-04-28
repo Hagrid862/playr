@@ -10,21 +10,11 @@ import {
   TrackWhereInput,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
-
-/**
- * Repository conventions (see sibling `*.repository.ts` files in this folder):
- *
- * - **getById** — `findUnique` by `id`, returns `null` when missing or soft-deleted (`deletedAt`).
- * - **getPaginated(page, limit, filter?, orderBy?, options?)** — Page is 1-based; maps to Prisma skip/take.
- * - **delete** — Hard delete (`prisma.delete`). Use **softDelete** to set `deletedAt` for soft-deletable rows.
- * - **deleteMany** / **softDeleteMany** — Only accept explicit `id` arrays so callers cannot pass an empty filter and wipe a table.
- */
 @Injectable()
 export class TrackRepository {
   private static readonly GUEST_USER_ID = 'GUEST';
 
   constructor(private readonly prisma: PrismaService) {}
-
   private accessibleOr(activeUserId: string) {
     return [
       { visibility: 'public' as const },
@@ -49,6 +39,12 @@ export class TrackRepository {
     id: string,
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by its ID.
+   * @param id Record identifier.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getById(
     id: string,
     options?: { include: Prisma.TrackInclude },
@@ -63,15 +59,19 @@ export class TrackRepository {
     return row;
   }
 
-  /**
-   * Track where the user has explicit owner ACL (library edit/delete flows).
-   */
   async getByIdForOwner(id: string, userId: string): Promise<Track | null>;
   async getByIdForOwner<T extends Prisma.TrackInclude>(
     id: string,
     userId: string,
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by ID when the user is an owner.
+   * @param id Record identifier.
+   * @param userId userId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByIdForOwner(
     id: string,
     userId: string,
@@ -86,13 +86,17 @@ export class TrackRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  /** All non-deleted tracks on an album, ordered by disc then track number. */
   async listByAlbumId(albumId: string): Promise<Track[]>;
   async listByAlbumId<T extends Prisma.TrackInclude>(
     albumId: string,
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }>[]>;
+  /**
+   * Lists tracks that belong to the provided album ID.
+   * @param albumId albumId to match.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async listByAlbumId<T extends Prisma.TrackInclude>(
     albumId: string,
     options?: { include: T },
@@ -103,8 +107,6 @@ export class TrackRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  /** Tracks credited to an artist (many-to-many). */
   async listByArtistId(artistId: string): Promise<Track[]>;
   async listByArtistId(
     artistId: string,
@@ -119,6 +121,12 @@ export class TrackRepository {
       orderBy?: TrackOrderByWithRelationInput;
     },
   ): Promise<TrackGetPayload<{ include: T }>[]>;
+  /**
+   * Lists tracks associated with the provided artist ID.
+   * @param artistId artistId to match.
+   * @param options Optional pagination (`take`, `skip`), sorting (`orderBy`), and relation include (`include`) options.
+   * @returns Records that match the query criteria.
+   */
   async listByArtistId<T extends Prisma.TrackInclude>(
     artistId: string,
     options?: {
@@ -140,11 +148,6 @@ export class TrackRepository {
       ...(include ? { include } : {}),
     });
   }
-
-  /**
-   * Tracks visible to a principal using the same rules as {@link checkAccess}
-   * (public, track/album/artist ACL). Omit `principalUserId` or pass `undefined` for guest.
-   */
   async listAccessibleForPrincipal(
     principalUserId: string | undefined,
     options?: {
@@ -162,6 +165,12 @@ export class TrackRepository {
       include: T;
     },
   ): Promise<TrackGetPayload<{ include: T }>[]>;
+  /**
+   * Lists tracks accessible to the provided principal.
+   * @param principalUserId principalUserId to match.
+   * @param options Optional pagination (`take`, `skip`), sorting (`orderBy`), and relation include (`include`) options.
+   * @returns Records that match the query criteria.
+   */
   async listAccessibleForPrincipal<T extends Prisma.TrackInclude>(
     principalUserId: string | undefined,
     options?: {
@@ -197,6 +206,15 @@ export class TrackRepository {
     orderBy: TrackOrderByWithRelationInput | undefined,
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }>[]>;
+  /**
+   * Returns a paginated list of matching records.
+   * @param page 1-based page index.
+   * @param limit Maximum rows to return.
+   * @param filter Filter criteria for matching rows.
+   * @param orderBy Sort order for the query.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async getPaginated<T extends Prisma.TrackInclude>(
     page: number,
     limit: number,
@@ -219,14 +237,22 @@ export class TrackRepository {
   // ─────────────────────────────────────────────────────────────
   // UTILS
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Checks whether a matching record currently exists.
+   * @param id Record identifier.
+   * @returns True when a matching record exists.
+   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.track.count({
       where: { id, deletedAt: null },
     });
     return count > 0;
   }
-
+  /**
+   * Counts records that match the provided filters.
+   * @param filter Filter criteria for matching rows.
+   * @returns Number of matching records.
+   */
   async count(filter?: TrackWhereInput): Promise<number> {
     return await this.prisma.client.track.count({
       where: {
@@ -235,7 +261,12 @@ export class TrackRepository {
       },
     });
   }
-
+  /**
+   * Checks whether the user can access the requested record.
+   * @param id Record identifier.
+   * @param userId userId to match.
+   * @returns True when the principal is allowed to access the track.
+   */
   async checkAccess(id: string, userId?: string): Promise<boolean> {
     const activeUserId = userId ?? TrackRepository.GUEST_USER_ID;
 
@@ -260,6 +291,12 @@ export class TrackRepository {
     data: TrackCreateInput,
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }>>;
+  /**
+   * Creates a new record with the provided data.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created record. Includes related entities when `options.include` is provided.
+   */
   async create(
     data: TrackCreateInput,
     options?: { include: Prisma.TrackInclude },
@@ -275,12 +312,16 @@ export class TrackRepository {
     data: Prisma.TrackCreateManyInput[],
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }>[]>;
+  /**
+   * Creates multiple records in a single operation.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created records. Includes related entities when `options.include` is provided.
+   */
   async createMany(
     data: Prisma.TrackCreateManyInput[],
     options?: { include: Prisma.TrackInclude },
-  ): Promise<
-    Track[] | TrackGetPayload<{ include: Prisma.TrackInclude }>[]
-  > {
+  ): Promise<Track[] | TrackGetPayload<{ include: Prisma.TrackInclude }>[]> {
     return await this.prisma.client.track.createManyAndReturn({
       data,
       ...(options?.include ? { include: options.include } : {}),
@@ -297,6 +338,14 @@ export class TrackRepository {
     data: TrackUpdateInput,
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }>>;
+  /**
+   * Updates an existing record with the provided data.
+   * @param id Record identifier.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Updated record. Includes related entities when `options.include` is provided.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async update(
     id: string,
     data: TrackUpdateInput,
@@ -308,14 +357,17 @@ export class TrackRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  async updateMany(
-    updates: { id: string; data: TrackUpdateInput }[],
-  ): Promise<Track[]>;
+  async updateMany(updates: { id: string; data: TrackUpdateInput }[]): Promise<Track[]>;
   async updateMany<T extends Prisma.TrackInclude>(
     updates: { id: string; data: TrackUpdateInput }[],
     options: { include: T },
   ): Promise<TrackGetPayload<{ include: T }>[]>;
+  /**
+   * Updates multiple existing records in a single operation.
+   * @param updates List of record IDs and update payloads to apply.
+   * @param options Optional include or query options.
+   * @returns Updated records. Includes related entities when `options.include` is provided.
+   */
   async updateMany(
     updates: { id: string; data: TrackUpdateInput }[],
     options?: { include: Prisma.TrackInclude },
@@ -334,21 +386,36 @@ export class TrackRepository {
   // ─────────────────────────────────────────────────────────────
   // DELETE
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Permanently deletes a single record by ID.
+   * @param id Record identifier.
+   * @returns Deleted record.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async delete(id: string): Promise<Track> {
     return await this.prisma.client.track.delete({
       where: { id },
     });
   }
-
+  /**
+   * Soft-deletes a single record by setting its deletion timestamp.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async softDelete(id: string): Promise<Track> {
     return await this.prisma.client.track.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  /** Hard-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Permanently deletes multiple records by their IDs.
+   * @param ids Record identifiers to match.
+   * @returns Pre-delete snapshots of deleted records.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async deleteMany(ids: string[]): Promise<Track[]> {
     if (ids.length === 0) {
       return [];
@@ -361,8 +428,11 @@ export class TrackRepository {
     });
     return tracks;
   }
-
-  /** Soft-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Soft-deletes multiple records by setting their deletion timestamps.
+   * @param ids Record identifiers to match.
+   * @returns The resulting record after the write operation.
+   */
   async softDeleteMany(ids: string[]): Promise<Track[]> {
     if (ids.length === 0) {
       return [];

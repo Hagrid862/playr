@@ -34,6 +34,12 @@ export class LibraryAlbumRepository {
     id: string,
     options: { include: T },
   ): Promise<LibraryAlbumGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by its ID.
+   * @param id Record identifier.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getById(
     id: string,
     options?: { include: Prisma.LibraryAlbumInclude },
@@ -50,15 +56,19 @@ export class LibraryAlbumRepository {
     return row;
   }
 
-  async getByLibraryAndAlbum(
-    libraryId: string,
-    albumId: string,
-  ): Promise<LibraryAlbum | null>;
+  async getByLibraryAndAlbum(libraryId: string, albumId: string): Promise<LibraryAlbum | null>;
   async getByLibraryAndAlbum<T extends Prisma.LibraryAlbumInclude>(
     libraryId: string,
     albumId: string,
     options: { include: T },
   ): Promise<LibraryAlbumGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a library-album link by library ID and album ID.
+   * @param libraryId libraryId to match.
+   * @param albumId albumId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByLibraryAndAlbum(
     libraryId: string,
     albumId: string,
@@ -85,15 +95,22 @@ export class LibraryAlbumRepository {
     orderBy: LibraryAlbumOrderByWithRelationInput | undefined,
     options: { include: T },
   ): Promise<LibraryAlbumGetPayload<{ include: T }>[]>;
+  /**
+   * Returns a paginated list of matching records.
+   * @param page 1-based page index.
+   * @param limit Maximum rows to return.
+   * @param filter Filter criteria for matching rows.
+   * @param orderBy Sort order for the query.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async getPaginated(
     page: number,
     limit: number,
     filter?: LibraryAlbumWhereInput,
     orderBy?: LibraryAlbumOrderByWithRelationInput,
     options?: { include: Prisma.LibraryAlbumInclude },
-  ): Promise<
-    LibraryAlbum[] | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>[]
-  > {
+  ): Promise<LibraryAlbum[] | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>[]> {
     const { album, ...rest } = filter || {};
     return await this.prisma.client.libraryAlbum.findMany({
       take: limit,
@@ -117,30 +134,41 @@ export class LibraryAlbumRepository {
   // ─────────────────────────────────────────────────────────────
   // UTILS
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Checks whether a matching record currently exists.
+   * @param id Record identifier.
+   * @returns True when a matching record exists.
+   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.libraryAlbum.count({
       where: { id, deletedAt: null },
     });
     return count > 0;
   }
-
+  /**
+   * Checks whether a library-album link exists for the provided IDs.
+   * @param libraryId libraryId to match.
+   * @param albumId albumId to match.
+   * @returns True when a matching record exists.
+   */
   async existsForLibraryAndAlbum(libraryId: string, albumId: string): Promise<boolean> {
     const count = await this.prisma.client.libraryAlbum.count({
       where: mergeLibraryAlbumWhere({ libraryId, albumId }),
     });
     return count > 0;
   }
-
+  /**
+   * Counts records that match the provided filters.
+   * @param where Where clause constraints.
+   * @returns Number of matching records.
+   */
   async count(where?: LibraryAlbumWhereInput): Promise<number> {
     const { album, ...rest } = where || {};
     return await this.prisma.client.libraryAlbum.count({
       where: {
         ...rest,
         deletedAt:
-          where && 'deletedAt' in where && where.deletedAt !== undefined
-            ? where.deletedAt
-            : null,
+          where && 'deletedAt' in where && where.deletedAt !== undefined ? where.deletedAt : null,
         album: {
           ...((album as object) || {}),
           deletedAt: null,
@@ -158,12 +186,16 @@ export class LibraryAlbumRepository {
     data: LibraryAlbumCreateInput,
     options: { include: T },
   ): Promise<LibraryAlbumGetPayload<{ include: T }>>;
+  /**
+   * Creates a new record with the provided data.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created record. Includes related entities when `options.include` is provided.
+   */
   async create(
     data: LibraryAlbumCreateInput,
     options?: { include: Prisma.LibraryAlbumInclude },
-  ): Promise<
-    LibraryAlbum | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>
-  > {
+  ): Promise<LibraryAlbum | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>> {
     return await this.prisma.client.libraryAlbum.create({
       data,
       ...(options?.include ? { include: options.include } : {}),
@@ -175,12 +207,16 @@ export class LibraryAlbumRepository {
     data: Prisma.LibraryAlbumCreateManyInput[],
     options: { include: T },
   ): Promise<LibraryAlbumGetPayload<{ include: T }>[]>;
+  /**
+   * Creates multiple records in a single operation.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created records. Includes related entities when `options.include` is provided.
+   */
   async createMany(
     data: Prisma.LibraryAlbumCreateManyInput[],
     options?: { include: Prisma.LibraryAlbumInclude },
-  ): Promise<
-    LibraryAlbum[] | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>[]
-  > {
+  ): Promise<LibraryAlbum[] | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>[]> {
     return await this.prisma.client.libraryAlbum.createManyAndReturn({
       data,
       ...(options?.include ? { include: options.include } : {}),
@@ -197,20 +233,25 @@ export class LibraryAlbumRepository {
     data: LibraryAlbumUpdateInput,
     options: { include: T },
   ): Promise<LibraryAlbumGetPayload<{ include: T }>>;
+  /**
+   * Updates an existing record with the provided data.
+   * @param id Record identifier.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Updated record. Includes related entities when `options.include` is provided.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async update(
     id: string,
     data: LibraryAlbumUpdateInput,
     options?: { include: Prisma.LibraryAlbumInclude },
-  ): Promise<
-    LibraryAlbum | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>
-  > {
+  ): Promise<LibraryAlbum | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>> {
     return await this.prisma.client.libraryAlbum.update({
       data,
       where: { id },
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
   async updateMany(
     updates: { id: string; data: LibraryAlbumUpdateInput }[],
   ): Promise<LibraryAlbum[]>;
@@ -218,12 +259,16 @@ export class LibraryAlbumRepository {
     updates: { id: string; data: LibraryAlbumUpdateInput }[],
     options: { include: T },
   ): Promise<LibraryAlbumGetPayload<{ include: T }>[]>;
+  /**
+   * Updates multiple existing records in a single operation.
+   * @param updates List of record IDs and update payloads to apply.
+   * @param options Optional include or query options.
+   * @returns Updated records. Includes related entities when `options.include` is provided.
+   */
   async updateMany(
     updates: { id: string; data: LibraryAlbumUpdateInput }[],
     options?: { include: Prisma.LibraryAlbumInclude },
-  ): Promise<
-    LibraryAlbum[] | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>[]
-  > {
+  ): Promise<LibraryAlbum[] | LibraryAlbumGetPayload<{ include: Prisma.LibraryAlbumInclude }>[]> {
     return await this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.libraryAlbum.update({
@@ -238,19 +283,34 @@ export class LibraryAlbumRepository {
   // ─────────────────────────────────────────────────────────────
   // DELETE
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Permanently deletes a single record by ID.
+   * @param id Record identifier.
+   * @returns Deleted record.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async delete(id: string): Promise<LibraryAlbum> {
     return await this.prisma.client.libraryAlbum.delete({ where: { id } });
   }
-
+  /**
+   * Soft-deletes a single record by setting its deletion timestamp.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async softDelete(id: string): Promise<LibraryAlbum> {
     return await this.prisma.client.libraryAlbum.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  /** Hard-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Permanently deletes multiple records by their IDs.
+   * @param ids Record identifiers to match.
+   * @returns Pre-delete snapshots of deleted records.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async deleteMany(ids: string[]): Promise<LibraryAlbum[]> {
     if (ids.length === 0) {
       return [];
@@ -263,8 +323,11 @@ export class LibraryAlbumRepository {
     });
     return rows;
   }
-
-  /** Soft-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Soft-deletes multiple records by setting their deletion timestamps.
+   * @param ids Record identifiers to match.
+   * @returns The resulting record after the write operation.
+   */
   async softDeleteMany(ids: string[]): Promise<LibraryAlbum[]> {
     if (ids.length === 0) {
       return [];

@@ -24,6 +24,12 @@ export class UserRepository {
     id: string,
     options: { include: T },
   ): Promise<UserGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by its ID.
+   * @param id Record identifier.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getById(
     id: string,
     options?: { include: Prisma.UserInclude },
@@ -43,6 +49,12 @@ export class UserRepository {
     username: string,
     options: { include: T },
   ): Promise<UserGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single user by username.
+   * @param username Username to look up.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByUsername(
     username: string,
     options?: { include: Prisma.UserInclude },
@@ -62,6 +74,12 @@ export class UserRepository {
     email: string,
     options: { userInclude: T },
   ): Promise<UserGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by email address.
+   * @param email Email address to look up.
+   * @param options Optional nested include options for the related user payload (`userInclude`).
+   * @returns Matching record when found, otherwise null.
+   */
   async getByEmail(
     email: string,
     options?: { userInclude: Prisma.UserInclude },
@@ -72,7 +90,6 @@ export class UserRepository {
         user: options?.userInclude ? { include: options.userInclude } : true,
       },
     });
-
     if (
       !emailAddress ||
       emailAddress.deletedAt ||
@@ -99,6 +116,15 @@ export class UserRepository {
     orderBy: UserOrderByWithRelationInput | undefined,
     options: { include: T },
   ): Promise<UserGetPayload<{ include: T }>[]>;
+  /**
+   * Returns a paginated list of matching records.
+   * @param page 1-based page index.
+   * @param limit Maximum rows to return.
+   * @param filter Filter criteria for matching rows.
+   * @param orderBy Sort order for the query.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async getPaginated<T extends Prisma.UserInclude>(
     page: number,
     limit: number,
@@ -121,14 +147,22 @@ export class UserRepository {
   // ─────────────────────────────────────────────────────────────
   // UTILS
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Checks whether a matching record currently exists.
+   * @param id Record identifier.
+   * @returns True when a matching record exists.
+   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.user.count({
       where: { id, deletedAt: null },
     });
     return count > 0;
   }
-
+  /**
+   * Counts records that match the provided filters.
+   * @param filter Filter criteria for matching rows.
+   * @returns Number of matching records.
+   */
   async count(filter?: UserWhereInput): Promise<number> {
     return await this.prisma.client.user.count({
       where: {
@@ -150,6 +184,12 @@ export class UserRepository {
     data: UserCreateInput,
     options: { include: T },
   ): Promise<UserGetPayload<{ include: T }>>;
+  /**
+   * Creates a new record with the provided data.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created record. Includes related entities when `options.include` is provided.
+   */
   async create(
     data: UserCreateInput,
     options?: { include: Prisma.UserInclude },
@@ -165,6 +205,12 @@ export class UserRepository {
     data: Prisma.UserCreateManyInput[],
     options: { include: T },
   ): Promise<UserGetPayload<{ include: T }>[]>;
+  /**
+   * Creates multiple records in a single operation.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created records. Includes related entities when `options.include` is provided.
+   */
   async createMany(
     data: Prisma.UserCreateManyInput[],
     options?: { include: Prisma.UserInclude },
@@ -185,6 +231,14 @@ export class UserRepository {
     data: UserUpdateInput,
     options: { include: T },
   ): Promise<UserGetPayload<{ include: T }>>;
+  /**
+   * Updates an existing record with the provided data.
+   * @param id Record identifier.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Updated record. Includes related entities when `options.include` is provided.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async update(
     id: string,
     data: UserUpdateInput,
@@ -196,14 +250,17 @@ export class UserRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  async updateMany(
-    updates: { id: string; data: UserUpdateInput }[],
-  ): Promise<User[]>;
+  async updateMany(updates: { id: string; data: UserUpdateInput }[]): Promise<User[]>;
   async updateMany<T extends Prisma.UserInclude>(
     updates: { id: string; data: UserUpdateInput }[],
     options: { include: T },
   ): Promise<UserGetPayload<{ include: T }>[]>;
+  /**
+   * Updates multiple existing records in a single operation.
+   * @param updates List of record IDs and update payloads to apply.
+   * @param options Optional include or query options.
+   * @returns Updated records. Includes related entities when `options.include` is provided.
+   */
   async updateMany(
     updates: { id: string; data: UserUpdateInput }[],
     options?: { include: Prisma.UserInclude },
@@ -222,21 +279,36 @@ export class UserRepository {
   // ─────────────────────────────────────────────────────────────
   // DELETE
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Permanently deletes a single record by ID.
+   * @param id Record identifier.
+   * @returns Deleted record.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async delete(id: string): Promise<User> {
     return await this.prisma.client.user.delete({
       where: { id },
     });
   }
-
+  /**
+   * Soft-deletes a single record by setting its deletion timestamp.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async softDelete(id: string): Promise<User> {
     return await this.prisma.client.user.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  /** Hard-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Permanently deletes multiple records by their IDs.
+   * @param ids Record identifiers to match.
+   * @returns Pre-delete snapshots of deleted records.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async deleteMany(ids: string[]): Promise<User[]> {
     if (ids.length === 0) {
       return [];
@@ -249,8 +321,11 @@ export class UserRepository {
     });
     return usersToDelete;
   }
-
-  /** Soft-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Soft-deletes multiple records by setting their deletion timestamps.
+   * @param ids Record identifiers to match.
+   * @returns The resulting record after the write operation.
+   */
   async softDeleteMany(ids: string[]): Promise<User[]> {
     if (ids.length === 0) {
       return [];

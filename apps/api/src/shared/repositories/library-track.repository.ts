@@ -34,6 +34,12 @@ export class LibraryTrackRepository {
     id: string,
     options: { include: T },
   ): Promise<LibraryTrackGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a single record by its ID.
+   * @param id Record identifier.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getById(
     id: string,
     options?: { include: Prisma.LibraryTrackInclude },
@@ -50,15 +56,19 @@ export class LibraryTrackRepository {
     return row;
   }
 
-  async getByLibraryAndTrack(
-    libraryId: string,
-    trackId: string,
-  ): Promise<LibraryTrack | null>;
+  async getByLibraryAndTrack(libraryId: string, trackId: string): Promise<LibraryTrack | null>;
   async getByLibraryAndTrack<T extends Prisma.LibraryTrackInclude>(
     libraryId: string,
     trackId: string,
     options: { include: T },
   ): Promise<LibraryTrackGetPayload<{ include: T }> | null>;
+  /**
+   * Gets a library-track link by library ID and track ID.
+   * @param libraryId libraryId to match.
+   * @param trackId trackId to match.
+   * @param options Optional include or query options.
+   * @returns Matching record when found, otherwise null.
+   */
   async getByLibraryAndTrack(
     libraryId: string,
     trackId: string,
@@ -76,9 +86,7 @@ export class LibraryTrackRepository {
     page: number,
     limit: number,
     filter?: LibraryTrackWhereInput,
-    orderBy?:
-      | LibraryTrackOrderByWithRelationInput
-      | LibraryTrackOrderByWithRelationInput[],
+    orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[],
   ): Promise<LibraryTrack[]>;
   async getPaginated<T extends Prisma.LibraryTrackInclude>(
     page: number,
@@ -90,17 +98,22 @@ export class LibraryTrackRepository {
       | undefined,
     options: { include: T },
   ): Promise<LibraryTrackGetPayload<{ include: T }>[]>;
+  /**
+   * Returns a paginated list of matching records.
+   * @param page 1-based page index.
+   * @param limit Maximum rows to return.
+   * @param filter Filter criteria for matching rows.
+   * @param orderBy Sort order for the query.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async getPaginated(
     page: number,
     limit: number,
     filter?: LibraryTrackWhereInput,
-    orderBy?:
-      | LibraryTrackOrderByWithRelationInput
-      | LibraryTrackOrderByWithRelationInput[],
+    orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[],
     options?: { include: Prisma.LibraryTrackInclude },
-  ): Promise<
-    LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]
-  > {
+  ): Promise<LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]> {
     const { track, ...rest } = filter || {};
     return await this.prisma.client.libraryTrack.findMany({
       take: limit,
@@ -120,15 +133,11 @@ export class LibraryTrackRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  /** All library-track rows for a library whose tracks belong to the given album (no pagination). */
   async listByLibraryAndAlbum(
     libraryId: string,
     albumId: string,
     options?: {
-      orderBy?:
-        | LibraryTrackOrderByWithRelationInput
-        | LibraryTrackOrderByWithRelationInput[];
+      orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
       include?: Prisma.LibraryTrackInclude;
     },
   ): Promise<LibraryTrack[]>;
@@ -136,24 +145,25 @@ export class LibraryTrackRepository {
     libraryId: string,
     albumId: string,
     options: {
-      orderBy?:
-        | LibraryTrackOrderByWithRelationInput
-        | LibraryTrackOrderByWithRelationInput[];
+      orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
       include: T;
     },
   ): Promise<LibraryTrackGetPayload<{ include: T }>[]>;
+  /**
+   * Lists library-track links for a library and album.
+   * @param libraryId libraryId to match.
+   * @param albumId albumId to match.
+   * @param options Optional include or query options.
+   * @returns Records that match the query criteria.
+   */
   async listByLibraryAndAlbum(
     libraryId: string,
     albumId: string,
     options?: {
-      orderBy?:
-        | LibraryTrackOrderByWithRelationInput
-        | LibraryTrackOrderByWithRelationInput[];
+      orderBy?: LibraryTrackOrderByWithRelationInput | LibraryTrackOrderByWithRelationInput[];
       include?: Prisma.LibraryTrackInclude;
     },
-  ): Promise<
-    LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]
-  > {
+  ): Promise<LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]> {
     return await this.prisma.client.libraryTrack.findMany({
       where: {
         ...mergeLibraryTrackWhere({
@@ -166,8 +176,12 @@ export class LibraryTrackRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
-  /** Junction row ids linking this track to libraries owned by `userId` (non-deleted rows). */
+  /**
+   * Lists library-track IDs for a track and user.
+   * @param trackId trackId to match.
+   * @param userId userId to match.
+   * @returns Records that match the query criteria.
+   */
   async listIdsByTrackAndUser(trackId: string, userId: string): Promise<string[]> {
     const rows = await this.prisma.client.libraryTrack.findMany({
       where: {
@@ -183,30 +197,41 @@ export class LibraryTrackRepository {
   // ─────────────────────────────────────────────────────────────
   // UTILS
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Checks whether a matching record currently exists.
+   * @param id Record identifier.
+   * @returns True when a matching record exists.
+   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.client.libraryTrack.count({
       where: { id, deletedAt: null },
     });
     return count > 0;
   }
-
+  /**
+   * Checks whether a library-track link exists for the provided IDs.
+   * @param libraryId libraryId to match.
+   * @param trackId trackId to match.
+   * @returns True when a matching record exists.
+   */
   async existsForLibraryAndTrack(libraryId: string, trackId: string): Promise<boolean> {
     const count = await this.prisma.client.libraryTrack.count({
       where: mergeLibraryTrackWhere({ libraryId, trackId }),
     });
     return count > 0;
   }
-
+  /**
+   * Counts records that match the provided filters.
+   * @param where Where clause constraints.
+   * @returns Number of matching records.
+   */
   async count(where?: LibraryTrackWhereInput): Promise<number> {
     const { track, ...rest } = where || {};
     return await this.prisma.client.libraryTrack.count({
       where: {
         ...rest,
         deletedAt:
-          where && 'deletedAt' in where && where.deletedAt !== undefined
-            ? where.deletedAt
-            : null,
+          where && 'deletedAt' in where && where.deletedAt !== undefined ? where.deletedAt : null,
         track: {
           ...((track as object) || {}),
           deletedAt: null,
@@ -224,12 +249,16 @@ export class LibraryTrackRepository {
     data: LibraryTrackCreateInput,
     options: { include: T },
   ): Promise<LibraryTrackGetPayload<{ include: T }>>;
+  /**
+   * Creates a new record with the provided data.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created record. Includes related entities when `options.include` is provided.
+   */
   async create(
     data: LibraryTrackCreateInput,
     options?: { include: Prisma.LibraryTrackInclude },
-  ): Promise<
-    LibraryTrack | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>
-  > {
+  ): Promise<LibraryTrack | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>> {
     return await this.prisma.client.libraryTrack.create({
       data,
       ...(options?.include ? { include: options.include } : {}),
@@ -241,12 +270,16 @@ export class LibraryTrackRepository {
     data: Prisma.LibraryTrackCreateManyInput[],
     options: { include: T },
   ): Promise<LibraryTrackGetPayload<{ include: T }>[]>;
+  /**
+   * Creates multiple records in a single operation.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Created records. Includes related entities when `options.include` is provided.
+   */
   async createMany(
     data: Prisma.LibraryTrackCreateManyInput[],
     options?: { include: Prisma.LibraryTrackInclude },
-  ): Promise<
-    LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]
-  > {
+  ): Promise<LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]> {
     return await this.prisma.client.libraryTrack.createManyAndReturn({
       data,
       ...(options?.include ? { include: options.include } : {}),
@@ -263,20 +296,25 @@ export class LibraryTrackRepository {
     data: LibraryTrackUpdateInput,
     options: { include: T },
   ): Promise<LibraryTrackGetPayload<{ include: T }>>;
+  /**
+   * Updates an existing record with the provided data.
+   * @param id Record identifier.
+   * @param data Data payload to persist.
+   * @param options Optional include or query options.
+   * @returns Updated record. Includes related entities when `options.include` is provided.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async update(
     id: string,
     data: LibraryTrackUpdateInput,
     options?: { include: Prisma.LibraryTrackInclude },
-  ): Promise<
-    LibraryTrack | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>
-  > {
+  ): Promise<LibraryTrack | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>> {
     return await this.prisma.client.libraryTrack.update({
       data,
       where: { id },
       ...(options?.include ? { include: options.include } : {}),
     });
   }
-
   async updateMany(
     updates: { id: string; data: LibraryTrackUpdateInput }[],
   ): Promise<LibraryTrack[]>;
@@ -284,12 +322,16 @@ export class LibraryTrackRepository {
     updates: { id: string; data: LibraryTrackUpdateInput }[],
     options: { include: T },
   ): Promise<LibraryTrackGetPayload<{ include: T }>[]>;
+  /**
+   * Updates multiple existing records in a single operation.
+   * @param updates List of record IDs and update payloads to apply.
+   * @param options Optional include or query options.
+   * @returns Updated records. Includes related entities when `options.include` is provided.
+   */
   async updateMany(
     updates: { id: string; data: LibraryTrackUpdateInput }[],
     options?: { include: Prisma.LibraryTrackInclude },
-  ): Promise<
-    LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]
-  > {
+  ): Promise<LibraryTrack[] | LibraryTrackGetPayload<{ include: Prisma.LibraryTrackInclude }>[]> {
     return await this.prisma.mainClient.$transaction(
       updates.map(({ id, data }) =>
         this.prisma.client.libraryTrack.update({
@@ -304,19 +346,34 @@ export class LibraryTrackRepository {
   // ─────────────────────────────────────────────────────────────
   // DELETE
   // ─────────────────────────────────────────────────────────────
-
+  /**
+   * Permanently deletes a single record by ID.
+   * @param id Record identifier.
+   * @returns Deleted record.
+   * @throws Error if no matching record is found for this strict write operation.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async delete(id: string): Promise<LibraryTrack> {
     return await this.prisma.client.libraryTrack.delete({ where: { id } });
   }
-
+  /**
+   * Soft-deletes a single record by setting its deletion timestamp.
+   * @param id Record identifier.
+   * @returns The resulting record after the write operation.
+   * @throws Error if no matching record is found for this strict write operation.
+   */
   async softDelete(id: string): Promise<LibraryTrack> {
     return await this.prisma.client.libraryTrack.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
   }
-
-  /** Hard-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Permanently deletes multiple records by their IDs.
+   * @param ids Record identifiers to match.
+   * @returns Pre-delete snapshots of deleted records.
+   * @warning Permanently deletes records, including soft-deleted rows.
+   */
   async deleteMany(ids: string[]): Promise<LibraryTrack[]> {
     if (ids.length === 0) {
       return [];
@@ -329,8 +386,11 @@ export class LibraryTrackRepository {
     });
     return rows;
   }
-
-  /** Soft-delete by primary keys only. No-op when `ids` is empty. */
+  /**
+   * Soft-deletes multiple records by setting their deletion timestamps.
+   * @param ids Record identifiers to match.
+   * @returns The resulting record after the write operation.
+   */
   async softDeleteMany(ids: string[]): Promise<LibraryTrack[]> {
     if (ids.length === 0) {
       return [];
