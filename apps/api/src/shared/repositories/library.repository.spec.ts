@@ -63,7 +63,9 @@ describe('LibraryRepository', () => {
 
     it('should return library by id with include', async () => {
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
-      mockPrismaClient.library.findUnique.mockResolvedValue(libraryWithInclude as unknown as Library);
+      mockPrismaClient.library.findUnique.mockResolvedValue(
+        libraryWithInclude as unknown as Library,
+      );
 
       const result = await repository.getById('library-1', { include: { user: true } });
 
@@ -108,7 +110,9 @@ describe('LibraryRepository', () => {
 
     it('should return library by user id with include', async () => {
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
-      mockPrismaClient.library.findUnique.mockResolvedValue(libraryWithInclude as unknown as Library);
+      mockPrismaClient.library.findUnique.mockResolvedValue(
+        libraryWithInclude as unknown as Library,
+      );
 
       const result = await repository.getByUserId('user-1', { include: { user: true } });
 
@@ -186,7 +190,9 @@ describe('LibraryRepository', () => {
 
     it('should return paginated libraries with include', async () => {
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
-      mockPrismaClient.library.findMany.mockResolvedValue([libraryWithInclude] as unknown as Library[]);
+      mockPrismaClient.library.findMany.mockResolvedValue([
+        libraryWithInclude,
+      ] as unknown as Library[]);
 
       await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
 
@@ -309,7 +315,10 @@ describe('LibraryRepository', () => {
 
   describe('createMany', () => {
     it('should create many libraries without include', async () => {
-      const createInputs = [{ userId: 'user-1' }, { userId: 'user-2' }] as Prisma.LibraryCreateManyInput[];
+      const createInputs = [
+        { userId: 'user-1' },
+        { userId: 'user-2' },
+      ] as Prisma.LibraryCreateManyInput[];
       mockPrismaClient.library.createManyAndReturn.mockResolvedValue([mockLibrary]);
 
       const result = await repository.createMany(createInputs);
@@ -323,7 +332,9 @@ describe('LibraryRepository', () => {
     it('should create many libraries with include', async () => {
       const createInputs = [{ userId: 'user-1' }] as Prisma.LibraryCreateManyInput[];
       const librariesWithInclude = [{ ...mockLibrary, user: { id: 'user-1' } }];
-      mockPrismaClient.library.createManyAndReturn.mockResolvedValue(librariesWithInclude as unknown as Library[]);
+      mockPrismaClient.library.createManyAndReturn.mockResolvedValue(
+        librariesWithInclude as unknown as Library[],
+      );
 
       await repository.createMany(createInputs, { include: { user: true } });
 
@@ -384,9 +395,7 @@ describe('LibraryRepository', () => {
     });
 
     it('should update many libraries with include', async () => {
-      const updates = [
-        { id: 'library-1', data: {} as Prisma.LibraryUpdateInput },
-      ];
+      const updates = [{ id: 'library-1', data: {} as Prisma.LibraryUpdateInput }];
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {

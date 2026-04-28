@@ -83,7 +83,9 @@ describe('EmailAddressRepository', () => {
 
     it('should return email address by id with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(emailWithInclude as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(
+        emailWithInclude as unknown as EmailAddress,
+      );
 
       const result = await repository.getById('email-1', { include: { user: true } });
 
@@ -128,7 +130,9 @@ describe('EmailAddressRepository', () => {
 
     it('should return email address by email with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(emailWithInclude as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(
+        emailWithInclude as unknown as EmailAddress,
+      );
 
       const result = await repository.getByEmail('test@example.com', { include: { user: true } });
 
@@ -162,7 +166,9 @@ describe('EmailAddressRepository', () => {
   describe('getPrimaryByEmailWithUser', () => {
     it('should return primary email with user', async () => {
       const emailWithUser = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(emailWithUser as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(
+        emailWithUser as unknown as EmailAddress,
+      );
 
       const result = await repository.getPrimaryByEmailWithUser('test@example.com');
 
@@ -175,9 +181,13 @@ describe('EmailAddressRepository', () => {
 
     it('should return primary email with user include', async () => {
       const emailWithUser = { ...mockEmailAddress, user: { ...mockUser, emailAddresses: [] } };
-      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(emailWithUser as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.findUnique.mockResolvedValue(
+        emailWithUser as unknown as EmailAddress,
+      );
 
-      const result = await repository.getPrimaryByEmailWithUser('test@example.com', { includeUser: { emailAddresses: true } });
+      const result = await repository.getPrimaryByEmailWithUser('test@example.com', {
+        includeUser: { emailAddresses: true },
+      });
 
       expect(result).toEqual(emailWithUser);
       expect(mockPrismaClient.emailAddress.findUnique).toHaveBeenCalledWith({
@@ -281,9 +291,13 @@ describe('EmailAddressRepository', () => {
 
     it('should return paginated email addresses with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findMany.mockResolvedValue([emailWithInclude] as unknown as EmailAddress[]);
+      mockPrismaClient.emailAddress.findMany.mockResolvedValue([
+        emailWithInclude,
+      ] as unknown as EmailAddress[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
+      const result = await repository.getPaginated(1, 10, undefined, undefined, {
+        include: { user: true },
+      });
 
       expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
@@ -310,7 +324,9 @@ describe('EmailAddressRepository', () => {
 
     it('should return all email addresses for user with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findMany.mockResolvedValue([emailWithInclude] as unknown as EmailAddress[]);
+      mockPrismaClient.emailAddress.findMany.mockResolvedValue([
+        emailWithInclude,
+      ] as unknown as EmailAddress[]);
 
       const result = await repository.getAllByUserId('user-1', { include: { user: true } });
 
@@ -336,7 +352,9 @@ describe('EmailAddressRepository', () => {
 
     it('should return primary email for user with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findFirst.mockResolvedValue(emailWithInclude as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.findFirst.mockResolvedValue(
+        emailWithInclude as unknown as EmailAddress,
+      );
 
       const result = await repository.getPrimaryByUserId('user-1', { include: { user: true } });
 
@@ -363,7 +381,9 @@ describe('EmailAddressRepository', () => {
 
     it('should return recovery emails for user with include', async () => {
       const recoveryEmail = { ...mockEmailAddress, type: EmailType.recovery, user: mockUser };
-      mockPrismaClient.emailAddress.findMany.mockResolvedValue([recoveryEmail] as unknown as EmailAddress[]);
+      mockPrismaClient.emailAddress.findMany.mockResolvedValue([
+        recoveryEmail,
+      ] as unknown as EmailAddress[]);
 
       const result = await repository.getRecoveryByUserId('user-1', { include: { user: true } });
 
@@ -389,9 +409,13 @@ describe('EmailAddressRepository', () => {
 
     it('should return emails by type for user with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findMany.mockResolvedValue([emailWithInclude] as unknown as EmailAddress[]);
+      mockPrismaClient.emailAddress.findMany.mockResolvedValue([
+        emailWithInclude,
+      ] as unknown as EmailAddress[]);
 
-      const result = await repository.getByTypeAndUserId(EmailType.recovery, 'user-1', { include: { user: true } });
+      const result = await repository.getByTypeAndUserId(EmailType.recovery, 'user-1', {
+        include: { user: true },
+      });
 
       expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
@@ -415,9 +439,13 @@ describe('EmailAddressRepository', () => {
 
     it('should return emails by status for user with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findMany.mockResolvedValue([emailWithInclude] as unknown as EmailAddress[]);
+      mockPrismaClient.emailAddress.findMany.mockResolvedValue([
+        emailWithInclude,
+      ] as unknown as EmailAddress[]);
 
-      const result = await repository.getByStatusAndUserId(EmailStatus.pending, 'user-1', { include: { user: true } });
+      const result = await repository.getByStatusAndUserId(EmailStatus.pending, 'user-1', {
+        include: { user: true },
+      });
 
       expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
@@ -441,7 +469,9 @@ describe('EmailAddressRepository', () => {
 
     it('should return verified emails for user with include', async () => {
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.findMany.mockResolvedValue([emailWithInclude] as unknown as EmailAddress[]);
+      mockPrismaClient.emailAddress.findMany.mockResolvedValue([
+        emailWithInclude,
+      ] as unknown as EmailAddress[]);
 
       const result = await repository.getVerifiedByUserId('user-1', { include: { user: true } });
 
@@ -592,7 +622,9 @@ describe('EmailAddressRepository', () => {
         user: { connect: { id: 'user-1' } },
       };
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.create.mockResolvedValue(emailWithInclude as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.create.mockResolvedValue(
+        emailWithInclude as unknown as EmailAddress,
+      );
 
       const result = await repository.create(createInput, { include: { user: true } });
 
@@ -640,7 +672,9 @@ describe('EmailAddressRepository', () => {
         },
       ];
       const emailsWithInclude = [{ ...mockEmailAddress, user: mockUser }];
-      mockPrismaClient.emailAddress.createManyAndReturn.mockResolvedValue(emailsWithInclude as unknown as EmailAddress[]);
+      mockPrismaClient.emailAddress.createManyAndReturn.mockResolvedValue(
+        emailsWithInclude as unknown as EmailAddress[],
+      );
 
       const result = await repository.createMany(createInputs, { include: { user: true } });
 
@@ -669,7 +703,9 @@ describe('EmailAddressRepository', () => {
     it('should update email address with include', async () => {
       const updateInput = { email: 'updated@example.com' } as Prisma.EmailAddressUpdateInput;
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
-      mockPrismaClient.emailAddress.update.mockResolvedValue(emailWithInclude as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.update.mockResolvedValue(
+        emailWithInclude as unknown as EmailAddress,
+      );
 
       const result = await repository.update('email-1', updateInput, { include: { user: true } });
 
@@ -685,8 +721,14 @@ describe('EmailAddressRepository', () => {
   describe('updateMany', () => {
     it('should update many email addresses without include', async () => {
       const updates = [
-        { id: 'email-1', data: { email: 'updated1@example.com' } as Prisma.EmailAddressUpdateInput },
-        { id: 'email-2', data: { email: 'updated2@example.com' } as Prisma.EmailAddressUpdateInput },
+        {
+          id: 'email-1',
+          data: { email: 'updated1@example.com' } as Prisma.EmailAddressUpdateInput,
+        },
+        {
+          id: 'email-2',
+          data: { email: 'updated2@example.com' } as Prisma.EmailAddressUpdateInput,
+        },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -704,7 +746,10 @@ describe('EmailAddressRepository', () => {
 
     it('should update many email addresses with include', async () => {
       const updates = [
-        { id: 'email-1', data: { email: 'updated1@example.com' } as Prisma.EmailAddressUpdateInput },
+        {
+          id: 'email-1',
+          data: { email: 'updated1@example.com' } as Prisma.EmailAddressUpdateInput,
+        },
       ];
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -713,7 +758,9 @@ describe('EmailAddressRepository', () => {
         }
         return await Promise.all(cb);
       });
-      mockPrismaClient.emailAddress.update.mockResolvedValue(emailWithInclude as unknown as EmailAddress);
+      mockPrismaClient.emailAddress.update.mockResolvedValue(
+        emailWithInclude as unknown as EmailAddress,
+      );
 
       const result = await repository.updateMany(updates, { include: { user: true } });
 

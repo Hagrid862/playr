@@ -153,7 +153,9 @@ describe('ArtistRepository', () => {
       const artistWithInclude = { ...mockArtist, albums: [] };
       mockPrismaClient.artist.findFirst.mockResolvedValue(artistWithInclude as unknown as Artist);
 
-      const result = await repository.getByIdForOwner('artist-1', 'user-1', { include: { albums: true } });
+      const result = await repository.getByIdForOwner('artist-1', 'user-1', {
+        include: { albums: true },
+      });
 
       expect(result).toEqual(artistWithInclude);
       expect(mockPrismaClient.artist.findFirst).toHaveBeenCalledWith({
@@ -187,7 +189,9 @@ describe('ArtistRepository', () => {
       const artistWithInclude = { ...mockArtist, albums: [] };
       mockPrismaClient.artist.findFirst.mockResolvedValue(artistWithInclude as unknown as Artist);
 
-      const result = await repository.getByNameForOwner('Test Artist', 'user-1', { include: { albums: true } });
+      const result = await repository.getByNameForOwner('Test Artist', 'user-1', {
+        include: { albums: true },
+      });
 
       expect(result).toEqual(artistWithInclude);
       expect(mockPrismaClient.artist.findFirst).toHaveBeenCalledWith({
@@ -249,9 +253,13 @@ describe('ArtistRepository', () => {
 
     it('should return paginated artists with include', async () => {
       const artistWithInclude = { ...mockArtist, albums: [] };
-      mockPrismaClient.artist.findMany.mockResolvedValue([artistWithInclude] as unknown as Artist[]);
+      mockPrismaClient.artist.findMany.mockResolvedValue([
+        artistWithInclude,
+      ] as unknown as Artist[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { albums: true } });
+      const result = await repository.getPaginated(1, 10, undefined, undefined, {
+        include: { albums: true },
+      });
 
       expect(result).toEqual([artistWithInclude]);
       expect(mockPrismaClient.artist.findMany).toHaveBeenCalledWith({
@@ -333,10 +341,7 @@ describe('ArtistRepository', () => {
         where: {
           id: 'artist-1',
           deletedAt: null,
-          OR: [
-            { visibility: Visibility.public },
-            { access: { some: { userId: 'GUEST' } } },
-          ],
+          OR: [{ visibility: Visibility.public }, { access: { some: { userId: 'GUEST' } } }],
         },
         select: { id: true },
       });
@@ -352,10 +357,7 @@ describe('ArtistRepository', () => {
         where: {
           id: 'artist-1',
           deletedAt: null,
-          OR: [
-            { visibility: Visibility.public },
-            { access: { some: { userId: 'user-1' } } },
-          ],
+          OR: [{ visibility: Visibility.public }, { access: { some: { userId: 'user-1' } } }],
         },
         select: { id: true },
       });
@@ -400,7 +402,10 @@ describe('ArtistRepository', () => {
 
   describe('createMany', () => {
     it('should create many artists without include', async () => {
-      const createInputs = [{ name: 'Artist 1' }, { name: 'Artist 2' }] as Prisma.ArtistCreateManyInput[];
+      const createInputs = [
+        { name: 'Artist 1' },
+        { name: 'Artist 2' },
+      ] as Prisma.ArtistCreateManyInput[];
       mockPrismaClient.artist.createManyAndReturn.mockResolvedValue([mockArtist]);
 
       const result = await repository.createMany(createInputs);
@@ -412,9 +417,14 @@ describe('ArtistRepository', () => {
     });
 
     it('should create many artists with include', async () => {
-      const createInputs = [{ name: 'Artist 1' }, { name: 'Artist 2' }] as Prisma.ArtistCreateManyInput[];
+      const createInputs = [
+        { name: 'Artist 1' },
+        { name: 'Artist 2' },
+      ] as Prisma.ArtistCreateManyInput[];
       const artistsWithInclude = [{ ...mockArtist, albums: [] }];
-      mockPrismaClient.artist.createManyAndReturn.mockResolvedValue(artistsWithInclude as unknown as Artist[]);
+      mockPrismaClient.artist.createManyAndReturn.mockResolvedValue(
+        artistsWithInclude as unknown as Artist[],
+      );
 
       const result = await repository.createMany(createInputs, { include: { albums: true } });
 
@@ -445,7 +455,9 @@ describe('ArtistRepository', () => {
       const artistWithInclude = { ...mockArtist, albums: [] };
       mockPrismaClient.artist.update.mockResolvedValue(artistWithInclude as unknown as Artist);
 
-      const result = await repository.update('artist-1', updateInput, { include: { albums: true } });
+      const result = await repository.update('artist-1', updateInput, {
+        include: { albums: true },
+      });
 
       expect(result).toEqual(artistWithInclude);
       expect(mockPrismaClient.artist.update).toHaveBeenCalledWith({
@@ -477,9 +489,7 @@ describe('ArtistRepository', () => {
     });
 
     it('should update many artists with include', async () => {
-      const updates = [
-        { id: 'artist-1', data: { name: 'Updated 1' } as Prisma.ArtistUpdateInput },
-      ];
+      const updates = [{ id: 'artist-1', data: { name: 'Updated 1' } as Prisma.ArtistUpdateInput }];
       const artistWithInclude = { ...mockArtist, albums: [] };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {

@@ -65,7 +65,9 @@ describe('RefreshTokenRepository', () => {
 
     it('should return refresh token by id with include', async () => {
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.findUnique.mockResolvedValue(tokenWithInclude as unknown as RefreshToken);
+      mockPrismaClient.refreshToken.findUnique.mockResolvedValue(
+        tokenWithInclude as unknown as RefreshToken,
+      );
 
       const result = await repository.getById('refresh-token-1', { include: { session: true } });
 
@@ -110,7 +112,9 @@ describe('RefreshTokenRepository', () => {
 
     it('should return refresh token by token string with include', async () => {
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.findUnique.mockResolvedValue(tokenWithInclude as unknown as RefreshToken);
+      mockPrismaClient.refreshToken.findUnique.mockResolvedValue(
+        tokenWithInclude as unknown as RefreshToken,
+      );
 
       const result = await repository.getByToken('token123', { include: { session: true } });
 
@@ -188,7 +192,9 @@ describe('RefreshTokenRepository', () => {
 
     it('should return paginated refresh tokens with include', async () => {
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.findMany.mockResolvedValue([tokenWithInclude] as unknown as RefreshToken[]);
+      mockPrismaClient.refreshToken.findMany.mockResolvedValue([
+        tokenWithInclude,
+      ] as unknown as RefreshToken[]);
 
       await repository.getPaginated(1, 10, undefined, undefined, { include: { session: true } });
 
@@ -262,7 +268,10 @@ describe('RefreshTokenRepository', () => {
 
   describe('create', () => {
     it('should create refresh token without include', async () => {
-      const createInput = { token: 'newtoken', session: { connect: { id: 'session-1' } } } as Prisma.RefreshTokenCreateInput;
+      const createInput = {
+        token: 'newtoken',
+        session: { connect: { id: 'session-1' } },
+      } as Prisma.RefreshTokenCreateInput;
       mockPrismaClient.refreshToken.create.mockResolvedValue(mockRefreshToken);
 
       const result = await repository.create(createInput);
@@ -274,9 +283,14 @@ describe('RefreshTokenRepository', () => {
     });
 
     it('should create refresh token with include', async () => {
-      const createInput = { token: 'newtoken', session: { connect: { id: 'session-1' } } } as Prisma.RefreshTokenCreateInput;
+      const createInput = {
+        token: 'newtoken',
+        session: { connect: { id: 'session-1' } },
+      } as Prisma.RefreshTokenCreateInput;
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.create.mockResolvedValue(tokenWithInclude as unknown as RefreshToken);
+      mockPrismaClient.refreshToken.create.mockResolvedValue(
+        tokenWithInclude as unknown as RefreshToken,
+      );
 
       const result = await repository.create(createInput, { include: { session: true } });
 
@@ -305,9 +319,13 @@ describe('RefreshTokenRepository', () => {
     });
 
     it('should create many refresh tokens with include', async () => {
-      const createInputs = [{ token: 'token1', sessionId: 'session-1' }] as Prisma.RefreshTokenCreateManyInput[];
+      const createInputs = [
+        { token: 'token1', sessionId: 'session-1' },
+      ] as Prisma.RefreshTokenCreateManyInput[];
       const tokensWithInclude = [{ ...mockRefreshToken, session: { id: 'session-1' } }];
-      mockPrismaClient.refreshToken.createManyAndReturn.mockResolvedValue(tokensWithInclude as unknown as RefreshToken[]);
+      mockPrismaClient.refreshToken.createManyAndReturn.mockResolvedValue(
+        tokensWithInclude as unknown as RefreshToken[],
+      );
 
       await repository.createMany(createInputs, { include: { session: true } });
 
@@ -335,7 +353,9 @@ describe('RefreshTokenRepository', () => {
     it('should update refresh token with include', async () => {
       const updateInput = { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput;
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.update.mockResolvedValue(tokenWithInclude as unknown as RefreshToken);
+      mockPrismaClient.refreshToken.update.mockResolvedValue(
+        tokenWithInclude as unknown as RefreshToken,
+      );
 
       await repository.update('refresh-token-1', updateInput, { include: { session: true } });
 
@@ -364,7 +384,9 @@ describe('RefreshTokenRepository', () => {
     it('should update refresh token by token string with include', async () => {
       const updateInput = { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput;
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.update.mockResolvedValue(tokenWithInclude as unknown as RefreshToken);
+      mockPrismaClient.refreshToken.update.mockResolvedValue(
+        tokenWithInclude as unknown as RefreshToken,
+      );
 
       await repository.updateByToken('token123', updateInput, { include: { session: true } });
 
@@ -379,8 +401,14 @@ describe('RefreshTokenRepository', () => {
   describe('updateMany', () => {
     it('should update many refresh tokens without include', async () => {
       const updates = [
-        { id: 'refresh-token-1', data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput },
-        { id: 'refresh-token-2', data: { expiresAt: new Date('2025-01-02') } as Prisma.RefreshTokenUpdateInput },
+        {
+          id: 'refresh-token-1',
+          data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput,
+        },
+        {
+          id: 'refresh-token-2',
+          data: { expiresAt: new Date('2025-01-02') } as Prisma.RefreshTokenUpdateInput,
+        },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -398,7 +426,10 @@ describe('RefreshTokenRepository', () => {
 
     it('should update many refresh tokens with include', async () => {
       const updates = [
-        { id: 'refresh-token-1', data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput },
+        {
+          id: 'refresh-token-1',
+          data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput,
+        },
       ];
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -407,7 +438,9 @@ describe('RefreshTokenRepository', () => {
         }
         return await Promise.all(cb);
       });
-      mockPrismaClient.refreshToken.update.mockResolvedValue(tokenWithInclude as unknown as RefreshToken);
+      mockPrismaClient.refreshToken.update.mockResolvedValue(
+        tokenWithInclude as unknown as RefreshToken,
+      );
 
       await repository.updateMany(updates, { include: { session: true } });
 
@@ -418,8 +451,14 @@ describe('RefreshTokenRepository', () => {
   describe('updateManyByToken', () => {
     it('should update many refresh tokens by token without include', async () => {
       const updates = [
-        { token: 'token1', data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput },
-        { token: 'token2', data: { expiresAt: new Date('2025-01-02') } as Prisma.RefreshTokenUpdateInput },
+        {
+          token: 'token1',
+          data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput,
+        },
+        {
+          token: 'token2',
+          data: { expiresAt: new Date('2025-01-02') } as Prisma.RefreshTokenUpdateInput,
+        },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -437,7 +476,10 @@ describe('RefreshTokenRepository', () => {
 
     it('should update many refresh tokens by token with include', async () => {
       const updates = [
-        { token: 'token1', data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput },
+        {
+          token: 'token1',
+          data: { expiresAt: new Date('2025-01-01') } as Prisma.RefreshTokenUpdateInput,
+        },
       ];
       const tokenWithInclude = { ...mockRefreshToken, session: { id: 'session-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -446,7 +488,9 @@ describe('RefreshTokenRepository', () => {
         }
         return await Promise.all(cb);
       });
-      mockPrismaClient.refreshToken.update.mockResolvedValue(tokenWithInclude as unknown as RefreshToken);
+      mockPrismaClient.refreshToken.update.mockResolvedValue(
+        tokenWithInclude as unknown as RefreshToken,
+      );
 
       await repository.updateManyByToken(updates, { include: { session: true } });
 
@@ -469,8 +513,14 @@ describe('RefreshTokenRepository', () => {
     });
 
     it('should revoke refresh token with include', async () => {
-      const revokedToken = { ...mockRefreshToken, revokedAt: new Date(), session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.update.mockResolvedValue(revokedToken as unknown as RefreshToken);
+      const revokedToken = {
+        ...mockRefreshToken,
+        revokedAt: new Date(),
+        session: { id: 'session-1' },
+      };
+      mockPrismaClient.refreshToken.update.mockResolvedValue(
+        revokedToken as unknown as RefreshToken,
+      );
 
       await repository.revoke('refresh-token-1', { include: { session: true } });
 
@@ -497,8 +547,14 @@ describe('RefreshTokenRepository', () => {
     });
 
     it('should revoke refresh token by token string with include', async () => {
-      const revokedToken = { ...mockRefreshToken, revokedAt: new Date(), session: { id: 'session-1' } };
-      mockPrismaClient.refreshToken.update.mockResolvedValue(revokedToken as unknown as RefreshToken);
+      const revokedToken = {
+        ...mockRefreshToken,
+        revokedAt: new Date(),
+        session: { id: 'session-1' },
+      };
+      mockPrismaClient.refreshToken.update.mockResolvedValue(
+        revokedToken as unknown as RefreshToken,
+      );
 
       await repository.revokeByToken('token123', { include: { session: true } });
 

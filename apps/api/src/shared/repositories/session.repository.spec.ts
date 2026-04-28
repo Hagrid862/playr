@@ -67,7 +67,9 @@ describe('SessionRepository', () => {
 
     it('should return session by id with include', async () => {
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
-      mockPrismaClient.session.findUnique.mockResolvedValue(sessionWithInclude as unknown as Session);
+      mockPrismaClient.session.findUnique.mockResolvedValue(
+        sessionWithInclude as unknown as Session,
+      );
 
       const result = await repository.getById('session-1', { include: { user: true } });
 
@@ -118,7 +120,9 @@ describe('SessionRepository', () => {
 
     it('should return active sessions by user id with include', async () => {
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
-      mockPrismaClient.session.findMany.mockResolvedValue([sessionWithInclude] as unknown as Session[]);
+      mockPrismaClient.session.findMany.mockResolvedValue([
+        sessionWithInclude,
+      ] as unknown as Session[]);
 
       const result = await repository.getActiveByUserId('user-1', { include: { user: true } });
 
@@ -183,7 +187,9 @@ describe('SessionRepository', () => {
 
     it('should return paginated sessions with include', async () => {
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
-      mockPrismaClient.session.findMany.mockResolvedValue([sessionWithInclude] as unknown as Session[]);
+      mockPrismaClient.session.findMany.mockResolvedValue([
+        sessionWithInclude,
+      ] as unknown as Session[]);
 
       await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
 
@@ -324,9 +330,13 @@ describe('SessionRepository', () => {
     });
 
     it('should create many sessions with include', async () => {
-      const createInputs = [{ userId: 'user-1', type: SessionType.user }] as Prisma.SessionCreateManyInput[];
+      const createInputs = [
+        { userId: 'user-1', type: SessionType.user },
+      ] as Prisma.SessionCreateManyInput[];
       const sessionsWithInclude = [{ ...mockSession, user: { id: 'user-1' } }];
-      mockPrismaClient.session.createManyAndReturn.mockResolvedValue(sessionsWithInclude as unknown as Session[]);
+      mockPrismaClient.session.createManyAndReturn.mockResolvedValue(
+        sessionsWithInclude as unknown as Session[],
+      );
 
       await repository.createMany(createInputs, { include: { user: true } });
 
@@ -369,8 +379,14 @@ describe('SessionRepository', () => {
   describe('updateMany', () => {
     it('should update many sessions without include', async () => {
       const updates = [
-        { id: 'session-1', data: { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput },
-        { id: 'session-2', data: { refreshedAt: new Date('2024-02-02') } as Prisma.SessionUpdateInput },
+        {
+          id: 'session-1',
+          data: { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput,
+        },
+        {
+          id: 'session-2',
+          data: { refreshedAt: new Date('2024-02-02') } as Prisma.SessionUpdateInput,
+        },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -388,7 +404,10 @@ describe('SessionRepository', () => {
 
     it('should update many sessions with include', async () => {
       const updates = [
-        { id: 'session-1', data: { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput },
+        {
+          id: 'session-1',
+          data: { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput,
+        },
       ];
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {

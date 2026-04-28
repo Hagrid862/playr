@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AudioFileRepository } from './audio-file.repository';
 import { PrismaService } from '../services/prisma.service';
-import { AudioFile, AudioFormat, AudioQuality, FileBucket, Prisma, ProcessingStatus } from '@repo/db';
+import {
+  AudioFile,
+  AudioFormat,
+  AudioQuality,
+  FileBucket,
+  Prisma,
+  ProcessingStatus,
+} from '@repo/db';
 
 describe('AudioFileRepository', () => {
   let repository: AudioFileRepository;
@@ -64,7 +71,9 @@ describe('AudioFileRepository', () => {
   describe('getById', () => {
     it('should return audio file by id without include', async () => {
       const audioFileWithTrack = { ...mockAudioFile, track: { deletedAt: null } };
-      mockPrismaClient.audioFile.findUnique.mockResolvedValue(audioFileWithTrack as unknown as AudioFile);
+      mockPrismaClient.audioFile.findUnique.mockResolvedValue(
+        audioFileWithTrack as unknown as AudioFile,
+      );
 
       const result = await repository.getById('audio-1');
 
@@ -77,7 +86,9 @@ describe('AudioFileRepository', () => {
 
     it('should return audio file with custom include', async () => {
       const audioFileWithInclude = { ...mockAudioFile, track: { deletedAt: null, id: 'track-1' } };
-      mockPrismaClient.audioFile.findUnique.mockResolvedValue(audioFileWithInclude as unknown as AudioFile);
+      mockPrismaClient.audioFile.findUnique.mockResolvedValue(
+        audioFileWithInclude as unknown as AudioFile,
+      );
 
       const result = await repository.getById('audio-1', { include: { track: true } });
 
@@ -105,7 +116,9 @@ describe('AudioFileRepository', () => {
 
     it('should include track when track include is true', async () => {
       const audioFileWithTrack = { ...mockAudioFile, track: { deletedAt: null, id: 'track-1' } };
-      mockPrismaClient.audioFile.findUnique.mockResolvedValue(audioFileWithTrack as unknown as AudioFile);
+      mockPrismaClient.audioFile.findUnique.mockResolvedValue(
+        audioFileWithTrack as unknown as AudioFile,
+      );
 
       const result = await repository.getById('audio-1', { include: { track: true } });
 
@@ -117,7 +130,9 @@ describe('AudioFileRepository', () => {
         ...mockAudioFile,
         track: { deletedAt: null, id: 'track-1', name: 'Track' },
       };
-      mockPrismaClient.audioFile.findUnique.mockResolvedValue(audioFileWithTrack as unknown as AudioFile);
+      mockPrismaClient.audioFile.findUnique.mockResolvedValue(
+        audioFileWithTrack as unknown as AudioFile,
+      );
 
       const result = await repository.getById('audio-1', {
         include: { track: { select: { id: true, name: true } } },
@@ -128,7 +143,9 @@ describe('AudioFileRepository', () => {
 
     it('should add track select when include exists but has no track property', async () => {
       const audioFileWithTrack = { ...mockAudioFile, track: { deletedAt: null } };
-      mockPrismaClient.audioFile.findUnique.mockResolvedValue(audioFileWithTrack as unknown as AudioFile);
+      mockPrismaClient.audioFile.findUnique.mockResolvedValue(
+        audioFileWithTrack as unknown as AudioFile,
+      );
 
       const result = await repository.getById('audio-1', { include: {} });
 
@@ -141,9 +158,13 @@ describe('AudioFileRepository', () => {
 
     it('should return include unchanged when track is object without select', async () => {
       const audioFileWithTrack = { ...mockAudioFile, track: { deletedAt: null, id: 'track-1' } };
-      mockPrismaClient.audioFile.findUnique.mockResolvedValue(audioFileWithTrack as unknown as AudioFile);
+      mockPrismaClient.audioFile.findUnique.mockResolvedValue(
+        audioFileWithTrack as unknown as AudioFile,
+      );
 
-      const result = await repository.getById('audio-1', { include: { track: { include: { album: true } } } });
+      const result = await repository.getById('audio-1', {
+        include: { track: { include: { album: true } } },
+      });
 
       expect(result).toEqual(audioFileWithTrack);
       expect(mockPrismaClient.audioFile.findUnique).toHaveBeenCalledWith({
@@ -172,7 +193,9 @@ describe('AudioFileRepository', () => {
     it('should return audio files for track with status filter', async () => {
       mockPrismaClient.audioFile.findMany.mockResolvedValue([mockAudioFile]);
 
-      const result = await repository.listByTrackId('track-1', { status: ProcessingStatus.complete });
+      const result = await repository.listByTrackId('track-1', {
+        status: ProcessingStatus.complete,
+      });
 
       expect(result).toEqual([mockAudioFile]);
       expect(mockPrismaClient.audioFile.findMany).toHaveBeenCalledWith({
@@ -217,7 +240,9 @@ describe('AudioFileRepository', () => {
 
     it('should return audio files with include', async () => {
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
-      mockPrismaClient.audioFile.findMany.mockResolvedValue([audioFileWithInclude] as unknown as AudioFile[]);
+      mockPrismaClient.audioFile.findMany.mockResolvedValue([
+        audioFileWithInclude,
+      ] as unknown as AudioFile[]);
 
       const result = await repository.listByTrackId('track-1', { include: { track: true } });
 
@@ -282,9 +307,13 @@ describe('AudioFileRepository', () => {
 
     it('should return paginated audio files with include', async () => {
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
-      mockPrismaClient.audioFile.findMany.mockResolvedValue([audioFileWithInclude] as unknown as AudioFile[]);
+      mockPrismaClient.audioFile.findMany.mockResolvedValue([
+        audioFileWithInclude,
+      ] as unknown as AudioFile[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { track: true } });
+      const result = await repository.getPaginated(1, 10, undefined, undefined, {
+        include: { track: true },
+      });
 
       expect(result).toEqual([audioFileWithInclude]);
       expect(mockPrismaClient.audioFile.findMany).toHaveBeenCalledWith({
@@ -379,7 +408,9 @@ describe('AudioFileRepository', () => {
         track: { connect: { id: 'track-1' } },
       };
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
-      mockPrismaClient.audioFile.create.mockResolvedValue(audioFileWithInclude as unknown as AudioFile);
+      mockPrismaClient.audioFile.create.mockResolvedValue(
+        audioFileWithInclude as unknown as AudioFile,
+      );
 
       const result = await repository.create(createInput, { include: { track: true } });
 
@@ -442,7 +473,9 @@ describe('AudioFileRepository', () => {
         },
       ];
       const audioFilesWithInclude = [{ ...mockAudioFile, track: { id: 'track-1' } }];
-      mockPrismaClient.audioFile.createManyAndReturn.mockResolvedValue(audioFilesWithInclude as unknown as AudioFile[]);
+      mockPrismaClient.audioFile.createManyAndReturn.mockResolvedValue(
+        audioFilesWithInclude as unknown as AudioFile[],
+      );
 
       const result = await repository.createMany(createInputs, { include: { track: true } });
 
@@ -471,7 +504,9 @@ describe('AudioFileRepository', () => {
     it('should update audio file with include', async () => {
       const updateInput: Prisma.AudioFileUpdateInput = { key: 'tracks/track-1/updated.mp3' };
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
-      mockPrismaClient.audioFile.update.mockResolvedValue(audioFileWithInclude as unknown as AudioFile);
+      mockPrismaClient.audioFile.update.mockResolvedValue(
+        audioFileWithInclude as unknown as AudioFile,
+      );
 
       const result = await repository.update('audio-1', updateInput, { include: { track: true } });
 
@@ -487,8 +522,14 @@ describe('AudioFileRepository', () => {
   describe('updateMany', () => {
     it('should update many audio files without include', async () => {
       const updates = [
-        { id: 'audio-1', data: { key: 'tracks/track-1/updated1.mp3' } as Prisma.AudioFileUpdateInput },
-        { id: 'audio-2', data: { key: 'tracks/track-1/updated2.mp3' } as Prisma.AudioFileUpdateInput },
+        {
+          id: 'audio-1',
+          data: { key: 'tracks/track-1/updated1.mp3' } as Prisma.AudioFileUpdateInput,
+        },
+        {
+          id: 'audio-2',
+          data: { key: 'tracks/track-1/updated2.mp3' } as Prisma.AudioFileUpdateInput,
+        },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -506,7 +547,10 @@ describe('AudioFileRepository', () => {
 
     it('should update many audio files with include', async () => {
       const updates = [
-        { id: 'audio-1', data: { key: 'tracks/track-1/updated1.mp3' } as Prisma.AudioFileUpdateInput },
+        {
+          id: 'audio-1',
+          data: { key: 'tracks/track-1/updated1.mp3' } as Prisma.AudioFileUpdateInput,
+        },
       ];
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -515,7 +559,9 @@ describe('AudioFileRepository', () => {
         }
         return await Promise.all(cb);
       });
-      mockPrismaClient.audioFile.update.mockResolvedValue(audioFileWithInclude as unknown as AudioFile);
+      mockPrismaClient.audioFile.update.mockResolvedValue(
+        audioFileWithInclude as unknown as AudioFile,
+      );
 
       const result = await repository.updateMany(updates, { include: { track: true } });
 

@@ -150,7 +150,9 @@ describe('ImageRepository', () => {
       const imageWithInclude = { ...mockImage, reportAttached: null };
       mockPrismaClient.image.findMany.mockResolvedValue([imageWithInclude] as unknown as Image[]);
 
-      await repository.getPaginated(1, 10, undefined, undefined, { include: { reportAttached: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, {
+        include: { reportAttached: true },
+      });
 
       expect(mockPrismaClient.image.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -299,7 +301,9 @@ describe('ImageRepository', () => {
         },
       ] as Prisma.ImageCreateManyInput[];
       const imagesWithInclude = [{ ...mockImage, reportAttached: null }];
-      mockPrismaClient.image.createManyAndReturn.mockResolvedValue(imagesWithInclude as unknown as Image[]);
+      mockPrismaClient.image.createManyAndReturn.mockResolvedValue(
+        imagesWithInclude as unknown as Image[],
+      );
 
       await repository.createMany(createInputs, { include: { reportAttached: true } });
 

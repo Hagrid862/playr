@@ -65,7 +65,9 @@ describe('LibraryArtistRepository', () => {
 
     it('should return library artist by id with include', async () => {
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
-      mockPrismaClient.libraryArtist.findUnique.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
+      mockPrismaClient.libraryArtist.findUnique.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
 
       const result = await repository.getById('library-artist-1', { include: { artist: true } });
 
@@ -113,10 +115,17 @@ describe('LibraryArtistRepository', () => {
     });
 
     it('should return library artist by library and artist with include', async () => {
-      const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1', name: 'Test Artist' } };
-      mockPrismaClient.libraryArtist.findFirst.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
+      const libraryArtistWithInclude = {
+        ...mockLibraryArtist,
+        artist: { id: 'artist-1', name: 'Test Artist' },
+      };
+      mockPrismaClient.libraryArtist.findFirst.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
 
-      const result = await repository.getByLibraryAndArtist('library-1', 'artist-1', { include: { artist: true } });
+      const result = await repository.getByLibraryAndArtist('library-1', 'artist-1', {
+        include: { artist: true },
+      });
 
       expect(result).toEqual(libraryArtistWithInclude);
       expect(mockPrismaClient.libraryArtist.findFirst).toHaveBeenCalledWith({
@@ -218,7 +227,9 @@ describe('LibraryArtistRepository', () => {
 
     it('should return paginated library artists with include', async () => {
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
-      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([libraryArtistWithInclude] as unknown as LibraryArtist[]);
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([
+        libraryArtistWithInclude,
+      ] as unknown as LibraryArtist[]);
 
       await repository.getPaginated(1, 10, undefined, undefined, { include: { artist: true } });
 
@@ -363,7 +374,9 @@ describe('LibraryArtistRepository', () => {
         artist: { connect: { id: 'artist-1' } },
       } as Prisma.LibraryArtistCreateInput;
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
-      mockPrismaClient.libraryArtist.create.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
+      mockPrismaClient.libraryArtist.create.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
 
       const result = await repository.create(createInput, { include: { artist: true } });
 
@@ -377,7 +390,10 @@ describe('LibraryArtistRepository', () => {
 
   describe('createMany', () => {
     it('should create many library artists without include', async () => {
-      const createInputs = [{ libraryId: 'library-1', artistId: 'artist-1' }, { libraryId: 'library-1', artistId: 'artist-2' }] as Prisma.LibraryArtistCreateManyInput[];
+      const createInputs = [
+        { libraryId: 'library-1', artistId: 'artist-1' },
+        { libraryId: 'library-1', artistId: 'artist-2' },
+      ] as Prisma.LibraryArtistCreateManyInput[];
       mockPrismaClient.libraryArtist.createManyAndReturn.mockResolvedValue([mockLibraryArtist]);
 
       const result = await repository.createMany(createInputs);
@@ -389,9 +405,13 @@ describe('LibraryArtistRepository', () => {
     });
 
     it('should create many library artists with include', async () => {
-      const createInputs = [{ libraryId: 'library-1', artistId: 'artist-1' }] as Prisma.LibraryArtistCreateManyInput[];
+      const createInputs = [
+        { libraryId: 'library-1', artistId: 'artist-1' },
+      ] as Prisma.LibraryArtistCreateManyInput[];
       const libraryArtistsWithInclude = [{ ...mockLibraryArtist, artist: { id: 'artist-1' } }];
-      mockPrismaClient.libraryArtist.createManyAndReturn.mockResolvedValue(libraryArtistsWithInclude as unknown as LibraryArtist[]);
+      mockPrismaClient.libraryArtist.createManyAndReturn.mockResolvedValue(
+        libraryArtistsWithInclude as unknown as LibraryArtist[],
+      );
 
       await repository.createMany(createInputs, { include: { artist: true } });
 
@@ -419,7 +439,9 @@ describe('LibraryArtistRepository', () => {
     it('should update library artist with include', async () => {
       const updateInput = {} as Prisma.LibraryArtistUpdateInput;
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
-      mockPrismaClient.libraryArtist.update.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
+      mockPrismaClient.libraryArtist.update.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
 
       await repository.update('library-artist-1', updateInput, { include: { artist: true } });
 
@@ -452,9 +474,7 @@ describe('LibraryArtistRepository', () => {
     });
 
     it('should update many library artists with include', async () => {
-      const updates = [
-        { id: 'library-artist-1', data: {} as Prisma.LibraryArtistUpdateInput },
-      ];
+      const updates = [{ id: 'library-artist-1', data: {} as Prisma.LibraryArtistUpdateInput }];
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -462,7 +482,9 @@ describe('LibraryArtistRepository', () => {
         }
         return await Promise.all(cb);
       });
-      mockPrismaClient.libraryArtist.update.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
+      mockPrismaClient.libraryArtist.update.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
 
       await repository.updateMany(updates, { include: { artist: true } });
 

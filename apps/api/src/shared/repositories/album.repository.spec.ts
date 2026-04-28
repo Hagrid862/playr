@@ -147,7 +147,9 @@ describe('AlbumRepository', () => {
           deletedAt: null,
           OR: [
             { access: { some: { userId: 'user-1', role: AccessRole.owner } } },
-            { artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } } },
+            {
+              artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } },
+            },
           ],
         },
       });
@@ -157,7 +159,9 @@ describe('AlbumRepository', () => {
       const albumWithInclude = { ...mockAlbum, tracks: [] };
       mockPrismaClient.album.findFirst.mockResolvedValue(albumWithInclude as unknown as Album);
 
-      const result = await repository.getByIdForOwner('album-1', 'user-1', { include: { tracks: true } });
+      const result = await repository.getByIdForOwner('album-1', 'user-1', {
+        include: { tracks: true },
+      });
 
       expect(result).toEqual(albumWithInclude);
       expect(mockPrismaClient.album.findFirst).toHaveBeenCalledWith({
@@ -166,7 +170,9 @@ describe('AlbumRepository', () => {
           deletedAt: null,
           OR: [
             { access: { some: { userId: 'user-1', role: AccessRole.owner } } },
-            { artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } } },
+            {
+              artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } },
+            },
           ],
         },
         include: { tracks: true },
@@ -194,7 +200,9 @@ describe('AlbumRepository', () => {
       const albumWithInclude = { ...mockAlbum, tracks: [] };
       mockPrismaClient.album.findFirst.mockResolvedValue(albumWithInclude as unknown as Album);
 
-      const result = await repository.getByIdForAlbumOwner('album-1', 'user-1', { include: { tracks: true } });
+      const result = await repository.getByIdForAlbumOwner('album-1', 'user-1', {
+        include: { tracks: true },
+      });
 
       expect(result).toEqual(albumWithInclude);
       expect(mockPrismaClient.album.findFirst).toHaveBeenCalledWith({
@@ -221,7 +229,9 @@ describe('AlbumRepository', () => {
           deletedAt: null,
           OR: [
             { access: { some: { userId: 'user-1', role: AccessRole.owner } } },
-            { artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } } },
+            {
+              artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } },
+            },
           ],
         },
       });
@@ -231,7 +241,9 @@ describe('AlbumRepository', () => {
       const albumWithInclude = { ...mockAlbum, tracks: [] };
       mockPrismaClient.album.findFirst.mockResolvedValue(albumWithInclude as unknown as Album);
 
-      const result = await repository.getByNameForOwner('Test Album', 'user-1', { include: { tracks: true } });
+      const result = await repository.getByNameForOwner('Test Album', 'user-1', {
+        include: { tracks: true },
+      });
 
       expect(result).toEqual(albumWithInclude);
       expect(mockPrismaClient.album.findFirst).toHaveBeenCalledWith({
@@ -240,7 +252,9 @@ describe('AlbumRepository', () => {
           deletedAt: null,
           OR: [
             { access: { some: { userId: 'user-1', role: AccessRole.owner } } },
-            { artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } } },
+            {
+              artists: { some: { access: { some: { userId: 'user-1', role: AccessRole.owner } } } },
+            },
           ],
         },
         include: { tracks: true },
@@ -298,7 +312,9 @@ describe('AlbumRepository', () => {
       const albumWithInclude = { ...mockAlbum, tracks: [] };
       mockPrismaClient.album.findMany.mockResolvedValue([albumWithInclude] as unknown as Album[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { tracks: true } });
+      const result = await repository.getPaginated(1, 10, undefined, undefined, {
+        include: { tracks: true },
+      });
 
       expect(result).toEqual([albumWithInclude]);
       expect(mockPrismaClient.album.findMany).toHaveBeenCalledWith({
@@ -449,7 +465,10 @@ describe('AlbumRepository', () => {
 
   describe('createMany', () => {
     it('should create many albums without include', async () => {
-      const createInputs = [{ name: 'Album 1' }, { name: 'Album 2' }] as Prisma.AlbumCreateManyInput[];
+      const createInputs = [
+        { name: 'Album 1' },
+        { name: 'Album 2' },
+      ] as Prisma.AlbumCreateManyInput[];
       mockPrismaClient.album.createManyAndReturn.mockResolvedValue([mockAlbum]);
 
       const result = await repository.createMany(createInputs);
@@ -461,9 +480,14 @@ describe('AlbumRepository', () => {
     });
 
     it('should create many albums with include', async () => {
-      const createInputs = [{ name: 'Album 1' }, { name: 'Album 2' }] as Prisma.AlbumCreateManyInput[];
+      const createInputs = [
+        { name: 'Album 1' },
+        { name: 'Album 2' },
+      ] as Prisma.AlbumCreateManyInput[];
       const albumsWithInclude = [{ ...mockAlbum, tracks: [] }];
-      mockPrismaClient.album.createManyAndReturn.mockResolvedValue(albumsWithInclude as unknown as Album[]);
+      mockPrismaClient.album.createManyAndReturn.mockResolvedValue(
+        albumsWithInclude as unknown as Album[],
+      );
 
       const result = await repository.createMany(createInputs, { include: { tracks: true } });
 
@@ -526,9 +550,7 @@ describe('AlbumRepository', () => {
     });
 
     it('should update many albums with include', async () => {
-      const updates = [
-        { id: 'album-1', data: { name: 'Updated 1' } as Prisma.AlbumUpdateInput },
-      ];
+      const updates = [{ id: 'album-1', data: { name: 'Updated 1' } as Prisma.AlbumUpdateInput }];
       const albumWithInclude = { ...mockAlbum, tracks: [] };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {

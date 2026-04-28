@@ -121,7 +121,9 @@ describe('UserRepository', () => {
       const userWithInclude = { ...mockUser, emailAddresses: [] };
       mockPrismaClient.user.findUnique.mockResolvedValue(userWithInclude as unknown as User);
 
-      const result = await repository.getByUsername('testuser', { include: { emailAddresses: true } });
+      const result = await repository.getByUsername('testuser', {
+        include: { emailAddresses: true },
+      });
 
       expect(result).toEqual(userWithInclude);
       expect(mockPrismaClient.user.findUnique).toHaveBeenCalledWith({
@@ -173,9 +175,13 @@ describe('UserRepository', () => {
         user: userWithInclude,
         type: EmailType.primary,
         deletedAt: null,
-      } as unknown as Prisma.EmailAddressGetPayload<{ include: { user: { include: { emailAddresses: true } } } }>);
+      } as unknown as Prisma.EmailAddressGetPayload<{
+        include: { user: { include: { emailAddresses: true } } };
+      }>);
 
-      const result = await repository.getByEmail('test@example.com', { userInclude: { emailAddresses: true } });
+      const result = await repository.getByEmail('test@example.com', {
+        userInclude: { emailAddresses: true },
+      });
 
       expect(result).toEqual(userWithInclude);
       expect(mockPrismaClient.emailAddress.findUnique).toHaveBeenCalledWith({
@@ -290,7 +296,9 @@ describe('UserRepository', () => {
       const userWithInclude = { ...mockUser, emailAddresses: [] };
       mockPrismaClient.user.findMany.mockResolvedValue([userWithInclude] as unknown as User[]);
 
-      await repository.getPaginated(1, 10, undefined, undefined, { include: { emailAddresses: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, {
+        include: { emailAddresses: true },
+      });
 
       expect(mockPrismaClient.user.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -413,9 +421,13 @@ describe('UserRepository', () => {
     });
 
     it('should create many users with include', async () => {
-      const createInputs = [{ username: 'user1', firstName: 'User', password: 'hash1' }] as Prisma.UserCreateManyInput[];
+      const createInputs = [
+        { username: 'user1', firstName: 'User', password: 'hash1' },
+      ] as Prisma.UserCreateManyInput[];
       const usersWithInclude = [{ ...mockUser, emailAddresses: [] }];
-      mockPrismaClient.user.createManyAndReturn.mockResolvedValue(usersWithInclude as unknown as User[]);
+      mockPrismaClient.user.createManyAndReturn.mockResolvedValue(
+        usersWithInclude as unknown as User[],
+      );
 
       await repository.createMany(createInputs, { include: { emailAddresses: true } });
 

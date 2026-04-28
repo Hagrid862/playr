@@ -177,9 +177,7 @@ describe('UpdateLibraryArtistHandler', () => {
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
 
     artistRepository.getByIdForOwner.mockResolvedValueOnce(mockArtist); // Existence
-    artistRepository.getByNameForOwner.mockResolvedValueOnce(
-      artistBuilder({ id: 'other-artist' }),
-    ); // Conflict
+    artistRepository.getByNameForOwner.mockResolvedValueOnce(artistBuilder({ id: 'other-artist' })); // Conflict
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });

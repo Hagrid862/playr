@@ -88,10 +88,7 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
       await expect(handler.execute(command)).rejects.toThrow(
         'Album not found or permission denied',
       );
-      expect(albumRepository.getByIdForAlbumOwner).toHaveBeenCalledWith(
-        mockAlbumId,
-        mockUserId,
-      );
+      expect(albumRepository.getByIdForAlbumOwner).toHaveBeenCalledWith(mockAlbumId, mockUserId);
     });
 
     it('should return album as-is when album has no cover', async () => {

@@ -123,7 +123,9 @@ describe('TrackRepository', () => {
       const trackWithInclude = { ...mockTrack, artists: [] };
       mockPrismaClient.track.findFirst.mockResolvedValue(trackWithInclude as unknown as Track);
 
-      const result = await repository.getByIdForOwner('track-1', 'user-1', { include: { artists: true } });
+      const result = await repository.getByIdForOwner('track-1', 'user-1', {
+        include: { artists: true },
+      });
 
       expect(result).toEqual(trackWithInclude);
       expect(mockPrismaClient.track.findFirst).toHaveBeenCalledWith({
@@ -478,7 +480,10 @@ describe('TrackRepository', () => {
 
   describe('create', () => {
     it('should create track without include', async () => {
-      const createInput = { title: 'New Track', album: { connect: { id: 'album-1' } } } as Prisma.TrackCreateInput;
+      const createInput = {
+        title: 'New Track',
+        album: { connect: { id: 'album-1' } },
+      } as Prisma.TrackCreateInput;
       mockPrismaClient.track.create.mockResolvedValue(mockTrack);
 
       const result = await repository.create(createInput);
@@ -490,7 +495,10 @@ describe('TrackRepository', () => {
     });
 
     it('should create track with include', async () => {
-      const createInput = { title: 'New Track', album: { connect: { id: 'album-1' } } } as Prisma.TrackCreateInput;
+      const createInput = {
+        title: 'New Track',
+        album: { connect: { id: 'album-1' } },
+      } as Prisma.TrackCreateInput;
       const trackWithInclude = { ...mockTrack, artists: [] };
       mockPrismaClient.track.create.mockResolvedValue(trackWithInclude as unknown as Track);
 
@@ -507,8 +515,24 @@ describe('TrackRepository', () => {
   describe('createMany', () => {
     it('should create many tracks without include', async () => {
       const createInputs = [
-        { title: 'Track 1', albumId: 'album-1', duration: 180, trackNumber: 1, diskNumber: 1, explicit: false, visibility: Visibility.public },
-        { title: 'Track 2', albumId: 'album-1', duration: 190, trackNumber: 2, diskNumber: 1, explicit: false, visibility: Visibility.public },
+        {
+          title: 'Track 1',
+          albumId: 'album-1',
+          duration: 180,
+          trackNumber: 1,
+          diskNumber: 1,
+          explicit: false,
+          visibility: Visibility.public,
+        },
+        {
+          title: 'Track 2',
+          albumId: 'album-1',
+          duration: 190,
+          trackNumber: 2,
+          diskNumber: 1,
+          explicit: false,
+          visibility: Visibility.public,
+        },
       ] as Prisma.TrackCreateManyInput[];
       mockPrismaClient.track.createManyAndReturn.mockResolvedValue([mockTrack]);
 
@@ -522,10 +546,20 @@ describe('TrackRepository', () => {
 
     it('should create many tracks with include', async () => {
       const createInputs = [
-        { title: 'Track 1', albumId: 'album-1', duration: 180, trackNumber: 1, diskNumber: 1, explicit: false, visibility: Visibility.public },
+        {
+          title: 'Track 1',
+          albumId: 'album-1',
+          duration: 180,
+          trackNumber: 1,
+          diskNumber: 1,
+          explicit: false,
+          visibility: Visibility.public,
+        },
       ] as Prisma.TrackCreateManyInput[];
       const tracksWithInclude = [{ ...mockTrack, artists: [] }];
-      mockPrismaClient.track.createManyAndReturn.mockResolvedValue(tracksWithInclude as unknown as Track[]);
+      mockPrismaClient.track.createManyAndReturn.mockResolvedValue(
+        tracksWithInclude as unknown as Track[],
+      );
 
       await repository.createMany(createInputs, { include: { artists: true } });
 
@@ -586,9 +620,7 @@ describe('TrackRepository', () => {
     });
 
     it('should update many tracks with include', async () => {
-      const updates = [
-        { id: 'track-1', data: { title: 'Updated 1' } as Prisma.TrackUpdateInput },
-      ];
+      const updates = [{ id: 'track-1', data: { title: 'Updated 1' } as Prisma.TrackUpdateInput }];
       const trackWithInclude = { ...mockTrack, artists: [] };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
