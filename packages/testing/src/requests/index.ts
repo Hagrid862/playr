@@ -16,3 +16,5 @@ export { getLibraryAlbumsRequestBuilder } from "./get-library-albums-request.bui
 export { getLibraryTracksRequestBuilder } from "./get-library-tracks-request.builder";
 export { getLibraryArtistsRequestBuilder } from "./get-library-artists-request.builder";
 export { bulkUploadTrackAudioRequestBuilder } from "./bulk-upload-track-audio-request.builder";
+export { verifyEmailRequestBuilder } from "./verify-email-request.builder";
+export { resendEmailVerificationCodeRequestBuilder } from "./resend-email-verification-code-request.builder";
