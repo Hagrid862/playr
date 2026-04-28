@@ -23,13 +23,7 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
   async execute(command: UpdateLibraryAlbumCommand): Promise<ZodAlbum> {
     const { id, request, userId } = command;
 
-    const album = await this.albumRepository.findOne({
-      id,
-      OR: [
-        { access: { some: { userId, role: 'owner' } } },
-        { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
-      ],
-    });
+    const album = await this.albumRepository.getByIdForOwner(id, userId);
 
     if (!album) {
       throw new NotFoundException('Album not found');
@@ -54,13 +48,10 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
     }
 
     if (request.name && request.name !== album.name) {
-      const existingAlbumWithName = await this.albumRepository.findOne({
-        name: request.name,
-        OR: [
-          { access: { some: { userId, role: 'owner' } } },
-          { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
-        ],
-      });
+      const existingAlbumWithName = await this.albumRepository.getByNameForOwner(
+        request.name,
+        userId,
+      );
 
       if (existingAlbumWithName) {
         throw new ConflictException('This album name is already taken');

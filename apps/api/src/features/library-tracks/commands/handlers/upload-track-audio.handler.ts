@@ -22,7 +22,7 @@ export class UploadTrackAudioHandler implements ICommandHandler<UploadTrackAudio
   async execute(command: UploadTrackAudioCommand): Promise<UploadTrackAudioResponse> {
     const { trackId, userId, file } = command;
 
-    const track = await this.trackRepository.findOne({ id: trackId }, true);
+    const track = await this.trackRepository.getById(trackId, { include: { access: true } });
 
     if (!track) {
       throw new NotFoundException('Track not found');

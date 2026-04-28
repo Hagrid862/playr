@@ -11,7 +11,13 @@ export class GetLibraryTrackHandler implements IQueryHandler<GetLibraryTrackQuer
   async execute(query: GetLibraryTrackQuery): Promise<ZodTrack> {
     const { id } = query;
 
-    const track = await this.trackRepository.findOne({ id }, true);
+    const track = await this.trackRepository.getById(id, {
+      include: {
+        album: true,
+        artists: true,
+        genres: { include: { genre: true } },
+      },
+    });
 
     if (!track) {
       throw new NotFoundException('Track not found');

@@ -24,35 +24,19 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
   async execute(command: DeleteLibraryTrackCommand): Promise<ZodTrack> {
     const { id, userId } = command;
 
-    const track = await this.trackRepository.findOne({
-      id,
-      access: { some: { userId, role: 'owner' } },
-    });
+    const track = await this.trackRepository.getByIdForOwner(id, userId);
 
     if (!track) {
       throw new NotFoundException('Track not found or you do not have permission to delete it');
     }
 
-    const audioFiles = await this.audioFileRepository.findMany({
-      where: { trackId: id },
-    });
+    const audioFiles = await this.audioFileRepository.listByTrackId(id);
 
     await this.unitOfWork.runInTransaction(async () => {
-      // Soft delete the track
-      await this.trackRepository.update(
-        id,
-        {
-          deletedAt: new Date(),
-        },
-        { includeRelations: false },
-      );
+      await this.trackRepository.softDelete(id);
 
-      // Remove from all users libraries?
-      // Usually library_tracks is per user. If owner deletes, maybe it should be gone from their library.
-      await this.libraryTrackRepository.deleteMany({
-        trackId: id,
-        library: { userId },
-      });
+      const libraryLinkIds = await this.libraryTrackRepository.listIdsByTrackAndUser(id, userId);
+      await this.libraryTrackRepository.deleteMany(libraryLinkIds);
 
       for (const audioFile of audioFiles) {
         await this.audioFileRepository.delete(audioFile.id);

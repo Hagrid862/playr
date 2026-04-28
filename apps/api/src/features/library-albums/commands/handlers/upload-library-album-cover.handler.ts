@@ -28,10 +28,7 @@ export class UploadLibraryAlbumCoverHandler implements ICommandHandler<UploadLib
     const { albumId, file, userId } = command;
 
     // Validate album existence and ownership
-    const album = await this.albumRepository.findOne({
-      id: albumId,
-      access: { some: { userId, role: 'owner' } },
-    });
+    const album = await this.albumRepository.getByIdForAlbumOwner(albumId, userId);
 
     if (!album) {
       throw new NotFoundException('Album not found or permission denied');

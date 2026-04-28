@@ -34,7 +34,7 @@ export class TrackAccessGuard implements CanActivate {
     const hasAccess = await this.trackRepository.checkAccess(trackId, userId);
 
     if (!hasAccess) {
-      const track = await this.trackRepository.findOne({ id: trackId });
+      const track = await this.trackRepository.getById(trackId);
       if (!track) {
         throw new NotFoundException('Track not found');
       }

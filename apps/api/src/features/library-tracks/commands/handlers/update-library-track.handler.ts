@@ -24,10 +24,7 @@ export class UpdateLibraryTrackHandler implements ICommandHandler<UpdateLibraryT
   async execute(command: UpdateLibraryTrackCommand): Promise<ZodTrack> {
     const { id, body, userId } = command;
 
-    const track = await this.trackRepository.findOne({
-      id,
-      access: { some: { userId, role: 'owner' } },
-    });
+    const track = await this.trackRepository.getByIdForOwner(id, userId);
 
     if (!track) {
       throw new NotFoundException('Track not found or you do not have permission to update it');

@@ -21,7 +21,7 @@ export class DeleteLibraryGenreHandler implements ICommandHandler<DeleteLibraryG
       'Only custom genres in your library can be deleted',
     );
 
-    const deleted = await this.genreRepository.delete(genreId);
+    const deleted = await this.genreRepository.softDelete(genreId);
 
     const parsed = DeletedGenreSchema.safeParse({ id: deleted.id });
 

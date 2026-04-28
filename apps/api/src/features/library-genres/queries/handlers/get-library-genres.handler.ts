@@ -21,17 +21,15 @@ export class GetLibraryGenresHandler implements IQueryHandler<GetLibraryGenresQu
       throw new PreconditionFailedException('User library not found');
     }
 
-    const skip = (page - 1) * limit;
-
     const [items, total] = await Promise.all([
-      this.genreRepository.findForLibraryList({
+      this.genreRepository.getGenresPaginatedForLibrary({
         libraryId: library.id,
         q,
         kind,
-        skip,
-        take: limit,
+        page,
+        limit,
       }),
-      this.genreRepository.countForLibraryList({
+      this.genreRepository.countGenresForLibrary({
         libraryId: library.id,
         q,
         kind,

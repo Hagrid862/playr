@@ -61,9 +61,7 @@ export class AudioProcessingWorker extends WorkerHost {
 
     this.logger.log(`[${jobId}] Processing audio file ${audioFileId} for track ${trackId}`);
 
-    const originalFile = await this.audioFileRepository.findOne({
-      id: audioFileId,
-    });
+    const originalFile = await this.audioFileRepository.getById(audioFileId);
     if (!originalFile) {
       this.logger.error(`[${jobId}] Audio file ${audioFileId} not found`, {
         audioFileId,
@@ -95,7 +93,7 @@ export class AudioProcessingWorker extends WorkerHost {
       });
 
       if (duration) {
-        const track = await this.trackRepository.findOne({ id: trackId }, true);
+        const track = await this.trackRepository.getById(trackId, { include: { access: true } });
         if (!track) {
           throw new NotFoundException('Track not found');
         }
@@ -104,13 +102,9 @@ export class AudioProcessingWorker extends WorkerHost {
           userId,
         );
         if (hasAccess && (!track.duration || Math.round(duration) !== track.duration)) {
-          await this.trackRepository.update(
-            trackId,
-            {
-              duration: Math.round(duration),
-            },
-            { includeRelations: false },
-          );
+          await this.trackRepository.update(trackId, {
+            duration: Math.round(duration),
+          });
         }
       }
 

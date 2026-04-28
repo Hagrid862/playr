@@ -3,7 +3,18 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetLibraryTracksResponse, type ZodTrack } from '@repo/contracts';
+import { Prisma } from '@repo/db';
 import { GetLibraryTracksQuery } from '../impl/get-library-tracks.query';
+
+const LIBRARY_TRACK_WITH_TRACK_INCLUDE = {
+  track: {
+    include: {
+      artists: true,
+      album: true,
+      genres: { include: { genre: true } },
+    },
+  },
+} satisfies Prisma.LibraryTrackInclude;
 
 @QueryHandler(GetLibraryTracksQuery)
 export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQuery> {
@@ -22,15 +33,16 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
     }
 
     const [items, total] = await Promise.all([
-      this.libraryTrackRepository.findMany({
-        where: {
+      this.libraryTrackRepository.getPaginated(
+        page,
+        limit,
+        {
           libraryId: library.id,
           track: albumId ? { albumId } : undefined,
         },
-        take: limit,
-        skip: (page - 1) * limit,
-        orderBy: { track: { trackNumber: 'asc' } }, // Sort by track number
-      }),
+        { track: { trackNumber: 'asc' } },
+        { include: LIBRARY_TRACK_WITH_TRACK_INCLUDE },
+      ),
       this.libraryTrackRepository.count({
         libraryId: library.id,
         track: albumId ? { albumId } : undefined,

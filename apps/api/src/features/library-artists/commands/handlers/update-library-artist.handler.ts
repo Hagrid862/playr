@@ -23,20 +23,17 @@ export class UpdateLibraryArtistHandler implements ICommandHandler<UpdateLibrary
   async execute(command: UpdateLibraryArtistCommand): Promise<ZodArtist> {
     const { artistId, request, userId } = command;
 
-    const artist = await this.artistRepository.findOne({
-      id: artistId,
-      access: { some: { userId, role: 'owner' } },
-    });
+    const artist = await this.artistRepository.getByIdForOwner(artistId, userId);
 
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
 
     if (request.name && request.name !== artist.name) {
-      const existingArtistWithName = await this.artistRepository.findOne({
-        name: request.name,
-        access: { some: { userId, role: 'owner' } },
-      });
+      const existingArtistWithName = await this.artistRepository.getByNameForOwner(
+        request.name,
+        userId,
+      );
 
       if (existingArtistWithName) {
         throw new ConflictException('This artist name is already taken');

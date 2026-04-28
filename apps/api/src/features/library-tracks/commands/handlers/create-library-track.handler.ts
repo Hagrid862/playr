@@ -34,7 +34,7 @@ export class CreateLibraryTrackHandler implements ICommandHandler<CreateLibraryT
       throw new PreconditionFailedException('User library not found');
     }
 
-    const album = await this.albumRepository.findOne({ id: body.albumId });
+    const album = await this.albumRepository.getById(body.albumId);
     if (!album) {
       throw new PreconditionFailedException('Album not found');
     }
