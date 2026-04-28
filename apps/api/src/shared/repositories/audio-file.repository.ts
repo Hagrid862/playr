@@ -66,7 +66,8 @@ export class AudioFileRepository {
       return null;
     }
     if (!options?.include?.track) {
-      const { track: _t, ...rest } = row;
+      const { track, ...rest } = row;
+      void track;
       return rest as AudioFile;
     }
     return row;
