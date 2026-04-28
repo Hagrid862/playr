@@ -48,13 +48,13 @@ describe('UserRepository', () => {
   const mockUser: User = {
     id: 'user-1',
     username: 'testuser',
-    passwordHash: 'hashedpassword',
-    displayName: 'Test User',
-    bio: null,
+    firstName: 'Test',
+    lastName: 'User',
+    birthDate: null,
+    gender: null,
+    description: null,
+    password: 'hashedpassword',
     avatarId: null,
-    visibility: 'public',
-    role: 'user',
-    lastLoginAt: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -258,7 +258,7 @@ describe('UserRepository', () => {
 
     it('should return paginated users with filter and orderBy', async () => {
       mockPrismaClient.user.findMany.mockResolvedValue([mockUser]);
-      const filter = { role: 'user' } as Prisma.UserWhereInput;
+      const filter = { firstName: 'Test' } as Prisma.UserWhereInput;
       const orderBy = { createdAt: 'desc' } as Prisma.UserOrderByWithRelationInput;
 
       const result = await repository.getPaginated(2, 5, filter, orderBy);
@@ -267,7 +267,7 @@ describe('UserRepository', () => {
       expect(mockPrismaClient.user.findMany).toHaveBeenCalledWith({
         take: 5,
         skip: 5,
-        where: { role: 'user', deletedAt: null },
+        where: { firstName: 'Test', deletedAt: null },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -276,7 +276,7 @@ describe('UserRepository', () => {
       mockPrismaClient.user.findMany.mockResolvedValue([mockUser]);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.user.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -290,7 +290,7 @@ describe('UserRepository', () => {
       const userWithInclude = { ...mockUser, emailAddresses: [] };
       mockPrismaClient.user.findMany.mockResolvedValue([userWithInclude] as unknown as User[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { emailAddresses: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { emailAddresses: true } });
 
       expect(mockPrismaClient.user.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -337,13 +337,13 @@ describe('UserRepository', () => {
 
     it('should count users with filter', async () => {
       mockPrismaClient.user.count.mockResolvedValue(3);
-      const filter = { role: 'user' } as Prisma.UserWhereInput;
+      const filter = { firstName: 'Test' } as Prisma.UserWhereInput;
 
       const result = await repository.count(filter);
 
       expect(result).toBe(3);
       expect(mockPrismaClient.user.count).toHaveBeenCalledWith({
-        where: { role: 'user', deletedAt: null },
+        where: { firstName: 'Test', deletedAt: null },
       });
     });
 
@@ -353,6 +353,7 @@ describe('UserRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.user.count).toHaveBeenCalledWith({
         where: { deletedAt: new Date('2024-01-02') },
       });
@@ -361,7 +362,11 @@ describe('UserRepository', () => {
 
   describe('create', () => {
     it('should create user without include', async () => {
-      const createInput = { username: 'newuser', passwordHash: 'hash' } as Prisma.UserCreateInput;
+      const createInput = {
+        username: 'newuser',
+        firstName: 'New',
+        password: 'hash',
+      } as Prisma.UserCreateInput;
       mockPrismaClient.user.create.mockResolvedValue(mockUser);
 
       const result = await repository.create(createInput);
@@ -373,7 +378,11 @@ describe('UserRepository', () => {
     });
 
     it('should create user with include', async () => {
-      const createInput = { username: 'newuser', passwordHash: 'hash' } as Prisma.UserCreateInput;
+      const createInput = {
+        username: 'newuser',
+        firstName: 'New',
+        password: 'hash',
+      } as Prisma.UserCreateInput;
       const userWithInclude = { ...mockUser, emailAddresses: [] };
       mockPrismaClient.user.create.mockResolvedValue(userWithInclude as unknown as User);
 
@@ -389,7 +398,10 @@ describe('UserRepository', () => {
 
   describe('createMany', () => {
     it('should create many users without include', async () => {
-      const createInputs = [{ username: 'user1' }, { username: 'user2' }] as Prisma.UserCreateManyInput[];
+      const createInputs = [
+        { username: 'user1', firstName: 'User', password: 'hash1' },
+        { username: 'user2', firstName: 'User', password: 'hash2' },
+      ] as Prisma.UserCreateManyInput[];
       mockPrismaClient.user.createManyAndReturn.mockResolvedValue([mockUser]);
 
       const result = await repository.createMany(createInputs);
@@ -401,11 +413,11 @@ describe('UserRepository', () => {
     });
 
     it('should create many users with include', async () => {
-      const createInputs = [{ username: 'user1' }] as Prisma.UserCreateManyInput[];
+      const createInputs = [{ username: 'user1', firstName: 'User', password: 'hash1' }] as Prisma.UserCreateManyInput[];
       const usersWithInclude = [{ ...mockUser, emailAddresses: [] }];
       mockPrismaClient.user.createManyAndReturn.mockResolvedValue(usersWithInclude as unknown as User[]);
 
-      const result = await repository.createMany(createInputs, { include: { emailAddresses: true } });
+      await repository.createMany(createInputs, { include: { emailAddresses: true } });
 
       expect(mockPrismaClient.user.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
@@ -416,7 +428,7 @@ describe('UserRepository', () => {
 
   describe('update', () => {
     it('should update user without include', async () => {
-      const updateInput = { displayName: 'Updated Name' } as Prisma.UserUpdateInput;
+      const updateInput = { firstName: 'Updated' } as Prisma.UserUpdateInput;
       mockPrismaClient.user.update.mockResolvedValue(mockUser);
 
       const result = await repository.update('user-1', updateInput);
@@ -429,11 +441,11 @@ describe('UserRepository', () => {
     });
 
     it('should update user with include', async () => {
-      const updateInput = { displayName: 'Updated Name' } as Prisma.UserUpdateInput;
+      const updateInput = { firstName: 'Updated' } as Prisma.UserUpdateInput;
       const userWithInclude = { ...mockUser, emailAddresses: [] };
       mockPrismaClient.user.update.mockResolvedValue(userWithInclude as unknown as User);
 
-      const result = await repository.update('user-1', updateInput, { include: { emailAddresses: true } });
+      await repository.update('user-1', updateInput, { include: { emailAddresses: true } });
 
       expect(mockPrismaClient.user.update).toHaveBeenCalledWith({
         data: updateInput,
@@ -446,8 +458,8 @@ describe('UserRepository', () => {
   describe('updateMany', () => {
     it('should update many users without include', async () => {
       const updates = [
-        { id: 'user-1', data: { displayName: 'Updated 1' } as Prisma.UserUpdateInput },
-        { id: 'user-2', data: { displayName: 'Updated 2' } as Prisma.UserUpdateInput },
+        { id: 'user-1', data: { firstName: 'Updated 1' } as Prisma.UserUpdateInput },
+        { id: 'user-2', data: { firstName: 'Updated 2' } as Prisma.UserUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -465,7 +477,7 @@ describe('UserRepository', () => {
 
     it('should update many users with include', async () => {
       const updates = [
-        { id: 'user-1', data: { displayName: 'Updated 1' } as Prisma.UserUpdateInput },
+        { id: 'user-1', data: { firstName: 'Updated 1' } as Prisma.UserUpdateInput },
       ];
       const userWithInclude = { ...mockUser, emailAddresses: [] };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -476,7 +488,7 @@ describe('UserRepository', () => {
       });
       mockPrismaClient.user.update.mockResolvedValue(userWithInclude as unknown as User);
 
-      const result = await repository.updateMany(updates, { include: { emailAddresses: true } });
+      await repository.updateMany(updates, { include: { emailAddresses: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
     });

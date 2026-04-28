@@ -45,13 +45,13 @@ describe('EmailAddressRepository', () => {
   const mockUser: User = {
     id: 'user-1',
     username: 'testuser',
-    passwordHash: 'hash',
-    displayName: 'Test User',
-    bio: null,
+    firstName: 'Test',
+    lastName: 'User',
+    birthDate: null,
+    gender: null,
+    description: null,
+    password: 'hash',
     avatarId: null,
-    visibility: 'public',
-    role: 'user',
-    lastLoginAt: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -179,6 +179,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getPrimaryByEmailWithUser('test@example.com', { includeUser: { emailAddresses: true } });
 
+      expect(result).toEqual(emailWithUser);
       expect(mockPrismaClient.emailAddress.findUnique).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
         include: { user: { include: { emailAddresses: true } } },
@@ -269,6 +270,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getPaginated(1, 10, filter);
 
+      expect(result).toEqual([mockEmailAddress]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -283,6 +285,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
 
+      expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -311,6 +314,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getAllByUserId('user-1', { include: { user: true } });
 
+      expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', deletedAt: null },
         include: { user: true },
@@ -336,6 +340,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getPrimaryByUserId('user-1', { include: { user: true } });
 
+      expect(result).toEqual(emailWithInclude);
       expect(mockPrismaClient.emailAddress.findFirst).toHaveBeenCalledWith({
         where: { userId: 'user-1', type: EmailType.primary, deletedAt: null },
         include: { user: true },
@@ -362,6 +367,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getRecoveryByUserId('user-1', { include: { user: true } });
 
+      expect(result).toEqual([recoveryEmail]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', type: EmailType.recovery, deletedAt: null },
         include: { user: true },
@@ -387,6 +393,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getByTypeAndUserId(EmailType.recovery, 'user-1', { include: { user: true } });
 
+      expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', type: EmailType.recovery, deletedAt: null },
         include: { user: true },
@@ -412,6 +419,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getByStatusAndUserId(EmailStatus.pending, 'user-1', { include: { user: true } });
 
+      expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
         where: { status: EmailStatus.pending, userId: 'user-1', deletedAt: null },
         include: { user: true },
@@ -437,6 +445,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.getVerifiedByUserId('user-1', { include: { user: true } });
 
+      expect(result).toEqual([emailWithInclude]);
       expect(mockPrismaClient.emailAddress.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', status: EmailStatus.verified, deletedAt: null },
         include: { user: true },
@@ -537,6 +546,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.emailAddress.count).toHaveBeenCalledWith({
         where: { deletedAt: new Date('2024-01-02') },
       });
@@ -558,7 +568,12 @@ describe('EmailAddressRepository', () => {
 
   describe('create', () => {
     it('should create email address without include', async () => {
-      const createInput = { email: 'new@example.com', userId: 'user-1', type: EmailType.primary } as Prisma.EmailAddressCreateInput;
+      const createInput: Prisma.EmailAddressCreateInput = {
+        email: 'new@example.com',
+        type: EmailType.primary,
+        status: EmailStatus.pending,
+        user: { connect: { id: 'user-1' } },
+      };
       mockPrismaClient.emailAddress.create.mockResolvedValue(mockEmailAddress);
 
       const result = await repository.create(createInput);
@@ -570,7 +585,12 @@ describe('EmailAddressRepository', () => {
     });
 
     it('should create email address with include', async () => {
-      const createInput = { email: 'new@example.com', userId: 'user-1', type: EmailType.primary } as Prisma.EmailAddressCreateInput;
+      const createInput: Prisma.EmailAddressCreateInput = {
+        email: 'new@example.com',
+        type: EmailType.primary,
+        status: EmailStatus.pending,
+        user: { connect: { id: 'user-1' } },
+      };
       const emailWithInclude = { ...mockEmailAddress, user: mockUser };
       mockPrismaClient.emailAddress.create.mockResolvedValue(emailWithInclude as unknown as EmailAddress);
 
@@ -586,7 +606,20 @@ describe('EmailAddressRepository', () => {
 
   describe('createMany', () => {
     it('should create many email addresses without include', async () => {
-      const createInputs = [{ email: 'email1@example.com' }, { email: 'email2@example.com' }] as Prisma.EmailAddressCreateManyInput[];
+      const createInputs: Prisma.EmailAddressCreateManyInput[] = [
+        {
+          email: 'email1@example.com',
+          userId: 'user-1',
+          type: EmailType.primary,
+          status: EmailStatus.pending,
+        },
+        {
+          email: 'email2@example.com',
+          userId: 'user-1',
+          type: EmailType.recovery,
+          status: EmailStatus.pending,
+        },
+      ];
       mockPrismaClient.emailAddress.createManyAndReturn.mockResolvedValue([mockEmailAddress]);
 
       const result = await repository.createMany(createInputs);
@@ -598,12 +631,20 @@ describe('EmailAddressRepository', () => {
     });
 
     it('should create many email addresses with include', async () => {
-      const createInputs = [{ email: 'email1@example.com' }] as Prisma.EmailAddressCreateManyInput[];
+      const createInputs: Prisma.EmailAddressCreateManyInput[] = [
+        {
+          email: 'email1@example.com',
+          userId: 'user-1',
+          type: EmailType.primary,
+          status: EmailStatus.pending,
+        },
+      ];
       const emailsWithInclude = [{ ...mockEmailAddress, user: mockUser }];
       mockPrismaClient.emailAddress.createManyAndReturn.mockResolvedValue(emailsWithInclude as unknown as EmailAddress[]);
 
       const result = await repository.createMany(createInputs, { include: { user: true } });
 
+      expect(result).toEqual(emailsWithInclude);
       expect(mockPrismaClient.emailAddress.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
         include: { user: true },
@@ -632,6 +673,7 @@ describe('EmailAddressRepository', () => {
 
       const result = await repository.update('email-1', updateInput, { include: { user: true } });
 
+      expect(result).toEqual(emailWithInclude);
       expect(mockPrismaClient.emailAddress.update).toHaveBeenCalledWith({
         where: { id: 'email-1' },
         data: updateInput,
@@ -676,6 +718,7 @@ describe('EmailAddressRepository', () => {
       const result = await repository.updateMany(updates, { include: { user: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
+      expect(result).toEqual([emailWithInclude]);
     });
   });
 

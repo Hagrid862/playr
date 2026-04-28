@@ -46,7 +46,6 @@ describe('LibraryArtistRepository', () => {
     id: 'library-artist-1',
     libraryId: 'library-1',
     artistId: 'artist-1',
-    addedAt: new Date('2024-01-01'),
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -166,7 +165,7 @@ describe('LibraryArtistRepository', () => {
     it('should return paginated library artists with filter and orderBy', async () => {
       mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
       const filter = { libraryId: 'library-1' } as Prisma.LibraryArtistWhereInput;
-      const orderBy = { addedAt: 'desc' } as Prisma.LibraryArtistOrderByWithRelationInput;
+      const orderBy = { createdAt: 'desc' } as Prisma.LibraryArtistOrderByWithRelationInput;
 
       const result = await repository.getPaginated(2, 5, filter, orderBy);
 
@@ -179,7 +178,7 @@ describe('LibraryArtistRepository', () => {
           deletedAt: null,
           artist: { deletedAt: null },
         },
-        orderBy: { addedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -187,7 +186,7 @@ describe('LibraryArtistRepository', () => {
       mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -204,7 +203,7 @@ describe('LibraryArtistRepository', () => {
       mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
       const filter = { artist: { name: 'Test' } } as Prisma.LibraryArtistWhereInput;
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -221,7 +220,7 @@ describe('LibraryArtistRepository', () => {
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
       mockPrismaClient.libraryArtist.findMany.mockResolvedValue([libraryArtistWithInclude] as unknown as LibraryArtist[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { artist: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { artist: true } });
 
       expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -317,7 +316,7 @@ describe('LibraryArtistRepository', () => {
       mockPrismaClient.libraryArtist.count.mockResolvedValue(1);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.count(filter);
+      await repository.count(filter);
 
       expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
         where: {
@@ -331,7 +330,7 @@ describe('LibraryArtistRepository', () => {
       mockPrismaClient.libraryArtist.count.mockResolvedValue(2);
       const filter = { artist: { name: 'Test' } } as Prisma.LibraryArtistWhereInput;
 
-      const result = await repository.count(filter);
+      await repository.count(filter);
 
       expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
         where: {
@@ -344,7 +343,10 @@ describe('LibraryArtistRepository', () => {
 
   describe('create', () => {
     it('should create library artist without include', async () => {
-      const createInput = { libraryId: 'library-1', artistId: 'artist-1', addedAt: new Date() } as Prisma.LibraryArtistCreateInput;
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        artist: { connect: { id: 'artist-1' } },
+      } as Prisma.LibraryArtistCreateInput;
       mockPrismaClient.libraryArtist.create.mockResolvedValue(mockLibraryArtist);
 
       const result = await repository.create(createInput);
@@ -356,7 +358,10 @@ describe('LibraryArtistRepository', () => {
     });
 
     it('should create library artist with include', async () => {
-      const createInput = { libraryId: 'library-1', artistId: 'artist-1', addedAt: new Date() } as Prisma.LibraryArtistCreateInput;
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        artist: { connect: { id: 'artist-1' } },
+      } as Prisma.LibraryArtistCreateInput;
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
       mockPrismaClient.libraryArtist.create.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
 
@@ -388,7 +393,7 @@ describe('LibraryArtistRepository', () => {
       const libraryArtistsWithInclude = [{ ...mockLibraryArtist, artist: { id: 'artist-1' } }];
       mockPrismaClient.libraryArtist.createManyAndReturn.mockResolvedValue(libraryArtistsWithInclude as unknown as LibraryArtist[]);
 
-      const result = await repository.createMany(createInputs, { include: { artist: true } });
+      await repository.createMany(createInputs, { include: { artist: true } });
 
       expect(mockPrismaClient.libraryArtist.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
@@ -399,7 +404,7 @@ describe('LibraryArtistRepository', () => {
 
   describe('update', () => {
     it('should update library artist without include', async () => {
-      const updateInput = { addedAt: new Date('2024-02-01') } as Prisma.LibraryArtistUpdateInput;
+      const updateInput = {} as Prisma.LibraryArtistUpdateInput;
       mockPrismaClient.libraryArtist.update.mockResolvedValue(mockLibraryArtist);
 
       const result = await repository.update('library-artist-1', updateInput);
@@ -412,11 +417,11 @@ describe('LibraryArtistRepository', () => {
     });
 
     it('should update library artist with include', async () => {
-      const updateInput = { addedAt: new Date('2024-02-01') } as Prisma.LibraryArtistUpdateInput;
+      const updateInput = {} as Prisma.LibraryArtistUpdateInput;
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
       mockPrismaClient.libraryArtist.update.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
 
-      const result = await repository.update('library-artist-1', updateInput, { include: { artist: true } });
+      await repository.update('library-artist-1', updateInput, { include: { artist: true } });
 
       expect(mockPrismaClient.libraryArtist.update).toHaveBeenCalledWith({
         data: updateInput,
@@ -429,8 +434,8 @@ describe('LibraryArtistRepository', () => {
   describe('updateMany', () => {
     it('should update many library artists without include', async () => {
       const updates = [
-        { id: 'library-artist-1', data: { addedAt: new Date('2024-02-01') } as Prisma.LibraryArtistUpdateInput },
-        { id: 'library-artist-2', data: { addedAt: new Date('2024-02-02') } as Prisma.LibraryArtistUpdateInput },
+        { id: 'library-artist-1', data: {} as Prisma.LibraryArtistUpdateInput },
+        { id: 'library-artist-2', data: {} as Prisma.LibraryArtistUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -448,7 +453,7 @@ describe('LibraryArtistRepository', () => {
 
     it('should update many library artists with include', async () => {
       const updates = [
-        { id: 'library-artist-1', data: { addedAt: new Date('2024-02-01') } as Prisma.LibraryArtistUpdateInput },
+        { id: 'library-artist-1', data: {} as Prisma.LibraryArtistUpdateInput },
       ];
       const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -459,7 +464,7 @@ describe('LibraryArtistRepository', () => {
       });
       mockPrismaClient.libraryArtist.update.mockResolvedValue(libraryArtistWithInclude as unknown as LibraryArtist);
 
-      const result = await repository.updateMany(updates, { include: { artist: true } });
+      await repository.updateMany(updates, { include: { artist: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
     });

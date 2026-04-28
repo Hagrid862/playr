@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImageRepository } from './image.repository';
 import { PrismaService } from '../services/prisma.service';
-import { Image, Prisma } from '@repo/db';
+import { FileBucket, Image, ImageUploadStatus, Prisma } from '@repo/db';
 
 describe('ImageRepository', () => {
   let repository: ImageRepository;
@@ -43,13 +43,14 @@ describe('ImageRepository', () => {
 
   const mockImage: Image = {
     id: 'image-1',
-    originalFileName: 'photo.jpg',
-    path: '/path/to/photo.jpg',
-    size: 1000000,
+    alt: 'Cover image',
+    bucket: FileBucket.public,
+    key: 'images/photo.jpg',
+    url: 'https://example.com/images/photo.jpg',
     mimeType: 'image/jpeg',
-    width: 1920,
-    height: 1080,
-    storageBackend: 's3',
+    blurhash: null,
+    reportId: null,
+    uploadStatus: ImageUploadStatus.uploaded,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -68,15 +69,15 @@ describe('ImageRepository', () => {
     });
 
     it('should return image by id with include', async () => {
-      const imageWithInclude = { ...mockImage, albums: [] };
+      const imageWithInclude = { ...mockImage, reportAttached: null };
       mockPrismaClient.image.findUnique.mockResolvedValue(imageWithInclude as unknown as Image);
 
-      const result = await repository.getById('image-1', { include: { albums: true } });
+      const result = await repository.getById('image-1', { include: { reportAttached: true } });
 
       expect(result).toEqual(imageWithInclude);
       expect(mockPrismaClient.image.findUnique).toHaveBeenCalledWith({
         where: { id: 'image-1' },
-        include: { albums: true },
+        include: { reportAttached: true },
       });
     });
 
@@ -135,7 +136,7 @@ describe('ImageRepository', () => {
       mockPrismaClient.image.findMany.mockResolvedValue([mockImage]);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.image.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -146,17 +147,17 @@ describe('ImageRepository', () => {
     });
 
     it('should return paginated images with include', async () => {
-      const imageWithInclude = { ...mockImage, albums: [] };
+      const imageWithInclude = { ...mockImage, reportAttached: null };
       mockPrismaClient.image.findMany.mockResolvedValue([imageWithInclude] as unknown as Image[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { albums: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { reportAttached: true } });
 
       expect(mockPrismaClient.image.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
         where: { deletedAt: null },
         orderBy: { createdAt: 'desc' },
-        include: { albums: true },
+        include: { reportAttached: true },
       });
     });
   });
@@ -212,6 +213,7 @@ describe('ImageRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.image.count).toHaveBeenCalledWith({
         where: { deletedAt: new Date('2024-01-02') },
       });
@@ -220,7 +222,13 @@ describe('ImageRepository', () => {
 
   describe('create', () => {
     it('should create image without include', async () => {
-      const createInput = { originalFileName: 'new.jpg', path: '/new.jpg' } as Prisma.ImageCreateInput;
+      const createInput = {
+        alt: 'New image',
+        bucket: FileBucket.public,
+        key: 'images/new.jpg',
+        mimeType: 'image/jpeg',
+        uploadStatus: ImageUploadStatus.pending,
+      } as Prisma.ImageCreateInput;
       mockPrismaClient.image.create.mockResolvedValue(mockImage);
 
       const result = await repository.create(createInput);
@@ -232,23 +240,44 @@ describe('ImageRepository', () => {
     });
 
     it('should create image with include', async () => {
-      const createInput = { originalFileName: 'new.jpg', path: '/new.jpg' } as Prisma.ImageCreateInput;
-      const imageWithInclude = { ...mockImage, albums: [] };
+      const createInput = {
+        alt: 'New image',
+        bucket: FileBucket.public,
+        key: 'images/new.jpg',
+        mimeType: 'image/jpeg',
+        uploadStatus: ImageUploadStatus.pending,
+      } as Prisma.ImageCreateInput;
+      const imageWithInclude = { ...mockImage, reportAttached: null };
       mockPrismaClient.image.create.mockResolvedValue(imageWithInclude as unknown as Image);
 
-      const result = await repository.create(createInput, { include: { albums: true } });
+      const result = await repository.create(createInput, { include: { reportAttached: true } });
 
       expect(result).toEqual(imageWithInclude);
       expect(mockPrismaClient.image.create).toHaveBeenCalledWith({
         data: createInput,
-        include: { albums: true },
+        include: { reportAttached: true },
       });
     });
   });
 
   describe('createMany', () => {
     it('should create many images without include', async () => {
-      const createInputs = [{ originalFileName: 'img1.jpg' }, { originalFileName: 'img2.jpg' }] as Prisma.ImageCreateManyInput[];
+      const createInputs = [
+        {
+          alt: 'Image 1',
+          bucket: FileBucket.public,
+          key: 'images/img1.jpg',
+          mimeType: 'image/jpeg',
+          uploadStatus: ImageUploadStatus.pending,
+        },
+        {
+          alt: 'Image 2',
+          bucket: FileBucket.public,
+          key: 'images/img2.jpg',
+          mimeType: 'image/jpeg',
+          uploadStatus: ImageUploadStatus.pending,
+        },
+      ] as Prisma.ImageCreateManyInput[];
       mockPrismaClient.image.createManyAndReturn.mockResolvedValue([mockImage]);
 
       const result = await repository.createMany(createInputs);
@@ -260,22 +289,30 @@ describe('ImageRepository', () => {
     });
 
     it('should create many images with include', async () => {
-      const createInputs = [{ originalFileName: 'img1.jpg' }] as Prisma.ImageCreateManyInput[];
-      const imagesWithInclude = [{ ...mockImage, albums: [] }];
+      const createInputs = [
+        {
+          alt: 'Image 1',
+          bucket: FileBucket.public,
+          key: 'images/img1.jpg',
+          mimeType: 'image/jpeg',
+          uploadStatus: ImageUploadStatus.pending,
+        },
+      ] as Prisma.ImageCreateManyInput[];
+      const imagesWithInclude = [{ ...mockImage, reportAttached: null }];
       mockPrismaClient.image.createManyAndReturn.mockResolvedValue(imagesWithInclude as unknown as Image[]);
 
-      const result = await repository.createMany(createInputs, { include: { albums: true } });
+      await repository.createMany(createInputs, { include: { reportAttached: true } });
 
       expect(mockPrismaClient.image.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
-        include: { albums: true },
+        include: { reportAttached: true },
       });
     });
   });
 
   describe('update', () => {
     it('should update image without include', async () => {
-      const updateInput = { originalFileName: 'updated.jpg' } as Prisma.ImageUpdateInput;
+      const updateInput = { key: 'images/updated.jpg' } as Prisma.ImageUpdateInput;
       mockPrismaClient.image.update.mockResolvedValue(mockImage);
 
       const result = await repository.update('image-1', updateInput);
@@ -288,16 +325,16 @@ describe('ImageRepository', () => {
     });
 
     it('should update image with include', async () => {
-      const updateInput = { originalFileName: 'updated.jpg' } as Prisma.ImageUpdateInput;
-      const imageWithInclude = { ...mockImage, albums: [] };
+      const updateInput = { key: 'images/updated.jpg' } as Prisma.ImageUpdateInput;
+      const imageWithInclude = { ...mockImage, reportAttached: null };
       mockPrismaClient.image.update.mockResolvedValue(imageWithInclude as unknown as Image);
 
-      const result = await repository.update('image-1', updateInput, { include: { albums: true } });
+      await repository.update('image-1', updateInput, { include: { reportAttached: true } });
 
       expect(mockPrismaClient.image.update).toHaveBeenCalledWith({
         where: { id: 'image-1' },
         data: updateInput,
-        include: { albums: true },
+        include: { reportAttached: true },
       });
     });
   });
@@ -305,8 +342,8 @@ describe('ImageRepository', () => {
   describe('updateMany', () => {
     it('should update many images without include', async () => {
       const updates = [
-        { id: 'image-1', data: { originalFileName: 'updated1.jpg' } as Prisma.ImageUpdateInput },
-        { id: 'image-2', data: { originalFileName: 'updated2.jpg' } as Prisma.ImageUpdateInput },
+        { id: 'image-1', data: { key: 'images/updated1.jpg' } as Prisma.ImageUpdateInput },
+        { id: 'image-2', data: { key: 'images/updated2.jpg' } as Prisma.ImageUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -324,9 +361,9 @@ describe('ImageRepository', () => {
 
     it('should update many images with include', async () => {
       const updates = [
-        { id: 'image-1', data: { originalFileName: 'updated1.jpg' } as Prisma.ImageUpdateInput },
+        { id: 'image-1', data: { key: 'images/updated1.jpg' } as Prisma.ImageUpdateInput },
       ];
-      const imageWithInclude = { ...mockImage, albums: [] };
+      const imageWithInclude = { ...mockImage, reportAttached: null };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
           return await cb(mockMainClient);
@@ -335,7 +372,7 @@ describe('ImageRepository', () => {
       });
       mockPrismaClient.image.update.mockResolvedValue(imageWithInclude as unknown as Image);
 
-      const result = await repository.updateMany(updates, { include: { albums: true } });
+      await repository.updateMany(updates, { include: { reportAttached: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
     });

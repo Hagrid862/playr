@@ -44,8 +44,6 @@ describe('LibraryRepository', () => {
   const mockLibrary: Library = {
     id: 'library-1',
     userId: 'user-1',
-    totalTracks: 100,
-    totalDuration: 3600000,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -176,7 +174,7 @@ describe('LibraryRepository', () => {
       mockPrismaClient.library.findMany.mockResolvedValue([mockLibrary]);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.library.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -190,7 +188,7 @@ describe('LibraryRepository', () => {
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
       mockPrismaClient.library.findMany.mockResolvedValue([libraryWithInclude] as unknown as Library[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
 
       expect(mockPrismaClient.library.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -274,6 +272,7 @@ describe('LibraryRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.library.count).toHaveBeenCalledWith({
         where: { deletedAt: new Date('2024-01-02') },
       });
@@ -282,7 +281,7 @@ describe('LibraryRepository', () => {
 
   describe('create', () => {
     it('should create library without include', async () => {
-      const createInput = { userId: 'user-1', totalTracks: 0, totalDuration: 0 } as Prisma.LibraryCreateInput;
+      const createInput = { user: { connect: { id: 'user-1' } } } as Prisma.LibraryCreateInput;
       mockPrismaClient.library.create.mockResolvedValue(mockLibrary);
 
       const result = await repository.create(createInput);
@@ -294,7 +293,7 @@ describe('LibraryRepository', () => {
     });
 
     it('should create library with include', async () => {
-      const createInput = { userId: 'user-1', totalTracks: 0, totalDuration: 0 } as Prisma.LibraryCreateInput;
+      const createInput = { user: { connect: { id: 'user-1' } } } as Prisma.LibraryCreateInput;
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
       mockPrismaClient.library.create.mockResolvedValue(libraryWithInclude as unknown as Library);
 
@@ -326,7 +325,7 @@ describe('LibraryRepository', () => {
       const librariesWithInclude = [{ ...mockLibrary, user: { id: 'user-1' } }];
       mockPrismaClient.library.createManyAndReturn.mockResolvedValue(librariesWithInclude as unknown as Library[]);
 
-      const result = await repository.createMany(createInputs, { include: { user: true } });
+      await repository.createMany(createInputs, { include: { user: true } });
 
       expect(mockPrismaClient.library.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
@@ -337,7 +336,7 @@ describe('LibraryRepository', () => {
 
   describe('update', () => {
     it('should update library without include', async () => {
-      const updateInput = { totalTracks: 150 } as Prisma.LibraryUpdateInput;
+      const updateInput = {} as Prisma.LibraryUpdateInput;
       mockPrismaClient.library.update.mockResolvedValue(mockLibrary);
 
       const result = await repository.update('library-1', updateInput);
@@ -350,11 +349,11 @@ describe('LibraryRepository', () => {
     });
 
     it('should update library with include', async () => {
-      const updateInput = { totalTracks: 150 } as Prisma.LibraryUpdateInput;
+      const updateInput = {} as Prisma.LibraryUpdateInput;
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
       mockPrismaClient.library.update.mockResolvedValue(libraryWithInclude as unknown as Library);
 
-      const result = await repository.update('library-1', updateInput, { include: { user: true } });
+      await repository.update('library-1', updateInput, { include: { user: true } });
 
       expect(mockPrismaClient.library.update).toHaveBeenCalledWith({
         data: updateInput,
@@ -367,8 +366,8 @@ describe('LibraryRepository', () => {
   describe('updateMany', () => {
     it('should update many libraries without include', async () => {
       const updates = [
-        { id: 'library-1', data: { totalTracks: 150 } as Prisma.LibraryUpdateInput },
-        { id: 'library-2', data: { totalTracks: 200 } as Prisma.LibraryUpdateInput },
+        { id: 'library-1', data: {} as Prisma.LibraryUpdateInput },
+        { id: 'library-2', data: {} as Prisma.LibraryUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -386,7 +385,7 @@ describe('LibraryRepository', () => {
 
     it('should update many libraries with include', async () => {
       const updates = [
-        { id: 'library-1', data: { totalTracks: 150 } as Prisma.LibraryUpdateInput },
+        { id: 'library-1', data: {} as Prisma.LibraryUpdateInput },
       ];
       const libraryWithInclude = { ...mockLibrary, user: { id: 'user-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -397,7 +396,7 @@ describe('LibraryRepository', () => {
       });
       mockPrismaClient.library.update.mockResolvedValue(libraryWithInclude as unknown as Library);
 
-      const result = await repository.updateMany(updates, { include: { user: true } });
+      await repository.updateMany(updates, { include: { user: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
     });

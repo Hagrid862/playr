@@ -46,7 +46,6 @@ describe('LibraryAlbumRepository', () => {
     id: 'library-album-1',
     libraryId: 'library-1',
     albumId: 'album-1',
-    addedAt: new Date('2024-01-01'),
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -166,7 +165,7 @@ describe('LibraryAlbumRepository', () => {
     it('should return paginated library albums with filter and orderBy', async () => {
       mockPrismaClient.libraryAlbum.findMany.mockResolvedValue([mockLibraryAlbum]);
       const filter = { libraryId: 'library-1' } as Prisma.LibraryAlbumWhereInput;
-      const orderBy = { addedAt: 'desc' } as Prisma.LibraryAlbumOrderByWithRelationInput;
+      const orderBy = { createdAt: 'desc' } as Prisma.LibraryAlbumOrderByWithRelationInput;
 
       const result = await repository.getPaginated(2, 5, filter, orderBy);
 
@@ -179,7 +178,7 @@ describe('LibraryAlbumRepository', () => {
           deletedAt: null,
           album: { deletedAt: null },
         },
-        orderBy: { addedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -189,6 +188,7 @@ describe('LibraryAlbumRepository', () => {
 
       const result = await repository.getPaginated(1, 10, filter);
 
+      expect(result).toEqual([mockLibraryAlbum]);
       expect(mockPrismaClient.libraryAlbum.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -206,6 +206,7 @@ describe('LibraryAlbumRepository', () => {
 
       const result = await repository.getPaginated(1, 10, filter);
 
+      expect(result).toEqual([mockLibraryAlbum]);
       expect(mockPrismaClient.libraryAlbum.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -223,6 +224,7 @@ describe('LibraryAlbumRepository', () => {
 
       const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { album: true } });
 
+      expect(result).toEqual([libraryAlbumWithInclude]);
       expect(mockPrismaClient.libraryAlbum.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -319,6 +321,7 @@ describe('LibraryAlbumRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.libraryAlbum.count).toHaveBeenCalledWith({
         where: {
           deletedAt: new Date('2024-01-02'),
@@ -333,6 +336,7 @@ describe('LibraryAlbumRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(2);
       expect(mockPrismaClient.libraryAlbum.count).toHaveBeenCalledWith({
         where: {
           deletedAt: null,
@@ -344,7 +348,10 @@ describe('LibraryAlbumRepository', () => {
 
   describe('create', () => {
     it('should create library album without include', async () => {
-      const createInput = { libraryId: 'library-1', albumId: 'album-1', addedAt: new Date() } as Prisma.LibraryAlbumCreateInput;
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        album: { connect: { id: 'album-1' } },
+      } as Prisma.LibraryAlbumCreateInput;
       mockPrismaClient.libraryAlbum.create.mockResolvedValue(mockLibraryAlbum);
 
       const result = await repository.create(createInput);
@@ -356,7 +363,10 @@ describe('LibraryAlbumRepository', () => {
     });
 
     it('should create library album with include', async () => {
-      const createInput = { libraryId: 'library-1', albumId: 'album-1', addedAt: new Date() } as Prisma.LibraryAlbumCreateInput;
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        album: { connect: { id: 'album-1' } },
+      } as Prisma.LibraryAlbumCreateInput;
       const libraryAlbumWithInclude = { ...mockLibraryAlbum, album: { id: 'album-1' } };
       mockPrismaClient.libraryAlbum.create.mockResolvedValue(libraryAlbumWithInclude as unknown as LibraryAlbum);
 
@@ -390,6 +400,7 @@ describe('LibraryAlbumRepository', () => {
 
       const result = await repository.createMany(createInputs, { include: { album: true } });
 
+      expect(result).toEqual(libraryAlbumsWithInclude);
       expect(mockPrismaClient.libraryAlbum.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
         include: { album: true },
@@ -399,7 +410,7 @@ describe('LibraryAlbumRepository', () => {
 
   describe('update', () => {
     it('should update library album without include', async () => {
-      const updateInput = { addedAt: new Date('2024-02-01') } as Prisma.LibraryAlbumUpdateInput;
+      const updateInput = {} as Prisma.LibraryAlbumUpdateInput;
       mockPrismaClient.libraryAlbum.update.mockResolvedValue(mockLibraryAlbum);
 
       const result = await repository.update('library-album-1', updateInput);
@@ -412,12 +423,13 @@ describe('LibraryAlbumRepository', () => {
     });
 
     it('should update library album with include', async () => {
-      const updateInput = { addedAt: new Date('2024-02-01') } as Prisma.LibraryAlbumUpdateInput;
+      const updateInput = {} as Prisma.LibraryAlbumUpdateInput;
       const libraryAlbumWithInclude = { ...mockLibraryAlbum, album: { id: 'album-1' } };
       mockPrismaClient.libraryAlbum.update.mockResolvedValue(libraryAlbumWithInclude as unknown as LibraryAlbum);
 
       const result = await repository.update('library-album-1', updateInput, { include: { album: true } });
 
+      expect(result).toEqual(libraryAlbumWithInclude);
       expect(mockPrismaClient.libraryAlbum.update).toHaveBeenCalledWith({
         data: updateInput,
         where: { id: 'library-album-1' },
@@ -429,8 +441,8 @@ describe('LibraryAlbumRepository', () => {
   describe('updateMany', () => {
     it('should update many library albums without include', async () => {
       const updates = [
-        { id: 'library-album-1', data: { addedAt: new Date('2024-02-01') } as Prisma.LibraryAlbumUpdateInput },
-        { id: 'library-album-2', data: { addedAt: new Date('2024-02-02') } as Prisma.LibraryAlbumUpdateInput },
+        { id: 'library-album-1', data: {} as Prisma.LibraryAlbumUpdateInput },
+        { id: 'library-album-2', data: {} as Prisma.LibraryAlbumUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -448,7 +460,7 @@ describe('LibraryAlbumRepository', () => {
 
     it('should update many library albums with include', async () => {
       const updates = [
-        { id: 'library-album-1', data: { addedAt: new Date('2024-02-01') } as Prisma.LibraryAlbumUpdateInput },
+        { id: 'library-album-1', data: {} as Prisma.LibraryAlbumUpdateInput },
       ];
       const libraryAlbumWithInclude = { ...mockLibraryAlbum, album: { id: 'album-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -462,6 +474,7 @@ describe('LibraryAlbumRepository', () => {
       const result = await repository.updateMany(updates, { include: { album: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
+      expect(result).toEqual([libraryAlbumWithInclude]);
     });
   });
 

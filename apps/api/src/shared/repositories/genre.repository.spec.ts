@@ -45,8 +45,9 @@ describe('GenreRepository', () => {
   const mockGenre: Genre = {
     id: 'genre-1',
     name: 'Rock',
+    description: null,
     slug: 'rock',
-    kind: 'system' as GenreKind,
+    kind: GenreKind.system,
     libraryId: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -58,7 +59,7 @@ describe('GenreRepository', () => {
     id: 'genre-2',
     name: 'Custom Rock',
     slug: 'custom-rock',
-    kind: 'custom' as GenreKind,
+    kind: GenreKind.custom,
     libraryId: 'library-1',
   };
 
@@ -135,7 +136,7 @@ describe('GenreRepository', () => {
       const genreWithInclude = { ...mockGenre, tracks: [] };
       mockPrismaClient.genre.findFirst.mockResolvedValue(genreWithInclude as unknown as Genre);
 
-      const result = await repository.getGenreForLibrary('genre-1', 'library-1', { include: { tracks: true } });
+      await repository.getGenreForLibrary('genre-1', 'library-1', { include: { tracks: true } });
 
       expect(mockPrismaClient.genre.findFirst).toHaveBeenCalledWith({
         where: {
@@ -159,7 +160,7 @@ describe('GenreRepository', () => {
         where: {
           libraryId: null,
           slug: 'rock',
-          kind: 'system',
+          kind: GenreKind.system,
           deletedAt: null,
         },
       });
@@ -169,13 +170,13 @@ describe('GenreRepository', () => {
       const genreWithInclude = { ...mockGenre, tracks: [] };
       mockPrismaClient.genre.findFirst.mockResolvedValue(genreWithInclude as unknown as Genre);
 
-      const result = await repository.getSystemGenreBySlug('rock', { include: { tracks: true } });
+      await repository.getSystemGenreBySlug('rock', { include: { tracks: true } });
 
       expect(mockPrismaClient.genre.findFirst).toHaveBeenCalledWith({
         where: {
           libraryId: null,
           slug: 'rock',
-          kind: 'system',
+          kind: GenreKind.system,
           deletedAt: null,
         },
         include: { tracks: true },
@@ -194,7 +195,7 @@ describe('GenreRepository', () => {
         where: {
           libraryId: 'library-1',
           slug: 'custom-rock',
-          kind: 'custom',
+          kind: GenreKind.custom,
           deletedAt: null,
         },
       });
@@ -204,13 +205,13 @@ describe('GenreRepository', () => {
       const genreWithInclude = { ...mockCustomGenre, tracks: [] };
       mockPrismaClient.genre.findFirst.mockResolvedValue(genreWithInclude as unknown as Genre);
 
-      const result = await repository.getCustomGenreBySlugForLibrary('library-1', 'custom-rock', { include: { tracks: true } });
+      await repository.getCustomGenreBySlugForLibrary('library-1', 'custom-rock', { include: { tracks: true } });
 
       expect(mockPrismaClient.genre.findFirst).toHaveBeenCalledWith({
         where: {
           libraryId: 'library-1',
           slug: 'custom-rock',
-          kind: 'custom',
+          kind: GenreKind.custom,
           deletedAt: null,
         },
         include: { tracks: true },
@@ -237,7 +238,7 @@ describe('GenreRepository', () => {
     it('should return genre by slug for library with excludeGenreId', async () => {
       mockPrismaClient.genre.findFirst.mockResolvedValue(mockCustomGenre);
 
-      const result = await repository.getGenreBySlugForLibrary('library-1', 'custom-rock', { excludeGenreId: 'genre-3' });
+      await repository.getGenreBySlugForLibrary('library-1', 'custom-rock', { excludeGenreId: 'genre-3' });
 
       expect(mockPrismaClient.genre.findFirst).toHaveBeenCalledWith({
         where: {
@@ -253,7 +254,7 @@ describe('GenreRepository', () => {
       const genreWithInclude = { ...mockCustomGenre, tracks: [] };
       mockPrismaClient.genre.findFirst.mockResolvedValue(genreWithInclude as unknown as Genre);
 
-      const result = await repository.getGenreBySlugForLibrary('library-1', 'custom-rock', { include: { tracks: true } });
+      await repository.getGenreBySlugForLibrary('library-1', 'custom-rock', { include: { tracks: true } });
 
       expect(mockPrismaClient.genre.findFirst).toHaveBeenCalledWith({
         where: {
@@ -301,7 +302,7 @@ describe('GenreRepository', () => {
       mockPrismaClient.genre.findMany.mockResolvedValue([mockGenre]);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.genre.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -315,7 +316,7 @@ describe('GenreRepository', () => {
       const genreWithInclude = { ...mockGenre, tracks: [] };
       mockPrismaClient.genre.findMany.mockResolvedValue([genreWithInclude] as unknown as Genre[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { tracks: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { tracks: true } });
 
       expect(mockPrismaClient.genre.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -352,9 +353,9 @@ describe('GenreRepository', () => {
     it('should return genres paginated for library with kind filter', async () => {
       mockPrismaClient.genre.findMany.mockResolvedValue([mockGenre]);
 
-      const result = await repository.getGenresPaginatedForLibrary({
+      await repository.getGenresPaginatedForLibrary({
         libraryId: 'library-1',
-        kind: 'system' as GenreKind,
+        kind: GenreKind.system,
         page: 1,
         limit: 10,
       });
@@ -366,7 +367,7 @@ describe('GenreRepository', () => {
               deletedAt: null,
               OR: [{ libraryId: null }, { libraryId: 'library-1' }],
             },
-            { kind: 'system' },
+            { kind: GenreKind.system },
           ],
         },
         orderBy: { name: 'asc' },
@@ -378,7 +379,7 @@ describe('GenreRepository', () => {
     it('should return genres paginated for library with search query', async () => {
       mockPrismaClient.genre.findMany.mockResolvedValue([mockGenre]);
 
-      const result = await repository.getGenresPaginatedForLibrary({
+      await repository.getGenresPaginatedForLibrary({
         libraryId: 'library-1',
         q: 'rock',
         page: 1,
@@ -409,10 +410,10 @@ describe('GenreRepository', () => {
     it('should return genres paginated for library with all filters', async () => {
       mockPrismaClient.genre.findMany.mockResolvedValue([mockGenre]);
 
-      const result = await repository.getGenresPaginatedForLibrary({
+      await repository.getGenresPaginatedForLibrary({
         libraryId: 'library-1',
         q: 'rock',
-        kind: 'system' as GenreKind,
+        kind: GenreKind.system,
         page: 2,
         limit: 5,
       });
@@ -424,7 +425,7 @@ describe('GenreRepository', () => {
               deletedAt: null,
               OR: [{ libraryId: null }, { libraryId: 'library-1' }],
             },
-            { kind: 'system' },
+            { kind: GenreKind.system },
             {
               OR: [
                 { name: { contains: 'rock', mode: 'insensitive' } },
@@ -443,7 +444,7 @@ describe('GenreRepository', () => {
       const genreWithInclude = { ...mockGenre, tracks: [] };
       mockPrismaClient.genre.findMany.mockResolvedValue([genreWithInclude] as unknown as Genre[]);
 
-      const result = await repository.getGenresPaginatedForLibrary({
+      await repository.getGenresPaginatedForLibrary({
         libraryId: 'library-1',
         page: 1,
         limit: 10,
@@ -481,16 +482,16 @@ describe('GenreRepository', () => {
     it('should count genres for library with kind filter', async () => {
       mockPrismaClient.genre.count.mockResolvedValue(5);
 
-      const result = await repository.countGenresForLibrary({
+      await repository.countGenresForLibrary({
         libraryId: 'library-1',
-        kind: 'system' as GenreKind,
+        kind: GenreKind.system,
       });
 
       expect(mockPrismaClient.genre.count).toHaveBeenCalledWith({
         where: {
           AND: [
             { deletedAt: null, OR: [{ libraryId: null }, { libraryId: 'library-1' }] },
-            { kind: 'system' },
+            { kind: GenreKind.system },
           ],
         },
       });
@@ -499,7 +500,7 @@ describe('GenreRepository', () => {
     it('should count genres for library with search query', async () => {
       mockPrismaClient.genre.count.mockResolvedValue(3);
 
-      const result = await repository.countGenresForLibrary({
+      await repository.countGenresForLibrary({
         libraryId: 'library-1',
         q: 'rock',
       });
@@ -649,7 +650,7 @@ describe('GenreRepository', () => {
 
   describe('create', () => {
     it('should create genre without include', async () => {
-      const createInput = { name: 'Jazz', slug: 'jazz', kind: 'custom' } as Prisma.GenreCreateInput;
+      const createInput = { name: 'Jazz', slug: 'jazz', kind: GenreKind.custom } as Prisma.GenreCreateInput;
       mockPrismaClient.genre.create.mockResolvedValue(mockGenre);
 
       const result = await repository.create(createInput);
@@ -661,7 +662,7 @@ describe('GenreRepository', () => {
     });
 
     it('should create genre with include', async () => {
-      const createInput = { name: 'Jazz', slug: 'jazz', kind: 'custom' } as Prisma.GenreCreateInput;
+      const createInput = { name: 'Jazz', slug: 'jazz', kind: GenreKind.custom } as Prisma.GenreCreateInput;
       const genreWithInclude = { ...mockGenre, tracks: [] };
       mockPrismaClient.genre.create.mockResolvedValue(genreWithInclude as unknown as Genre);
 
@@ -677,7 +678,10 @@ describe('GenreRepository', () => {
 
   describe('createMany', () => {
     it('should create many genres without include', async () => {
-      const createInputs = [{ name: 'Jazz', slug: 'jazz' }, { name: 'Blues', slug: 'blues' }] as Prisma.GenreCreateManyInput[];
+      const createInputs = [
+        { name: 'Jazz', slug: 'jazz', kind: GenreKind.custom },
+        { name: 'Blues', slug: 'blues', kind: GenreKind.custom },
+      ] as Prisma.GenreCreateManyInput[];
       mockPrismaClient.genre.createManyAndReturn.mockResolvedValue([mockGenre]);
 
       const result = await repository.createMany(createInputs);
@@ -689,11 +693,11 @@ describe('GenreRepository', () => {
     });
 
     it('should create many genres with include', async () => {
-      const createInputs = [{ name: 'Jazz', slug: 'jazz' }] as Prisma.GenreCreateManyInput[];
+      const createInputs = [{ name: 'Jazz', slug: 'jazz', kind: GenreKind.custom }] as Prisma.GenreCreateManyInput[];
       const genresWithInclude = [{ ...mockGenre, tracks: [] }];
       mockPrismaClient.genre.createManyAndReturn.mockResolvedValue(genresWithInclude as unknown as Genre[]);
 
-      const result = await repository.createMany(createInputs, { include: { tracks: true } });
+      await repository.createMany(createInputs, { include: { tracks: true } });
 
       expect(mockPrismaClient.genre.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
@@ -721,7 +725,7 @@ describe('GenreRepository', () => {
       const genreWithInclude = { ...mockGenre, tracks: [] };
       mockPrismaClient.genre.update.mockResolvedValue(genreWithInclude as unknown as Genre);
 
-      const result = await repository.update('genre-1', updateInput, { include: { tracks: true } });
+      await repository.update('genre-1', updateInput, { include: { tracks: true } });
 
       expect(mockPrismaClient.genre.update).toHaveBeenCalledWith({
         where: { id: 'genre-1' },
@@ -764,7 +768,7 @@ describe('GenreRepository', () => {
       });
       mockPrismaClient.genre.update.mockResolvedValue(genreWithInclude as unknown as Genre);
 
-      const result = await repository.updateMany(updates, { include: { tracks: true } });
+      await repository.updateMany(updates, { include: { tracks: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
     });

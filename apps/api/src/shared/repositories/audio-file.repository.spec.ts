@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AudioFileRepository } from './audio-file.repository';
 import { PrismaService } from '../services/prisma.service';
-import { AudioFile, Prisma, ProcessingStatus } from '@repo/db';
+import { AudioFile, AudioFormat, AudioQuality, FileBucket, Prisma, ProcessingStatus } from '@repo/db';
 
 describe('AudioFileRepository', () => {
   let repository: AudioFileRepository;
@@ -42,18 +42,21 @@ describe('AudioFileRepository', () => {
 
   const mockAudioFile: AudioFile = {
     id: 'audio-1',
-    trackId: 'track-1',
-    originalFileName: 'song.mp3',
-    path: '/path/to/song.mp3',
-    size: 1000000,
+    bucket: FileBucket.private,
+    key: 'tracks/track-1/song.mp3',
+    url: null,
     mimeType: 'audio/mpeg',
-    codec: 'mp3',
+    size: 1000000,
+    format: AudioFormat.mp3,
+    duration: 180,
     bitrate: 320,
     sampleRate: 44100,
     channels: 2,
-    duration: 180,
+    isOriginal: true,
+    waveformJson: null,
+    trackId: 'track-1',
+    quality: AudioQuality.original,
     status: ProcessingStatus.complete,
-    storageBackend: 's3',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -218,6 +221,7 @@ describe('AudioFileRepository', () => {
 
       const result = await repository.listByTrackId('track-1', { include: { track: true } });
 
+      expect(result).toEqual([audioFileWithInclude]);
       expect(mockPrismaClient.audioFile.findMany).toHaveBeenCalledWith({
         where: {
           trackId: 'track-1',
@@ -234,6 +238,7 @@ describe('AudioFileRepository', () => {
 
       const result = await repository.listByTrackId('track-1', { orderBy });
 
+      expect(result).toEqual([mockAudioFile]);
       expect(mockPrismaClient.audioFile.findMany).toHaveBeenCalledWith({
         where: {
           trackId: 'track-1',
@@ -281,6 +286,7 @@ describe('AudioFileRepository', () => {
 
       const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { track: true } });
 
+      expect(result).toEqual([audioFileWithInclude]);
       expect(mockPrismaClient.audioFile.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -339,7 +345,17 @@ describe('AudioFileRepository', () => {
 
   describe('create', () => {
     it('should create audio file without include', async () => {
-      const createInput = { originalFileName: 'new.mp3' } as Prisma.AudioFileCreateInput;
+      const createInput: Prisma.AudioFileCreateInput = {
+        bucket: FileBucket.private,
+        key: 'tracks/track-1/new.mp3',
+        mimeType: 'audio/mpeg',
+        size: 1000,
+        format: AudioFormat.mp3,
+        isOriginal: true,
+        quality: AudioQuality.original,
+        status: ProcessingStatus.pending,
+        track: { connect: { id: 'track-1' } },
+      };
       mockPrismaClient.audioFile.create.mockResolvedValue(mockAudioFile);
 
       const result = await repository.create(createInput);
@@ -351,7 +367,17 @@ describe('AudioFileRepository', () => {
     });
 
     it('should create audio file with include', async () => {
-      const createInput = { originalFileName: 'new.mp3' } as Prisma.AudioFileCreateInput;
+      const createInput: Prisma.AudioFileCreateInput = {
+        bucket: FileBucket.private,
+        key: 'tracks/track-1/new.mp3',
+        mimeType: 'audio/mpeg',
+        size: 1000,
+        format: AudioFormat.mp3,
+        isOriginal: true,
+        quality: AudioQuality.original,
+        status: ProcessingStatus.pending,
+        track: { connect: { id: 'track-1' } },
+      };
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
       mockPrismaClient.audioFile.create.mockResolvedValue(audioFileWithInclude as unknown as AudioFile);
 
@@ -367,7 +393,30 @@ describe('AudioFileRepository', () => {
 
   describe('createMany', () => {
     it('should create many audio files without include', async () => {
-      const createInputs = [{ originalFileName: 'file1.mp3' }, { originalFileName: 'file2.mp3' }] as Prisma.AudioFileCreateManyInput[];
+      const createInputs: Prisma.AudioFileCreateManyInput[] = [
+        {
+          trackId: 'track-1',
+          bucket: FileBucket.private,
+          key: 'tracks/track-1/file1.mp3',
+          mimeType: 'audio/mpeg',
+          size: 1000,
+          format: AudioFormat.mp3,
+          isOriginal: true,
+          quality: AudioQuality.original,
+          status: ProcessingStatus.pending,
+        },
+        {
+          trackId: 'track-1',
+          bucket: FileBucket.private,
+          key: 'tracks/track-1/file2.mp3',
+          mimeType: 'audio/mpeg',
+          size: 1000,
+          format: AudioFormat.mp3,
+          isOriginal: true,
+          quality: AudioQuality.original,
+          status: ProcessingStatus.pending,
+        },
+      ];
       mockPrismaClient.audioFile.createManyAndReturn.mockResolvedValue([mockAudioFile]);
 
       const result = await repository.createMany(createInputs);
@@ -379,12 +428,25 @@ describe('AudioFileRepository', () => {
     });
 
     it('should create many audio files with include', async () => {
-      const createInputs = [{ originalFileName: 'file1.mp3' }] as Prisma.AudioFileCreateManyInput[];
+      const createInputs: Prisma.AudioFileCreateManyInput[] = [
+        {
+          trackId: 'track-1',
+          bucket: FileBucket.private,
+          key: 'tracks/track-1/file1.mp3',
+          mimeType: 'audio/mpeg',
+          size: 1000,
+          format: AudioFormat.mp3,
+          isOriginal: true,
+          quality: AudioQuality.original,
+          status: ProcessingStatus.pending,
+        },
+      ];
       const audioFilesWithInclude = [{ ...mockAudioFile, track: { id: 'track-1' } }];
       mockPrismaClient.audioFile.createManyAndReturn.mockResolvedValue(audioFilesWithInclude as unknown as AudioFile[]);
 
       const result = await repository.createMany(createInputs, { include: { track: true } });
 
+      expect(result).toEqual(audioFilesWithInclude);
       expect(mockPrismaClient.audioFile.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
         include: { track: true },
@@ -394,7 +456,7 @@ describe('AudioFileRepository', () => {
 
   describe('update', () => {
     it('should update audio file without include', async () => {
-      const updateInput = { originalFileName: 'updated.mp3' } as Prisma.AudioFileUpdateInput;
+      const updateInput: Prisma.AudioFileUpdateInput = { key: 'tracks/track-1/updated.mp3' };
       mockPrismaClient.audioFile.update.mockResolvedValue(mockAudioFile);
 
       const result = await repository.update('audio-1', updateInput);
@@ -407,12 +469,13 @@ describe('AudioFileRepository', () => {
     });
 
     it('should update audio file with include', async () => {
-      const updateInput = { originalFileName: 'updated.mp3' } as Prisma.AudioFileUpdateInput;
+      const updateInput: Prisma.AudioFileUpdateInput = { key: 'tracks/track-1/updated.mp3' };
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
       mockPrismaClient.audioFile.update.mockResolvedValue(audioFileWithInclude as unknown as AudioFile);
 
       const result = await repository.update('audio-1', updateInput, { include: { track: true } });
 
+      expect(result).toEqual(audioFileWithInclude);
       expect(mockPrismaClient.audioFile.update).toHaveBeenCalledWith({
         where: { id: 'audio-1' },
         data: updateInput,
@@ -424,8 +487,8 @@ describe('AudioFileRepository', () => {
   describe('updateMany', () => {
     it('should update many audio files without include', async () => {
       const updates = [
-        { id: 'audio-1', data: { originalFileName: 'updated1.mp3' } as Prisma.AudioFileUpdateInput },
-        { id: 'audio-2', data: { originalFileName: 'updated2.mp3' } as Prisma.AudioFileUpdateInput },
+        { id: 'audio-1', data: { key: 'tracks/track-1/updated1.mp3' } as Prisma.AudioFileUpdateInput },
+        { id: 'audio-2', data: { key: 'tracks/track-1/updated2.mp3' } as Prisma.AudioFileUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -443,7 +506,7 @@ describe('AudioFileRepository', () => {
 
     it('should update many audio files with include', async () => {
       const updates = [
-        { id: 'audio-1', data: { originalFileName: 'updated1.mp3' } as Prisma.AudioFileUpdateInput },
+        { id: 'audio-1', data: { key: 'tracks/track-1/updated1.mp3' } as Prisma.AudioFileUpdateInput },
       ];
       const audioFileWithInclude = { ...mockAudioFile, track: { id: 'track-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -457,6 +520,7 @@ describe('AudioFileRepository', () => {
       const result = await repository.updateMany(updates, { include: { track: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
+      expect(result).toEqual([audioFileWithInclude]);
     });
   });
 

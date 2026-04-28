@@ -44,11 +44,12 @@ describe('LibraryTrackRepository', () => {
 
   const mockLibraryTrack: LibraryTrack = {
     id: 'library-track-1',
+    listenedCount: 0,
     libraryId: 'library-1',
     trackId: 'track-1',
-    addedAt: new Date('2024-01-01'),
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
+    listenCountResetAt: null,
     deletedAt: null,
   };
 
@@ -166,7 +167,7 @@ describe('LibraryTrackRepository', () => {
     it('should return paginated library tracks with filter and orderBy', async () => {
       mockPrismaClient.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack]);
       const filter = { libraryId: 'library-1' } as Prisma.LibraryTrackWhereInput;
-      const orderBy = { addedAt: 'desc' } as Prisma.LibraryTrackOrderByWithRelationInput;
+      const orderBy = { createdAt: 'desc' } as Prisma.LibraryTrackOrderByWithRelationInput;
 
       const result = await repository.getPaginated(2, 5, filter, orderBy);
 
@@ -179,7 +180,7 @@ describe('LibraryTrackRepository', () => {
           deletedAt: null,
           track: { deletedAt: null },
         },
-        orderBy: { addedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -187,7 +188,7 @@ describe('LibraryTrackRepository', () => {
       mockPrismaClient.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack]);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.libraryTrack.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -204,7 +205,7 @@ describe('LibraryTrackRepository', () => {
       mockPrismaClient.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack]);
       const filter = { track: { name: 'Test' } } as Prisma.LibraryTrackWhereInput;
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.libraryTrack.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -221,7 +222,7 @@ describe('LibraryTrackRepository', () => {
       const libraryTrackWithInclude = { ...mockLibraryTrack, track: { id: 'track-1' } };
       mockPrismaClient.libraryTrack.findMany.mockResolvedValue([libraryTrackWithInclude] as unknown as LibraryTrack[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { track: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { track: true } });
 
       expect(mockPrismaClient.libraryTrack.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -254,9 +255,9 @@ describe('LibraryTrackRepository', () => {
 
     it('should return library tracks by library and album with orderBy', async () => {
       mockPrismaClient.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack]);
-      const orderBy = { addedAt: 'desc' } as Prisma.LibraryTrackOrderByWithRelationInput;
+      const orderBy = { createdAt: 'desc' } as Prisma.LibraryTrackOrderByWithRelationInput;
 
-      const result = await repository.listByLibraryAndAlbum('library-1', 'album-1', { orderBy });
+      await repository.listByLibraryAndAlbum('library-1', 'album-1', { orderBy });
 
       expect(mockPrismaClient.libraryTrack.findMany).toHaveBeenCalledWith({
         where: {
@@ -264,7 +265,7 @@ describe('LibraryTrackRepository', () => {
           track: { albumId: 'album-1', deletedAt: null },
           deletedAt: null,
         },
-        orderBy: { addedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -272,7 +273,7 @@ describe('LibraryTrackRepository', () => {
       const libraryTrackWithInclude = { ...mockLibraryTrack, track: { id: 'track-1' } };
       mockPrismaClient.libraryTrack.findMany.mockResolvedValue([libraryTrackWithInclude] as unknown as LibraryTrack[]);
 
-      const result = await repository.listByLibraryAndAlbum('library-1', 'album-1', { include: { track: true } });
+      await repository.listByLibraryAndAlbum('library-1', 'album-1', { include: { track: true } });
 
       expect(mockPrismaClient.libraryTrack.findMany).toHaveBeenCalledWith({
         where: {
@@ -286,9 +287,9 @@ describe('LibraryTrackRepository', () => {
 
     it('should return library tracks with array orderBy', async () => {
       mockPrismaClient.libraryTrack.findMany.mockResolvedValue([mockLibraryTrack]);
-      const orderBy = [{ addedAt: 'desc' }, { createdAt: 'asc' }] as Prisma.LibraryTrackOrderByWithRelationInput[];
+      const orderBy = [{ createdAt: 'desc' }] as Prisma.LibraryTrackOrderByWithRelationInput[];
 
-      const result = await repository.listByLibraryAndAlbum('library-1', 'album-1', { orderBy });
+      await repository.listByLibraryAndAlbum('library-1', 'album-1', { orderBy });
 
       expect(mockPrismaClient.libraryTrack.findMany).toHaveBeenCalledWith({
         where: {
@@ -296,7 +297,7 @@ describe('LibraryTrackRepository', () => {
           track: { albumId: 'album-1', deletedAt: null },
           deletedAt: null,
         },
-        orderBy: [{ addedAt: 'desc' }, { createdAt: 'asc' }],
+        orderBy: [{ createdAt: 'desc' }],
       });
     });
   });
@@ -411,7 +412,7 @@ describe('LibraryTrackRepository', () => {
       mockPrismaClient.libraryTrack.count.mockResolvedValue(1);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.count(filter);
+      await repository.count(filter);
 
       expect(mockPrismaClient.libraryTrack.count).toHaveBeenCalledWith({
         where: {
@@ -427,6 +428,7 @@ describe('LibraryTrackRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(2);
       expect(mockPrismaClient.libraryTrack.count).toHaveBeenCalledWith({
         where: {
           deletedAt: null,
@@ -438,7 +440,10 @@ describe('LibraryTrackRepository', () => {
 
   describe('create', () => {
     it('should create library track without include', async () => {
-      const createInput = { libraryId: 'library-1', trackId: 'track-1', addedAt: new Date() } as Prisma.LibraryTrackCreateInput;
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        track: { connect: { id: 'track-1' } },
+      } as Prisma.LibraryTrackCreateInput;
       mockPrismaClient.libraryTrack.create.mockResolvedValue(mockLibraryTrack);
 
       const result = await repository.create(createInput);
@@ -450,7 +455,10 @@ describe('LibraryTrackRepository', () => {
     });
 
     it('should create library track with include', async () => {
-      const createInput = { libraryId: 'library-1', trackId: 'track-1', addedAt: new Date() } as Prisma.LibraryTrackCreateInput;
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        track: { connect: { id: 'track-1' } },
+      } as Prisma.LibraryTrackCreateInput;
       const libraryTrackWithInclude = { ...mockLibraryTrack, track: { id: 'track-1' } };
       mockPrismaClient.libraryTrack.create.mockResolvedValue(libraryTrackWithInclude as unknown as LibraryTrack);
 
@@ -482,7 +490,7 @@ describe('LibraryTrackRepository', () => {
       const libraryTracksWithInclude = [{ ...mockLibraryTrack, track: { id: 'track-1' } }];
       mockPrismaClient.libraryTrack.createManyAndReturn.mockResolvedValue(libraryTracksWithInclude as unknown as LibraryTrack[]);
 
-      const result = await repository.createMany(createInputs, { include: { track: true } });
+      await repository.createMany(createInputs, { include: { track: true } });
 
       expect(mockPrismaClient.libraryTrack.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
@@ -493,7 +501,7 @@ describe('LibraryTrackRepository', () => {
 
   describe('update', () => {
     it('should update library track without include', async () => {
-      const updateInput = { addedAt: new Date('2024-02-01') } as Prisma.LibraryTrackUpdateInput;
+      const updateInput = {} as Prisma.LibraryTrackUpdateInput;
       mockPrismaClient.libraryTrack.update.mockResolvedValue(mockLibraryTrack);
 
       const result = await repository.update('library-track-1', updateInput);
@@ -506,11 +514,11 @@ describe('LibraryTrackRepository', () => {
     });
 
     it('should update library track with include', async () => {
-      const updateInput = { addedAt: new Date('2024-02-01') } as Prisma.LibraryTrackUpdateInput;
+      const updateInput = {} as Prisma.LibraryTrackUpdateInput;
       const libraryTrackWithInclude = { ...mockLibraryTrack, track: { id: 'track-1' } };
       mockPrismaClient.libraryTrack.update.mockResolvedValue(libraryTrackWithInclude as unknown as LibraryTrack);
 
-      const result = await repository.update('library-track-1', updateInput, { include: { track: true } });
+      await repository.update('library-track-1', updateInput, { include: { track: true } });
 
       expect(mockPrismaClient.libraryTrack.update).toHaveBeenCalledWith({
         data: updateInput,
@@ -523,8 +531,8 @@ describe('LibraryTrackRepository', () => {
   describe('updateMany', () => {
     it('should update many library tracks without include', async () => {
       const updates = [
-        { id: 'library-track-1', data: { addedAt: new Date('2024-02-01') } as Prisma.LibraryTrackUpdateInput },
-        { id: 'library-track-2', data: { addedAt: new Date('2024-02-02') } as Prisma.LibraryTrackUpdateInput },
+        { id: 'library-track-1', data: {} as Prisma.LibraryTrackUpdateInput },
+        { id: 'library-track-2', data: {} as Prisma.LibraryTrackUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -542,7 +550,7 @@ describe('LibraryTrackRepository', () => {
 
     it('should update many library tracks with include', async () => {
       const updates = [
-        { id: 'library-track-1', data: { addedAt: new Date('2024-02-01') } as Prisma.LibraryTrackUpdateInput },
+        { id: 'library-track-1', data: {} as Prisma.LibraryTrackUpdateInput },
       ];
       const libraryTrackWithInclude = { ...mockLibraryTrack, track: { id: 'track-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -553,7 +561,7 @@ describe('LibraryTrackRepository', () => {
       });
       mockPrismaClient.libraryTrack.update.mockResolvedValue(libraryTrackWithInclude as unknown as LibraryTrack);
 
-      const result = await repository.updateMany(updates, { include: { track: true } });
+      await repository.updateMany(updates, { include: { track: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
     });

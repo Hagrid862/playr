@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AlbumRepository } from './album.repository';
 import { PrismaService } from '../services/prisma.service';
-import { AccessRole, Album, Prisma } from '@repo/db';
+import { AccessRole, Album, AlbumType, Prisma, Visibility } from '@repo/db';
 
 describe('AlbumRepository', () => {
   let repository: AlbumRepository;
@@ -78,9 +78,12 @@ describe('AlbumRepository', () => {
     id: 'album-1',
     name: 'Test Album',
     description: null,
+    type: AlbumType.album,
+    totalTracks: 10,
+    totalDuration: 1800,
     releaseDate: null,
     coverId: null,
-    visibility: 'public',
+    visibility: Visibility.public,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -282,6 +285,7 @@ describe('AlbumRepository', () => {
 
       const result = await repository.getPaginated(1, 10, filter);
 
+      expect(result).toEqual([mockAlbum]);
       expect(mockPrismaClient.album.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -296,6 +300,7 @@ describe('AlbumRepository', () => {
 
       const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { tracks: true } });
 
+      expect(result).toEqual([albumWithInclude]);
       expect(mockPrismaClient.album.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -357,6 +362,7 @@ describe('AlbumRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.album.count).toHaveBeenCalledWith({
         where: { deletedAt: null },
       });
@@ -375,7 +381,7 @@ describe('AlbumRepository', () => {
           id: 'album-1',
           deletedAt: null,
           OR: [
-            { visibility: 'public' },
+            { visibility: Visibility.public },
             { access: { some: { userId: 'GUEST' } } },
             { artists: { some: { access: { some: { userId: 'GUEST' } } } } },
           ],
@@ -395,7 +401,7 @@ describe('AlbumRepository', () => {
           id: 'album-1',
           deletedAt: null,
           OR: [
-            { visibility: 'public' },
+            { visibility: Visibility.public },
             { access: { some: { userId: 'user-1' } } },
             { artists: { some: { access: { some: { userId: 'user-1' } } } } },
           ],
@@ -461,6 +467,7 @@ describe('AlbumRepository', () => {
 
       const result = await repository.createMany(createInputs, { include: { tracks: true } });
 
+      expect(result).toEqual(albumsWithInclude);
       expect(mockPrismaClient.album.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
         include: { tracks: true },
@@ -489,6 +496,7 @@ describe('AlbumRepository', () => {
 
       const result = await repository.update('album-1', updateInput, { include: { tracks: true } });
 
+      expect(result).toEqual(albumWithInclude);
       expect(mockPrismaClient.album.update).toHaveBeenCalledWith({
         where: { id: 'album-1' },
         data: updateInput,
@@ -533,6 +541,7 @@ describe('AlbumRepository', () => {
       const result = await repository.updateMany(updates, { include: { tracks: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
+      expect(result).toEqual([albumWithInclude]);
     });
   });
 
@@ -698,6 +707,7 @@ describe('AlbumRepository', () => {
 
       const result = await repository.softDeleteCascade('album-1');
 
+      expect(result).toEqual({ ...mockAlbum, deletedAt: expect.any(Date) });
       expect(mockTx.reportTarget.updateMany).toHaveBeenCalled();
       expect(mockTx.libraryAlbum.updateMany).toHaveBeenCalled();
       expect(mockTx.track.updateMany).toHaveBeenCalled();

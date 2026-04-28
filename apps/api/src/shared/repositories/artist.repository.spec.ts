@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ArtistRepository } from './artist.repository';
 import { PrismaService } from '../services/prisma.service';
-import { AccessRole, Artist, Prisma } from '@repo/db';
+import { AccessRole, Artist, Prisma, Visibility } from '@repo/db';
 
 describe('ArtistRepository', () => {
   let repository: ArtistRepository;
@@ -78,8 +78,11 @@ describe('ArtistRepository', () => {
     id: 'artist-1',
     name: 'Test Artist',
     description: null,
-    imageId: null,
-    visibility: 'public',
+    avatarId: null,
+    bannerId: null,
+    visibility: Visibility.public,
+    isCommunity: false,
+    verified: false,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     deletedAt: null,
@@ -235,6 +238,7 @@ describe('ArtistRepository', () => {
 
       const result = await repository.getPaginated(1, 10, filter);
 
+      expect(result).toEqual([mockArtist]);
       expect(mockPrismaClient.artist.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -249,6 +253,7 @@ describe('ArtistRepository', () => {
 
       const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { albums: true } });
 
+      expect(result).toEqual([artistWithInclude]);
       expect(mockPrismaClient.artist.findMany).toHaveBeenCalledWith({
         take: 10,
         skip: 0,
@@ -310,6 +315,7 @@ describe('ArtistRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.artist.count).toHaveBeenCalledWith({
         where: { deletedAt: null },
       });
@@ -328,7 +334,7 @@ describe('ArtistRepository', () => {
           id: 'artist-1',
           deletedAt: null,
           OR: [
-            { visibility: 'public' },
+            { visibility: Visibility.public },
             { access: { some: { userId: 'GUEST' } } },
           ],
         },
@@ -347,7 +353,7 @@ describe('ArtistRepository', () => {
           id: 'artist-1',
           deletedAt: null,
           OR: [
-            { visibility: 'public' },
+            { visibility: Visibility.public },
             { access: { some: { userId: 'user-1' } } },
           ],
         },
@@ -412,6 +418,7 @@ describe('ArtistRepository', () => {
 
       const result = await repository.createMany(createInputs, { include: { albums: true } });
 
+      expect(result).toEqual(artistsWithInclude);
       expect(mockPrismaClient.artist.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
         include: { albums: true },
@@ -440,6 +447,7 @@ describe('ArtistRepository', () => {
 
       const result = await repository.update('artist-1', updateInput, { include: { albums: true } });
 
+      expect(result).toEqual(artistWithInclude);
       expect(mockPrismaClient.artist.update).toHaveBeenCalledWith({
         where: { id: 'artist-1' },
         data: updateInput,
@@ -484,6 +492,7 @@ describe('ArtistRepository', () => {
       const result = await repository.updateMany(updates, { include: { albums: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
+      expect(result).toEqual([artistWithInclude]);
     });
   });
 
@@ -669,6 +678,7 @@ describe('ArtistRepository', () => {
 
       const result = await repository.softDeleteCascade('artist-1');
 
+      expect(result).toEqual({ ...mockArtist, deletedAt: expect.any(Date) });
       expect(mockTx.playlist.updateMany).toHaveBeenCalledWith({
         where: { artistId: 'artist-1', deletedAt: null },
         data: { deletedAt: expect.any(Date) },

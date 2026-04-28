@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SessionRepository } from './session.repository';
 import { PrismaService } from '../services/prisma.service';
-import { Prisma, Session } from '@repo/db';
+import { Prisma, Session, SessionType } from '@repo/db';
 
 describe('SessionRepository', () => {
   let repository: SessionRepository;
@@ -44,9 +44,9 @@ describe('SessionRepository', () => {
   const mockSession: Session = {
     id: 'session-1',
     userId: 'user-1',
-    ipAddress: '127.0.0.1',
-    userAgent: 'Mozilla/5.0',
+    type: SessionType.user,
     expiresAt: new Date('2024-12-31'),
+    refreshedAt: null,
     revokedAt: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -171,7 +171,7 @@ describe('SessionRepository', () => {
       mockPrismaClient.session.findMany.mockResolvedValue([mockSession]);
       const filter = { deletedAt: new Date('2024-01-02') };
 
-      const result = await repository.getPaginated(1, 10, filter);
+      await repository.getPaginated(1, 10, filter);
 
       expect(mockPrismaClient.session.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -185,7 +185,7 @@ describe('SessionRepository', () => {
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
       mockPrismaClient.session.findMany.mockResolvedValue([sessionWithInclude] as unknown as Session[]);
 
-      const result = await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { user: true } });
 
       expect(mockPrismaClient.session.findMany).toHaveBeenCalledWith({
         take: 10,
@@ -248,6 +248,7 @@ describe('SessionRepository', () => {
 
       const result = await repository.count(filter);
 
+      expect(result).toBe(1);
       expect(mockPrismaClient.session.count).toHaveBeenCalledWith({
         where: { deletedAt: new Date('2024-01-02') },
       });
@@ -274,7 +275,10 @@ describe('SessionRepository', () => {
 
   describe('create', () => {
     it('should create session without include', async () => {
-      const createInput = { userId: 'user-1', ipAddress: '127.0.0.1' } as Prisma.SessionCreateInput;
+      const createInput = {
+        user: { connect: { id: 'user-1' } },
+        type: SessionType.user,
+      } as Prisma.SessionCreateInput;
       mockPrismaClient.session.create.mockResolvedValue(mockSession);
 
       const result = await repository.create(createInput);
@@ -286,7 +290,10 @@ describe('SessionRepository', () => {
     });
 
     it('should create session with include', async () => {
-      const createInput = { userId: 'user-1', ipAddress: '127.0.0.1' } as Prisma.SessionCreateInput;
+      const createInput = {
+        user: { connect: { id: 'user-1' } },
+        type: SessionType.user,
+      } as Prisma.SessionCreateInput;
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
       mockPrismaClient.session.create.mockResolvedValue(sessionWithInclude as unknown as Session);
 
@@ -302,7 +309,10 @@ describe('SessionRepository', () => {
 
   describe('createMany', () => {
     it('should create many sessions without include', async () => {
-      const createInputs = [{ userId: 'user-1' }, { userId: 'user-2' }] as Prisma.SessionCreateManyInput[];
+      const createInputs = [
+        { userId: 'user-1', type: SessionType.user },
+        { userId: 'user-2', type: SessionType.user },
+      ] as Prisma.SessionCreateManyInput[];
       mockPrismaClient.session.createManyAndReturn.mockResolvedValue([mockSession]);
 
       const result = await repository.createMany(createInputs);
@@ -314,11 +324,11 @@ describe('SessionRepository', () => {
     });
 
     it('should create many sessions with include', async () => {
-      const createInputs = [{ userId: 'user-1' }] as Prisma.SessionCreateManyInput[];
+      const createInputs = [{ userId: 'user-1', type: SessionType.user }] as Prisma.SessionCreateManyInput[];
       const sessionsWithInclude = [{ ...mockSession, user: { id: 'user-1' } }];
       mockPrismaClient.session.createManyAndReturn.mockResolvedValue(sessionsWithInclude as unknown as Session[]);
 
-      const result = await repository.createMany(createInputs, { include: { user: true } });
+      await repository.createMany(createInputs, { include: { user: true } });
 
       expect(mockPrismaClient.session.createManyAndReturn).toHaveBeenCalledWith({
         data: createInputs,
@@ -329,7 +339,7 @@ describe('SessionRepository', () => {
 
   describe('update', () => {
     it('should update session without include', async () => {
-      const updateInput = { ipAddress: '192.168.1.1' } as Prisma.SessionUpdateInput;
+      const updateInput = { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput;
       mockPrismaClient.session.update.mockResolvedValue(mockSession);
 
       const result = await repository.update('session-1', updateInput);
@@ -342,11 +352,11 @@ describe('SessionRepository', () => {
     });
 
     it('should update session with include', async () => {
-      const updateInput = { ipAddress: '192.168.1.1' } as Prisma.SessionUpdateInput;
+      const updateInput = { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput;
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
       mockPrismaClient.session.update.mockResolvedValue(sessionWithInclude as unknown as Session);
 
-      const result = await repository.update('session-1', updateInput, { include: { user: true } });
+      await repository.update('session-1', updateInput, { include: { user: true } });
 
       expect(mockPrismaClient.session.update).toHaveBeenCalledWith({
         where: { id: 'session-1' },
@@ -359,8 +369,8 @@ describe('SessionRepository', () => {
   describe('updateMany', () => {
     it('should update many sessions without include', async () => {
       const updates = [
-        { id: 'session-1', data: { ipAddress: '192.168.1.1' } as Prisma.SessionUpdateInput },
-        { id: 'session-2', data: { ipAddress: '192.168.1.2' } as Prisma.SessionUpdateInput },
+        { id: 'session-1', data: { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput },
+        { id: 'session-2', data: { refreshedAt: new Date('2024-02-02') } as Prisma.SessionUpdateInput },
       ];
       mockMainClient.$transaction.mockImplementation(async (cb) => {
         if (typeof cb === 'function') {
@@ -378,7 +388,7 @@ describe('SessionRepository', () => {
 
     it('should update many sessions with include', async () => {
       const updates = [
-        { id: 'session-1', data: { ipAddress: '192.168.1.1' } as Prisma.SessionUpdateInput },
+        { id: 'session-1', data: { refreshedAt: new Date('2024-02-01') } as Prisma.SessionUpdateInput },
       ];
       const sessionWithInclude = { ...mockSession, user: { id: 'user-1' } };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -389,7 +399,7 @@ describe('SessionRepository', () => {
       });
       mockPrismaClient.session.update.mockResolvedValue(sessionWithInclude as unknown as Session);
 
-      const result = await repository.updateMany(updates, { include: { user: true } });
+      await repository.updateMany(updates, { include: { user: true } });
 
       expect(mockMainClient.$transaction).toHaveBeenCalled();
     });
@@ -413,7 +423,7 @@ describe('SessionRepository', () => {
       const revokedSession = { ...mockSession, revokedAt: new Date(), user: { id: 'user-1' } };
       mockPrismaClient.session.update.mockResolvedValue(revokedSession as unknown as Session);
 
-      const result = await repository.revoke('session-1', { include: { user: true } });
+      await repository.revoke('session-1', { include: { user: true } });
 
       expect(mockPrismaClient.session.update).toHaveBeenCalledWith({
         where: { id: 'session-1' },
