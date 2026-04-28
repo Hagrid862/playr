@@ -226,4 +226,54 @@ describe('GlobalExceptionFilter', () => {
       }),
     );
   });
+
+  it('should clear auth cookies when unauthorized error occurs on the refresh path', () => {
+    // Arrange
+    const mockResponse = createMock<Response>({
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      clearCookie: vi.fn().mockReturnThis(),
+    });
+
+    const mockRequest = createMock<Request>({
+      // We use a path that ends with /auth/refresh to trigger the logic
+      path: '/auth/refresh',
+      url: 'auth/refresh',
+      id: 'test-id',
+      startTime: Date.now(),
+      headers: {},
+    });
+
+    const mockHost = createMock<ArgumentsHost>({
+      switchToHttp: () => ({
+        getResponse: () => mockResponse,
+        getRequest: () => mockRequest,
+      }),
+    });
+
+    // Mock production env to test the 'secure: true' branch
+    configService.get.mockReturnValue('production');
+    
+    // Trigger a 401 Unauthorized
+    const exception = new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+
+    // Act
+    filter.catch(exception, mockHost);
+
+    // Assert
+    // 1. Check that clearCookie was called twice (once for '/' and once for '/auth/refresh')
+    expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
+    
+    // 2. Verify the arguments for the first call
+    expect(mockResponse.clearCookie).toHaveBeenCalledWith(
+      expect.any(String), // REFRESH_TOKEN_COOKIE_NAME
+      expect.objectContaining({
+        secure: true,
+        path: '/',
+      }),
+    );
+
+    // 3. Verify the response still returns the standard JSON
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
+  });
 });

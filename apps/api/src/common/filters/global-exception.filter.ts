@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 import {
   REFRESH_TOKEN_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_OPTIONS,
-} from '../../features/auth/constants/cookie.constants';
+} from '@/features/auth/constants/cookie.constants';
 import { createStandardizedResponse } from '../utils/response.helper';
 
 @Catch()
