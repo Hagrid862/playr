@@ -206,7 +206,7 @@ describe('CoverSelectionBanner', () => {
       ).toBeInTheDocument();
     });
 
-    it('calls onSelectCover with null when None from tracks is clicked', async () => {
+    it("calls onSelectCover with null when Don't use embedded tile is clicked", async () => {
       const user = userEvent.setup();
       const onSelectCover = getOnSelectCover();
       customRender(
@@ -219,7 +219,7 @@ describe('CoverSelectionBanner', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /None from tracks/i }));
+      await user.click(screen.getByRole('button', { name: /Don't use embedded/i }));
       expect(onSelectCover).toHaveBeenCalledWith(null);
     });
 

@@ -48,8 +48,10 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
   const [manualAlbumCoverFile, setManualAlbumCoverFile] = useState<File | null>(null);
   const [manualAlbumCoverPreviewUrl, setManualAlbumCoverPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const manualAlbumCoverFileRef = useRef<File | null>(null);
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
+  manualAlbumCoverFileRef.current = manualAlbumCoverFile;
 
   const trackIds = useMemo(() => tracks.map((t) => t.id).join(','), [tracks]);
   const lastScannedTrackIds = useRef<string>('');
@@ -181,6 +183,9 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
           if (prev != null && idsWithCover.includes(prev)) {
             return prev;
           }
+          if (manualAlbumCoverFileRef.current != null) {
+            return null;
+          }
           return groups[0]?.representativeTrackId ?? null;
         });
       } finally {
@@ -217,6 +222,9 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
       return file ? URL.createObjectURL(file) : null;
     });
     setManualAlbumCoverFile(file);
+    if (file != null) {
+      setSelectedCoverTrackId(null);
+    }
   }, []);
 
   const removeManualAlbumCover = useCallback(() => {

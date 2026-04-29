@@ -16,18 +16,11 @@ import { CreateLibraryArtistNameModal } from './CreateLibraryArtistNameModal';
 import { LibraryAlbumFromFilesProcessingOverlay } from './LibraryAlbumFromFilesProcessingOverlay';
 import { LibraryAlbumFromFilesTracksSection } from './LibraryAlbumFromFilesTracksSection';
 import { LibraryAlbumMetadataSection } from './LibraryAlbumMetadataSection';
+import { makeLocalPendingArtistId, isLocalPendingArtistId } from './pendingLibraryArtist';
 import { useLibraryAlbumFromFilesForm } from './useLibraryAlbumFromFilesForm';
 
 /** Select sentinel: opens the “new artist” modal instead of setting `artistId`. */
 const CREATE_NEW_ARTIST_SELECT_VALUE = '__create_new_artist__';
-
-function makeLocalPendingArtistId(): string {
-  return `local:pending:${crypto.randomUUID()}`;
-}
-
-function isLocalPendingArtistId(id: string): boolean {
-  return id.startsWith('local:pending:');
-}
 
 export interface LibraryAlbumFromFilesFormProps {
   cancelTo: string;
@@ -112,6 +105,13 @@ export function LibraryAlbumFromFilesForm({
     },
     [updateFormData],
   );
+
+  const handleClearStagedArtist = useCallback(() => {
+    const id = formData.artistId;
+    if (!isLocalPendingArtistId(id)) return;
+    setPendingArtists((prev) => prev.filter((p) => p.id !== id));
+    updateFormData('artistId', '');
+  }, [formData.artistId, updateFormData]);
 
   const handleSelectCover = useCallback(
     (trackId: string | null) => {
@@ -237,15 +237,17 @@ export function LibraryAlbumFromFilesForm({
         className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden"
       >
         <div className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-stretch lg:gap-8 xl:gap-12 2xl:gap-16">
-          <aside className="w-full shrink-0 lg:w-[min(100%,24rem)] lg:min-h-0 lg:max-h-full lg:overflow-y-auto lg:overscroll-contain lg:pr-1 xl:w-[min(100%,28rem)] 2xl:w-[30rem]">
+          <aside className="w-full shrink-0 lg:w-[min(100%,24rem)] lg:min-h-0 lg:max-h-full lg:overflow-y-auto lg:overscroll-contain lg:px-3 xl:w-[min(100%,28rem)] 2xl:w-[30rem]">
             <LibraryAlbumMetadataSection
               formData={formData}
               artists={artists}
               artistSelectOptions={artistSelectOptions}
               isLoadingArtists={isLoadingArtists}
+              isStagedNewArtistSelected={isLocalPendingArtistId(formData.artistId)}
               coverPreviewUrl={coverPreviewUrl}
               onUpdate={updateFormData}
               onArtistIdChange={handleArtistIdChange}
+              onClearStagedArtist={handleClearStagedArtist}
               onManualCoverFile={setManualAlbumCover}
               onRemoveCover={handleRemoveCover}
             />

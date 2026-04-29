@@ -197,6 +197,36 @@ describe('useLibraryAlbumFromFilesForm', () => {
 
       expect(result.current.selectedCoverTrackId).not.toBeNull();
     });
+
+    it('does not auto-select embedded cover after scan when a manual cover is already set', async () => {
+      vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
+        title: 'Song',
+        album: 'Album',
+        year: 2024,
+        trackNo: 1,
+        diskNo: 1,
+      });
+      const embeddedCover = new File(['e'], 'embedded.jpg', { type: 'image/jpeg' });
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(embeddedCover);
+
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+      const manualCover = new File(['m'], 'manual.jpg', { type: 'image/jpeg' });
+
+      act(() => {
+        result.current.setManualAlbumCover(manualCover);
+      });
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('track.mp3')]));
+      });
+
+      await waitFor(() => {
+        expect(result.current.tracksWithCovers.length).toBe(1);
+      });
+
+      expect(result.current.selectedCoverTrackId).toBeNull();
+      expect(result.current.coverFileForUpload).toBe(manualCover);
+    });
   });
 
   describe('track CRUD', () => {
