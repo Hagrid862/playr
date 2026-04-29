@@ -27,6 +27,7 @@ import { UploadLibraryArtistAvatarCommand } from './commands/impl/upload-library
 import { UploadLibraryArtistBannerCommand } from './commands/impl/upload-library-artist-banner.command';
 import { CreateLibraryArtistRequestDto } from './dto/request/create-library-artist.request.dto';
 import { GetLibraryArtistAlbumsRequestDto } from './dto/request/get-library-artist-albums.request.dto';
+import { GetLibraryArtistNameAvailabilityRequestDto } from './dto/request/get-library-artist-name-availability.request.dto';
 import { GetLibraryArtistsRequestDto } from './dto/request/get-library-artists.request.dto';
 import { UpdateLibraryArtistRequestDto } from './dto/request/update-library-artist.request.dto';
 import { UploadLibraryArtistAvatarRequestDto } from './dto/request/upload-library-artist-avatar.request.dto';
@@ -35,12 +36,14 @@ import { CreateLibraryArtistResponseDto } from './dto/response/create-library-ar
 import { DeleteLibraryArtistResponseDto } from './dto/response/delete-library-artist.response.dto';
 import { GetLibraryArtistAlbumsResponseDto } from './dto/response/get-library-artist-albums.response.dto';
 import { GetLibraryArtistResponseDto } from './dto/response/get-library-artist.response.dto';
+import { GetLibraryArtistNameAvailabilityResponseDto } from './dto/response/get-library-artist-name-availability.response.dto';
 import { GetLibraryArtistsResponseDto } from './dto/response/get-library-artists.response.dto';
 import { UpdateLibraryArtistResponseDto } from './dto/response/update-library-artist.response.dto';
 import { UploadLibraryArtistAvatarResponseDto } from './dto/response/upload-library-artist-avatar.response.dto';
 import { UploadLibraryArtistBannerResponseDto } from './dto/response/upload-library-artist-banner.response.dto';
 import { GetLibraryArtistAlbumsQuery } from './queries/impl/get-library-artist-albums.query';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
+import { GetLibraryArtistNameAvailabilityQuery } from './queries/impl/get-library-artist-name-availability.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
 
 @ApiTags('Library Artists')
@@ -105,6 +108,31 @@ export class LibraryArtistsController {
     @Query() query: GetLibraryArtistsRequestDto,
   ) {
     return this.queryBus.execute(new GetLibraryArtistsQuery(userId, query.page, query.limit));
+  }
+
+  @Get('availability')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Check if an artist name is available for the current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Availability result',
+    type: GetLibraryArtistNameAvailabilityResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 412,
+    description: 'User library not found',
+    type: ApiErrorResponseDto,
+  })
+  getLibraryArtistNameAvailability(
+    @CurrentUser('id') userId: string,
+    @Query() query: GetLibraryArtistNameAvailabilityRequestDto,
+  ) {
+    return this.queryBus.execute(new GetLibraryArtistNameAvailabilityQuery(userId, query.name));
   }
 
   @Get(':id')
