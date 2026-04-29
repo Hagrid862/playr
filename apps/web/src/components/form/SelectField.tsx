@@ -20,6 +20,7 @@ interface SelectFieldProps {
   value: string;
   options: SelectOption[];
   error?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
   onBlur: () => void;
 }
@@ -30,6 +31,7 @@ export function SelectField({
   value,
   options,
   error,
+  disabled = false,
   onChange,
   onBlur,
 }: SelectFieldProps) {
@@ -38,7 +40,8 @@ export function SelectField({
     <Field data-invalid={!!error}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Select
-        value={value}
+        disabled={disabled}
+        value={value === '' ? undefined : value}
         onValueChange={(val) => {
           onChange(val);
           onBlur();
@@ -48,6 +51,7 @@ export function SelectField({
           id={id}
           type="button"
           tabIndex={0}
+          disabled={disabled}
           className={`w-full ${error ? 'border-destructive focus-visible:ring-destructive/50' : ''}`}
           onBlur={onBlur}
         >

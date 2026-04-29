@@ -22,7 +22,10 @@ const albumTypeOptions = Object.entries(AlbumType).map(([key, value]) => ({
 
 interface LibraryAlbumMetadataSectionProps {
   formData: LibraryAlbumFromFilesFormData;
+  /** Server-loaded artists (for empty-state copy). */
   artists: { id: string; name: string }[];
+  /** Options for the artist select, including “Create new…” and any client-only pending artists. */
+  artistSelectOptions: { value: string; label: string }[];
   isLoadingArtists: boolean;
   /** Manual upload and/or embedded track cover — what to show in the artwork tile */
   coverPreviewUrl: string | null;
@@ -30,6 +33,8 @@ interface LibraryAlbumMetadataSectionProps {
     field: K,
     value: LibraryAlbumFromFilesFormData[K],
   ) => void;
+  /** Artist field only; used to open “create artist” without writing a sentinel `artistId`. */
+  onArtistIdChange: (value: string) => void;
   onManualCoverFile: (file: File | null) => void;
   /** Clears manual file if set, otherwise clears embedded cover selection */
   onRemoveCover: () => void;
@@ -38,9 +43,11 @@ interface LibraryAlbumMetadataSectionProps {
 export function LibraryAlbumMetadataSection({
   formData,
   artists,
+  artistSelectOptions,
   isLoadingArtists,
   coverPreviewUrl,
   onUpdate,
+  onArtistIdChange,
   onManualCoverFile,
   onRemoveCover,
 }: LibraryAlbumMetadataSectionProps) {
@@ -243,20 +250,22 @@ export function LibraryAlbumMetadataSection({
             isLoadingArtists
               ? 'Loading...'
               : artists.length === 0
-                ? 'No artists yet'
+                ? 'Create or select artist'
                 : 'Select artist'
           }
           value={formData.artistId}
-          options={artists.map((a) => ({ value: a.id, label: a.name }))}
-          onChange={(value) => onUpdate('artistId', value)}
+          options={artistSelectOptions}
+          disabled={isLoadingArtists}
+          onChange={onArtistIdChange}
           onBlur={() => {}}
         />
         {!isLoadingArtists && artists.length === 0 && (
           <p className="text-xs text-muted-foreground">
+            Choose <span className="font-medium text-foreground">Create new artist…</span> above, or{' '}
             <Link to="/app/library/artists/create" className="text-primary hover:underline">
-              Create an artist
-            </Link>{' '}
-            first to add albums.
+              add an artist separately
+            </Link>
+            .
           </p>
         )}
       </div>

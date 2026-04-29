@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCreateLibraryAlbum } from '@/hooks/api/library-albums/useCreateLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
+import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLibraryArtist';
 import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { useLibraryStore } from '@/stores/library.store';
@@ -11,10 +12,22 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CoverSelectionBanner } from '../../tracks/bulk/CoverSelectionBanner';
 import { AlbumAudioDropCard } from './AlbumAudioDropCard';
+import { CreateLibraryArtistNameModal } from './CreateLibraryArtistNameModal';
 import { LibraryAlbumFromFilesProcessingOverlay } from './LibraryAlbumFromFilesProcessingOverlay';
 import { LibraryAlbumFromFilesTracksSection } from './LibraryAlbumFromFilesTracksSection';
 import { LibraryAlbumMetadataSection } from './LibraryAlbumMetadataSection';
 import { useLibraryAlbumFromFilesForm } from './useLibraryAlbumFromFilesForm';
+
+/** Select sentinel: opens the “new artist” modal instead of setting `artistId`. */
+const CREATE_NEW_ARTIST_SELECT_VALUE = '__create_new_artist__';
+
+function makeLocalPendingArtistId(): string {
+  return `local:pending:${crypto.randomUUID()}`;
+}
+
+function isLocalPendingArtistId(id: string): boolean {
+  return id.startsWith('local:pending:');
+}
 
 export interface LibraryAlbumFromFilesFormProps {
   cancelTo: string;
@@ -34,8 +47,12 @@ export function LibraryAlbumFromFilesForm({
   const { mutateAsync: uploadCover, isPending: isUploadingCover } = useUploadLibraryAlbumCover();
   const { mutateAsync: bulkCreateTracks, isPending: isUploadingTracks } =
     useBulkCreateLibraryTracks();
+  const { mutateAsync: createLibraryArtist, isPending: isCreatingArtist } =
+    useCreateLibraryArtist();
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);
+  const [pendingArtists, setPendingArtists] = useState<{ id: string; name: string }[]>([]);
 
   const {
     formData,
@@ -66,6 +83,36 @@ export function LibraryAlbumFromFilesForm({
 
   const coverPreviewUrl = manualAlbumCoverPreviewUrl ?? embeddedCoverPreviewUrl;
 
+  const artistSelectOptions = useMemo(() => {
+    const createOption = { value: CREATE_NEW_ARTIST_SELECT_VALUE, label: '+ Create new artist…' };
+    const serverOpts = artists.map((a) => ({ value: a.id, label: a.name }));
+    const pendingOpts = pendingArtists.map((a) => ({
+      value: a.id,
+      label: `${a.name} (new)`,
+    }));
+    return [createOption, ...pendingOpts, ...serverOpts];
+  }, [artists, pendingArtists]);
+
+  const handleArtistIdChange = useCallback(
+    (value: string) => {
+      if (value === CREATE_NEW_ARTIST_SELECT_VALUE) {
+        setCreateArtistModalOpen(true);
+        return;
+      }
+      updateFormData('artistId', value);
+    },
+    [updateFormData],
+  );
+
+  const handleConfirmNewArtistName = useCallback(
+    (name: string) => {
+      const id = makeLocalPendingArtistId();
+      setPendingArtists((prev) => [...prev, { id, name }]);
+      updateFormData('artistId', id);
+    },
+    [updateFormData],
+  );
+
   const handleSelectCover = useCallback(
     (trackId: string | null) => {
       setSelectedCoverTrackId(trackId);
@@ -84,13 +131,15 @@ export function LibraryAlbumFromFilesForm({
     }
   }, [manualAlbumCoverPreviewUrl, removeManualAlbumCover, setSelectedCoverTrackId]);
 
-  const progressStep = isCreatingAlbum
-    ? 'Creating album...'
-    : isUploadingCover
-      ? 'Uploading cover...'
-      : isUploadingTracks
-        ? `Uploading ${tracks.length} track${tracks.length !== 1 ? 's' : ''}...`
-        : null;
+  const progressStep = isCreatingArtist
+    ? 'Creating artist...'
+    : isCreatingAlbum
+      ? 'Creating album...'
+      : isUploadingCover
+        ? 'Uploading cover...'
+        : isUploadingTracks
+          ? `Uploading ${tracks.length} track${tracks.length !== 1 ? 's' : ''}...`
+          : null;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -99,11 +148,25 @@ export function LibraryAlbumFromFilesForm({
       if (!isFormValid || !libraryId) return;
 
       try {
+        let artistId = formData.artistId;
+
+        if (isLocalPendingArtistId(artistId)) {
+          const pending = pendingArtists.find((p) => p.id === artistId);
+          if (!pending?.name.trim()) {
+            throw new Error('Artist name is missing');
+          }
+          const createdArtist = await createLibraryArtist({ name: pending.name.trim() });
+          if (!createdArtist.data) {
+            throw new Error('Failed to create artist');
+          }
+          artistId = createdArtist.data.id;
+        }
+
         const album = await createAlbum({
           name: formData.name,
           description: formData.description,
           type: formData.type,
-          artistId: formData.artistId,
+          artistId,
           releaseDate: formData.releaseDate,
         });
 
@@ -116,12 +179,13 @@ export function LibraryAlbumFromFilesForm({
         await bulkCreateTracks({
           album: album.data,
           tracks,
-          artistIds: [formData.artistId],
+          artistIds: [artistId],
         });
 
         toast.success(
           `Successfully created album and uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`,
         );
+        setPendingArtists([]);
         navigate({ to: '/app/library/albums/$id', params: { id: album.data.id } });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to create album';
@@ -135,6 +199,8 @@ export function LibraryAlbumFromFilesForm({
       formData,
       coverFileForUpload,
       tracks,
+      pendingArtists,
+      createLibraryArtist,
       createAlbum,
       uploadCover,
       bulkCreateTracks,
@@ -142,7 +208,7 @@ export function LibraryAlbumFromFilesForm({
     ],
   );
 
-  const isSubmitting = isCreatingAlbum || isUploadingCover || isUploadingTracks;
+  const isSubmitting = isCreatingArtist || isCreatingAlbum || isUploadingCover || isUploadingTracks;
   const isProcessing = isScanningMetadata || isScanningCovers;
   const processingMessage =
     isScanningMetadata && isScanningCovers
@@ -158,6 +224,11 @@ export function LibraryAlbumFromFilesForm({
 
   return (
     <div className="relative flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden">
+      <CreateLibraryArtistNameModal
+        open={createArtistModalOpen}
+        onOpenChange={setCreateArtistModalOpen}
+        onConfirm={handleConfirmNewArtistName}
+      />
       {isProcessing && <LibraryAlbumFromFilesProcessingOverlay message={processingMessage} />}
 
       <form
@@ -169,9 +240,11 @@ export function LibraryAlbumFromFilesForm({
             <LibraryAlbumMetadataSection
               formData={formData}
               artists={artists}
+              artistSelectOptions={artistSelectOptions}
               isLoadingArtists={isLoadingArtists}
               coverPreviewUrl={coverPreviewUrl}
               onUpdate={updateFormData}
+              onArtistIdChange={handleArtistIdChange}
               onManualCoverFile={setManualAlbumCover}
               onRemoveCover={handleRemoveCover}
             />
