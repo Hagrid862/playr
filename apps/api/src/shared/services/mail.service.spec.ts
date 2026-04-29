@@ -65,6 +65,7 @@ describe('MailService', () => {
       });
       expect(logger.log).toHaveBeenCalledWith(
         expect.stringContaining(`successfully sent to email id ${mockEmailAddress.id}`),
+        'MailService',
       );
     });
 
@@ -80,7 +81,11 @@ describe('MailService', () => {
 
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining(`Failed to sent OTP code for email verification to email id ${mockEmailAddress.id}: SMTP connection error`),
+        expect.stringContaining(
+          `Failed to sent OTP code for email verification to email id ${mockEmailAddress.id}: `,
+        ),
+        undefined,
+        'MailService',
       );
     });
 
@@ -96,6 +101,8 @@ describe('MailService', () => {
       expect(result).toBe(false);
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining('Unknown error'),
+        undefined,
+        'MailService',
       );
     });
   });

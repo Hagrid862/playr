@@ -107,7 +107,11 @@ describe('EmailAuthService', () => {
       expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
       expect(mailService.sendEmailVerificationCode).not.toHaveBeenCalled();
       expect(emailAddressRepository.edit).not.toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalledWith('Failed to begin email verification flow', expect.stringContaining('OTP generation failed'));
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to begin email verification flow',
+        expect.stringContaining('OTP generation failed'),
+        'EmailAuthService',
+      );
     });
 
     it('should return false and log error if email status update fails after successful email send', async () => {
@@ -129,7 +133,11 @@ describe('EmailAuthService', () => {
         expect.any(Number),
       );
       expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailAddress.id, { status: 'pending' });
-      expect(logger.error).toHaveBeenCalledWith('Failed to begin email verification flow', expect.stringContaining('Database update failed'));
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to begin email verification flow',
+        expect.stringContaining('Database update failed'),
+        'EmailAuthService',
+      );
     });
 
     it('should return false and log error for unexpected errors', async () => {
@@ -142,7 +150,11 @@ describe('EmailAuthService', () => {
 
       // Assert
       expect(result).toBe(false);
-      expect(logger.error).toHaveBeenCalledWith('Failed to begin email verification flow', String(unexpectedError));
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to begin email verification flow',
+        String(unexpectedError),
+        'EmailAuthService',
+      );
     });
   });
 });
