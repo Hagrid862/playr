@@ -8,34 +8,62 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { checkLibraryArtistNameAvailability } from '@/hooks/api/library-artists/requests/checkLibraryArtistNameAvailability';
 import { useCallback, useEffect, useState } from 'react';
 
 type CreateLibraryArtistNameModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Called with trimmed name when user confirms. */
+  /** Names of artists already staged as pending in this session (exact match vs trimmed input). */
+  pendingArtistNames: string[];
+  /** Called with trimmed name when availability passes. */
   onConfirm: (name: string) => void;
 };
 
 export function CreateLibraryArtistNameModal({
   open,
   onOpenChange,
+  pendingArtistNames,
   onConfirm,
 }: CreateLibraryArtistNameModalProps) {
   const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setName('');
+      setError(null);
+      setIsChecking(false);
     }
   }, [open]);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    onConfirm(trimmed);
-    onOpenChange(false);
-  }, [name, onConfirm, onOpenChange]);
+
+    setError(null);
+
+    if (pendingArtistNames.some((n) => n === trimmed)) {
+      setError('You already added an artist with this name for this album.');
+      return;
+    }
+
+    setIsChecking(true);
+    try {
+      const result = await checkLibraryArtistNameAvailability(trimmed);
+      if (!result.data.available) {
+        setError('An artist with this name already exists in your library.');
+        return;
+      }
+      onConfirm(trimmed);
+      onOpenChange(false);
+    } catch {
+      setError('Could not verify name. Try again.');
+    } finally {
+      setIsChecking(false);
+    }
+  }, [name, onConfirm, onOpenChange, pendingArtistNames]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -51,15 +79,23 @@ export function CreateLibraryArtistNameModal({
           label="Artist name"
           placeholder="e.g. The Band"
           value={name}
-          onChange={setName}
+          onChange={(v) => {
+            setName(v);
+            setError(null);
+          }}
           onBlur={() => {}}
+          error={error ?? undefined}
         />
         <DialogFooter className="gap-2 sm:gap-0">
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleConfirm} disabled={!name.trim()}>
-            Add artist
+          <Button
+            type="button"
+            onClick={() => void handleConfirm()}
+            disabled={!name.trim() || isChecking}
+          >
+            {isChecking ? 'Checking…' : 'Add artist'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -227,6 +227,7 @@ export function LibraryAlbumFromFilesForm({
       <CreateLibraryArtistNameModal
         open={createArtistModalOpen}
         onOpenChange={setCreateArtistModalOpen}
+        pendingArtistNames={pendingArtists.map((p) => p.name)}
         onConfirm={handleConfirmNewArtistName}
       />
       {isProcessing && <LibraryAlbumFromFilesProcessingOverlay message={processingMessage} />}
