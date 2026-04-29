@@ -4,18 +4,19 @@ import {
   type ExtractedAudioMetadata,
 } from '@/lib/audio/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
-import type { BulkTrackItem, TrackWithCover } from '@/lib/types/library';
+import { sha256HexFromBlob } from '@/lib/crypto/sha256HexFromBlob';
+import type { BulkTrackItem, CoverArtGroup, TrackWithCover } from '@/lib/types/library';
 import type { CreateLibraryAlbumRequest } from '@repo/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-export type BulkAlbumFormData = Pick<
+export type LibraryAlbumFromFilesFormData = Pick<
   CreateLibraryAlbumRequest,
   'name' | 'description' | 'type' | 'releaseDate'
 > & {
   artistId: string;
 };
 
-const initialFormData: BulkAlbumFormData = {
+const initialFormData: LibraryAlbumFromFilesFormData = {
   name: '',
   description: '',
   type: 'album',
@@ -23,20 +24,32 @@ const initialFormData: BulkAlbumFormData = {
   releaseDate: null,
 };
 
-export type BulkAlbumUploadStep =
+export type LibraryAlbumFromFilesUploadStep =
   | 'idle'
   | 'creating-album'
   | 'uploading-cover'
   | 'uploading-tracks';
 
-export function useBulkAlbumUploadForm() {
-  const [formData, setFormData] = useState<BulkAlbumFormData>(initialFormData);
+export type UseLibraryAlbumFromFilesFormOptions = {
+  initialArtistId?: string;
+};
+
+export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesFormOptions) {
+  const [formData, setFormData] = useState<LibraryAlbumFromFilesFormData>(() => ({
+    ...initialFormData,
+    artistId: options?.initialArtistId ?? '',
+  }));
   const [tracks, setTracks] = useState<BulkTrackItem[]>([]);
   const [tracksWithCovers, setTracksWithCovers] = useState<TrackWithCover[]>([]);
+  const [coverGroups, setCoverGroups] = useState<CoverArtGroup[]>([]);
   const [selectedCoverTrackId, setSelectedCoverTrackId] = useState<string | null>(null);
   const [isScanningMetadata, setIsScanningMetadata] = useState(false);
   const [isScanningCovers, setIsScanningCovers] = useState(false);
+  const [manualAlbumCoverFile, setManualAlbumCoverFile] = useState<File | null>(null);
+  const [manualAlbumCoverPreviewUrl, setManualAlbumCoverPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tracksRef = useRef(tracks);
+  tracksRef.current = tracks;
 
   const trackIds = useMemo(() => tracks.map((t) => t.id).join(','), [tracks]);
   const lastScannedTrackIds = useRef<string>('');
@@ -60,7 +73,6 @@ export function useBulkAlbumUploadForm() {
       }
 
       if (!cancelled && results.length === tracks.length) {
-        // Derive album name: use most common or first non-empty
         const albums = results.map((r) => r.album).filter(Boolean);
         const albumName =
           albums.length > 0
@@ -70,7 +82,6 @@ export function useBulkAlbumUploadForm() {
               )[0] as string)
             : '';
 
-        // Derive year from first file that has it
         const year = results.find((r) => r.year)?.year;
 
         setFormData((prev) => ({
@@ -79,7 +90,6 @@ export function useBulkAlbumUploadForm() {
           releaseDate: prev.releaseDate ?? (year ? new Date(year, 0, 1) : null),
         }));
 
-        // Update track titles and numbers from metadata
         setTracks((prev) =>
           prev.map((t, i) => {
             const meta = results[i];
@@ -106,9 +116,14 @@ export function useBulkAlbumUploadForm() {
     };
   }, [trackIds, tracks]);
 
-  // Scan covers when tracks change
+  // Scan covers when track IDs change only (not when metadata updates titles)
   useEffect(() => {
-    if (tracks.length === 0) return;
+    if (trackIds === '') {
+      return;
+    }
+
+    const snapshot = tracksRef.current;
+    if (snapshot.length === 0) return;
 
     let cancelled = false;
 
@@ -116,41 +131,101 @@ export function useBulkAlbumUploadForm() {
       setIsScanningCovers(true);
       const results: TrackWithCover[] = [];
 
-      for (const track of tracks) {
-        if (cancelled) break;
-        const coverFile = await extractCoverFromAudioFile(track.file);
-        if (coverFile && !cancelled) {
-          const previewUrl = URL.createObjectURL(coverFile);
-          results.push({
-            trackId: track.id,
-            trackName: track.file.name,
-            coverFile,
-            previewUrl,
-          });
+      try {
+        for (const track of snapshot) {
+          if (cancelled) break;
+          const coverFile = await extractCoverFromAudioFile(track.file);
+          if (coverFile && !cancelled) {
+            const previewUrl = URL.createObjectURL(coverFile);
+            results.push({
+              trackId: track.id,
+              trackName: track.file.name,
+              coverFile,
+              previewUrl,
+            });
+          }
+        }
+
+        if (cancelled) {
+          results.forEach((r) => URL.revokeObjectURL(r.previewUrl));
+          return;
+        }
+
+        const digestMap = new Map<string, CoverArtGroup>();
+        for (const twc of results) {
+          const digest = await sha256HexFromBlob(twc.coverFile);
+          if (cancelled) return;
+          const existing = digestMap.get(digest);
+          if (!existing) {
+            digestMap.set(digest, {
+              digest,
+              representativeTrackId: twc.trackId,
+              trackIds: [twc.trackId],
+              previewUrl: twc.previewUrl,
+              trackFileNames: [twc.trackName],
+            });
+          } else {
+            existing.trackIds.push(twc.trackId);
+            existing.trackFileNames.push(twc.trackName);
+          }
+        }
+
+        if (cancelled) return;
+
+        const groups = [...digestMap.values()];
+
+        setTracksWithCovers(results);
+        setCoverGroups(groups);
+        setSelectedCoverTrackId((prev) => {
+          const idsWithCover = results.map((r) => r.trackId);
+          if (prev != null && idsWithCover.includes(prev)) {
+            return prev;
+          }
+          return groups[0]?.representativeTrackId ?? null;
+        });
+      } finally {
+        if (!cancelled) {
+          setIsScanningCovers(false);
         }
       }
-
-      if (!cancelled) {
-        setTracksWithCovers(results);
-        setSelectedCoverTrackId((prev) =>
-          results.some((r) => r.trackId === prev) ? prev : (results[0]?.trackId ?? null),
-        );
-      }
-
-      setIsScanningCovers(false);
     };
 
     scan();
     return () => {
       cancelled = true;
+      setIsScanningCovers(false);
     };
-  }, [trackIds, tracks]);
+  }, [trackIds]);
 
   useEffect(() => {
     return () => {
       tracksWithCovers.forEach((t) => URL.revokeObjectURL(t.previewUrl));
     };
   }, [tracksWithCovers]);
+
+  useEffect(() => {
+    return () => {
+      if (manualAlbumCoverPreviewUrl) {
+        URL.revokeObjectURL(manualAlbumCoverPreviewUrl);
+      }
+    };
+  }, [manualAlbumCoverPreviewUrl]);
+
+  const setManualAlbumCover = useCallback((file: File | null) => {
+    setManualAlbumCoverPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+    setManualAlbumCoverFile(file);
+  }, []);
+
+  const removeManualAlbumCover = useCallback(() => {
+    setManualAlbumCoverPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setManualAlbumCoverFile(null);
+  }, []);
 
   const addFiles = useCallback((files: FileList | null) => {
     if (!files?.length) return;
@@ -187,6 +262,7 @@ export function useBulkAlbumUploadForm() {
       const willBeEmpty = tracks.filter((t) => t.id !== id).length === 0;
       if (willBeEmpty) {
         setTracksWithCovers([]);
+        setCoverGroups([]);
         setSelectedCoverTrackId(null);
       }
       setTracks((prev) => {
@@ -200,19 +276,31 @@ export function useBulkAlbumUploadForm() {
     [tracks],
   );
 
-  const clearAll = useCallback(() => {
+  const clearTracks = useCallback(() => {
     lastScannedTrackIds.current = '';
     setTracksWithCovers([]);
+    setCoverGroups([]);
     setSelectedCoverTrackId(null);
     setTracks([]);
-    setFormData(initialFormData);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   }, []);
 
+  const clearAll = useCallback(() => {
+    clearTracks();
+    setFormData({
+      ...initialFormData,
+      artistId: options?.initialArtistId ?? '',
+    });
+    setManualAlbumCover(null);
+  }, [clearTracks, options?.initialArtistId, setManualAlbumCover]);
+
   const updateFormData = useCallback(
-    <K extends keyof BulkAlbumFormData>(field: K, value: BulkAlbumFormData[K]) => {
+    <K extends keyof LibraryAlbumFromFilesFormData>(
+      field: K,
+      value: LibraryAlbumFromFilesFormData[K],
+    ) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
     [],
@@ -224,6 +312,11 @@ export function useBulkAlbumUploadForm() {
         ? (tracksWithCovers.find((t) => t.trackId === selectedCoverTrackId)?.coverFile ?? null)
         : null,
     [selectedCoverTrackId, tracksWithCovers],
+  );
+
+  const coverFileForUpload = useMemo(
+    () => manualAlbumCoverFile ?? selectedCoverFile,
+    [manualAlbumCoverFile, selectedCoverFile],
   );
 
   const hasInvalidTracks = tracks.some(
@@ -240,15 +333,21 @@ export function useBulkAlbumUploadForm() {
     formData,
     tracks,
     tracksWithCovers,
+    coverGroups,
     selectedCoverTrackId,
     setSelectedCoverTrackId,
     selectedCoverFile,
+    manualAlbumCoverPreviewUrl,
+    setManualAlbumCover,
+    removeManualAlbumCover,
+    coverFileForUpload,
     isScanningMetadata,
     isScanningCovers,
     fileInputRef,
     addFiles,
     updateTrack,
     removeTrack,
+    clearTracks,
     clearAll,
     updateFormData,
     isFormValid,

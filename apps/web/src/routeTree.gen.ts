@@ -29,7 +29,6 @@ import { Route as AppLibraryOverviewPrivateRouteImport } from './routes/app/libr
 import { Route as AppLibraryOverviewCommunityRouteImport } from './routes/app/library/overview/community'
 import { Route as AppLibraryArtistsCreateRouteImport } from './routes/app/library/artists/create'
 import { Route as AppLibraryAlbumsCreateRouteImport } from './routes/app/library/albums/create'
-import { Route as AppLibraryAlbumsBulkCreateRouteImport } from './routes/app/library/albums/bulk-create'
 import { Route as AppLibraryArtistsIdIndexRouteImport } from './routes/app/library/artists/$id/index'
 import { Route as AppLibraryAlbumsIdIndexRouteImport } from './routes/app/library/albums/$id/index'
 import { Route as AppLibraryArtistsIdEditRouteImport } from './routes/app/library/artists/$id/edit'
@@ -146,12 +145,6 @@ const AppLibraryAlbumsCreateRoute = AppLibraryAlbumsCreateRouteImport.update({
   path: '/create',
   getParentRoute: () => AppLibraryAlbumsRoute,
 } as any)
-const AppLibraryAlbumsBulkCreateRoute =
-  AppLibraryAlbumsBulkCreateRouteImport.update({
-    id: '/bulk-create',
-    path: '/bulk-create',
-    getParentRoute: () => AppLibraryAlbumsRoute,
-  } as any)
 const AppLibraryArtistsIdIndexRoute =
   AppLibraryArtistsIdIndexRouteImport.update({
     id: '/$id/',
@@ -235,7 +228,6 @@ export interface FileRoutesByFullPath {
   '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
-  '/app/library/albums/bulk-create': typeof AppLibraryAlbumsBulkCreateRoute
   '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
@@ -266,7 +258,6 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/new': typeof AppNewIndexRoute
   '/app/search': typeof AppSearchIndexRoute
-  '/app/library/albums/bulk-create': typeof AppLibraryAlbumsBulkCreateRoute
   '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
@@ -302,7 +293,6 @@ export interface FileRoutesById {
   '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
   '/app/new/': typeof AppNewIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
-  '/app/library/albums/bulk-create': typeof AppLibraryAlbumsBulkCreateRoute
   '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
@@ -339,7 +329,6 @@ export interface FileRouteTypes {
     | '/app/library/overview'
     | '/app/new/'
     | '/app/search/'
-    | '/app/library/albums/bulk-create'
     | '/app/library/albums/create'
     | '/app/library/artists/create'
     | '/app/library/overview/community'
@@ -370,7 +359,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/new'
     | '/app/search'
-    | '/app/library/albums/bulk-create'
     | '/app/library/albums/create'
     | '/app/library/artists/create'
     | '/app/library/overview/community'
@@ -405,7 +393,6 @@ export interface FileRouteTypes {
     | '/app/library/overview'
     | '/app/new/'
     | '/app/search/'
-    | '/app/library/albums/bulk-create'
     | '/app/library/albums/create'
     | '/app/library/artists/create'
     | '/app/library/overview/community'
@@ -579,13 +566,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryAlbumsCreateRouteImport
       parentRoute: typeof AppLibraryAlbumsRoute
     }
-    '/app/library/albums/bulk-create': {
-      id: '/app/library/albums/bulk-create'
-      path: '/bulk-create'
-      fullPath: '/app/library/albums/bulk-create'
-      preLoaderRoute: typeof AppLibraryAlbumsBulkCreateRouteImport
-      parentRoute: typeof AppLibraryAlbumsRoute
-    }
     '/app/library/artists/$id/': {
       id: '/app/library/artists/$id/'
       path: '/$id'
@@ -674,7 +654,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppLibraryAlbumsRouteChildren {
-  AppLibraryAlbumsBulkCreateRoute: typeof AppLibraryAlbumsBulkCreateRoute
   AppLibraryAlbumsCreateRoute: typeof AppLibraryAlbumsCreateRoute
   AppLibraryAlbumsIndexRoute: typeof AppLibraryAlbumsIndexRoute
   AppLibraryAlbumsIdEditRoute: typeof AppLibraryAlbumsIdEditRoute
@@ -685,7 +664,6 @@ interface AppLibraryAlbumsRouteChildren {
 }
 
 const AppLibraryAlbumsRouteChildren: AppLibraryAlbumsRouteChildren = {
-  AppLibraryAlbumsBulkCreateRoute: AppLibraryAlbumsBulkCreateRoute,
   AppLibraryAlbumsCreateRoute: AppLibraryAlbumsCreateRoute,
   AppLibraryAlbumsIndexRoute: AppLibraryAlbumsIndexRoute,
   AppLibraryAlbumsIdEditRoute: AppLibraryAlbumsIdEditRoute,

@@ -1,12 +1,12 @@
 import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { BulkAlbumProcessingOverlay } from './BulkAlbumProcessingOverlay';
+import { LibraryAlbumFromFilesProcessingOverlay } from './LibraryAlbumFromFilesProcessingOverlay';
 
-describe('BulkAlbumProcessingOverlay', () => {
+describe('LibraryAlbumFromFilesProcessingOverlay', () => {
   describe('rendering', () => {
     it('renders message and helper text', () => {
-      customRender(<BulkAlbumProcessingOverlay message="Scanning metadata..." />);
+      customRender(<LibraryAlbumFromFilesProcessingOverlay message="Scanning metadata..." />);
 
       expect(screen.getByText('Scanning metadata...')).toBeInTheDocument();
       expect(
@@ -17,7 +17,7 @@ describe('BulkAlbumProcessingOverlay', () => {
 
   describe('accessibility', () => {
     it('exposes live region with busy state', () => {
-      customRender(<BulkAlbumProcessingOverlay message="Processing..." />);
+      customRender(<LibraryAlbumFromFilesProcessingOverlay message="Processing..." />);
 
       const overlay = document.querySelector('[aria-live="polite"][aria-busy="true"]');
       expect(overlay).toBeInTheDocument();

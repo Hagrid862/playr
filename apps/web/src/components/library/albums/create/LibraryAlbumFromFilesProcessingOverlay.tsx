@@ -1,11 +1,13 @@
 import { CircleNotchIcon } from '@phosphor-icons/react';
 
-interface BulkAlbumProcessingOverlayProps {
+interface LibraryAlbumFromFilesProcessingOverlayProps {
   message: string;
 }
 
 /** Full-screen overlay for processing state. Leaves playback controls visible at bottom. */
-export function BulkAlbumProcessingOverlay({ message }: BulkAlbumProcessingOverlayProps) {
+export function LibraryAlbumFromFilesProcessingOverlay({
+  message,
+}: LibraryAlbumFromFilesProcessingOverlayProps) {
   return (
     <div
       className="fixed inset-x-0 top-0 bottom-20 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm"

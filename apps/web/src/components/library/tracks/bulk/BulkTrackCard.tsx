@@ -8,7 +8,7 @@ import type { BulkTrackCardProps } from './BulkTrackUploadForm.types';
 
 export function BulkTrackCard({ track, onUpdate, onRemove }: BulkTrackCardProps) {
   return (
-    <Card>
+    <Card className="m-px">
       <CardHeader className="flex flex-row items-start justify-between gap-2 border-b pb-3">
         <CardTitle className="text-sm font-medium truncate" title={track.file.name}>
           {track.file.name}

@@ -6,7 +6,7 @@ import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useBulkAlbumUploadForm } from './useBulkAlbumUploadForm';
+import { useLibraryAlbumFromFilesForm } from './useLibraryAlbumFromFilesForm';
 
 vi.mock('@/lib/audio/audio-metadata', () => ({
   extractMetadataFromAudioFile: vi.fn(),
@@ -17,7 +17,11 @@ vi.mock('@/lib/audio/clean-audio-filename', () => ({
   cleanFilenameToTitle: vi.fn(),
 }));
 
-describe('useBulkAlbumUploadForm', () => {
+vi.mock('@/lib/crypto/sha256HexFromBlob', () => ({
+  sha256HexFromBlob: vi.fn(async (blob: Blob) => `digest-${blob.size}`),
+}));
+
+describe('useLibraryAlbumFromFilesForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.URL.createObjectURL = vi.fn(() => 'mock-url');
@@ -36,7 +40,7 @@ describe('useBulkAlbumUploadForm', () => {
 
   describe('initial state', () => {
     it('initializes with default state', () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       expect(result.current.formData).toEqual({
         name: '',
@@ -53,7 +57,7 @@ describe('useBulkAlbumUploadForm', () => {
 
   describe('addFiles', () => {
     it('handles addFiles correctly', async () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
       const file1 = createAudioFile('track2.mp3');
       const file2 = createAudioFile('track1.mp3');
 
@@ -71,7 +75,7 @@ describe('useBulkAlbumUploadForm', () => {
     });
 
     it('handles empty files or non-audio files in addFiles', () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
       const textFile = new File(['text'], 'text.txt', { type: 'text/plain' });
 
       act(() => {
@@ -110,7 +114,7 @@ describe('useBulkAlbumUploadForm', () => {
         return null;
       });
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
       const file1 = createAudioFile('01_song.mp3');
       const file2 = createAudioFile('02_song.mp3');
 
@@ -135,7 +139,7 @@ describe('useBulkAlbumUploadForm', () => {
     it('handles empty metadata responses', async () => {
       vi.mocked(extractMetadataFromAudioFile).mockResolvedValueOnce(null);
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
       const file1 = createAudioFile('01_song.mp3');
 
       act(() => {
@@ -159,7 +163,7 @@ describe('useBulkAlbumUploadForm', () => {
         diskNo: undefined,
       });
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('01_song.mp3')]));
@@ -179,7 +183,7 @@ describe('useBulkAlbumUploadForm', () => {
         return null;
       });
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(
@@ -197,7 +201,7 @@ describe('useBulkAlbumUploadForm', () => {
 
   describe('track CRUD', () => {
     it('updates track by id', () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
       const file = createAudioFile('song.mp3');
 
       act(() => {
@@ -215,7 +219,7 @@ describe('useBulkAlbumUploadForm', () => {
     });
 
     it('removes track by id', () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
       const file1 = createAudioFile('song1.mp3');
       const file2 = createAudioFile('song2.mp3');
 
@@ -235,7 +239,7 @@ describe('useBulkAlbumUploadForm', () => {
     });
 
     it('updates a specific track and leaves others untouched', () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
       const file1 = createAudioFile('song1.mp3');
       const file2 = createAudioFile('song2.mp3');
 
@@ -260,7 +264,7 @@ describe('useBulkAlbumUploadForm', () => {
 
   describe('form validity', () => {
     it('computes isFormValid correctly', () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       expect(result.current.isFormValid).toBe(false);
 
@@ -280,10 +284,37 @@ describe('useBulkAlbumUploadForm', () => {
     });
   });
 
+  describe('clearTracks', () => {
+    it('clears tracks and cover state but keeps album form fields', async () => {
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(new File([], 'i'));
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('test.mp3')]));
+        result.current.updateFormData('name', 'Kept Album');
+        result.current.updateFormData('artistId', 'artist-1');
+      });
+
+      await waitFor(() => {
+        expect(result.current.tracksWithCovers.length).toBeGreaterThan(0);
+      });
+
+      act(() => {
+        result.current.clearTracks();
+      });
+
+      expect(result.current.tracks).toHaveLength(0);
+      expect(result.current.tracksWithCovers).toHaveLength(0);
+      expect(result.current.coverGroups).toHaveLength(0);
+      expect(result.current.formData.name).toBe('Kept Album');
+      expect(result.current.formData.artistId).toBe('artist-1');
+    });
+  });
+
   describe('clearAll', () => {
     it('clears all state via clearAll', async () => {
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(new File([], 'i'));
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('test.mp3')]));
@@ -308,7 +339,7 @@ describe('useBulkAlbumUploadForm', () => {
     });
 
     it('clears all state when fileInputRef is null', () => {
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('test.mp3')]));
@@ -330,7 +361,7 @@ describe('useBulkAlbumUploadForm', () => {
       const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValueOnce(mockCover);
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('has_cover.mp3')]));
@@ -355,7 +386,7 @@ describe('useBulkAlbumUploadForm', () => {
       const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(mockCover);
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('track1.mp3')]));
@@ -382,7 +413,7 @@ describe('useBulkAlbumUploadForm', () => {
       const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(mockCover);
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('track1.mp3')]));
@@ -403,7 +434,7 @@ describe('useBulkAlbumUploadForm', () => {
       const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(mockCover);
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(
@@ -437,7 +468,7 @@ describe('useBulkAlbumUploadForm', () => {
       const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(mockCover);
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(
@@ -470,7 +501,7 @@ describe('useBulkAlbumUploadForm', () => {
     it('falls back to null when no tracks have covers', async () => {
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(null);
 
-      const { result } = customRenderHook(() => useBulkAlbumUploadForm());
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
 
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('no_cover.mp3')]));
@@ -481,6 +512,26 @@ describe('useBulkAlbumUploadForm', () => {
       });
 
       expect(result.current.selectedCoverTrackId).toBeNull();
+    });
+
+    it('merges identical embedded covers into one cover group', async () => {
+      const sharedBytes = new Uint8Array([1, 2, 3, 4]);
+      const mockCover = new File([sharedBytes], 'cover.jpg', { type: 'image/jpeg' });
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(mockCover);
+
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(
+          createFileList([createAudioFile('a.mp3'), createAudioFile('b.mp3')]),
+        );
+      });
+
+      await waitFor(() => {
+        expect(result.current.coverGroups).toHaveLength(1);
+      });
+
+      expect(result.current.coverGroups[0]?.trackIds).toHaveLength(2);
     });
   });
 });
