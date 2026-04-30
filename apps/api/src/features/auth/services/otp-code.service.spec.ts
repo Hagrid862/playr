@@ -66,6 +66,24 @@ describe('OtpCodeService', () => {
 
       await expect(service.generateOTPCode(mockEmailAddress, 'emailVerification'))
         .rejects.toThrow(InternalServerErrorException);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`Error generating OTP for email id ${mockEmailAddress.id} and type emailVerification: Redis error`)),
+        undefined,
+        'OtpCodeService',
+      );
+    });
+
+    it('should throw InternalServerErrorException if redis fails with a non-Error object', async () => {
+      hashingService.hash.mockResolvedValue('hashed-otp');
+      redis.set.mockRejectedValue('String error');
+
+      await expect(service.generateOTPCode(mockEmailAddress, 'emailVerification'))
+        .rejects.toThrow(InternalServerErrorException);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`Error generating OTP for email id ${mockEmailAddress.id} and type emailVerification: Unknown error`)),
+        undefined,
+        'OtpCodeService',
+      );
     });
   });
 
@@ -84,6 +102,12 @@ describe('OtpCodeService', () => {
       expect(result).toBe(true);
       expect(redis.get).toHaveBeenCalledWith(`otp:emailVerification:${mockEmailAddress.email}`);
       expect(redis.del).toHaveBeenCalledWith(`otp:emailVerification:${mockEmailAddress.email}`);
+      expect(redis.eval).toHaveBeenCalledWith(
+        expect.stringContaining('return redis.call("DEL", KEYS[1])'),
+        1,
+        `otp:emailVerification:${mockEmailAddress.email}:claim`,
+        expect.any(String),
+      );
     });
 
     it('should return false if lock cannot be acquired', async () => {
@@ -93,6 +117,7 @@ describe('OtpCodeService', () => {
 
       expect(result).toBe(false);
       expect(redis.get).not.toHaveBeenCalled();
+      expect(redis.eval).toHaveBeenCalled();
     });
 
     it('should return false if no OTP is stored', async () => {
@@ -118,11 +143,72 @@ describe('OtpCodeService', () => {
     it('should throw InternalServerErrorException and release lock on error', async () => {
       redis.set.mockResolvedValue('OK');
       redis.get.mockRejectedValue(new Error('Redis crash'));
+      redis.eval.mockResolvedValue(1); // Ensure lock release doesn't throw
 
       await expect(service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification'))
         .rejects.toThrow(InternalServerErrorException);
-      
-      expect(redis.eval).toHaveBeenCalled(); // finally block
+
+      expect(redis.eval).toHaveBeenCalled(); // finally, block
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`Error verifying OTP for email id ${mockEmailAddress.id} and type emailVerification: Redis crash`)),
+        undefined,
+        'OtpCodeService',
+      );
+    });
+
+    it('should throw InternalServerErrorException if verify fails with a non-Error object', async () => {
+      redis.set.mockResolvedValue('OK');
+      redis.get.mockRejectedValue('String error');
+      redis.eval.mockResolvedValue(1);
+
+      await expect(service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification'))
+        .rejects.toThrow(InternalServerErrorException);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`Error verifying OTP for email id ${mockEmailAddress.id} and type emailVerification: Unknown error`)),
+        undefined,
+        'OtpCodeService',
+      );
+    });
+
+    it('should log a warning if releaseClaimLock fails with an Error object', async () => {
+      // Arrange
+      const releaseError = new Error('Redis eval error during lock release');
+      redis.set.mockResolvedValue('OK'); // Lock acquired
+      redis.get.mockResolvedValue(hashedOtp);
+      hashingService.compare.mockResolvedValue(true);
+      redis.eval.mockRejectedValue(releaseError); // Simulate error in releaseClaimLock
+
+      // Act
+      const result = await service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification');
+
+      // Assert
+      expect(result).toBe(true); // Verification still succeeds, but lock release fails
+      expect(redis.eval).toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`Failed to release OTP claim lock for key otp:emailVerification:${mockEmailAddress.email}:claim: ${releaseError.message}`)),
+        'OtpCodeService',
+      );
+    });
+
+    it('should log a warning if releaseClaimLock fails with a non-Error object', async () => {
+      // Arrange
+      const releaseError = 'Non-Error object thrown';
+      redis.set.mockResolvedValue('OK'); // Lock acquired
+      redis.get.mockResolvedValue(hashedOtp);
+      hashingService.compare.mockResolvedValue(true);
+      redis.eval.mockRejectedValue(releaseError); // Simulate non-Error in releaseClaimLock
+
+      // Act
+      const result = await service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification');
+
+      // Assert
+      expect(result).toBe(true); // Verification still succeeds, but lock release fails
+      expect(redis.eval).toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`Failed to release OTP claim lock for key otp:emailVerification:${mockEmailAddress.email}:claim: Unknown error`)),
+        'OtpCodeService',
+      );
     });
   });
 });

@@ -114,6 +114,24 @@ describe('EmailAuthService', () => {
       );
     });
 
+    it('should return false and log error if OTP generation fails with an error that has no stack', async () => {
+      // Arrange
+      const error = new Error('OTP generation failed without stack');
+      delete error.stack; // Explicitly remove the stack to trigger the branch
+      otpCodeService.generateOTPCode.mockRejectedValue(error);
+
+      // Act
+      const result = await service.beginEmailVerification(mockEmailAddress);
+
+      // Assert
+      expect(result).toBe(false);
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to begin email verification flow',
+        'OTP generation failed without stack',
+        'EmailAuthService',
+      );
+    });
+
     it('should return false and log error if email status update fails after successful email send', async () => {
       // Arrange
       const error = new Error('Database update failed');
