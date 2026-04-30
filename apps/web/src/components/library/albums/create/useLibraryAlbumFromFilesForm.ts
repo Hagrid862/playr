@@ -49,7 +49,9 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
   const [manualAlbumCoverFile, setManualAlbumCoverFile] = useState<File | null>(null);
   const [manualAlbumCoverPreviewUrl, setManualAlbumCoverPreviewUrl] = useState<string | null>(null);
   /** Single consistent non-empty artist across tracks (normalized); drives autofill when `artistId` is empty. */
-  const [metadataSuggestedArtistName, setMetadataSuggestedArtistName] = useState<string | null>(null);
+  const [metadataSuggestedArtistName, setMetadataSuggestedArtistName] = useState<string | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const manualAlbumCoverFileRef = useRef<File | null>(null);
   const tracksRef = useRef(tracks);

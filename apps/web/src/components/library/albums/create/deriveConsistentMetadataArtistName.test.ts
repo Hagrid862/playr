@@ -8,29 +8,24 @@ describe('deriveConsistentMetadataArtistName', () => {
 
   it('returns the artist when all non-empty tags normalize to the same value', () => {
     expect(
-      deriveConsistentMetadataArtistName([
-        { artist: 'Same Artist' },
-        { artist: 'same artist' },
-      ]),
+      deriveConsistentMetadataArtistName([{ artist: 'Same Artist' }, { artist: 'same artist' }]),
     ).toBe('Same Artist');
   });
 
   it('returns the first non-empty display string when casing differs', () => {
-    expect(
-      deriveConsistentMetadataArtistName([{ artist: '  Foo  ' }, { artist: 'foo' }]),
-    ).toBe('Foo');
+    expect(deriveConsistentMetadataArtistName([{ artist: '  Foo  ' }, { artist: 'foo' }])).toBe(
+      'Foo',
+    );
   });
 
   it('ignores tracks with no artist when others agree', () => {
-    expect(
-      deriveConsistentMetadataArtistName([{ artist: 'Solo' }, {}, { artist: 'solo' }]),
-    ).toBe('Solo');
+    expect(deriveConsistentMetadataArtistName([{ artist: 'Solo' }, {}, { artist: 'solo' }])).toBe(
+      'Solo',
+    );
   });
 
   it('returns null when artists conflict', () => {
-    expect(
-      deriveConsistentMetadataArtistName([{ artist: 'A' }, { artist: 'B' }]),
-    ).toBeNull();
+    expect(deriveConsistentMetadataArtistName([{ artist: 'A' }, { artist: 'B' }])).toBeNull();
   });
 
   it('trims whitespace-only to empty', () => {

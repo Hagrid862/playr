@@ -170,209 +170,210 @@ export function LibraryAlbumMetadataSection({
 
         <div className="flex flex-col gap-8 overflow-visible md:flex-row md:gap-10">
           <div className="flex shrink-0 flex-col items-center gap-3 overflow-visible">
-          <input
-            ref={coverInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleCoverInputChange}
-          />
-          <div className="relative shrink-0 overflow-visible">
-            {coverPreviewUrl && (
-              <img
-                src={coverPreviewUrl}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 size-40 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
-              />
-            )}
-            <div
-              role="button"
-              tabIndex={0}
-              className="group relative flex size-40 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-stone-700/60 bg-stone-900 shadow-xl transition-all hover:border-primary/50"
-              onClick={() => coverInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  coverInputRef.current?.click();
-                }
-              }}
-              onDrop={handleCoverDrop}
-              onDragOver={handleCoverDragOver}
-            >
-              {coverPreviewUrl ? (
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCoverInputChange}
+            />
+            <div className="relative shrink-0 overflow-visible">
+              {coverPreviewUrl && (
                 <img
                   src={coverPreviewUrl}
-                  alt={formData.name || 'Cover preview'}
-                  className="size-full rounded-[13px] object-cover transition-opacity group-hover:opacity-60"
-                />
-              ) : (
-                <MusicNotesIcon
-                  size={44}
-                  className="text-muted-foreground transition-colors group-hover:text-primary"
-                  weight="duotone"
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 size-40 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
                 />
               )}
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[13px] bg-stone-950/60 opacity-0 transition-opacity group-hover:opacity-100">
-                <div className="flex flex-col items-center gap-1.5">
-                  <CameraIcon size={22} className="text-white" />
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-white">
-                    {coverPreviewUrl ? 'Change cover' : 'Upload cover'}
-                  </span>
+              <div
+                role="button"
+                tabIndex={0}
+                className="group relative flex size-40 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-stone-700/60 bg-stone-900 shadow-xl transition-all hover:border-primary/50"
+                onClick={() => coverInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    coverInputRef.current?.click();
+                  }
+                }}
+                onDrop={handleCoverDrop}
+                onDragOver={handleCoverDragOver}
+              >
+                {coverPreviewUrl ? (
+                  <img
+                    src={coverPreviewUrl}
+                    alt={formData.name || 'Cover preview'}
+                    className="size-full rounded-[13px] object-cover transition-opacity group-hover:opacity-60"
+                  />
+                ) : (
+                  <MusicNotesIcon
+                    size={44}
+                    className="text-muted-foreground transition-colors group-hover:text-primary"
+                    weight="duotone"
+                  />
+                )}
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[13px] bg-stone-950/60 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <CameraIcon size={22} className="text-white" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white">
+                      {coverPreviewUrl ? 'Change cover' : 'Upload cover'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+            {coverPreviewUrl ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => {
+                  onRemoveCover();
+                }}
+                className="gap-1 text-xs text-muted-foreground hover:text-red-400"
+              >
+                <TrashIcon size={12} />
+                Remove
+              </Button>
+            ) : (
+              <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                Artwork
+              </span>
+            )}
           </div>
-          {coverPreviewUrl ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() => {
-                onRemoveCover();
-              }}
-              className="gap-1 text-xs text-muted-foreground hover:text-red-400"
-            >
-              <TrashIcon size={12} />
-              Remove
-            </Button>
-          ) : (
-            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-              Artwork
-            </span>
-          )}
-        </div>
 
-        <div className="flex flex-1 flex-col gap-6">
-          <TextField
-            label="Album title"
-            placeholder="e.g. Nevermind"
-            value={formData.name}
-            onChange={(value) => onUpdate('name', value)}
-            onBlur={() => {}}
-          />
-          <TextAreaField
-            label="Description"
-            placeholder="Tell something about this album..."
-            value={formData.description || ''}
-            onChange={(value) => onUpdate('description', value)}
-            onBlur={() => {}}
-            className="min-h-32"
-          />
-        </div>
+          <div className="flex flex-1 flex-col gap-6">
+            <TextField
+              label="Album title"
+              placeholder="e.g. Nevermind"
+              value={formData.name}
+              onChange={(value) => onUpdate('name', value)}
+              onBlur={() => {}}
+            />
+            <TextAreaField
+              label="Description"
+              placeholder="Tell something about this album..."
+              value={formData.description || ''}
+              onChange={(value) => onUpdate('description', value)}
+              onBlur={() => {}}
+              className="min-h-32"
+            />
+          </div>
         </div>
       </div>
 
       <div className="min-h-0 flex-1 space-y-6 lg:overflow-y-auto lg:pr-1">
         <div className="space-y-1">
-        {isStagedNewArtistSelected ? (
-          <Field>
-            <FieldLabel htmlFor={artistFieldId}>Artist</FieldLabel>
-            <div className="flex w-full overflow-visible rounded-lg border border-input bg-background dark:bg-input/30">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span
-                    className="inline-flex min-w-0 flex-1 cursor-default outline-none"
-                    tabIndex={0}
-                  >
-                    <Select
-                      disabled
-                      value={formData.artistId === '' ? undefined : formData.artistId}
-                      onValueChange={onArtistIdChange}
+          {isStagedNewArtistSelected ? (
+            <Field>
+              <FieldLabel htmlFor={artistFieldId}>Artist</FieldLabel>
+              <div className="flex w-full overflow-visible rounded-lg border border-input bg-background dark:bg-input/30">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="inline-flex min-w-0 flex-1 cursor-default outline-none"
+                      tabIndex={0}
                     >
-                      <SelectTrigger
-                        id={artistFieldId}
-                        type="button"
+                      <Select
                         disabled
-                        className={cn(
-                          'h-8 min-w-0 flex-1 rounded-none border-0 shadow-none disabled:cursor-not-allowed disabled:opacity-100',
-                          'w-full bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent',
-                        )}
-                        onBlur={() => {}}
+                        value={formData.artistId === '' ? undefined : formData.artistId}
+                        onValueChange={onArtistIdChange}
                       >
-                        <SelectValue
-                          placeholder={
-                            isLoadingArtists
-                              ? 'Loading...'
-                              : artists.length === 0
-                                ? 'Create or select artist'
-                                : 'Select artist'
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent position="popper">
-                        <SelectGroup>
-                          {artistSelectOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent sideOffset={4} className="max-w-xs">
-                  This artist is not in your library yet. Remove the draft to pick a different
-                  artist.
-                </TooltipContent>
-              </Tooltip>
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                aria-label="Remove draft artist"
-                onClick={onClearStagedArtist}
-                className="h-8 w-8 shrink-0 rounded-none border-0 border-l border-input hover:bg-destructive/20 dark:border-input"
-              >
-                <XIcon className="size-4" />
-              </Button>
-            </div>
-          </Field>
-        ) : (
+                        <SelectTrigger
+                          id={artistFieldId}
+                          type="button"
+                          disabled
+                          className={cn(
+                            'h-8 min-w-0 flex-1 rounded-none border-0 shadow-none disabled:cursor-not-allowed disabled:opacity-100',
+                            'w-full bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent',
+                          )}
+                          onBlur={() => {}}
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingArtists
+                                ? 'Loading...'
+                                : artists.length === 0
+                                  ? 'Create or select artist'
+                                  : 'Select artist'
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          <SelectGroup>
+                            {artistSelectOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={4} className="max-w-xs">
+                    This artist is not in your library yet. Remove the draft to pick a different
+                    artist.
+                  </TooltipContent>
+                </Tooltip>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  aria-label="Remove draft artist"
+                  onClick={onClearStagedArtist}
+                  className="h-8 w-8 shrink-0 rounded-none border-0 border-l border-input hover:bg-destructive/20 dark:border-input"
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </div>
+            </Field>
+          ) : (
+            <SelectField
+              label="Artist"
+              placeholder={
+                isLoadingArtists
+                  ? 'Loading...'
+                  : artists.length === 0
+                    ? 'Create or select artist'
+                    : 'Select artist'
+              }
+              value={formData.artistId}
+              options={artistSelectOptions}
+              disabled={isLoadingArtists}
+              onChange={onArtistIdChange}
+              onBlur={() => {}}
+            />
+          )}
+          {!isLoadingArtists && artists.length === 0 && !isStagedNewArtistSelected && (
+            <p className="text-xs text-muted-foreground">
+              Choose <span className="font-medium text-foreground">Create new artist…</span> above,
+              or{' '}
+              <Link to="/app/library/artists/create" className="text-primary hover:underline">
+                add an artist separately
+              </Link>
+              .
+            </p>
+          )}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
           <SelectField
-            label="Artist"
-            placeholder={
-              isLoadingArtists
-                ? 'Loading...'
-                : artists.length === 0
-                  ? 'Create or select artist'
-                  : 'Select artist'
-            }
-            value={formData.artistId}
-            options={artistSelectOptions}
-            disabled={isLoadingArtists}
-            onChange={onArtistIdChange}
+            label="Album type"
+            placeholder="Select type"
+            value={formData.type}
+            options={albumTypeOptions}
+            onChange={(value) => onUpdate('type', value as typeof formData.type)}
             onBlur={() => {}}
           />
-        )}
-        {!isLoadingArtists && artists.length === 0 && !isStagedNewArtistSelected && (
-          <p className="text-xs text-muted-foreground">
-            Choose <span className="font-medium text-foreground">Create new artist…</span> above, or{' '}
-            <Link to="/app/library/artists/create" className="text-primary hover:underline">
-              add an artist separately
-            </Link>
-            .
-          </p>
-        )}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField
-          label="Album type"
-          placeholder="Select type"
-          value={formData.type}
-          options={albumTypeOptions}
-          onChange={(value) => onUpdate('type', value as typeof formData.type)}
-          onBlur={() => {}}
-        />
-        <DatePickerField
-          label="Release date"
-          value={formData.releaseDate ?? undefined}
-          onChange={(date) => onUpdate('releaseDate', date ?? null)}
-          onBlur={() => {}}
-        />
-      </div>
+          <DatePickerField
+            label="Release date"
+            value={formData.releaseDate ?? undefined}
+            onChange={(date) => onUpdate('releaseDate', date ?? null)}
+            onBlur={() => {}}
+          />
+        </div>
       </div>
     </div>
   );
