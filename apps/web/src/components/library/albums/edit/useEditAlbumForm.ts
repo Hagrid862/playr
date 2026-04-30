@@ -1,7 +1,9 @@
+import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import type { UpdateLibraryAlbumRequest } from '@repo/contracts';
 import { UpdateLibraryAlbumRequestSchema, ZodAlbum } from '@repo/contracts';
 import { useForm } from '@tanstack/react-form';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 export const validateWithZod = (value: UpdateLibraryAlbumRequest) => {
   const result = UpdateLibraryAlbumRequestSchema.safeParse(value);
@@ -19,18 +21,28 @@ interface UseEditAlbumFormProps {
   album: ZodAlbum;
   onSubmit: (
     values: UpdateLibraryAlbumRequest,
+    tracks: EditAlbumTracksSubmitPayload,
     cover?: File,
     shouldDeleteCover?: boolean,
   ) => Promise<void>;
+  prepareTracksSubmit: () =>
+    | { ok: true; payload: EditAlbumTracksSubmitPayload }
+    | { ok: false; error: string };
 }
 
-export function useEditAlbumForm({ album, onSubmit }: UseEditAlbumFormProps) {
+export function useEditAlbumForm({ album, onSubmit, prepareTracksSubmit }: UseEditAlbumFormProps) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [coverPreview, setCoverPreview] = useState<string | undefined>(undefined);
   const [selectedCover, setSelectedCover] = useState<File | undefined>(undefined);
   const [isCoverRemoved, setIsCoverRemoved] = useState(false);
   const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
   const [isMultipleFilesModalOpen, setIsMultipleFilesModalOpen] = useState(false);
+
+  const prepareTracksSubmitRef = useRef(prepareTracksSubmit);
+
+  useEffect(() => {
+    prepareTracksSubmitRef.current = prepareTracksSubmit;
+  }, [prepareTracksSubmit]);
 
   const form = useForm({
     defaultValues: {
@@ -44,8 +56,14 @@ export function useEditAlbumForm({ album, onSubmit }: UseEditAlbumFormProps) {
       onChange: ({ value }) => validateWithZod(value),
     },
     onSubmit: async ({ value }) => {
+      const prep = prepareTracksSubmitRef.current();
+      if (!prep.ok) {
+        toast.error(prep.error);
+        return;
+      }
       await onSubmit(
         { ...value, coverId: isCoverRemoved ? null : value.coverId },
+        prep.payload,
         selectedCover,
         isCoverRemoved,
       );

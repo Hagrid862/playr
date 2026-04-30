@@ -4,7 +4,20 @@ import { albumBuilder, imageBuilder } from '@repo/testing/builders';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import { useEditAlbumForm, validateWithZod } from './useEditAlbumForm';
+
+const emptyTracksPayload: EditAlbumTracksSubmitPayload = {
+  pendingArtistsToCreate: [],
+  existingUpdates: [],
+  deleteIds: [],
+  newTracks: [],
+};
+
+const mockPrepareTracksSubmit = vi.fn(() => ({
+  ok: true as const,
+  payload: emptyTracksPayload,
+}));
 
 const mockAlbum = {
   ...albumBuilder(),
@@ -50,7 +63,11 @@ describe('useEditAlbumForm', () => {
 
   it('initializes with album values', () => {
     const { result } = customRenderHook(() =>
-      useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+      useEditAlbumForm({
+        album: mockAlbum,
+        onSubmit: mockOnSubmit,
+        prepareTracksSubmit: mockPrepareTracksSubmit,
+      }),
     );
 
     expect(result.current.form.state.values.name).toBe(mockAlbum.name);
@@ -68,7 +85,11 @@ describe('useEditAlbumForm', () => {
       releaseDate: null,
     };
     const { result } = customRenderHook(() =>
-      useEditAlbumForm({ album: incompleteAlbum, onSubmit: mockOnSubmit }),
+      useEditAlbumForm({
+        album: incompleteAlbum,
+        onSubmit: mockOnSubmit,
+        prepareTracksSubmit: mockPrepareTracksSubmit,
+      }),
     );
 
     expect(result.current.form.state.values.description).toBe('');
@@ -78,7 +99,11 @@ describe('useEditAlbumForm', () => {
   describe('handleCoverSelect', () => {
     it('sets selected cover and preview for valid image', () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       const file = new File(['image'], 'test.png', { type: 'image/png' });
@@ -92,7 +117,11 @@ describe('useEditAlbumForm', () => {
 
     it('opens format modal for non-image file', () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       const file = new File(['doc'], 'test.pdf', { type: 'application/pdf' });
@@ -107,7 +136,11 @@ describe('useEditAlbumForm', () => {
   describe('handleFiles', () => {
     it('opens multiple files modal for more than one file', () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       const file1 = new File(['image1'], '1.png', { type: 'image/png' });
@@ -124,7 +157,11 @@ describe('useEditAlbumForm', () => {
 
     it('handles dropped single file and updates selected cover', () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       const file1 = new File(['image'], 'single.png', { type: 'image/png' });
@@ -142,7 +179,11 @@ describe('useEditAlbumForm', () => {
   describe('handleRemoveCover', () => {
     it('clears cover and sets isCoverRemoved', () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       act(() => {
@@ -154,7 +195,11 @@ describe('useEditAlbumForm', () => {
 
     it('resets file input context when coverInputRef has current', () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       // Mutate ref
@@ -171,7 +216,11 @@ describe('useEditAlbumForm', () => {
   describe('submission', () => {
     it('calls onSubmit with correct arguments', async () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       await act(async () => {
@@ -181,6 +230,7 @@ describe('useEditAlbumForm', () => {
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith(
           expect.objectContaining({ name: mockAlbum.name }),
+          emptyTracksPayload,
           undefined,
           false,
         );
@@ -189,7 +239,11 @@ describe('useEditAlbumForm', () => {
 
     it('calls onSubmit with isCoverRemoved when cover is removed', async () => {
       const { result } = customRenderHook(() =>
-        useEditAlbumForm({ album: mockAlbum, onSubmit: mockOnSubmit }),
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: mockPrepareTracksSubmit,
+        }),
       );
 
       act(() => {
@@ -203,6 +257,7 @@ describe('useEditAlbumForm', () => {
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith(
           expect.objectContaining({ coverId: null }),
+          emptyTracksPayload,
           undefined,
           true,
         );

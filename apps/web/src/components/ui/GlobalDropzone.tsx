@@ -79,7 +79,7 @@ export function GlobalDropzone({
   }, [handleDragEnter, handleDragLeave, handleDragOver, handleDrop]);
 
   return (
-    <div className={cn('relative w-full h-full', className)}>
+    <div className={cn('relative min-h-0 w-full h-full', className)}>
       {children}
 
       {isDragging && (

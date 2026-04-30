@@ -24,21 +24,27 @@ export const bulkCreateLibraryTracks = async ({
   createResponse: BulkCreateLibraryTracksResponse;
   uploadResponse: BulkUploadTrackAudioResponse;
 }> => {
-  const artistIds = explicitArtistIds?.length
+  const defaultArtistIds = explicitArtistIds?.length
     ? explicitArtistIds
     : (album.artists?.map((a) => a.id) ?? []);
-  if (artistIds.length === 0) {
+  if (defaultArtistIds.length === 0) {
     throw new Error('Album must have at least one artist');
   }
 
   const bulkCreateRequest: BulkCreateLibraryTracksRequest = {
-    tracks: tracks.map(({ title, trackNumber, diskNumber, explicit }) => ({
-      title,
-      trackNumber,
-      diskNumber,
-      explicit,
-      artistIds,
-    })),
+    tracks: tracks.map(
+      ({ title, trackNumber, diskNumber, explicit, artistIds: perTrackArtists }) => {
+        const resolved =
+          perTrackArtists && perTrackArtists.length > 0 ? perTrackArtists : defaultArtistIds;
+        return {
+          title,
+          trackNumber,
+          diskNumber,
+          explicit,
+          artistIds: resolved,
+        };
+      },
+    ),
   };
 
   const createResponse = await apiClient<BulkCreateLibraryTracksResponse>(

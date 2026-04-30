@@ -5,6 +5,8 @@ export interface BulkTrackItem {
   trackNumber: number;
   diskNumber: number;
   explicit: boolean;
+  /** When set (non-empty), used for bulk create per-track artist assignment. */
+  artistIds?: string[];
 }
 
 export interface TrackWithCover {
