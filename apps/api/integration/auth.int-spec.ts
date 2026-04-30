@@ -13,6 +13,15 @@ import request from 'supertest';
 import { vi } from 'vitest';
 import { createIntegrationApp } from './test-utils';
 
+vi.mock('argon2', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('argon2')>();
+  return {
+    ...actual,
+    hash: vi.fn().mockResolvedValue('hashed-password'),
+    verify: vi.fn().mockResolvedValue(true),
+  };
+});
+
 describe('AuthController (Integration)', () => {
   let app: INestApplication;
   let prismaMock: PrismaServiceMock;
@@ -139,6 +148,127 @@ describe('AuthController (Integration)', () => {
     });
   });
 
+  describe('POST /auth/verify-email', () => {
+    const verifyData = {
+      email: 'test@example.com',
+      otpCode: '12345678',
+    };
+
+    it('should verify email successfully and return tokens (200)', async () => {
+      const emailObj = emailAddressBuilder({
+        email: verifyData.email,
+        status: EmailStatus.pending,
+      });
+      const userObj = userBuilder({ id: emailObj.userId });
+
+      // Mock getting email
+      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce(emailObj);
+
+      // Mock OTP verification (Redis mock)
+      const redis = app.get('REDIS_CLIENT');
+      redis.set.mockResolvedValueOnce('OK'); // claim lock
+      redis.get.mockResolvedValueOnce('hashed-otp'); // get otp
+      redis.del.mockResolvedValueOnce(1); // delete otp
+      redis.eval.mockResolvedValueOnce(1); // release lock
+
+      // Mock update
+      prismaMock.client.emailAddress.update.mockResolvedValue({
+        ...emailObj,
+        status: EmailStatus.verified,
+      });
+
+      // Mock getting user (twice: once in repo, once in repo again but handled by Mock)
+      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce({
+        ...emailObj,
+        user: userObj,
+      } as any);
+
+      // Mock session and refresh token creation for generateAuthTokens
+      prismaMock.client.session.create.mockResolvedValue(sessionBuilder({ userId: userObj.id }));
+      prismaMock.client.refreshToken.create.mockResolvedValue(refreshTokenBuilder());
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send(verifyData)
+        .expect(200);
+
+      expect(response.body.data.accessToken).toBeDefined();
+      expect(response.body.data.user.id).toBe(userObj.id);
+    });
+
+    it('should return 401 for invalid OTP code', async () => {
+      const emailObj = emailAddressBuilder({ email: verifyData.email });
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+
+      // Mock OTP verification failure
+      const redis = app.get('REDIS_CLIENT');
+      redis.set.mockResolvedValueOnce('OK');
+      redis.get.mockResolvedValueOnce('hashed-otp');
+      redis.eval.mockResolvedValueOnce(1);
+
+      // Argon2 verify returns false
+      const argon2 = await import('argon2');
+      vi.mocked(argon2.verify).mockResolvedValueOnce(false);
+
+      await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send(verifyData)
+        .expect(401);
+    });
+
+    it('should return 400 if email not found', async () => {
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .post('/auth/verify-email')
+        .send(verifyData)
+        .expect(400);
+    });
+  });
+
+  describe('POST /auth/resend-email-verification-code', () => {
+    const resendData = { email: 'test@example.com' };
+
+    it('should resend verification code successfully (200)', async () => {
+      const emailObj = emailAddressBuilder({
+        email: resendData.email,
+        status: EmailStatus.created,
+      });
+
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/resend-email-verification-code')
+        .send(resendData)
+        .expect(200);
+
+      expect(response.body.data.isEmailSent).toBe(true);
+    });
+
+    it('should return 400 if email is already verified', async () => {
+      const emailObj = emailAddressBuilder({
+        email: resendData.email,
+        status: EmailStatus.verified,
+      });
+
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+
+      await request(app.getHttpServer())
+        .post('/auth/resend-email-verification-code')
+        .send(resendData)
+        .expect(400);
+    });
+
+    it('should return 400 if email not found', async () => {
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .post('/auth/resend-email-verification-code')
+        .send(resendData)
+        .expect(400);
+    });
+  });
+
   describe('POST /auth/login', () => {
     const loginData = {
       email: 'test@example.com',
@@ -194,8 +324,6 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 401 for invalid password', async () => {
-      const hashedPassword = await import('argon2').then((a) => a.hash('different-password'));
-
       prismaMock.client.emailAddress.findFirst.mockResolvedValue({
         ...emailAddressBuilder({
           email: loginData.email,
@@ -205,9 +333,11 @@ describe('AuthController (Integration)', () => {
         user: userBuilder({
           id: 'user-123',
           username: 'testuser',
-          password: hashedPassword,
         }),
-      } as EmailAddress & { user: User });
+      } as any);
+
+      const argon2 = await import('argon2');
+      vi.mocked(argon2.verify).mockResolvedValueOnce(false);
 
       await request(app.getHttpServer()).post('/auth/login').send(loginData).expect(401);
     });
