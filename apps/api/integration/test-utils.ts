@@ -12,6 +12,7 @@ import { AppModule } from '../src/app.module';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
 import { PrismaService } from '../src/shared/services/prisma.service';
+import { MailerService } from '@nestjs-modules/mailer';
 
 // Mock BullMQ to avoid Redis connections in integration tests
 vi.mock('@nestjs/bullmq', async () => {
@@ -66,7 +67,20 @@ export async function createIntegrationApp(
     imports: [AppModule],
   })
     .overrideProvider(PrismaService)
-    .useClass(PrismaServiceMock);
+    .useClass(PrismaServiceMock)
+    .overrideProvider('REDIS_CLIENT')
+    .useValue({
+      get: vi.fn(),
+      set: vi.fn().mockResolvedValue('OK'),
+      del: vi.fn(),
+      eval: vi.fn(),
+      on: vi.fn(),
+      quit: vi.fn().mockResolvedValue('OK'),
+    })
+    .overrideProvider(MailerService)
+    .useValue({
+      sendMail: vi.fn().mockResolvedValue({}),
+    });
 
   moduleBuilder = builder(moduleBuilder);
 

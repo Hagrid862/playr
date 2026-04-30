@@ -48,24 +48,30 @@ describe('AuthController (Integration)', () => {
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 
       // Mock successful creation
-      prismaMock.client.user.create.mockResolvedValue(
-        userBuilder({ ...validRegistration, id: 'user-123', username: validRegistration.username }),
-      );
-      prismaMock.client.emailAddress.create.mockResolvedValue(
-        emailAddressBuilder({
-          userId: 'user-123',
-          email: validRegistration.email,
-          type: EmailType.primary,
-          status: EmailStatus.verified,
-        }),
-      );
+      const user = userBuilder({
+        ...validRegistration,
+        id: 'user-123',
+        username: validRegistration.username,
+      });
+      const email = emailAddressBuilder({
+        userId: 'user-123',
+        email: validRegistration.email,
+        type: EmailType.primary,
+        status: EmailStatus.created,
+      });
+
+      prismaMock.client.user.create.mockResolvedValue({
+        ...user,
+        emailAddresses: [email],
+      } as User & { emailAddresses: EmailAddress[] });
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')
         .send(validRegistration)
         .expect(201);
 
-      expect(response.body.data.username).toBe(validRegistration.username);
+      expect(response.body.data.user.username).toBe(validRegistration.username);
+      expect(response.body.data.isEmailSent).toBeDefined();
     });
 
     it('should return 409 if email already exists', async () => {
@@ -115,7 +121,7 @@ describe('AuthController (Integration)', () => {
         .send(invalidRegistration)
         .expect(400);
 
-      // nestjs-zod usually returns validation errors in a specific format
+      // nestjs-zod usually returns validation errors in a specific format. 
       // We check if the response has an error property
       expect(response.body.error).toBeDefined();
     });
@@ -176,7 +182,7 @@ describe('AuthController (Integration)', () => {
       const response = await request(app.getHttpServer())
         .post('/auth/login')
         .send(loginData)
-        .expect(201); // Controller login method actually returns 201 by default unless @HttpCode is used
+        .expect(200);
 
       expect(response.body.data.accessToken).toBeDefined();
       expect(response.body.data.user.username).toBe(userBase.username);
@@ -262,7 +268,7 @@ describe('AuthController (Integration)', () => {
       const response = await request(app.getHttpServer())
         .post('/auth/refresh')
         .set('Cookie', `refreshToken=${signedToken}`)
-        .expect(201);
+        .expect(200);
 
       expect(response.body.data.accessToken).toBeDefined();
       expect(response.body.data.refreshToken).toBeUndefined();
