@@ -8,6 +8,7 @@ import { sha256HexFromBlob } from '@/lib/crypto/sha256HexFromBlob';
 import type { BulkTrackItem, CoverArtGroup, TrackWithCover } from '@/lib/types/library';
 import type { CreateLibraryAlbumRequest } from '@repo/contracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { deriveConsistentMetadataArtistName } from './deriveConsistentMetadataArtistName';
 
 export type LibraryAlbumFromFilesFormData = Pick<
   CreateLibraryAlbumRequest,
@@ -47,6 +48,8 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
   const [isScanningCovers, setIsScanningCovers] = useState(false);
   const [manualAlbumCoverFile, setManualAlbumCoverFile] = useState<File | null>(null);
   const [manualAlbumCoverPreviewUrl, setManualAlbumCoverPreviewUrl] = useState<string | null>(null);
+  /** Single consistent non-empty artist across tracks (normalized); drives autofill when `artistId` is empty. */
+  const [metadataSuggestedArtistName, setMetadataSuggestedArtistName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const manualAlbumCoverFileRef = useRef<File | null>(null);
   const tracksRef = useRef(tracks);
@@ -66,6 +69,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
 
     const scan = async () => {
       setIsScanningMetadata(true);
+      setMetadataSuggestedArtistName(null);
       const results: ExtractedAudioMetadata[] = [];
 
       for (const track of tracks) {
@@ -85,6 +89,9 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
             : '';
 
         const year = results.find((r) => r.year)?.year;
+
+        const suggestedArtistName = deriveConsistentMetadataArtistName(results);
+        setMetadataSuggestedArtistName(suggestedArtistName);
 
         setFormData((prev) => ({
           ...prev,
@@ -286,6 +293,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
 
   const clearTracks = useCallback(() => {
     lastScannedTrackIds.current = '';
+    setMetadataSuggestedArtistName(null);
     setTracksWithCovers([]);
     setCoverGroups([]);
     setSelectedCoverTrackId(null);
@@ -339,6 +347,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
 
   return {
     formData,
+    suggestedArtistName: metadataSuggestedArtistName,
     tracks,
     tracksWithCovers,
     coverGroups,

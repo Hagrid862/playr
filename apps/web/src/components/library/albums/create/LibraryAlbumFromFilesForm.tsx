@@ -8,7 +8,7 @@ import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCr
 import { useLibraryStore } from '@/stores/library.store';
 import { CircleNotchIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CoverSelectionBanner } from '../../tracks/bulk/CoverSelectionBanner';
 import { AlbumAudioDropCard } from './AlbumAudioDropCard';
@@ -16,7 +16,7 @@ import { CreateLibraryArtistNameModal } from './CreateLibraryArtistNameModal';
 import { LibraryAlbumFromFilesProcessingOverlay } from './LibraryAlbumFromFilesProcessingOverlay';
 import { LibraryAlbumFromFilesTracksSection } from './LibraryAlbumFromFilesTracksSection';
 import { LibraryAlbumMetadataSection } from './LibraryAlbumMetadataSection';
-import { makeLocalPendingArtistId, isLocalPendingArtistId } from './pendingLibraryArtist';
+import { makeLocalPendingArtistId, isLocalPendingArtistId, normalizeLibraryArtistNameForMatch } from './pendingLibraryArtist';
 import { useLibraryAlbumFromFilesForm } from './useLibraryAlbumFromFilesForm';
 
 /** Select sentinel: opens the “new artist” modal instead of setting `artistId`. */
@@ -49,6 +49,7 @@ export function LibraryAlbumFromFilesForm({
 
   const {
     formData,
+    suggestedArtistName,
     tracks,
     tracksWithCovers,
     coverGroups,
@@ -68,6 +69,37 @@ export function LibraryAlbumFromFilesForm({
     updateFormData,
     isFormValid,
   } = useLibraryAlbumFromFilesForm({ initialArtistId });
+
+  useEffect(() => {
+    if (isLoadingArtists) return;
+    const raw = suggestedArtistName?.trim();
+    if (!raw) return;
+    if (formData.artistId !== '') return;
+
+    const sugNorm = normalizeLibraryArtistNameForMatch(raw);
+    const matches = artists.filter(
+      (a) => normalizeLibraryArtistNameForMatch(a.name) === sugNorm,
+    );
+    if (matches.length > 1) return;
+    if (matches.length === 1) {
+      const id = matches[0]?.id;
+      if (id) updateFormData('artistId', id);
+      return;
+    }
+    if (pendingArtists.some((p) => normalizeLibraryArtistNameForMatch(p.name) === sugNorm)) {
+      return;
+    }
+    const id = makeLocalPendingArtistId();
+    setPendingArtists((prev) => [...prev, { id, name: raw }]);
+    updateFormData('artistId', id);
+  }, [
+    artists,
+    formData.artistId,
+    isLoadingArtists,
+    pendingArtists,
+    suggestedArtistName,
+    updateFormData,
+  ]);
 
   const embeddedCoverPreviewUrl = useMemo(() => {
     if (selectedCoverTrackId == null) return null;

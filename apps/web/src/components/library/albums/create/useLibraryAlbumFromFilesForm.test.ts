@@ -49,6 +49,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
         artistId: '',
         releaseDate: null,
       });
+      expect(result.current.suggestedArtistName).toBeNull();
       expect(result.current.tracks).toEqual([]);
       expect(result.current.tracksWithCovers).toEqual([]);
       expect(result.current.isFormValid).toBe(false);
@@ -128,6 +129,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
 
       expect(result.current.formData.name).toBe('Best Album');
       expect(result.current.formData.releaseDate?.getFullYear()).toBe(2024);
+      expect(result.current.suggestedArtistName).toBe('Artist A');
 
       expect(result.current.tracks[0]?.title).toBe('Song 1');
       expect(result.current.tracks[1]?.title).toBe('Song 2');
@@ -152,6 +154,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
 
       expect(result.current.formData.name).toBe('');
       expect(result.current.tracks[0]?.title).toBe('01_song');
+      expect(result.current.suggestedArtistName).toBeNull();
     });
 
     it('handles empty album names during metadata scan array reduction', async () => {
@@ -174,6 +177,133 @@ describe('useLibraryAlbumFromFilesForm', () => {
       });
 
       expect(result.current.formData.name).toBe('');
+      expect(result.current.suggestedArtistName).toBeNull();
+    });
+
+    it('does not overwrite album name when already set before metadata scan', async () => {
+      vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
+        title: 'Song',
+        artist: 'A',
+        album: 'From Metadata',
+        year: 2019,
+        trackNo: 1,
+        diskNo: 1,
+      });
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(null);
+
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.updateFormData('name', 'User Title');
+      });
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('t.mp3')]));
+      });
+
+      await waitFor(() => {
+        expect(result.current.isScanningMetadata).toBe(false);
+      });
+
+      expect(result.current.formData.name).toBe('User Title');
+      expect(result.current.suggestedArtistName).toBe('A');
+    });
+
+    it('sets suggestedArtistName to null when metadata artists conflict across tracks', async () => {
+      vi.mocked(extractMetadataFromAudioFile)
+        .mockResolvedValueOnce({
+          title: 'A',
+          artist: 'Artist One',
+          album: 'Alb',
+          year: 2020,
+          trackNo: 1,
+          diskNo: 1,
+        })
+        .mockResolvedValueOnce({
+          title: 'B',
+          artist: 'Artist Two',
+          album: 'Alb',
+          year: 2020,
+          trackNo: 2,
+          diskNo: 1,
+        });
+
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(
+          createFileList([createAudioFile('a.mp3'), createAudioFile('b.mp3')]),
+        );
+      });
+
+      await waitFor(() => {
+        expect(result.current.isScanningMetadata).toBe(false);
+      });
+
+      expect(result.current.suggestedArtistName).toBeNull();
+    });
+
+    it('suggests artist when only some tracks have the same artist tag', async () => {
+      vi.mocked(extractMetadataFromAudioFile)
+        .mockResolvedValueOnce({
+          title: 'A',
+          artist: 'Shared',
+          album: 'Alb',
+          year: 2021,
+          trackNo: 1,
+          diskNo: 1,
+        })
+        .mockResolvedValueOnce({
+          title: 'B',
+          album: 'Alb',
+          year: 2021,
+          trackNo: 2,
+          diskNo: 1,
+        });
+
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(
+          createFileList([createAudioFile('a.mp3'), createAudioFile('b.mp3')]),
+        );
+      });
+
+      await waitFor(() => {
+        expect(result.current.isScanningMetadata).toBe(false);
+      });
+
+      expect(result.current.suggestedArtistName).toBe('Shared');
+    });
+
+    it('clears suggestedArtistName when tracks are cleared', async () => {
+      vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
+        title: 'Song',
+        artist: 'Meta Artist',
+        album: 'Alb',
+        year: 2022,
+        trackNo: 1,
+        diskNo: 1,
+      });
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(null);
+
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('track.mp3')]));
+      });
+
+      await waitFor(() => {
+        expect(result.current.isScanningMetadata).toBe(false);
+      });
+
+      expect(result.current.suggestedArtistName).toBe('Meta Artist');
+
+      act(() => {
+        result.current.clearTracks();
+      });
+
+      expect(result.current.suggestedArtistName).toBeNull();
     });
 
     it('derives cover image fallback correctly', async () => {

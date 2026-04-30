@@ -5,3 +5,8 @@ export function makeLocalPendingArtistId(): string {
 export function isLocalPendingArtistId(id: string): boolean {
   return id.startsWith('local:pending:');
 }
+
+/** Case-insensitive trimmed comparison for autofill / duplicate checks. */
+export function normalizeLibraryArtistNameForMatch(name: string): string {
+  return name.trim().toLowerCase();
+}
