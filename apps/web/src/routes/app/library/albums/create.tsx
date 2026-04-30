@@ -20,8 +20,8 @@ function RouteComponent() {
   const libraryId = useLibraryStore((state) => state.libraryId);
 
   return (
-    <div className="-mx-4 flex max-lg:h-full min-h-0 w-[calc(100%+2rem)] min-w-0 flex-col gap-6 px-4 pb-6 md:pb-8 lg:h-[calc(100dvh-15rem)] lg:max-h-[calc(100dvh-15rem)] lg:min-h-[calc(100dvh-15rem)] lg:overflow-hidden lg:px-6 xl:px-8">
-      <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-[1920px] flex-col gap-6 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
+    <div className="-mx-4 flex max-lg:h-full min-h-0 w-[calc(100%+2rem)] min-w-0 flex-col gap-6 overflow-y-auto px-4 pb-6 md:pb-8 lg:h-[calc(100dvh-15rem)] lg:max-h-[calc(100dvh-15rem)] lg:min-h-[calc(100dvh-15rem)] lg:px-6 xl:px-8">
+      <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-[1920px] flex-col gap-6 overflow-visible lg:flex-1 lg:min-h-0">
         <div className="flex shrink-0 flex-col gap-2">
           <Alert className="border-primary/20 bg-primary/5">
             <AlertTitle className="text-primary">Create album with tracks</AlertTitle>

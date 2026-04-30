@@ -127,9 +127,7 @@ export function LibraryAlbumMetadataSection({
   }, []);
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-sm font-medium">Album details</h3>
-
+    <div className="flex flex-col gap-6 overflow-visible lg:max-h-full lg:min-h-0 lg:flex-1">
       <Dialog open={isMultipleFilesModalOpen} onOpenChange={setIsMultipleFilesModalOpen}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
@@ -167,8 +165,11 @@ export function LibraryAlbumMetadataSection({
         </DialogContent>
       </Dialog>
 
-      <div className="flex flex-col gap-8 md:flex-row md:gap-10">
-        <div className="flex shrink-0 flex-col items-center gap-3">
+      <div className="flex shrink-0 flex-col gap-6">
+        <h3 className="text-sm font-medium">Album details</h3>
+
+        <div className="flex flex-col gap-8 overflow-visible md:flex-row md:gap-10">
+          <div className="flex shrink-0 flex-col items-center gap-3 overflow-visible">
           <input
             ref={coverInputRef}
             type="file"
@@ -176,39 +177,49 @@ export function LibraryAlbumMetadataSection({
             className="hidden"
             onChange={handleCoverInputChange}
           />
-          <div
-            role="button"
-            tabIndex={0}
-            className="group relative flex size-40 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-stone-700/60 bg-stone-900 shadow-xl transition-all hover:border-primary/50"
-            onClick={() => coverInputRef.current?.click()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                coverInputRef.current?.click();
-              }
-            }}
-            onDrop={handleCoverDrop}
-            onDragOver={handleCoverDragOver}
-          >
-            {coverPreviewUrl ? (
+          <div className="relative shrink-0 overflow-visible">
+            {coverPreviewUrl && (
               <img
                 src={coverPreviewUrl}
-                alt={formData.name || 'Cover preview'}
-                className="size-full object-cover transition-opacity group-hover:opacity-60"
-              />
-            ) : (
-              <MusicNotesIcon
-                size={44}
-                className="text-muted-foreground transition-colors group-hover:text-primary"
-                weight="duotone"
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 size-40 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
               />
             )}
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-950/60 opacity-0 transition-opacity group-hover:opacity-100">
-              <div className="flex flex-col items-center gap-1.5">
-                <CameraIcon size={22} className="text-white" />
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white">
-                  {coverPreviewUrl ? 'Change cover' : 'Upload cover'}
-                </span>
+            <div
+              role="button"
+              tabIndex={0}
+              className="group relative flex size-40 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-stone-700/60 bg-stone-900 shadow-xl transition-all hover:border-primary/50"
+              onClick={() => coverInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  coverInputRef.current?.click();
+                }
+              }}
+              onDrop={handleCoverDrop}
+              onDragOver={handleCoverDragOver}
+            >
+              {coverPreviewUrl ? (
+                <img
+                  src={coverPreviewUrl}
+                  alt={formData.name || 'Cover preview'}
+                  className="size-full rounded-[13px] object-cover transition-opacity group-hover:opacity-60"
+                />
+              ) : (
+                <MusicNotesIcon
+                  size={44}
+                  className="text-muted-foreground transition-colors group-hover:text-primary"
+                  weight="duotone"
+                />
+              )}
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[13px] bg-stone-950/60 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="flex flex-col items-center gap-1.5">
+                  <CameraIcon size={22} className="text-white" />
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-white">
+                    {coverPreviewUrl ? 'Change cover' : 'Upload cover'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -249,13 +260,15 @@ export function LibraryAlbumMetadataSection({
             className="min-h-32"
           />
         </div>
+        </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="min-h-0 flex-1 space-y-6 lg:overflow-y-auto lg:pr-1">
+        <div className="space-y-1">
         {isStagedNewArtistSelected ? (
           <Field>
             <FieldLabel htmlFor={artistFieldId}>Artist</FieldLabel>
-            <div className="flex w-full overflow-hidden rounded-lg border border-input bg-background dark:bg-input/30">
+            <div className="flex w-full overflow-visible rounded-lg border border-input bg-background dark:bg-input/30">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span
@@ -359,6 +372,7 @@ export function LibraryAlbumMetadataSection({
           onChange={(date) => onUpdate('releaseDate', date ?? null)}
           onBlur={() => {}}
         />
+      </div>
       </div>
     </div>
   );

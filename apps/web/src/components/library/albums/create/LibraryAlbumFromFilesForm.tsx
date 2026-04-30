@@ -16,7 +16,11 @@ import { CreateLibraryArtistNameModal } from './CreateLibraryArtistNameModal';
 import { LibraryAlbumFromFilesProcessingOverlay } from './LibraryAlbumFromFilesProcessingOverlay';
 import { LibraryAlbumFromFilesTracksSection } from './LibraryAlbumFromFilesTracksSection';
 import { LibraryAlbumMetadataSection } from './LibraryAlbumMetadataSection';
-import { makeLocalPendingArtistId, isLocalPendingArtistId, normalizeLibraryArtistNameForMatch } from './pendingLibraryArtist';
+import {
+  makeLocalPendingArtistId,
+  isLocalPendingArtistId,
+  normalizeLibraryArtistNameForMatch,
+} from './pendingLibraryArtist';
 import { useLibraryAlbumFromFilesForm } from './useLibraryAlbumFromFilesForm';
 
 /** Select sentinel: opens the “new artist” modal instead of setting `artistId`. */
@@ -77,9 +81,7 @@ export function LibraryAlbumFromFilesForm({
     if (formData.artistId !== '') return;
 
     const sugNorm = normalizeLibraryArtistNameForMatch(raw);
-    const matches = artists.filter(
-      (a) => normalizeLibraryArtistNameForMatch(a.name) === sugNorm,
-    );
+    const matches = artists.filter((a) => normalizeLibraryArtistNameForMatch(a.name) === sugNorm);
     if (matches.length > 1) return;
     if (matches.length === 1) {
       const id = matches[0]?.id;
@@ -255,7 +257,7 @@ export function LibraryAlbumFromFilesForm({
       : `Create album & upload ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`;
 
   return (
-    <div className="relative flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden">
+    <div className="relative flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-col overflow-visible">
       <CreateLibraryArtistNameModal
         open={createArtistModalOpen}
         onOpenChange={setCreateArtistModalOpen}
@@ -266,10 +268,10 @@ export function LibraryAlbumFromFilesForm({
 
       <form
         onSubmit={handleSubmit}
-        className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden"
+        className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-visible"
       >
-        <div className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-stretch lg:gap-8 xl:gap-12 2xl:gap-16">
-          <aside className="w-full shrink-0 lg:w-[min(100%,24rem)] lg:min-h-0 lg:max-h-full lg:overflow-y-auto lg:overscroll-contain lg:px-3 xl:w-[min(100%,28rem)] 2xl:w-[30rem]">
+        <div className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-stretch lg:gap-8 xl:gap-12 2xl:gap-16 overflow-visible">
+          <aside className="flex w-full shrink-0 flex-col overflow-visible lg:max-h-full lg:min-h-0 lg:w-[min(100%,24rem)] lg:overscroll-contain lg:px-3 xl:w-[min(100%,28rem)] 2xl:w-[30rem]">
             <LibraryAlbumMetadataSection
               formData={formData}
               artists={artists}
