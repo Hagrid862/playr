@@ -41,7 +41,7 @@ export function RouteComponent() {
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error('Registration failed', err);
+        console.error('Login failed', err);
         toast.error(message);
       }
     }
