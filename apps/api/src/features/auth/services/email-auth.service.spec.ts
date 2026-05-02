@@ -63,13 +63,18 @@ describe('EmailAuthService', () => {
 
       // Assert
       expect(result).toBe(true);
-      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
+      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(
+        mockEmailAddress,
+        'emailVerification',
+      );
       expect(mailService.sendEmailVerificationCode).toHaveBeenCalledWith(
         mockEmailAddress,
         mockOtpCode,
         expect.any(Number), // OTP_CODE_TTL is a constant, so any number is fine
       );
-      expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailAddress.id, { status: 'pending' });
+      expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailAddress.id, {
+        status: 'pending',
+      });
       expect(logger.error).not.toHaveBeenCalled();
     });
 
@@ -84,7 +89,10 @@ describe('EmailAuthService', () => {
 
       // Assert
       expect(result).toBe(false);
-      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
+      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(
+        mockEmailAddress,
+        'emailVerification',
+      );
       expect(mailService.sendEmailVerificationCode).toHaveBeenCalledWith(
         mockEmailAddress,
         mockOtpCode,
@@ -104,7 +112,10 @@ describe('EmailAuthService', () => {
 
       // Assert
       expect(result).toBe(false);
-      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
+      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(
+        mockEmailAddress,
+        'emailVerification',
+      );
       expect(mailService.sendEmailVerificationCode).not.toHaveBeenCalled();
       expect(emailAddressRepository.edit).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledWith(
@@ -144,13 +155,18 @@ describe('EmailAuthService', () => {
 
       // Assert
       expect(result).toBe(false);
-      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
+      expect(otpCodeService.generateOTPCode).toHaveBeenCalledWith(
+        mockEmailAddress,
+        'emailVerification',
+      );
       expect(mailService.sendEmailVerificationCode).toHaveBeenCalledWith(
         mockEmailAddress,
         mockOtpCode,
         expect.any(Number),
       );
-      expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailAddress.id, { status: 'pending' });
+      expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailAddress.id, {
+        status: 'pending',
+      });
       expect(logger.error).toHaveBeenCalledWith(
         'Failed to begin email verification flow',
         expect.stringContaining('Database update failed'),

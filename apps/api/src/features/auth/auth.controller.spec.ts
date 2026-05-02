@@ -132,7 +132,7 @@ describe('AuthController', () => {
       await expect(controller.refresh(req)).rejects.toThrow(UnauthorizedException);
     });
   });
- 
+
   describe('verify-email', () => {
     it('should execute VerifyEmailCommand', async () => {
       const dto = verifyEmailRequestBuilder();

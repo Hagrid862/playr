@@ -64,10 +64,15 @@ describe('OtpCodeService', () => {
       hashingService.hash.mockResolvedValue('hashed-otp');
       redis.set.mockRejectedValue(new Error('Redis error'));
 
-      await expect(service.generateOTPCode(mockEmailAddress, 'emailVerification'))
-        .rejects.toThrow(InternalServerErrorException);
+      await expect(service.generateOTPCode(mockEmailAddress, 'emailVerification')).rejects.toThrow(
+        InternalServerErrorException,
+      );
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching(new RegExp(`Error generating OTP for email id ${mockEmailAddress.id} and type emailVerification: Redis error`)),
+        expect.stringMatching(
+          new RegExp(
+            `Error generating OTP for email id ${mockEmailAddress.id} and type emailVerification: Redis error`,
+          ),
+        ),
         undefined,
         'OtpCodeService',
       );
@@ -77,10 +82,15 @@ describe('OtpCodeService', () => {
       hashingService.hash.mockResolvedValue('hashed-otp');
       redis.set.mockRejectedValue('String error');
 
-      await expect(service.generateOTPCode(mockEmailAddress, 'emailVerification'))
-        .rejects.toThrow(InternalServerErrorException);
+      await expect(service.generateOTPCode(mockEmailAddress, 'emailVerification')).rejects.toThrow(
+        InternalServerErrorException,
+      );
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching(new RegExp(`Error generating OTP for email id ${mockEmailAddress.id} and type emailVerification: Unknown error`)),
+        expect.stringMatching(
+          new RegExp(
+            `Error generating OTP for email id ${mockEmailAddress.id} and type emailVerification: Unknown error`,
+          ),
+        ),
         undefined,
         'OtpCodeService',
       );
@@ -145,12 +155,17 @@ describe('OtpCodeService', () => {
       redis.get.mockRejectedValue(new Error('Redis crash'));
       redis.eval.mockResolvedValue(1); // Ensure lock release doesn't throw
 
-      await expect(service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification'))
-        .rejects.toThrow(InternalServerErrorException);
+      await expect(
+        service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification'),
+      ).rejects.toThrow(InternalServerErrorException);
 
       expect(redis.eval).toHaveBeenCalled(); // finally, block
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching(new RegExp(`Error verifying OTP for email id ${mockEmailAddress.id} and type emailVerification: Redis crash`)),
+        expect.stringMatching(
+          new RegExp(
+            `Error verifying OTP for email id ${mockEmailAddress.id} and type emailVerification: Redis crash`,
+          ),
+        ),
         undefined,
         'OtpCodeService',
       );
@@ -161,11 +176,16 @@ describe('OtpCodeService', () => {
       redis.get.mockRejectedValue('String error');
       redis.eval.mockResolvedValue(1);
 
-      await expect(service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification'))
-        .rejects.toThrow(InternalServerErrorException);
+      await expect(
+        service.verifyOTPCode(mockEmailAddress, otp, 'emailVerification'),
+      ).rejects.toThrow(InternalServerErrorException);
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringMatching(new RegExp(`Error verifying OTP for email id ${mockEmailAddress.id} and type emailVerification: Unknown error`)),
+        expect.stringMatching(
+          new RegExp(
+            `Error verifying OTP for email id ${mockEmailAddress.id} and type emailVerification: Unknown error`,
+          ),
+        ),
         undefined,
         'OtpCodeService',
       );
@@ -186,7 +206,11 @@ describe('OtpCodeService', () => {
       expect(result).toBe(true); // Verification still succeeds, but lock release fails
       expect(redis.eval).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringMatching(new RegExp(`Failed to release OTP claim lock for key otp:emailVerification:${mockEmailAddress.email}:claim: ${releaseError.message}`)),
+        expect.stringMatching(
+          new RegExp(
+            `Failed to release OTP claim lock for key otp:emailVerification:${mockEmailAddress.email}:claim: ${releaseError.message}`,
+          ),
+        ),
         'OtpCodeService',
       );
     });
@@ -206,7 +230,11 @@ describe('OtpCodeService', () => {
       expect(result).toBe(true); // Verification still succeeds, but lock release fails
       expect(redis.eval).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringMatching(new RegExp(`Failed to release OTP claim lock for key otp:emailVerification:${mockEmailAddress.email}:claim: Unknown error`)),
+        expect.stringMatching(
+          new RegExp(
+            `Failed to release OTP claim lock for key otp:emailVerification:${mockEmailAddress.email}:claim: Unknown error`,
+          ),
+        ),
         'OtpCodeService',
       );
     });

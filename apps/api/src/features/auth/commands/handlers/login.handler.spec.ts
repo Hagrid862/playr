@@ -144,9 +144,7 @@ describe('LoginHandler', () => {
       const command = new LoginCommand(mockUser, true);
 
       // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(
-        'User has no primary email address',
-      );
+      await expect(handler.execute(command)).rejects.toThrow('User has no primary email address');
     });
   });
 });

@@ -23,10 +23,7 @@ describe('MailService', () => {
     logger = createMock<Logger>();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        MailService,
-        { provide: MailerService, useValue: mailerService },
-      ],
+      providers: [MailService, { provide: MailerService, useValue: mailerService }],
     })
       .setLogger(logger)
       .compile();

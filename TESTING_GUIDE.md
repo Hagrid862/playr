@@ -16,21 +16,21 @@ This guide covers comprehensive testing strategies for modern TypeScript/JavaScr
 
 ### Apps with Tests
 
-| App | Test Type | Runner | Purpose |
-|-----|-----------|--------|---------|
-| `apps/api` | Unit + Integration | Vitest | Backend API testing |
-| `apps/admin` | Unit | Vitest | Admin interface testing |
-| `apps/artist` | Unit | Vitest | Artist interface testing |
-| `apps/web` | Unit | Vitest | Web interface testing |
-| `apps/e2e` | E2E | Playwright | Full user journey testing |
+| App           | Test Type          | Runner     | Purpose                   |
+| ------------- | ------------------ | ---------- | ------------------------- |
+| `apps/api`    | Unit + Integration | Vitest     | Backend API testing       |
+| `apps/admin`  | Unit               | Vitest     | Admin interface testing   |
+| `apps/artist` | Unit               | Vitest     | Artist interface testing  |
+| `apps/web`    | Unit               | Vitest     | Web interface testing     |
+| `apps/e2e`    | E2E                | Playwright | Full user journey testing |
 
 ### Packages with Tests
 
-| Package | Test Type | Purpose |
-|---------|-----------|---------|
-| `packages/db` | Unit + Integration | Database operations |
-| `packages/contracts` | Unit | Data validation schemas |
-| `packages/testing` | Unit | Test utilities and builders |
+| Package              | Test Type          | Purpose                     |
+| -------------------- | ------------------ | --------------------------- |
+| `packages/db`        | Unit + Integration | Database operations         |
+| `packages/contracts` | Unit               | Data validation schemas     |
+| `packages/testing`   | Unit               | Test utilities and builders |
 
 ---
 
@@ -39,22 +39,26 @@ This guide covers comprehensive testing strategies for modern TypeScript/JavaScr
 ### Core Testing Stack
 
 #### 1. **Vitest** – Primary Test Runner
+
 - **Ultra-fast** execution (runs 614+ tests in ~7 seconds)
 - **ESM support** with TypeScript
 - **Watch mode** for development
 - **Coverage reporting** built-in
 
 #### 2. **@nestjs/testing** - NestJS Test Utilities
+
 - Creates isolated test modules
 - Dependency injection for tests
 - Replaces real services with mocks
 
 #### 3. **@repo/testing** - Custom Test Utilities
+
 - `createMock<T>()` - Type-safe mock factory
 - `DeepMocked<T>` - TypeScript mock types
 - `userBuilder()`, `emailAddressBuilder()` - Test data builders
 
 #### 4. **Playwright** – E2E Testing
+
 - Browser automation
 - Cross-browser testing
 - Visual regression testing
@@ -92,6 +96,7 @@ pnpm test:coverage
 ### App-Specific Commands
 
 #### API Tests (Unit + Integration)
+
 ```bash
 cd apps/api
 
@@ -112,6 +117,7 @@ pnpm test:coverage
 ```
 
 #### E2E Tests
+
 ```bash
 cd apps/e2e
 
@@ -150,6 +156,7 @@ pnpm test:unit -- --grep "LoginHandler"
 ## Unit Tests
 
 ### What They Test
+
 - Individual functions/classes in isolation
 - Business logic without external dependencies
 - Error handling and edge cases
@@ -157,12 +164,12 @@ pnpm test:unit -- --grep "LoginHandler"
 ### Example: Testing a Service
 
 ```typescript
-import { Test, TestingModule } from '@nestjs/testing';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { UserService } from './user.service';
-import { UserRepository } from '../repositories/user.repository';
+import { Test, TestingModule } from "@nestjs/testing";
+import { createMock, DeepMocked } from "@repo/testing/nestjs";
+import { UserService } from "./user.service";
+import { UserRepository } from "../repositories/user.repository";
 
-describe('UserService', () => {
+describe("UserService", () => {
   let service: UserService;
   let userRepository: DeepMocked<UserRepository>;
 
@@ -179,25 +186,27 @@ describe('UserService', () => {
     service = module.get<UserService>(UserService);
   });
 
-  it('should create user successfully', async () => {
+  it("should create user successfully", async () => {
     // Arrange
-    const userData = { email: 'test@example.com', name: 'John' };
-    userRepository.create.mockResolvedValue({ id: '123', ...userData });
+    const userData = { email: "test@example.com", name: "John" };
+    userRepository.create.mockResolvedValue({ id: "123", ...userData });
 
     // Act
     const result = await service.createUser(userData);
 
     // Assert
-    expect(result.id).toBe('123');
+    expect(result.id).toBe("123");
     expect(userRepository.create).toHaveBeenCalledWith(userData);
   });
 
-  it('should throw error for invalid email', async () => {
+  it("should throw error for invalid email", async () => {
     // Arrange
-    const invalidData = { email: 'invalid', name: 'John' };
+    const invalidData = { email: "invalid", name: "John" };
 
     // Act & Assert
-    await expect(service.createUser(invalidData)).rejects.toThrow('Invalid email');
+    await expect(service.createUser(invalidData)).rejects.toThrow(
+      "Invalid email",
+    );
   });
 });
 ```
@@ -206,18 +215,18 @@ describe('UserService', () => {
 
 ```typescript
 // Mock successful async operation
-mockRepository.findById.mockResolvedValue({ id: '123', name: 'John' });
+mockRepository.findById.mockResolvedValue({ id: "123", name: "John" });
 
 // Mock error
-mockRepository.findById.mockRejectedValue(new Error('Not found'));
+mockRepository.findById.mockRejectedValue(new Error("Not found"));
 
 // Mock multiple calls
 mockRepository.findById
-  .mockResolvedValueOnce({ id: '1' })
-  .mockResolvedValueOnce({ id: '2' });
+  .mockResolvedValueOnce({ id: "1" })
+  .mockResolvedValueOnce({ id: "2" });
 
 // Verify calls
-expect(mockRepository.findById).toHaveBeenCalledWith('123');
+expect(mockRepository.findById).toHaveBeenCalledWith("123");
 expect(mockRepository.findById).toHaveBeenCalledTimes(2);
 ```
 
@@ -226,22 +235,24 @@ expect(mockRepository.findById).toHaveBeenCalledTimes(2);
 ## Integration Tests
 
 ### What They Test
+
 - How multiple components work together
 - Database operations with real data
 - External API calls (with mocking)
 - Service-to-service communication
 
 ### Setup
+
 Integration tests use a separate Vitest config:
 
 ```typescript
 // vitest.config.integration.mts
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ['src/**/*.integration.spec.ts'],
-    environment: 'node',
+    include: ["src/**/*.integration.spec.ts"],
+    environment: "node",
     // May use real database or test database
   },
 });
@@ -250,11 +261,11 @@ export default defineConfig({
 ### Example: Database Integration Test
 
 ```typescript
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '@/shared/services/prisma.service';
-import { UserRepository } from './user.repository';
+import { Test, TestingModule } from "@nestjs/testing";
+import { PrismaService } from "@/shared/services/prisma.service";
+import { UserRepository } from "./user.repository";
 
-describe('UserRepository (Integration)', () => {
+describe("UserRepository (Integration)", () => {
   let repository: UserRepository;
   let prisma: PrismaService;
 
@@ -275,12 +286,12 @@ describe('UserRepository (Integration)', () => {
     await prisma.user.deleteMany();
   });
 
-  it('should create and retrieve user', async () => {
+  it("should create and retrieve user", async () => {
     // Arrange
     const userData = {
-      email: 'test@example.com',
-      username: 'testuser',
-      password: 'hashed-password',
+      email: "test@example.com",
+      username: "testuser",
+      password: "hashed-password",
     };
 
     // Act
@@ -292,12 +303,12 @@ describe('UserRepository (Integration)', () => {
     expect(retrieved.username).toBe(userData.username);
   });
 
-  it('should handle unique constraint violations', async () => {
+  it("should handle unique constraint violations", async () => {
     // Arrange
     const userData = {
-      email: 'test@example.com',
-      username: 'testuser',
-      password: 'hashed-password',
+      email: "test@example.com",
+      username: "testuser",
+      password: "hashed-password",
     };
 
     // Act
@@ -312,22 +323,29 @@ describe('UserRepository (Integration)', () => {
 ### API Integration Tests (Real Code from Project)
 
 ```typescript
-import { INestApplication } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { EmailAddress, EmailStatus, EmailType, Gender, Session, User } from '@repo/db';
+import { INestApplication } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { JwtService } from "@nestjs/jwt";
+import {
+  EmailAddress,
+  EmailStatus,
+  EmailType,
+  Gender,
+  Session,
+  User,
+} from "@repo/db";
 import {
   emailAddressBuilder,
   refreshTokenBuilder,
   sessionBuilder,
   userBuilder,
-} from '@repo/testing/builders';
-import { PrismaServiceMock } from '@repo/testing/nestjs';
-import request from 'supertest';
-import { vi } from 'vitest';
-import { createIntegrationApp } from './test-utils';
+} from "@repo/testing/builders";
+import { PrismaServiceMock } from "@repo/testing/nestjs";
+import request from "supertest";
+import { vi } from "vitest";
+import { createIntegrationApp } from "./test-utils";
 
-describe('AuthController (Integration)', () => {
+describe("AuthController (Integration)", () => {
   let app: INestApplication;
   let prismaMock: PrismaServiceMock;
 
@@ -345,29 +363,33 @@ describe('AuthController (Integration)', () => {
     await app.close();
   });
 
-  describe('POST /auth/register', () => {
+  describe("POST /auth/register", () => {
     const validRegistration = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'Password123!',
-      firstName: 'Test',
-      lastName: 'User',
-      birthDate: '1990-01-01',
+      username: "testuser",
+      email: "test@example.com",
+      password: "Password123!",
+      firstName: "Test",
+      lastName: "User",
+      birthDate: "1990-01-01",
       gender: Gender.male,
     };
 
-    it('should register a new user successfully (201)', async () => {
+    it("should register a new user successfully (201)", async () => {
       // Mock repository checks (no existing user/email)
       prismaMock.client.user.findUnique.mockResolvedValue(null);
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 
       // Mock successful creation
       prismaMock.client.user.create.mockResolvedValue(
-        userBuilder({ ...validRegistration, id: 'user-123', username: validRegistration.username }),
+        userBuilder({
+          ...validRegistration,
+          id: "user-123",
+          username: validRegistration.username,
+        }),
       );
       prismaMock.client.emailAddress.create.mockResolvedValue(
         emailAddressBuilder({
-          userId: 'user-123',
+          userId: "user-123",
           email: validRegistration.email,
           type: EmailType.primary,
           status: EmailStatus.verified,
@@ -375,43 +397,43 @@ describe('AuthController (Integration)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post("/auth/register")
         .send(validRegistration)
         .expect(201);
 
       expect(response.body.data.username).toBe(validRegistration.username);
     });
 
-    it('should return 409 if email already exists', async () => {
+    it("should return 409 if email already exists", async () => {
       const existingEmail = emailAddressBuilder({
-        id: 'existing',
+        id: "existing",
         email: validRegistration.email,
-        userId: 'user-1',
+        userId: "user-1",
         type: EmailType.primary,
         status: EmailStatus.verified,
         verifiedAt: new Date(),
       });
       prismaMock.client.emailAddress.findFirst.mockResolvedValue({
         ...existingEmail,
-        user: userBuilder({ id: 'user-1' }),
+        user: userBuilder({ id: "user-1" }),
       } as EmailAddress & { user: User });
 
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post("/auth/register")
         .send(validRegistration)
         .expect(409);
 
-      expect(response.body.error.message).toBe('Email already exists');
+      expect(response.body.error.message).toBe("Email already exists");
     });
 
-    it('should return 400 if validation fails (e.g., weak password)', async () => {
+    it("should return 400 if validation fails (e.g., weak password)", async () => {
       const invalidRegistration = {
         ...validRegistration,
-        password: 'weak',
+        password: "weak",
       };
 
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post("/auth/register")
         .send(invalidRegistration)
         .expect(400);
 
@@ -421,21 +443,23 @@ describe('AuthController (Integration)', () => {
     });
   });
 
-  describe('POST /auth/login', () => {
+  describe("POST /auth/login", () => {
     const loginData = {
-      email: 'test@example.com',
-      password: 'Password123!',
+      email: "test@example.com",
+      password: "Password123!",
     };
 
-    it('should login successfully and return tokens (200)', async () => {
-      const hashedPassword = await import('argon2').then((a) => a.hash(loginData.password));
+    it("should login successfully and return tokens (200)", async () => {
+      const hashedPassword = await import("argon2").then((a) =>
+        a.hash(loginData.password),
+      );
       const userBase = userBuilder({
-        id: 'user-123',
-        username: 'testuser',
+        id: "user-123",
+        username: "testuser",
         password: hashedPassword,
       });
       const email = emailAddressBuilder({
-        id: 'email-123',
+        id: "email-123",
         email: loginData.email,
         userId: userBase.id,
         status: EmailStatus.verified,
@@ -451,18 +475,18 @@ describe('AuthController (Integration)', () => {
 
       // Mock session creation
       prismaMock.client.session.create.mockResolvedValue({
-        ...sessionBuilder({ id: 'session-123', userId: userBase.id }),
+        ...sessionBuilder({ id: "session-123", userId: userBase.id }),
       } as Session);
 
       // Mock refresh token creation
       prismaMock.client.refreshToken.create.mockResolvedValue(
         refreshTokenBuilder({
-          sessionId: 'session-123',
+          sessionId: "session-123",
         }),
       );
 
       const response = await request(app.getHttpServer())
-        .post('/auth/login')
+        .post("/auth/login")
         .send(loginData)
         .expect(201); // Controller login method actually returns 201 by default unless @HttpCode is used
 
@@ -470,28 +494,33 @@ describe('AuthController (Integration)', () => {
       expect(response.body.data.user.username).toBe(userBase.username);
 
       // Check refresh token cookie
-      const cookies = response.get('Set-Cookie');
+      const cookies = response.get("Set-Cookie");
       expect(cookies).toBeDefined();
-      expect(cookies?.some((c) => c.includes('refreshToken'))).toBe(true);
+      expect(cookies?.some((c) => c.includes("refreshToken"))).toBe(true);
     });
 
-    it('should return 401 for invalid password', async () => {
-      const hashedPassword = await import('argon2').then((a) => a.hash('different-password'));
+    it("should return 401 for invalid password", async () => {
+      const hashedPassword = await import("argon2").then((a) =>
+        a.hash("different-password"),
+      );
 
       prismaMock.client.emailAddress.findFirst.mockResolvedValue({
         ...emailAddressBuilder({
           email: loginData.email,
           status: EmailStatus.verified,
-          userId: 'user-123',
+          userId: "user-123",
         }),
         user: userBuilder({
-          id: 'user-123',
-          username: 'testuser',
+          id: "user-123",
+          username: "testuser",
           password: hashedPassword,
         }),
       } as EmailAddress & { user: User });
 
-      await request(app.getHttpServer()).post('/auth/login').send(loginData).expect(401);
+      await request(app.getHttpServer())
+        .post("/auth/login")
+        .send(loginData)
+        .expect(401);
     });
   });
 });
@@ -502,28 +531,30 @@ describe('AuthController (Integration)', () => {
 ## E2E Tests
 
 ### What They Test
+
 - Complete user workflows from start to finish
 - UI interactions and navigation
 - Cross-browser compatibility
 - Real user scenarios
 
 ### Setup
+
 E2E tests use Playwright with a separate config:
 
 ```typescript
 // playwright.config.ts
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './src',
+  testDir: "./src",
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: "http://localhost:3000",
     headless: true,
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
-    { name: 'firefox', use: { browserName: 'firefox' } },
-    { name: 'webkit', use: { browserName: 'webkit' } },
+    { name: "chromium", use: { browserName: "chromium" } },
+    { name: "firefox", use: { browserName: "firefox" } },
+    { name: "webkit", use: { browserName: "webkit" } },
   ],
 });
 ```
@@ -629,6 +660,7 @@ test.describe("Authentication Workflow", () => {
 ## Component Tests (Frontend)
 
 ### What They Test
+
 - React/Vue components in isolation
 - UI interactions
 - Component props and state
@@ -685,6 +717,7 @@ describe('LoginForm', () => {
 ## Visual Regression Tests
 
 ### What They Test
+
 - UI appearance changes
 - Layout consistency
 - Visual bugs
@@ -692,35 +725,35 @@ describe('LoginForm', () => {
 ### Example: Playwright Visual Test
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Visual Regression', () => {
-  test('should match login page screenshot', async ({ page }) => {
-    await page.goto('/login');
+test.describe("Visual Regression", () => {
+  test("should match login page screenshot", async ({ page }) => {
+    await page.goto("/login");
 
     // Wait for page to load completely
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState("networkidle");
 
     // Take screenshot and compare
-    await expect(page).toHaveScreenshot('login-page.png', {
+    await expect(page).toHaveScreenshot("login-page.png", {
       threshold: 0.2, // Allow 0.2% difference
       fullPage: true,
     });
   });
 
-  test('should match user profile layout', async ({ page }) => {
+  test("should match user profile layout", async ({ page }) => {
     // Login first
-    await page.goto('/login');
-    await page.fill('[data-testid="email"]', 'user@example.com');
-    await page.fill('[data-testid="password"]', 'password123');
+    await page.goto("/login");
+    await page.fill('[data-testid="email"]', "user@example.com");
+    await page.fill('[data-testid="password"]', "password123");
     await page.click('[data-testid="login-button"]');
 
     // Go to profile
-    await page.goto('/profile');
+    await page.goto("/profile");
 
     // Check visual layout
     await expect(page.locator('[data-testid="profile-card"]')).toHaveScreenshot(
-      'profile-card.png'
+      "profile-card.png",
     );
   });
 });
@@ -731,6 +764,7 @@ test.describe('Visual Regression', () => {
 ## Performance Tests
 
 ### What They Test
+
 - Load times
 - Memory usage
 - Bundle size
@@ -739,13 +773,13 @@ test.describe('Visual Regression', () => {
 ### Example: API Performance Test
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('API Performance', () => {
-  test('should load user list within 2 seconds', async ({ request }) => {
+test.describe("API Performance", () => {
+  test("should load user list within 2 seconds", async ({ request }) => {
     const startTime = Date.now();
 
-    const response = await request.get('/api/users');
+    const response = await request.get("/api/users");
 
     const endTime = Date.now();
     const responseTime = endTime - startTime;
@@ -754,14 +788,14 @@ test.describe('API Performance', () => {
     expect(responseTime).toBeLessThan(2000); // 2 seconds
   });
 
-  test('should handle concurrent requests', async ({ request }) => {
-    const requests = Array(10).fill().map(() =>
-      request.get('/api/users')
-    );
+  test("should handle concurrent requests", async ({ request }) => {
+    const requests = Array(10)
+      .fill()
+      .map(() => request.get("/api/users"));
 
     const responses = await Promise.all(requests);
 
-    responses.forEach(response => {
+    responses.forEach((response) => {
       expect(response.status()).toBe(200);
     });
   });
@@ -773,6 +807,7 @@ test.describe('API Performance', () => {
 ## Accessibility Tests
 
 ### What They Test
+
 - Screen reader compatibility
 - Keyboard navigation
 - Color contrast
@@ -781,41 +816,41 @@ test.describe('API Performance', () => {
 ### Example: Accessibility Test
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Accessibility', () => {
-  test('should have proper form labels', async ({ page }) => {
-    await page.goto('/login');
+test.describe("Accessibility", () => {
+  test("should have proper form labels", async ({ page }) => {
+    await page.goto("/login");
 
     // Check all inputs have labels
-    const inputs = page.locator('input');
+    const inputs = page.locator("input");
     const inputCount = await inputs.count();
 
     for (let i = 0; i < inputCount; i++) {
       const input = inputs.nth(i);
-      const id = await input.getAttribute('id');
+      const id = await input.getAttribute("id");
       const label = page.locator(`label[for="${id}"]`);
 
       await expect(label).toBeVisible();
     }
   });
 
-  test('should be keyboard navigable', async ({ page }) => {
-    await page.goto('/login');
+  test("should be keyboard navigable", async ({ page }) => {
+    await page.goto("/login");
 
     // Tab through form elements
-    await page.keyboard.press('Tab');
+    await page.keyboard.press("Tab");
     await expect(page.locator('[data-testid="email-input"]')).toBeFocused();
 
-    await page.keyboard.press('Tab');
+    await page.keyboard.press("Tab");
     await expect(page.locator('[data-testid="password-input"]')).toBeFocused();
 
-    await page.keyboard.press('Tab');
+    await page.keyboard.press("Tab");
     await expect(page.locator('[data-testid="login-button"]')).toBeFocused();
   });
 
-  test('should have sufficient color contrast', async ({ page }) => {
-    await page.goto('/login');
+  test("should have sufficient color contrast", async ({ page }) => {
+    await page.goto("/login");
 
     // Use axe-playwright for accessibility checking
     const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
@@ -823,9 +858,9 @@ test.describe('Accessibility', () => {
     expect(accessibilityScanResults.violations).toEqual(
       expect.not.arrayContaining([
         expect.objectContaining({
-          id: 'color-contrast',
+          id: "color-contrast",
         }),
-      ])
+      ]),
     );
   });
 });
@@ -852,27 +887,35 @@ src/
 ### Test Structure
 
 ```typescript
-describe('ComponentName', () => {
+describe("ComponentName", () => {
   // Setup
-  beforeAll(() => { /* Global setup */ });
-  afterAll(() => { /* Global cleanup */ });
+  beforeAll(() => {
+    /* Global setup */
+  });
+  afterAll(() => {
+    /* Global cleanup */
+  });
 
-  beforeEach(() => { /* Per-test setup */ });
-  afterEach(() => { /* Per-test cleanup */ });
+  beforeEach(() => {
+    /* Per-test setup */
+  });
+  afterEach(() => {
+    /* Per-test cleanup */
+  });
 
-  describe('MethodName', () => {
-    it('should handle success case', () => {
+  describe("MethodName", () => {
+    it("should handle success case", () => {
       // AAA Pattern
       // Arrange - Setup mocks and data
       // Act - Execute code
       // Assert - Verify results
     });
 
-    it('should handle error case', () => {
+    it("should handle error case", () => {
       // Test error scenarios
     });
 
-    it('should handle edge case', () => {
+    it("should handle edge case", () => {
       // Test boundary conditions
     });
   });
@@ -901,15 +944,15 @@ expect(mockRepository.save).toHaveBeenCalledWith(expectedData);
 ```typescript
 // Use builders for consistent test data
 const mockUser = userBuilder({
-  id: 'user-123',
-  email: 'test@example.com',
-  username: 'testuser',
+  id: "user-123",
+  email: "test@example.com",
+  username: "testuser",
 });
 
 // For variations
 const unverifiedUser = userBuilder({
   ...mockUser,
-  emailStatus: 'pending',
+  emailStatus: "pending",
 });
 ```
 
@@ -920,20 +963,19 @@ const unverifiedUser = userBuilder({
 ### Common Issues & Solutions
 
 #### Test Timeout
+
 ```typescript
-it('should complete within timeout', async () => {
+it("should complete within timeout", async () => {
   // Increase timeout for slow operations
 }, 10000); // 10 seconds
 ```
 
 #### Async Issues
+
 ```typescript
-it('should handle async operations', async () => {
+it("should handle async operations", async () => {
   // Wait for all promises
-  await Promise.all([
-    service.doAsyncThing(),
-    repository.saveAsync(),
-  ]);
+  await Promise.all([service.doAsyncThing(), repository.saveAsync()]);
 
   // Or use fake timers
   vi.useFakeTimers();
@@ -944,6 +986,7 @@ it('should handle async operations', async () => {
 ```
 
 #### Mock Issues
+
 ```typescript
 // Clear mocks between tests
 afterEach(() => {
@@ -957,6 +1000,7 @@ beforeEach(() => {
 ```
 
 #### Database State Issues
+
 ```typescript
 beforeEach(async () => {
   // Clean database
@@ -1002,14 +1046,14 @@ pnpm test:coverage
 export default defineConfig({
   test: {
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      include: ['src/**/*.ts'],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      include: ["src/**/*.ts"],
       exclude: [
-        'src/**/*.spec.ts',
-        'src/main.ts',
-        'src/**/*.module.ts',
-        'src/**/*.dto.ts',
+        "src/**/*.spec.ts",
+        "src/main.ts",
+        "src/**/*.module.ts",
+        "src/**/*.dto.ts",
       ],
       thresholds: {
         global: {
@@ -1044,8 +1088,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -1081,14 +1125,14 @@ it('should match snapshot', () => {
 ### Property-Based Testing
 
 ```typescript
-import { fc } from 'fast-check';
+import { fc } from "fast-check";
 
-it('should handle any valid email', () => {
+it("should handle any valid email", () => {
   fc.assert(
     fc.property(fc.emailAddress(), (email) => {
       const result = validateEmail(email);
       return result.isValid === true;
-    })
+    }),
   );
 });
 ```
@@ -1097,9 +1141,9 @@ it('should handle any valid email', () => {
 
 ```typescript
 // Test API contracts between services
-describe('API Contract', () => {
-  it('should match OpenAPI specification', async () => {
-    const response = await request(app).get('/users');
+describe("API Contract", () => {
+  it("should match OpenAPI specification", async () => {
+    const response = await request(app).get("/users");
     const contract = loadOpenAPISpec();
 
     expect(response.body).toMatchSchema(contract.definitions.UserList);
@@ -1122,17 +1166,14 @@ describe('API Contract', () => {
 
 ```typescript
 // Before: Repetitive setup
-describe('UserService', () => {
+describe("UserService", () => {
   let service: UserService;
   let mockRepo: DeepMocked<UserRepository>;
 
   beforeEach(async () => {
     mockRepo = createMock<UserRepository>();
     const module = await Test.createTestingModule({
-      providers: [
-        UserService,
-        { provide: UserRepository, useValue: mockRepo },
-      ],
+      providers: [UserService, { provide: UserRepository, useValue: mockRepo }],
     }).compile();
     service = module.get<UserService>(UserService);
   });
@@ -1144,10 +1185,7 @@ describe('UserService', () => {
 export const createUserServiceTestModule = async () => {
   const mockRepo = createMock<UserRepository>();
   const module = await Test.createTestingModule({
-    providers: [
-      UserService,
-      { provide: UserRepository, useValue: mockRepo },
-    ],
+    providers: [UserService, { provide: UserRepository, useValue: mockRepo }],
   }).compile();
 
   return {
@@ -1165,6 +1203,7 @@ export const createUserServiceTestModule = async () => {
 
 **Problem**: Tests take too long to run
 **Solutions**:
+
 - Use `vi.mock()` for heavy imports
 - Run tests in parallel (Vitest does this by default)
 - Mock external services
@@ -1174,6 +1213,7 @@ export const createUserServiceTestModule = async () => {
 
 **Problem**: Tests pass sometimes, fail sometimes
 **Solutions**:
+
 - Avoid relying on timing (`setTimeout`, `setInterval`)
 - Use proper async/await
 - Clean up state between tests
@@ -1183,6 +1223,7 @@ export const createUserServiceTestModule = async () => {
 
 **Problem**: Mock doesn't behave as expected
 **Solutions**:
+
 - Check import paths
 - Verify mock is created before module compilation
 - Use `mockResolvedValue()` for promises
@@ -1192,6 +1233,7 @@ export const createUserServiceTestModule = async () => {
 
 **Problem**: A coverage report doesn't reflect changes
 **Solutions**:
+
 - Run tests with `--coverage` flag
 - Check coverage configuration
 - Ensure test files are included

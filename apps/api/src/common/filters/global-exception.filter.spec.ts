@@ -253,7 +253,7 @@ describe('GlobalExceptionFilter', () => {
 
     // Mock production env to test the 'secure: true' branch
     configService.get.mockReturnValue('production');
-    
+
     // Trigger a 401 Unauthorized
     const exception = new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
 
@@ -263,7 +263,7 @@ describe('GlobalExceptionFilter', () => {
     // Assert
     // 1. Check that clearCookie was called twice (once for '/' and once for '/auth/refresh')
     expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-    
+
     // 2. Verify the arguments for the first call
     expect(mockResponse.clearCookie).toHaveBeenCalledWith(
       expect.any(String), // REFRESH_TOKEN_COOKIE_NAME

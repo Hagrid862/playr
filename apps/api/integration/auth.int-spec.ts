@@ -130,7 +130,7 @@ describe('AuthController (Integration)', () => {
         .send(invalidRegistration)
         .expect(400);
 
-      // nestjs-zod usually returns validation errors in a specific format. 
+      // nestjs-zod usually returns validation errors in a specific format.
       // We check if the response has an error property
       expect(response.body.error).toBeDefined();
     });
@@ -210,19 +210,13 @@ describe('AuthController (Integration)', () => {
       const argon2 = await import('argon2');
       vi.mocked(argon2.verify).mockResolvedValueOnce(false);
 
-      await request(app.getHttpServer())
-        .post('/auth/verify-email')
-        .send(verifyData)
-        .expect(401);
+      await request(app.getHttpServer()).post('/auth/verify-email').send(verifyData).expect(401);
     });
 
     it('should return 400 if email not found', async () => {
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 
-      await request(app.getHttpServer())
-        .post('/auth/verify-email')
-        .send(verifyData)
-        .expect(400);
+      await request(app.getHttpServer()).post('/auth/verify-email').send(verifyData).expect(400);
     });
   });
 
