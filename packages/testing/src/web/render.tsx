@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React, { type ComponentType, type ReactElement, type ReactNode } from "react";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -7,13 +8,13 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
+
 import {
   render,
   renderHook,
   type RenderHookOptions,
   type RenderOptions,
 } from "@testing-library/react";
-import { type ComponentType, type ReactElement, type ReactNode } from "react";
 
 function createTestQueryClient() {
   return new QueryClient({
@@ -26,13 +27,13 @@ function createTestQueryClient() {
 
 function createTestRouter(ui: ReactNode, initialLocation = "/") {
   const rootRoute = createRootRoute({
-    component: () => <Outlet />,
+    component: () => React.createElement(Outlet),
   });
 
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/",
-    component: () => <>{ui}</>,
+    component: () => React.createElement(React.Fragment, null, ui),
   });
 
   const routeTree = rootRoute.addChildren([indexRoute]);
@@ -88,8 +89,10 @@ function createQueryClientWrapper(options: {
 }): ComponentType<{ children: ReactNode }> {
   const { queryClient } = options;
   return function QueryClientWrapper({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    return React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      children,
     );
   };
 }
@@ -105,13 +108,13 @@ function createRouterTestWrapper<
 
   return function RouterTestWrapper({ children }: { children: ReactNode }) {
     const router = createTestRouter(children, initialLocation);
-    return (
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider
-          router={router}
-          {...(routerContext && { context: routerContext })}
-        />
-      </QueryClientProvider>
+    return React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      React.createElement(RouterProvider, {
+        router,
+        ...(routerContext && { context: routerContext }),
+      }),
     );
   };
 }
