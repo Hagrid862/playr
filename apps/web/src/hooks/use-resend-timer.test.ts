@@ -12,6 +12,7 @@ describe('useResendTimer', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals(); // Clean up any global stubs
   });
 
   it('should initialize with 0 if no value in localStorage', () => {
@@ -100,5 +101,23 @@ describe('useResendTimer', () => {
     });
 
     expect(result.current.timeLeft).toBe(45);
+  });
+
+
+  it('should return 0 for timeLeft if localStorage throws an error', () => {
+    const originalLocalStorage = window.localStorage;
+    Object.defineProperty(window, 'localStorage', {
+      get: () => {
+        throw new Error('localStorage is not available');
+      },
+    });
+
+    const { result } = renderHook(() => useResendTimer(KEY));
+    expect(result.current.timeLeft).toBe(0);
+    expect(result.current.isCounting).toBe(false);
+
+    Object.defineProperty(window, 'localStorage', {
+      get: () => originalLocalStorage,
+    });
   });
 });

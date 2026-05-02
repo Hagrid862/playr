@@ -1,11 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAuthStore } from '@/stores/auth.store';
 import { userBuilder } from '@repo/testing';
 
-// Mock the API hooks
+// Mock constants
 const mockVerifyEmail = vi.fn();
 const mockResendEmail = vi.fn();
+const mockNavigate = vi.fn();
+const mockInvalidate = vi.fn();
+const mockEmail = 'test@example.com';
 
 vi.mock('@/hooks/api/auth', () => ({
   useVerifyEmail: () => ({
@@ -18,37 +21,47 @@ vi.mock('@/hooks/api/auth', () => ({
   }),
 }));
 
-// Mock form hooks
-const mockHandleChange = vi.fn();
-const mockHandleBlur = vi.fn();
-const mockHandleSubmit = vi.fn();
-const mockGetFieldError = vi.fn();
+vi.mock('@/hooks/forms/useVerifyEmailForm', () => {
+  const { useState } = require('react');
+  return {
+    useVerifyEmailForm: () => {
+      const [data, setData] = useState({ email: mockEmail, otpCode: '' });
 
-vi.mock('@/hooks/forms/useVerifyEmailForm', () => ({
-  useVerifyEmailForm: (email: string) => ({
-    formData: { email, otpCode: '' },
-    isFormValid: false,
-    handleChange: mockHandleChange,
-    handleBlur: mockHandleBlur,
-    handleSubmit: mockHandleSubmit,
-    getFieldError: mockGetFieldError,
-  }),
-}));
+      return {
+        formData: data,
+        isFormValid: data.otpCode.length === 8,
+        handleChange: (field: string, value: string) => {
+          setData((prev: any) => ({ ...prev, [field]: value }));
+        },
+        handleBlur: vi.fn(),
+        handleSubmit: () => {
+          if (data.otpCode.length === 8) {
+            return { ...data };
+          }
+          return null;
+        },
+        getFieldError: () => undefined,
+      };
+    },
+  };
+});
 
 // Mock resend timer hook
-const mockStartTimer = vi.fn();
+vi.mock('@/hooks/use-resend-timer', () => {
+  const { useState } = require('react');
+  return {
+    useResendTimer: () => {
+      const [timeLeft, setTimeLeft] = useState(0);
 
-vi.mock('@/hooks/use-resend-timer', () => ({
-  useResendTimer: () => ({
-    timeLeft: 0,
-    startTimer: mockStartTimer,
-  }),
-}));
+      return {
+        timeLeft,
+        startTimer: () => setTimeLeft(60),
+      };
+    },
+  };
+});
 
 // Mock TanStack Router
-const mockNavigate = vi.fn();
-const mockInvalidate = vi.fn();
-
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-router')>();
   return {
@@ -60,28 +73,21 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   };
 });
 
-// Mock the verify-email route module to override Route.useSearch
-vi.mock('./verify-email', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./verify-email')>();
-  return {
-    ...actual,
-    Route: {
-      ...actual.Route,
-      useSearch: () => ({ email: 'test@example.com' }),
-    },
-  };
-});
-
 // Import component after mocks
-import { RouteComponent } from './verify-email';
+import { RouteComponent, Route } from './verify-email';
 
 describe('VerifyEmail Route', () => {
   const mockUser = userBuilder();
-  const searchParams = { email: 'test@example.com' };
 
   beforeEach(() => {
     vi.clearAllMocks();
     useAuthStore.getState().logout();
+    // Mock Route.useSearch before each test
+    vi.spyOn(Route, 'useSearch').mockReturnValue({ email: mockEmail });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should render the verify email page', async () => {
@@ -90,7 +96,7 @@ describe('VerifyEmail Route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByText(/verify your email/i)).toBeInTheDocument();
-    expect(screen.getByText(searchParams.email)).toBeInTheDocument();
+    expect(screen.getByText(mockEmail)).toBeInTheDocument();
   });
 
   it('should handle successful verification', async () => {
@@ -111,13 +117,14 @@ describe('VerifyEmail Route', () => {
     const otpInput = screen.getByLabelText(/verification code/i);
     fireEvent.change(otpInput, { target: { value: '12345678' } });
 
-    // Submit form
-    const submitBtn = screen.getByRole('button', { name: /verify/i });
-    fireEvent.click(submitBtn);
+    // Submit form - use query method since button text changes when loading
+    const buttons = screen.getAllByRole('button');
+    const submitBtn = buttons.find(btn => btn.getAttribute('type') === 'submit');
+    fireEvent.click(submitBtn!);
 
     await waitFor(() => {
       expect(mockVerifyEmail).toHaveBeenCalledWith({
-        email: 'test@example.com',
+        email: mockEmail,
         otpCode: '12345678',
       });
       expect(setAuthSpy).toHaveBeenCalledWith(mockUser, 'new-token');
@@ -135,15 +142,15 @@ describe('VerifyEmail Route', () => {
     fireEvent.click(resendBtn);
 
     await waitFor(() => {
-      expect(mockResendEmail).toHaveBeenCalledWith({ email: 'test@example.com' });
+      expect(mockResendEmail).toHaveBeenCalledWith({ email: mockEmail });
     });
-    
+
     // After resend, the button should show the timer
     expect(screen.getByText(/wait 60s to resend code/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /wait 60s to resend code/i })).toBeDisabled();
   });
 
-  it('should handle logout via dialog', async () => {
+   it('should handle logout via dialog', async () => {
     useAuthStore.getState().setUnauthenticatedUser(mockUser);
     const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
 
@@ -155,8 +162,8 @@ describe('VerifyEmail Route', () => {
 
     // Dialog should be open
     expect(screen.getByText(/are you absolutely sure/i)).toBeInTheDocument();
-    
-    // Find all "Log out" buttons and click the one in the dialog (the confirm button)
+
+    // Find all "Log out" buttons and click the one in the dialog (the confirmation button)
     const buttons = screen.getAllByRole('button', { name: /log out/i });
     // The first is the trigger button, the second is the action button in the dialog
     const confirmLogoutBtn = buttons[buttons.length - 1];
