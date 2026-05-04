@@ -36,6 +36,7 @@ overrides:
   serialize-javascript: ^7.0.3
   flatted: ^3.4.2
   effect: ^3.20.0
+  liquidjs: '>=10.25.7'
 
 importers:
 
@@ -181,7 +182,7 @@ importers:
         specifier: ^11.0.4
         version: 11.0.4(@nestjs/common@11.1.18(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.18)(bullmq@5.73.0)
       '@nestjs/common':
-        specifier: ^11.0.1
+        specifier: ^11.1.18
         version: 11.1.18(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config':
         specifier: ^4.0.4
@@ -237,6 +238,9 @@ importers:
       ioredis:
         specifier: ^5.10.0
         version: 5.10.1
+      lodash:
+        specifier: ^4.18.0
+        version: 4.18.1
       music-metadata:
         specifier: ^11.12.1
         version: 11.12.3
@@ -259,7 +263,7 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2
       rxjs:
-        specifier: ^7.8.1
+        specifier: ^7.8.2
         version: 7.8.2
       sharp:
         specifier: ^0.34.5
@@ -6110,8 +6114,8 @@ packages:
   linkify-it@5.0.0:
     resolution: {integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==}
 
-  liquidjs@10.25.2:
-    resolution: {integrity: sha512-ZbgcjEjGNlAIjqhuMzymO3lCpHgmVMftKfrq4/YLLxmKaFFeQMXRGrJTqKX7OXX1hKVPUDpTIrvL7lxt3X/hmw==}
+  liquidjs@10.25.7:
+    resolution: {integrity: sha512-rPCjJLiD4eDhQjvv964AeXFC+HbeYBbZrd7Z82Q6hqv1lX7G+5w4SJcKLn9CAAAwHI4aS3dTdo083UB79K3pDA==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -9772,7 +9776,7 @@ snapshots:
       bullmq: 5.73.0
       ejs: 5.0.1
       handlebars: 4.7.9
-      liquidjs: 10.25.2
+      liquidjs: 10.25.7
       mjml: 5.0.0-beta.2(svgo@4.0.1)(terser@5.46.1)(typescript@5.9.3)
       nunjucks: 3.2.4(chokidar@4.0.3)
       preview-email: 3.1.1
@@ -14502,7 +14506,7 @@ snapshots:
       uc.micro: 2.1.0
     optional: true
 
-  liquidjs@10.25.2:
+  liquidjs@10.25.7:
     dependencies:
       commander: 10.0.1
     optional: true

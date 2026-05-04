@@ -43,7 +43,8 @@
       "rollup": "^4.59.0",
       "serialize-javascript": "^7.0.3",
       "flatted": "^3.4.2",
-      "effect": "^3.20.0"
+      "effect": "^3.20.0",
+      "liquidjs": ">=10.25.7"
     }
   }
 }
