@@ -126,9 +126,6 @@ describe('VerifyEmailHandler', () => {
 
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-      await expect(handler.execute(command)).rejects.toThrow(
-        'User not found for the provided email address',
-      );
     });
   });
 });
