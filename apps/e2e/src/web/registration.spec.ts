@@ -25,18 +25,13 @@ test.describe("Registration Workflow", () => {
 
     await registrationPage.selectGender("Male");
 
-    // Select a birth date in the past
     const birthDate = new Date(2000, 0, 15);
     await registrationPage.selectBirthDate(birthDate);
 
-    // Wait for the button to be enabled
-    await expect(registrationPage.submitButton).toBeEnabled({ timeout: 10000 });
+    await expect(registrationPage.submitButton).toBeEnabled();
     await registrationPage.submit();
 
-    // Check if there's any server error message if it doesn't redirect immediately
-    await expect(registrationPage.page).toHaveURL(/\/auth\/login/, {
-      timeout: 15000,
-    });
+    await expect(registrationPage.page).toHaveURL(/\/auth\/verify-email/);
   });
 
   test("should show validation errors for empty fields", async () => {
@@ -62,7 +57,7 @@ test.describe("Registration Workflow", () => {
       "Last name is required",
     );
 
-    // Force blur on birth date and gender if they haven't been touched
+    // Force blur on birthdate and gender if they haven't been touched
     await registrationPage.birthDateButton.focus();
     await registrationPage.birthDateButton.blur();
     await registrationPage.genderSelect.focus();
@@ -103,7 +98,7 @@ test.describe("Registration Workflow", () => {
   test("should validate age requirement", async () => {
     // Use the POM method that we've improved
     const thirteenYearsAgo = new Date();
-    thirteenYearsAgo.setFullYear(thirteenYearsAgo.getFullYear() - 1); // 1 year old
+    thirteenYearsAgo.setFullYear(thirteenYearsAgo.getFullYear() - 1); // 1-year-old
 
     // Select Month and Year specifically to avoid confusion
     await registrationPage.selectBirthDate(thirteenYearsAgo);

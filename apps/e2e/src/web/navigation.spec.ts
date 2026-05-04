@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { DashboardPage } from "./dashboard.po";
 import { LibraryArtistsPage } from "./library-artists.po";
-import { LoginPage } from "./login.po";
 import { RegistrationPage } from "./registration.po";
+import {getOtpFromMailhog} from "./mailhog.helper";
+import {VerifyEmailPage} from "./verify-email.po";
 
 test.describe("Navigation Flow", () => {
-  let loginPage: LoginPage;
+  let verifyEmailPage: VerifyEmailPage;
   let registrationPage: RegistrationPage;
   let dashboardPage: DashboardPage;
   let artistsPage: LibraryArtistsPage;
@@ -17,7 +18,7 @@ test.describe("Navigation Flow", () => {
   };
 
   test.beforeEach(async ({ page }) => {
-    loginPage = new LoginPage(page);
+    verifyEmailPage = new VerifyEmailPage(page);
     registrationPage = new RegistrationPage(page);
     dashboardPage = new DashboardPage(page);
     artistsPage = new LibraryArtistsPage(page);
@@ -44,8 +45,22 @@ test.describe("Navigation Flow", () => {
     await registrationPage.submit();
     await registrationPage.expectSuccess();
 
-    await loginPage.goto();
-    await loginPage.login(testUserData.email, testUserData.password);
+    // 1. Should redirect to the email verification page with the user's email
+    await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
+    await expect(verifyEmailPage.pageTitle).toBeVisible();
+    await verifyEmailPage.expectEmailDisplayed(testUserData.email);
+
+    // 2. Retrieve the OTP code sent via email (MailHog intercepts in dev/test)
+    const otpCode = await getOtpFromMailhog(testUserData.email);
+    expect(otpCode).not.toBeNull();
+    expect(otpCode).toMatch(/^\d{8}$/);
+
+    // 3. Enter the OTP and submit verification
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await expect(verifyEmailPage.verifyButton).toBeEnabled();
+    await verifyEmailPage.clickVerify();
+
+    // 4. Should redirect to the dashboard after email verification
     await expect(page).toHaveURL(/\/app/);
   });
 
