@@ -146,7 +146,9 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.submit();
 
     // Expect Sonner toast error message for conflict
-    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.locator("[data-sonner-toast]").first()).toHaveText(
       /taken|exists|duplicate/i,
     );

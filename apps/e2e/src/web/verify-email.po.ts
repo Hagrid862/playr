@@ -26,7 +26,9 @@ export class VerifyEmailPage {
     this.confirmLogoutButton = page
       .getByRole("alertdialog")
       .getByRole("button", { name: /log out/i });
-    this.cancelLogoutButton = page.getByRole("alertdialog").getByRole("button", { name: "Cancel" });
+    this.cancelLogoutButton = page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Cancel" });
     this.alertDialog = page.getByRole("alertdialog");
     this.emailDisplay = page.locator("span.font-medium.text-foreground");
     this.fieldError = page.locator('[data-slot="field-error"]');

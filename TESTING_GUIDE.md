@@ -11,12 +11,12 @@ The `@repo/testing` package provides builders (data builders, request builders),
 
 ## Commands (from root)
 
-| Command | What it runs |
-|---|---|
-| `pnpm test` | All tests (unit + integration + e2e) |
-| `pnpm test:unit` | All unit tests |
-| `pnpm test:integration` | API integration tests |
-| `pnpm test:e2e` | Playwright E2E tests |
+| Command                 | What it runs                         |
+| ----------------------- | ------------------------------------ |
+| `pnpm test`             | All tests (unit + integration + e2e) |
+| `pnpm test:unit`        | All unit tests                       |
+| `pnpm test:integration` | API integration tests                |
+| `pnpm test:e2e`         | Playwright E2E tests                 |
 
 ## Running tests in a specific package
 
