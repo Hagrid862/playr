@@ -24,7 +24,7 @@ export class VerifyEmailPage {
       .getByRole("button", { name: /log out/i })
       .first();
     this.confirmLogoutButton = page.getByRole("alertdialog").getByRole("button", { name: /log out/i });
-    this.cancelLogoutButton = page.getByRole("button", { name: "Cancel" });
+    this.cancelLogoutButton = page.getByRole("alertdialog").getByRole("button", { name: "Cancel" });
     this.alertDialog = page.getByRole("alertdialog");
     this.emailDisplay = page.locator("span.font-medium.text-foreground");
     this.fieldError = page.locator('[data-slot="field-error"]');
@@ -41,7 +41,7 @@ export class VerifyEmailPage {
 
   /** Enter the 8-digit OTP code into the hidden input-otp input field. */
   async fillOtpCode(code: string) {
-    // The input has color:transparent so force is needed for Playwright actionability
+    // The input has color: transparent, so force is needed for Playwright actionability
     await this.hiddenInput.fill(code, { force: true });
   }
 

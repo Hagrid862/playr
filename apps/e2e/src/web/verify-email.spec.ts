@@ -42,7 +42,7 @@ test.describe("Email Verification Workflow", () => {
     await expect(registrationPage.submitButton).toBeEnabled({ timeout: 10000 });
     await registrationPage.submit();
 
-    // 2. Should redirect to email verification page with the user's email
+    // 2. Should redirect to the email verification page with the user's email
     await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
     await expect(verifyEmailPage.pageTitle).toBeVisible();
     await verifyEmailPage.expectEmailDisplayed(email);
@@ -88,7 +88,7 @@ test.describe("Email Verification Workflow", () => {
     await expect(registrationPage.submitButton).toBeEnabled({ timeout: 10000 });
     await registrationPage.submit();
 
-    // 2. Should reach the verify email page
+    // 2. Should reach the verified email page
     await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
 
     // 3. Submit an invalid OTP
@@ -122,13 +122,13 @@ test.describe("Email Verification Workflow", () => {
     await expect(registrationPage.submitButton).toBeEnabled({ timeout: 10000 });
     await registrationPage.submit();
 
-    // 2. Should reach the verify email page
+    // 2. Should reach the verified email page
     await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
 
-    // 3. Click resend code button
+    // 3. Click the resend code button
     await verifyEmailPage.clickResend();
 
-    // 4. Should show cooldown timer on the resend button
+    // 4. Should show a cooldown timer on the resend button
     await verifyEmailPage.expectResendTimerVisible();
 
     // 5. Retrieve the new OTP from MailHog
@@ -162,7 +162,7 @@ test.describe("Email Verification Workflow", () => {
     await expect(registrationPage.submitButton).toBeEnabled({ timeout: 10000 });
     await registrationPage.submit();
 
-    // 2. Should reach the verify email page
+    // 2. Should reach the verified email page
     await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
 
     // 3. Click logout trigger - alert dialog should open
@@ -173,7 +173,7 @@ test.describe("Email Verification Workflow", () => {
     await verifyEmailPage.cancelLogout();
     await verifyEmailPage.expectAlertDialogNotVisible();
 
-    // 5. Open dialog again and confirm logout
+    // 5. Open the dialog again and confirm the logout
     console.log("DEBUG: Clicking logout trigger");
     await verifyEmailPage.clickLogoutTrigger();
     await verifyEmailPage.expectAlertDialogVisible();
@@ -181,7 +181,7 @@ test.describe("Email Verification Workflow", () => {
     console.log("DEBUG: Confirming logout in dialog");
     await verifyEmailPage.confirmLogout();
 
-    // 6. Should be redirected to login page
+    // 6. Should be redirected to the login page
     console.log("DEBUG: Waiting for redirect to /auth/login");
     await expect(page).toHaveURL(/\/auth\/login/, { timeout: 10000 });
     console.log("DEBUG: Redirect successful");

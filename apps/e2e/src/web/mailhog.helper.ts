@@ -32,9 +32,15 @@ export async function getOtpFromMailhog(email: string): Promise<string | null> {
       }
 
       const data: MailHogResponse = await response.json();
-      const message = data.items.find((msg) =>
+
+      // Sort messages by creation date in descending order to get the newest first
+      const sortedMessages = data.items.sort(
+        (a, b) => new Date(b.Created).getTime() - new Date(a.Created).getTime(),
+      );
+
+      const message = sortedMessages.find((msg) =>
         msg.To.some(
-          (to) => `${to.Mailbox}@${to.Domain}` === email.toLowerCase(),
+          (to) => `${to.Mailbox}@${to.Domain}`.toLowerCase() === email.toLowerCase(),
         ),
       );
 
