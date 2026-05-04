@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouteComponent } from './register';
 import { userBuilder, emailAddressBuilder } from '@repo/testing';
 import { EmailStatus } from '@repo/db';
-import React from "react";
+import React from 'react';
 
 // Mock hooks
 const mockValues = createMock<{

@@ -43,7 +43,9 @@ describe('VerifyEmailForm', () => {
     render(<VerifyEmailForm {...defaultProps} isVerifyEmailLoading={true} />);
 
     // Find the Verify button by filtering all buttons by its type attribute
-    const verifyButton = screen.getAllByRole('button').find(btn => btn.getAttribute('type') === 'submit');
+    const verifyButton = screen
+      .getAllByRole('button')
+      .find((btn) => btn.getAttribute('type') === 'submit');
     expect(verifyButton).toBeInTheDocument(); // Ensure the button is found
     expect(verifyButton).toBeDisabled();
 
@@ -55,7 +57,7 @@ describe('VerifyEmailForm', () => {
     expect(screen.getByRole('button', { name: /resend code/i })).toBeDisabled();
     // OTP input slots should be disabled
     const otpInputs = screen.getAllByRole('textbox');
-    otpInputs.forEach(input => expect(input).toBeDisabled());
+    otpInputs.forEach((input) => expect(input).toBeDisabled());
   });
 
   it('should call onSubmit when form is submitted', () => {
