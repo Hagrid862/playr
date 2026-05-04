@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="all tests" type="CompoundRunConfigurationType">
+    <toRun name="e2e tests" type="JavaScriptTestRunnerPlaywright" />
+    <toRun name="api" type="JavaScriptTestRunnerVitest" />
+    <toRun name="integration" type="JavaScriptTestRunnerVitest" />
+    <toRun name="web" type="JavaScriptTestRunnerVitest" />
+    <method v="2" />
+  </configuration>
+</component>
