@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VerifyEmailForm } from './VerifyEmailForm';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('VerifyEmailForm', () => {
   const defaultProps = {
@@ -15,6 +15,10 @@ describe('VerifyEmailForm', () => {
     isResendLoading: false,
     resendTimer: 0,
   };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('should render correctly', () => {
     render(<VerifyEmailForm {...defaultProps} />);
