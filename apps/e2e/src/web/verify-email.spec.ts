@@ -14,7 +14,6 @@ test.describe("Email Verification Workflow", () => {
     verifyEmailPage = new VerifyEmailPage(page);
     dashboardPage = new DashboardPage(page);
 
-
     page.on("console", (msg) => {
       if (msg.type() === "error") console.log(`BROWSER ERROR: ${msg.text()}`);
     });
@@ -23,7 +22,9 @@ test.describe("Email Verification Workflow", () => {
     await deleteAllMailhogMessages();
   });
 
-  test("should register, verify email, and access the app", async ({ page }) => {
+  test("should register, verify email, and access the app", async ({
+    page,
+  }) => {
     const timestamp = Date.now();
     const email = `verify_${timestamp}@example.com`;
 
@@ -103,7 +104,9 @@ test.describe("Email Verification Workflow", () => {
     await expect(verifyEmailPage.verifyButton).toBeEnabled();
   });
 
-  test("should resend verification code and verify with new OTP", async ({ page }) => {
+  test("should resend verification code and verify with new OTP", async ({
+    page,
+  }) => {
     const timestamp = Date.now();
     const email = `resend_${timestamp}@example.com`;
 
@@ -177,7 +180,7 @@ test.describe("Email Verification Workflow", () => {
     console.log("DEBUG: Clicking logout trigger");
     await verifyEmailPage.clickLogoutTrigger();
     await verifyEmailPage.expectAlertDialogVisible();
-    
+
     console.log("DEBUG: Confirming logout in dialog");
     await verifyEmailPage.confirmLogout();
 

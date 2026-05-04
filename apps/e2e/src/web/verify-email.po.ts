@@ -17,18 +17,22 @@ export class VerifyEmailPage {
   constructor(page: Page) {
     this.page = page;
     // input-otp renders a hidden <input data-input-otp> that captures keyboard input
-    this.hiddenInput = page.locator('input[data-input-otp]');
+    this.hiddenInput = page.locator("input[data-input-otp]");
     this.verifyButton = page.getByRole("button", { name: "Verify" });
     this.resendButton = page.getByRole("button", { name: /Resend Code/i });
     this.logoutTriggerButton = page
       .getByRole("button", { name: /log out/i })
       .first();
-    this.confirmLogoutButton = page.getByRole("alertdialog").getByRole("button", { name: /log out/i });
+    this.confirmLogoutButton = page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: /log out/i });
     this.cancelLogoutButton = page.getByRole("alertdialog").getByRole("button", { name: "Cancel" });
     this.alertDialog = page.getByRole("alertdialog");
     this.emailDisplay = page.locator("span.font-medium.text-foreground");
     this.fieldError = page.locator('[data-slot="field-error"]');
-    this.pageTitle = page.locator('[data-slot="card-title"]').filter({ hasText: "Verify your Email" });
+    this.pageTitle = page
+      .locator('[data-slot="card-title"]')
+      .filter({ hasText: "Verify your Email" });
     this.pageDescription = page.locator("div.text-muted-foreground");
   }
 

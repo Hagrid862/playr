@@ -6,8 +6,8 @@ import { LibraryArtistsPage } from "./library-artists.po";
 import { PlayerPage } from "./player.po";
 import { QueuePage } from "./queue.po";
 import { RegistrationPage } from "./registration.po";
-import {getOtpFromMailhog} from "./mailhog.helper";
-import {VerifyEmailPage} from "./verify-email.po";
+import { getOtpFromMailhog } from "./mailhog.helper";
+import { VerifyEmailPage } from "./verify-email.po";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
