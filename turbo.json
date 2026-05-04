@@ -31,7 +31,8 @@
     "JWT_REFRESH_EXPIRES_IN",
     "THROTTLE_ENABLED",
     "REDIS_HOST",
-    "REDIS_PORT"
+    "REDIS_PORT",
+    "MAILHOG_API_URL"
   ],
   "tasks": {
     "build": {

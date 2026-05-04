@@ -89,8 +89,8 @@ describe('AuthController (e2e)', () => {
 
 Playwright tests organized by app in subdirectories: `web/`, `admin/`, `artist/`, `api/`. Each maps to a Playwright project in `playwright.config.ts` with its own base URL.
 
-- CI: 1 worker, 2 retries, forbids `.only`
-- Local: 4 workers, no retries
+- CI: one worker, two retries, forbids `.only`
+- Local: four workers, no retries
 
 ## Coverage
 
