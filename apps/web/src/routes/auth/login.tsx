@@ -1,11 +1,12 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import { useLogin } from '@/hooks/api/auth';
 import { useLoginForm } from '@/hooks/forms/useLoginForm';
 import { useAuthStore } from '@/stores/auth.store';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { SyntheticEvent } from 'react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/login')({
   component: RouteComponent,
@@ -13,7 +14,7 @@ export const Route = createFileRoute('/auth/login')({
 
 export function RouteComponent() {
   const navigate = useNavigate();
-  const { mutateAsync: loginUser, isPending: isLoading, error } = useLogin();
+  const { mutateAsync: loginUser, isPending: isLoading } = useLogin();
   const { formData, isFormValid, handleChange, handleBlur, handleSubmit, getFieldError } =
     useLoginForm();
 
@@ -24,29 +25,39 @@ export function RouteComponent() {
       try {
         const response = await loginUser(data);
 
-        // Persist auth data using store
-        useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
+        //different paths based on whether user primary email is verified
+        if (response.data.outcome === 'authenticated'){
+          // Persist auth data using store
+          useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
 
-        await navigate({ to: '/' });
+          await navigate({ to: '/' });
+        } else if (response.data.outcome === 'unauthenticated') {
+          useAuthStore.getState().setUnauthenticatedUser(response.data.user);
+
+          await navigate({
+            to: '/auth/verify-email',
+            search: { email: response.data.user.emailAddresses[0].email }
+          });
+        }
       } catch (err) {
-        console.error('Login failed', err);
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Registration failed', err);
+        toast.error(message);
       }
     }
   };
 
   return (
     <div className="flex min-h-screen w-full justify-center bg-background">
-      <div className="flex w-full max-w-[1920px] flex-col items-center justify-center p-4">
+      <div className="flex w-full max-w-480 flex-col items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle>Login to your account</CardTitle>
+            <CardTitle className="text-2xl">Login to your account</CardTitle>
+            <CardDescription className="py-2">
+              Welcome back! Please enter your credentials to access your account.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {error && (
-              <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                {error.message}
-              </div>
-            )}
             <LoginForm
               formData={formData}
               isLoading={isLoading}

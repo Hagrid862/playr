@@ -58,7 +58,7 @@ import { join } from 'path';
             from: `"Playr" <${configService.get('MAIL_FROM', { infer: true })}>`,
           },
           template: {
-            dir: join(__dirname, 'shared/mail/templates'),
+            dir: join(import.meta.dirname, 'templates'),
             adapter: new HandlebarsAdapter(),
             options: {
               strict: true,
@@ -66,7 +66,7 @@ import { join } from 'path';
           },
           options: {
             partials: {
-              dir: join(__dirname, 'shared/mail/templates/partials'),
+              dir: join(import.meta.dirname, 'templates/partials'),
               options: {
                 strict: true,
               },

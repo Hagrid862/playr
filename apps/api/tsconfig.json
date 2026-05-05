@@ -4,7 +4,12 @@
   "compilerOptions": {
     "types": ["node", "vitest/globals", "multer"],
     "baseUrl": ".",
+    "allowJs": true,
+    "checkJs": false,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*", "integration/**/*"],
+  "include": ["src/**/*", "integration/**/*", "tsup.config.ts", "src/types/tsup.d.ts"],
   "exclude": ["node_modules", "dist", "src/metadata.ts"]
 }

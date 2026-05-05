@@ -247,7 +247,7 @@ export function EditArtistForm({
         {/* Media Section */}
         <Card className="border-border/50 bg-stone-900/10 backdrop-blur-sm overflow-hidden">
           <CardHeader>
-            <CardTitle>Artist Media</CardTitle>
+            <CardTitle className="text-2xl">Artist Media</CardTitle>
             <CardDescription>
               Update your artist{`'s`} profile picture and banner image.
             </CardDescription>
@@ -311,7 +311,7 @@ export function EditArtistForm({
         {/* Identity Section */}
         <Card className="border-border/50 bg-stone-900/10 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <CardTitle className="text-2xl">Basic Information</CardTitle>
             <CardDescription>Manage your artist{`'s`} public name and biography.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">

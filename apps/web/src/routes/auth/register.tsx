@@ -1,13 +1,15 @@
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { RegisterWelcomePanel } from '@/components/auth/RegisterWelcomePanel';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useRegister } from '@/hooks/api/auth';
 import { useRegisterForm } from '@/hooks/forms/useRegisterForm';
 import { CircleNotchIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type SyntheticEvent } from 'react';
+import {useAuthStore} from "@/stores/auth.store";
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/register')({
   component: RouteComponent,
@@ -15,7 +17,7 @@ export const Route = createFileRoute('/auth/register')({
 
 export function RouteComponent() {
   const navigate = useNavigate();
-  const { mutateAsync: registerUser, isPending: isLoading, error } = useRegister();
+  const { mutateAsync: registerUser, isPending: isLoading } = useRegister();
 
   const {
     formData,
@@ -35,19 +37,26 @@ export function RouteComponent() {
     const data = handleSubmit();
     if (data) {
       try {
-        await registerUser(data);
+        const response = await registerUser(data);
 
-        // Redirect to login page for verification flow
-        await navigate({ to: '/auth/login' });
+        useAuthStore.getState().setUnauthenticatedUser(response.data.user);
+
+        await navigate({
+          to: '/auth/verify-email',
+          search: { email: response.data.user.emailAddresses[0].email }
+        });
+
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         console.error('Registration failed', err);
+        toast.error(message);
       }
     }
   };
 
   return (
     <div className="flex min-h-screen w-full justify-center bg-background px-4 py-8">
-      <div className="flex w-full max-w-[1920px] flex-col items-center justify-center">
+      <div className="flex w-full max-w-480 flex-col items-center justify-center">
         <Card className="w-full max-w-md lg:max-w-4xl overflow-hidden pt-0 pb-0 gap-0">
           <CardContent className="p-0">
             <div className="flex flex-col lg:flex-row">
@@ -57,13 +66,11 @@ export function RouteComponent() {
               {/* Form Panel */}
               <div className="lg:w-1/2 p-6">
                 <CardHeader className="p-0 pb-4">
-                  <CardTitle>Create an account</CardTitle>
+                  <CardTitle className="text-2xl">Create an account</CardTitle>
+                  <CardDescription className="py-2">
+                    Set up your account in seconds and start exploring music.
+                  </CardDescription>
                 </CardHeader>
-                {error && (
-                  <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                    {error.message}
-                  </div>
-                )}
                 <RegisterForm
                   id="register-form"
                   formData={formData}
@@ -98,7 +105,7 @@ export function RouteComponent() {
             </Button>
           </CardFooter>
         </Card>
-        <Button variant="link" color="primary" className="w-full mt-2" asChild>
+        <Button variant="link" color="primary" className="w-full mt-4" asChild>
           <Link to="/auth/login">Already have an account? Sign in!</Link>
         </Button>
       </div>
