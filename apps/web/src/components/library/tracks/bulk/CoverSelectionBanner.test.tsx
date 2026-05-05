@@ -427,9 +427,7 @@ describe('CoverSelectionBanner', () => {
         />,
       );
 
-      await user.click(
-        screen.getByRole('button', { name: 'Use embedded cover from track1.mp3' }),
-      );
+      await user.click(screen.getByRole('button', { name: 'Use embedded cover from track1.mp3' }));
       expect(onSelectCover).toHaveBeenCalledWith('track-1');
     });
 
@@ -473,9 +471,7 @@ describe('CoverSelectionBanner', () => {
       );
 
       expect(
-        screen.getByText(
-          /Your custom image stays until you tap an embedded image below/i,
-        ),
+        screen.getByText(/Your custom image stays until you tap an embedded image below/i),
       ).toBeInTheDocument();
       expect(
         screen.getByRole('button', {
@@ -515,12 +511,10 @@ describe('CoverSelectionBanner', () => {
       );
 
       expect(
-        screen.getByRole('button', { name: /Use embedded cover from track2\.mp3/i })
-          .className,
+        screen.getByRole('button', { name: /Use embedded cover from track2\.mp3/i }).className,
       ).toContain('border-primary');
       expect(
-        screen.getByRole('button', { name: /Use embedded cover from track1\.mp3/i })
-          .className,
+        screen.getByRole('button', { name: /Use embedded cover from track1\.mp3/i }).className,
       ).toContain('border-transparent');
     });
   });

@@ -100,6 +100,7 @@ export function LibraryAlbumFromFilesForm({
     formData.artistId,
     isLoadingArtists,
     pendingArtists,
+    setPendingArtists,
     suggestedArtistName,
     updateFormData,
   ]);
@@ -138,7 +139,7 @@ export function LibraryAlbumFromFilesForm({
       setPendingArtists((prev) => [...prev, { id, name }]);
       updateFormData('artistId', id);
     },
-    [updateFormData],
+    [setPendingArtists, updateFormData],
   );
 
   const handleClearStagedArtist = useCallback(() => {
@@ -148,7 +149,7 @@ export function LibraryAlbumFromFilesForm({
     /* v8 ignore stop */
     setPendingArtists((prev) => prev.filter((p) => p.id !== id));
     updateFormData('artistId', '');
-  }, [formData.artistId, updateFormData]);
+  }, [formData.artistId, setPendingArtists, updateFormData]);
 
   const handleSelectCover = useCallback(
     (trackId: string | null) => {
@@ -237,6 +238,7 @@ export function LibraryAlbumFromFilesForm({
       coverFileForUpload,
       tracks,
       pendingArtists,
+      setPendingArtists,
       createLibraryArtist,
       createAlbum,
       uploadCover,

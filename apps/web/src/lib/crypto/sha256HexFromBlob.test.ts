@@ -41,13 +41,15 @@ describe('sha256HexFromBlob', () => {
     const blob = new Blob([new Uint8Array([1])]);
     Object.defineProperty(blob, 'arrayBuffer', { value: undefined });
 
-    vi.spyOn(FileReader.prototype, 'readAsArrayBuffer').mockImplementation(function (this: FileReader) {
+    vi.spyOn(FileReader.prototype, 'readAsArrayBuffer').mockImplementation(function (
+      this: FileReader,
+    ) {
       queueMicrotask(() => {
         Object.defineProperty(this, 'error', {
           value: new DOMException('read failed', 'NotReadableError'),
           configurable: true,
         });
-        this.onerror?.(new ProgressEvent('error'));
+        this.onerror?.(new ProgressEvent('error') as ProgressEvent<FileReader>);
       });
     });
 

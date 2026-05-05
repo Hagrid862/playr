@@ -9,7 +9,7 @@ import {
   type EditAlbumTrackDraft,
 } from './editAlbumTracksDraft';
 
-function baseTrack(overrides?: Partial<ZodTrack>): ZodTrack {
+function baseTrack(): ZodTrack {
   const mainArtist = artistBuilder({ id: 'a1', name: 'Main' }) as ZodArtist;
   return {
     ...trackBuilder({
@@ -88,16 +88,12 @@ describe('draftsEqualForTrack', () => {
   });
 
   it('returns false when artist id set differs', () => {
-    expect(
-      draftsEqualForTrack(baseTrack(), { ...draftBase(), artistIds: ['other'] }),
-    ).toBe(false);
+    expect(draftsEqualForTrack(baseTrack(), { ...draftBase(), artistIds: ['other'] })).toBe(false);
   });
 
   it('treats missing server artists as empty when comparing to empty draft artist ids', () => {
     const track = { ...baseTrack(), artists: undefined } as ZodTrack;
-    expect(
-      draftsEqualForTrack(track, { ...draftBase(), artistIds: [] }),
-    ).toBe(true);
+    expect(draftsEqualForTrack(track, { ...draftBase(), artistIds: [] })).toBe(true);
   });
 });
 

@@ -2,7 +2,11 @@ import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AlbumTrackArtistsPicker, applyAlbumArtistToggle, nextAlbumArtistIds } from './AlbumTrackArtistsPicker';
+import {
+  AlbumTrackArtistsPicker,
+  applyAlbumArtistToggle,
+  nextAlbumArtistIds,
+} from './AlbumTrackArtistsPicker';
 
 describe('nextAlbumArtistIds', () => {
   it('returns null when turning on an id that is already selected', () => {
@@ -42,9 +46,7 @@ describe('AlbumTrackArtistsPicker', () => {
 
   it('toggles artist selection', async () => {
     const user = userEvent.setup();
-    customRender(
-      <AlbumTrackArtistsPicker artists={artists} value={[]} onChange={onChange} />,
-    );
+    customRender(<AlbumTrackArtistsPicker artists={artists} value={[]} onChange={onChange} />);
 
     await user.click(screen.getByRole('button', { name: /select artists/i }));
     const checks = screen.getAllByRole('checkbox');
@@ -63,9 +65,7 @@ describe('AlbumTrackArtistsPicker', () => {
 
   it('removes an artist when unchecked', async () => {
     const user = userEvent.setup();
-    customRender(
-      <AlbumTrackArtistsPicker artists={artists} value={['a1']} onChange={onChange} />,
-    );
+    customRender(<AlbumTrackArtistsPicker artists={artists} value={['a1']} onChange={onChange} />);
 
     await user.click(screen.getByRole('button', { name: /1 artist/i }));
     const checks = screen.getAllByRole('checkbox');

@@ -22,7 +22,11 @@ vi.mock('@/components/ui/calendar', () => ({
     selected?: Date;
   }) => (
     <div>
-      <button type="button" aria-label="Pick January 10" onClick={() => onSelect?.(new Date(2020, 0, 10))}>
+      <button
+        type="button"
+        aria-label="Pick January 10"
+        onClick={() => onSelect?.(new Date(2020, 0, 10))}
+      >
         day
       </button>
       <button type="button" aria-label="Clear selected date" onClick={() => onSelect?.(undefined)}>

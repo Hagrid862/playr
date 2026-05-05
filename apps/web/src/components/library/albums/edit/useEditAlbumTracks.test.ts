@@ -1,6 +1,4 @@
-import {
-  extractMetadataFromAudioFile,
-} from '@/lib/audio/audio-metadata';
+import { extractMetadataFromAudioFile } from '@/lib/audio/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import type { ZodAlbum, ZodArtist, ZodTrack } from '@repo/contracts';
 import { Visibility } from '@repo/db';
@@ -303,9 +301,7 @@ describe('useEditAlbumTracks', () => {
   });
 
   it('cancels in-flight metadata scan on unmount', async () => {
-    vi.mocked(extractMetadataFromAudioFile).mockImplementation(
-      () => new Promise(() => {}),
-    );
+    vi.mocked(extractMetadataFromAudioFile).mockImplementation(() => new Promise(() => {}));
 
     const album = buildAlbumWithTrack();
     const { result, unmount } = customRenderHook(() => useEditAlbumTracks(album));
@@ -518,9 +514,12 @@ describe('useEditAlbumTracks', () => {
 
   it('resets drafts when album server tracks sync key changes', () => {
     const albumV1 = buildAlbumWithTrack();
-    const { result, rerender } = customRenderHook(({ album }: HookProps) => useEditAlbumTracks(album), {
-      initialProps: { album: albumV1 },
-    });
+    const { result, rerender } = customRenderHook(
+      ({ album }: HookProps) => useEditAlbumTracks(album),
+      {
+        initialProps: { album: albumV1 },
+      },
+    );
 
     act(() => {
       result.current.updateDraft('track-1', { title: 'Local edit' });
@@ -544,9 +543,12 @@ describe('useEditAlbumTracks', () => {
 
   it('prunes pending delete ids when server tracks no longer include that id', () => {
     const albumV1 = buildAlbumWithTrack();
-    const { result, rerender } = customRenderHook(({ album }: HookProps) => useEditAlbumTracks(album), {
-      initialProps: { album: albumV1 },
-    });
+    const { result, rerender } = customRenderHook(
+      ({ album }: HookProps) => useEditAlbumTracks(album),
+      {
+        initialProps: { album: albumV1 },
+      },
+    );
 
     act(() => {
       result.current.scheduleTrackDelete('track-1');
@@ -758,9 +760,7 @@ describe('useEditAlbumTracks', () => {
     const prep = result.current.prepareTracksSubmit();
     expect(prep.ok).toBe(true);
     if (prep.ok) {
-      expect(prep.payload.pendingArtistsToCreate).toEqual([
-        { localId, name: 'Draft Name' },
-      ]);
+      expect(prep.payload.pendingArtistsToCreate).toEqual([{ localId, name: 'Draft Name' }]);
     }
   });
 
@@ -905,14 +905,20 @@ describe('useEditAlbumTracks', () => {
       result.current.addAudioFiles(second.files);
     });
     await waitFor(() => expect(result.current.stagedTracks.length).toBe(2));
-    expect(result.current.stagedTracks.map((t) => t.file.name)).toEqual(['first.mp3', 'second.mp3']);
+    expect(result.current.stagedTracks.map((t) => t.file.name)).toEqual([
+      'first.mp3',
+      'second.mp3',
+    ]);
   });
 
   it('skips metadata rescan when album name changes but staged ids stay the same', async () => {
     const album = buildAlbumWithTrack();
-    const { result, rerender } = customRenderHook(({ album: a }: HookProps) => useEditAlbumTracks(a), {
-      initialProps: { album },
-    });
+    const { result, rerender } = customRenderHook(
+      ({ album: a }: HookProps) => useEditAlbumTracks(a),
+      {
+        initialProps: { album },
+      },
+    );
 
     const list = new DataTransfer();
     list.items.add(new File(['x'], 'one.mp3', { type: 'audio/mp3' }));
@@ -933,7 +939,9 @@ describe('useEditAlbumTracks', () => {
     await waitFor(() => expect(result.current.isScanningMetadata).toBe(false));
 
     expect(result.current.stagedTracks.map((t) => t.id).join(',')).toBe(trackIdsKey);
-    expect(vi.mocked(extractMetadataFromAudioFile).mock.calls.length).toBe(extractCallsAfterFirstScan);
+    expect(vi.mocked(extractMetadataFromAudioFile).mock.calls.length).toBe(
+      extractCallsAfterFirstScan,
+    );
   });
 
   it('applies extracted metadata fields when scanner returns rich meta', async () => {
@@ -1008,9 +1016,12 @@ describe('useEditAlbumTracks', () => {
 
   it('prunes multiple stale pending delete ids when server track list changes', () => {
     const albumTwo = buildAlbumWithTwoTracksOnDifferentDisks();
-    const { result, rerender } = customRenderHook(({ album: a }: HookProps) => useEditAlbumTracks(a), {
-      initialProps: { album: albumTwo },
-    });
+    const { result, rerender } = customRenderHook(
+      ({ album: a }: HookProps) => useEditAlbumTracks(a),
+      {
+        initialProps: { album: albumTwo },
+      },
+    );
 
     act(() => {
       result.current.scheduleTrackDelete('track-a');

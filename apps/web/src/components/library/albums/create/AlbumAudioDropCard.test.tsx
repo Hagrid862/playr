@@ -17,9 +17,7 @@ describe('AlbumAudioDropCard', () => {
     const fileInputRef = createRef<HTMLInputElement>();
     const audio = new File(['x'], 'a.mp3', { type: 'audio/mpeg' });
 
-    customRender(
-      <AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} />,
-    );
+    customRender(<AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} />);
 
     const input = fileInputRef.current;
     expect(input).toBeTruthy();
@@ -36,12 +34,11 @@ describe('AlbumAudioDropCard', () => {
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(audio);
 
-    customRender(
-      <AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} />,
-    );
+    customRender(<AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} />);
 
-    const dropzone = screen.getByRole('button', { name: /click here or drop audio files/i })
-      .parentElement;
+    const dropzone = screen.getByRole('button', {
+      name: /click here or drop audio files/i,
+    }).parentElement;
     expect(dropzone).toBeTruthy();
 
     fireEvent.drop(dropzone!, { dataTransfer });
@@ -58,8 +55,9 @@ describe('AlbumAudioDropCard', () => {
       <AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} compact />,
     );
 
-    const dropzone = screen.getByRole('button', { name: /click here or drop audio files/i })
-      .parentElement!;
+    const dropzone = screen.getByRole('button', {
+      name: /click here or drop audio files/i,
+    }).parentElement!;
 
     fireEvent.dragEnter(dropzone);
     fireEvent.dragEnter(dropzone);
@@ -73,8 +71,9 @@ describe('AlbumAudioDropCard', () => {
   it('invokes onDragOver without throwing', () => {
     const fileInputRef = createRef<HTMLInputElement>();
     customRender(<AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} />);
-    const dropzone = screen.getByRole('button', { name: /click here or drop audio files/i })
-      .parentElement!;
+    const dropzone = screen.getByRole('button', {
+      name: /click here or drop audio files/i,
+    }).parentElement!;
     fireEvent.dragOver(dropzone);
     expect(onAddFiles).not.toHaveBeenCalled();
   });
@@ -83,12 +82,11 @@ describe('AlbumAudioDropCard', () => {
     const fileInputRef = createRef<HTMLInputElement>();
     const dataTransfer = new DataTransfer();
 
-    customRender(
-      <AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} />,
-    );
+    customRender(<AlbumAudioDropCard fileInputRef={fileInputRef} onAddFiles={onAddFiles} />);
 
-    const dropzone = screen.getByRole('button', { name: /click here or drop audio files/i })
-      .parentElement!;
+    const dropzone = screen.getByRole('button', {
+      name: /click here or drop audio files/i,
+    }).parentElement!;
     fireEvent.drop(dropzone, { dataTransfer });
 
     expect(onAddFiles).not.toHaveBeenCalled();

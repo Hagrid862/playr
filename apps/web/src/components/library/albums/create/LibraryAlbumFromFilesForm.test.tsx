@@ -237,9 +237,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(createAlbumMock).toHaveBeenCalled();
       expect(bulkTracksMock).toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalled();
-      expect(toast.success).toHaveBeenCalledWith(
-        'Successfully created album and uploaded 1 track',
-      );
+      expect(toast.success).toHaveBeenCalledWith('Successfully created album and uploaded 1 track');
     });
   });
 
@@ -251,7 +249,7 @@ describe('LibraryAlbumFromFilesForm', () => {
     const dt = new DataTransfer();
     dt.items.add(new File(['a'], 'a.mp3', { type: 'audio/mp3' }));
     dt.items.add(new File(['b'], 'b.mp3', { type: 'audio/mp3' }));
-    await user.upload(audioInput, dt.files);
+    await user.upload(audioInput, Array.from(dt.files));
 
     await waitFor(() => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
@@ -407,7 +405,9 @@ describe('LibraryAlbumFromFilesForm', () => {
       </TooltipProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: /artist/i })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: /artist/i })).toBeInTheDocument(),
+    );
   });
 
   it('surfaces missing pending artist name during submit', async () => {
@@ -692,9 +692,7 @@ describe('LibraryAlbumFromFilesForm', () => {
     allowCoverInputFilesMutation(coverInput);
     await user.upload(coverInput, new File(['m'], 'manual.png', { type: 'image/png' }));
 
-    await user.click(
-      screen.getByRole('button', { name: /use embedded cover from song\.mp3/i }),
-    );
+    await user.click(screen.getByRole('button', { name: /use embedded cover from song\.mp3/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/tap an image for the album cover/i)).toBeInTheDocument();
@@ -947,7 +945,7 @@ describe('LibraryAlbumFromFilesForm', () => {
     const dt = new DataTransfer();
     dt.items.add(new File(['a'], 'a.mp3', { type: 'audio/mp3' }));
     dt.items.add(new File(['b'], 'b.mp3', { type: 'audio/mp3' }));
-    await user.upload(audioInput, dt.files);
+    await user.upload(audioInput, Array.from(dt.files));
 
     await waitFor(() => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');

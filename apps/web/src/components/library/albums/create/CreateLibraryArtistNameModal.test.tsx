@@ -12,11 +12,16 @@ vi.mock('@/components/ui/button', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/components/ui/button')>();
   return {
     ...actual,
-    Button: ({ disabled: _disabled, onClick, children, ...rest }: ComponentProps<'button'>) => {
+    Button: ({ onClick, children, ...rest }: ComponentProps<'button'>) => {
       const isAddOrChecking = children === 'Add artist' || children === 'Checking…';
       const isChecking = children === 'Checking…';
       return (
-        <button type="button" {...rest} disabled={isAddOrChecking ? isChecking : false} onClick={onClick}>
+        <button
+          type="button"
+          {...rest}
+          disabled={isAddOrChecking ? isChecking : false}
+          onClick={onClick}
+        >
           {children}
         </button>
       );

@@ -174,13 +174,7 @@ describe('LibraryArtistsController', () => {
       const result = await controller.getLibraryArtistAlbums(userId, artistId, query);
 
       expect(queryBus.execute).toHaveBeenCalledWith(
-        new GetLibraryArtistAlbumsQuery(
-          userId,
-          artistId,
-          query.page,
-          query.limit,
-          query.type,
-        ),
+        new GetLibraryArtistAlbumsQuery(userId, artistId, query.page, query.limit, query.type),
       );
       expect(result).toBe(expectedResult);
     });

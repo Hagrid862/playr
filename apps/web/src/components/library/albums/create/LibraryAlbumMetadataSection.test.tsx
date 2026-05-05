@@ -168,7 +168,9 @@ describe('LibraryAlbumMetadataSection', () => {
     dt.items.add(bad);
     fireEvent.change(input, { target: { files: dt.files } });
 
-    expect(await screen.findByRole('heading', { name: /invalid file format/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /invalid file format/i }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^ok$/i }));
   });
 

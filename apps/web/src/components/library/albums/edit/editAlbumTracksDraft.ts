@@ -34,7 +34,9 @@ export function draftsEqualForTrack(track: ZodTrack, draft: EditAlbumTrackDraft)
   );
 }
 
-export function buildDraftsFromServerTracks(tracks: ZodTrack[]): Record<string, EditAlbumTrackDraft> {
+export function buildDraftsFromServerTracks(
+  tracks: ZodTrack[],
+): Record<string, EditAlbumTrackDraft> {
   const next: Record<string, EditAlbumTrackDraft> = {};
   for (const t of tracks) {
     next[t.id] = trackToDraft(t);

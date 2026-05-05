@@ -23,7 +23,9 @@ vi.mock('@/stores/library.store', () => ({
   useLibraryStore: (
     selector?: (s: { privateArtists: { id: string; name: string }[] }) => unknown,
   ) => {
-    return selector ? selector({ privateArtists: libraryStoreState.privateArtists }) : libraryStoreState;
+    return selector
+      ? selector({ privateArtists: libraryStoreState.privateArtists })
+      : libraryStoreState;
   },
 }));
 
@@ -64,7 +66,9 @@ const emptyPayload = {
   newTracks: [],
 };
 
-function createTracksMock(overrides: Partial<EditAlbumTracksController> = {}): EditAlbumTracksController {
+function createTracksMock(
+  overrides: Partial<EditAlbumTracksController> = {},
+): EditAlbumTracksController {
   return {
     sortedExisting: [],
     sortedExistingActive: [],
@@ -133,7 +137,9 @@ describe('EditAlbumTracksSection', () => {
   it('shows empty-artist helper when no library artists and no tracks', () => {
     libraryStoreState.privateArtists = [];
     customRender(<EditAlbumTracksSection tracks={tracks} />);
-    expect(screen.getByText(/Load library artists or add a new artist from a track/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Load library artists or add a new artist from a track/i),
+    ).toBeInTheDocument();
     expect(screen.getByText('No tracks on this album yet.')).toBeInTheDocument();
   });
 
@@ -293,7 +299,10 @@ describe('EditAlbumTracksSection', () => {
     fireEvent.change(stagedTitle, {
       target: { value: 'Staged Title' },
     });
-    expect(updateStagedTrack).toHaveBeenCalledWith('st-1', expect.objectContaining({ title: 'Staged Title' }));
+    expect(updateStagedTrack).toHaveBeenCalledWith(
+      'st-1',
+      expect.objectContaining({ title: 'Staged Title' }),
+    );
     fireEvent.blur(stagedTitle);
 
     const diskInput = screen.getByLabelText(/^disk no/i);
@@ -312,12 +321,30 @@ describe('EditAlbumTracksSection', () => {
     await user.click(screen.getByRole('button', { name: /1 artist/i }));
     await user.click(await screen.findByRole('checkbox', { name: /^alpha$/i }));
 
-    expect(updateStagedTrack).toHaveBeenCalledWith('st-1', expect.objectContaining({ diskNumber: 2 }));
-    expect(updateStagedTrack).toHaveBeenCalledWith('st-1', expect.objectContaining({ trackNumber: 5 }));
-    expect(updateStagedTrack).toHaveBeenCalledWith('st-1', expect.objectContaining({ diskNumber: 1 }));
-    expect(updateStagedTrack).toHaveBeenCalledWith('st-1', expect.objectContaining({ trackNumber: 1 }));
-    expect(updateStagedTrack).toHaveBeenCalledWith('st-1', expect.objectContaining({ explicit: true }));
-    expect(updateStagedTrack).toHaveBeenCalledWith('st-1', expect.objectContaining({ artistIds: [] }));
+    expect(updateStagedTrack).toHaveBeenCalledWith(
+      'st-1',
+      expect.objectContaining({ diskNumber: 2 }),
+    );
+    expect(updateStagedTrack).toHaveBeenCalledWith(
+      'st-1',
+      expect.objectContaining({ trackNumber: 5 }),
+    );
+    expect(updateStagedTrack).toHaveBeenCalledWith(
+      'st-1',
+      expect.objectContaining({ diskNumber: 1 }),
+    );
+    expect(updateStagedTrack).toHaveBeenCalledWith(
+      'st-1',
+      expect.objectContaining({ trackNumber: 1 }),
+    );
+    expect(updateStagedTrack).toHaveBeenCalledWith(
+      'st-1',
+      expect.objectContaining({ explicit: true }),
+    );
+    expect(updateStagedTrack).toHaveBeenCalledWith(
+      'st-1',
+      expect.objectContaining({ artistIds: [] }),
+    );
   });
 
   it('disables staged actions while metadata is scanning', () => {
