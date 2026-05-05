@@ -125,7 +125,9 @@ export class RegistrationPage {
 
   async expectSuccess() {
     try {
-      await expect(this.page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
+      await expect(this.page).toHaveURL(/\/auth\/verify-email/, {
+        timeout: 15000,
+      });
     } catch (e) {
       // If we failed, check if there's an error message on the page
       try {

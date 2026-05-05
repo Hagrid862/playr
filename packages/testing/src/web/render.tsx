@@ -1,5 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React, { type ComponentType, type ReactElement, type ReactNode } from "react";
+import React, {
+  type ComponentType,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   createMemoryHistory,
   createRootRoute,

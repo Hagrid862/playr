@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouteComponent } from './login';
 import { userBuilder, emailAddressBuilder } from '@repo/testing';
 import { EmailStatus, User, EmailAddress } from '@repo/db';
-import React from "react";
+import React from 'react';
 
 // Define a type that extends User to include emailAddresses
 type UserWithEmailAddresses = User & {

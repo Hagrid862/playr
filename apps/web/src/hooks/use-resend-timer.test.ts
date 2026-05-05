@@ -93,7 +93,7 @@ describe('useResendTimer', () => {
     expect(result.current.timeLeft).toBe(0);
 
     const expiry = Date.now() + 45 * 1000;
-    
+
     act(() => {
       window.localStorage.setItem(KEY, String(expiry));
       // Manually trigger storage event as it doesn't fire in the same window
@@ -102,7 +102,6 @@ describe('useResendTimer', () => {
 
     expect(result.current.timeLeft).toBe(45);
   });
-
 
   it('should return 0 for timeLeft if localStorage throws an error', () => {
     const originalLocalStorage = window.localStorage;

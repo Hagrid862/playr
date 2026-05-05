@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { DashboardPage } from "./dashboard.po";
 import { LoginPage } from "./login.po";
 import { RegistrationPage } from "./registration.po";
-import {getOtpFromMailhog} from "./mailhog.helper";
-import {VerifyEmailPage} from "./verify-email.po";
+import { getOtpFromMailhog } from "./mailhog.helper";
+import { VerifyEmailPage } from "./verify-email.po";
 
 test.describe("Authentication Workflow", () => {
   let loginPage: LoginPage;

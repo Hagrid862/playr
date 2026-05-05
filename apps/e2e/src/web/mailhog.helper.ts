@@ -40,7 +40,8 @@ export async function getOtpFromMailhog(email: string): Promise<string | null> {
 
       const message = sortedMessages.find((msg) =>
         msg.To.some(
-          (to) => `${to.Mailbox}@${to.Domain}`.toLowerCase() === email.toLowerCase(),
+          (to) =>
+            `${to.Mailbox}@${to.Domain}`.toLowerCase() === email.toLowerCase(),
         ),
       );
 

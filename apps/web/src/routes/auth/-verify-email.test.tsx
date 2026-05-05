@@ -92,7 +92,7 @@ describe('VerifyEmail Route', () => {
 
   it('should render the verify email page', async () => {
     useAuthStore.getState().setUnauthenticatedUser(mockUser);
-    
+
     render(<RouteComponent />);
 
     expect(screen.getByText(/verify your email/i)).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('VerifyEmail Route', () => {
   it('should handle successful verification', async () => {
     useAuthStore.getState().setUnauthenticatedUser(mockUser);
     const setAuthSpy = vi.spyOn(useAuthStore.getState(), 'setAuth');
-    
+
     mockVerifyEmail.mockResolvedValueOnce({
       success: true,
       data: {
@@ -119,7 +119,7 @@ describe('VerifyEmail Route', () => {
 
     // Submit form - use query method since button text changes when loading
     const buttons = screen.getAllByRole('button');
-    const submitBtn = buttons.find(btn => btn.getAttribute('type') === 'submit');
+    const submitBtn = buttons.find((btn) => btn.getAttribute('type') === 'submit');
     fireEvent.click(submitBtn!);
 
     await waitFor(() => {
@@ -150,7 +150,7 @@ describe('VerifyEmail Route', () => {
     expect(screen.getByRole('button', { name: /wait 60s to resend code/i })).toBeDisabled();
   });
 
-   it('should handle logout via dialog', async () => {
+  it('should handle logout via dialog', async () => {
     useAuthStore.getState().setUnauthenticatedUser(mockUser);
     const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
 

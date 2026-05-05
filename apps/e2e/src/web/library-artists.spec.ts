@@ -1,8 +1,8 @@
 import { expect, Page, test } from "@playwright/test";
 import { LibraryArtistsPage } from "./library-artists.po";
 import { RegistrationPage } from "./registration.po";
-import {getOtpFromMailhog} from "./mailhog.helper";
-import {VerifyEmailPage} from "./verify-email.po";
+import { getOtpFromMailhog } from "./mailhog.helper";
+import { VerifyEmailPage } from "./verify-email.po";
 
 test.describe("Library Artist CRUD Workflow", () => {
   let page: Page;

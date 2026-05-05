@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="api" type="JavaScriptTestRunnerVitest">
+    <config value="$PROJECT_DIR$/apps/api/vitest.config.mts" />
+    <node-interpreter value="project" />
+    <vitest-package value="$PROJECT_DIR$/apps/api/node_modules/vitest" />
+    <working-dir value="$PROJECT_DIR$/apps/api" />
+    <envs />
+    <scope-kind value="ALL" />
+    <method v="2" />
+  </configuration>
+</component>

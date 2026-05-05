@@ -2,6 +2,24 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { VerifyEmailForm } from './VerifyEmailForm';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Mock the InputOTP component to prevent window-related errors during tests
+vi.mock('@/components/ui/input-otp', () => ({
+  InputOTP: vi.fn(({ value, onChange, disabled, children, ...props }) => (
+    <div data-testid="mock-input-otp" {...props}>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        disabled={disabled}
+        data-testid="mock-input-otp-input"
+      />
+      {children}
+    </div>
+  )),
+  InputOTPGroup: vi.fn(({ children }) => <div data-testid="mock-input-otp-group">{children}</div>),
+  InputOTPSlot: vi.fn(({ index }) => <div data-testid={`mock-input-otp-slot-${index}`} />),
+}));
+
 describe('VerifyEmailForm', () => {
   const defaultProps = {
     formData: { email: 'test@example.com', otpCode: '' },
@@ -43,7 +61,9 @@ describe('VerifyEmailForm', () => {
     render(<VerifyEmailForm {...defaultProps} isVerifyEmailLoading={true} />);
 
     // Find the Verify button by filtering all buttons by its type attribute
-    const verifyButton = screen.getAllByRole('button').find(btn => btn.getAttribute('type') === 'submit');
+    const verifyButton = screen
+      .getAllByRole('button')
+      .find((btn) => btn.getAttribute('type') === 'submit');
     expect(verifyButton).toBeInTheDocument(); // Ensure the button is found
     expect(verifyButton).toBeDisabled();
 
@@ -54,8 +74,8 @@ describe('VerifyEmailForm', () => {
     // Resend button should also be disabled when verify is loading
     expect(screen.getByRole('button', { name: /resend code/i })).toBeDisabled();
     // OTP input slots should be disabled
-    const otpInputs = screen.getAllByRole('textbox');
-    otpInputs.forEach(input => expect(input).toBeDisabled());
+    const otpInput = screen.getByTestId('mock-input-otp-input');
+    expect(otpInput).toBeDisabled();
   });
 
   it('should call onSubmit when form is submitted', () => {
@@ -72,19 +92,17 @@ describe('VerifyEmailForm', () => {
 
   it('should call onChange when OTP input value changes', () => {
     render(<VerifyEmailForm {...defaultProps} />);
-    // Target the first individual input slot
-    const otpInputs = screen.getAllByRole('textbox');
-    const firstInput = otpInputs[0];
-    fireEvent.change(firstInput, { target: { value: '12345678' } });
+    // Target the mocked input element
+    const otpInput = screen.getByTestId('mock-input-otp-input');
+    fireEvent.change(otpInput, { target: { value: '12345678' } });
     expect(defaultProps.onChange).toHaveBeenCalledWith('otpCode', '12345678');
   });
 
   it('should call onBlur when OTP input loses focus', () => {
     render(<VerifyEmailForm {...defaultProps} />);
-    // Target the first individual input slot
-    const otpInputs = screen.getAllByRole('textbox');
-    const firstInput = otpInputs[0];
-    fireEvent.blur(firstInput);
+    // Target the mocked input element
+    const otpInput = screen.getByTestId('mock-input-otp-input');
+    fireEvent.blur(otpInput);
     expect(defaultProps.onBlur).toHaveBeenCalledWith('otpCode');
   });
 

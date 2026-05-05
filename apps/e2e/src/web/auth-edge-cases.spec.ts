@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { LoginPage } from "./login.po";
 import { RegistrationPage } from "./registration.po";
-import {getOtpFromMailhog} from "./mailhog.helper";
-import {VerifyEmailPage} from "./verify-email.po";
-import {DashboardPage} from "./dashboard.po";
+import { getOtpFromMailhog } from "./mailhog.helper";
+import { VerifyEmailPage } from "./verify-email.po";
+import { DashboardPage } from "./dashboard.po";
 
 test.describe("Auth Edge Cases", () => {
   let loginPage: LoginPage;
@@ -30,10 +30,10 @@ test.describe("Auth Edge Cases", () => {
     );
 
     // Expect Sonner toast error message
-    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({
+    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
+    await expect(page.locator("[data-sonner-toast]").first()).toHaveText(
       /Invalid credentials|User not found/i,
     );
   });
@@ -90,10 +90,10 @@ test.describe("Auth Edge Cases", () => {
     await loginPage.goto();
     await loginPage.login(user.email, "WrongPassword123!");
 
-    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({
+    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
+    await expect(page.locator("[data-sonner-toast]").first()).toHaveText(
       /Invalid credentials/i,
     );
   });
@@ -146,8 +146,10 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.submit();
 
     // Expect Sonner toast error message for conflict
-    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible();
-    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
+    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.locator("[data-sonner-toast]").first()).toHaveText(
       /taken|exists|duplicate/i,
     );
   });
@@ -198,8 +200,8 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.submit();
 
     // Expect Sonner toast error message
-    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible();
-    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
+    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible();
+    await expect(page.locator("[data-sonner-toast]").first()).toHaveText(
       /taken|exists|duplicate/i,
     );
   });

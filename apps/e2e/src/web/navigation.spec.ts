@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { DashboardPage } from "./dashboard.po";
 import { LibraryArtistsPage } from "./library-artists.po";
 import { RegistrationPage } from "./registration.po";
-import {getOtpFromMailhog} from "./mailhog.helper";
-import {VerifyEmailPage} from "./verify-email.po";
+import { getOtpFromMailhog } from "./mailhog.helper";
+import { VerifyEmailPage } from "./verify-email.po";
 
 test.describe("Navigation Flow", () => {
   let verifyEmailPage: VerifyEmailPage;
