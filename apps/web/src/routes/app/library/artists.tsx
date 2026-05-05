@@ -10,28 +10,30 @@ export const Route = createFileRoute('/app/library/artists')({
 
 function ArtistsLayout() {
   const location = useLocation();
-  const isCreate = location.pathname.endsWith('/create');
-  const isEdit = location.pathname.endsWith('/edit');
-  const isAddContent = location.pathname.endsWith('/add-content');
+  const segments = location.pathname.split('/').filter(Boolean);
   const isIndex =
-    location.pathname === '/app/library/artists' || location.pathname === '/app/library/artists/';
-  const isDetail = !isIndex && !isCreate && !isEdit && !isAddContent;
-  const addType = location.pathname.endsWith('/add-content/album')
-    ? 'album'
-    : location.pathname.endsWith('/add-content/ep')
-      ? 'ep'
-      : location.pathname.endsWith('/add-content/single')
-        ? 'single'
-        : location.pathname.endsWith('/add-content/compilation')
-          ? 'compilation'
-          : null;
+    segments.length === 3 &&
+    segments[0] === 'app' &&
+    segments[1] === 'library' &&
+    segments[2] === 'artists';
+  const isCreate = segments[3] === 'create';
+  const isEdit = segments[segments.length - 1] === 'edit';
+  const isAddContent = segments.includes('add-content');
+  const isDetail =
+    !isIndex &&
+    !isCreate &&
+    !isEdit &&
+    !isAddContent &&
+    segments[2] === 'artists' &&
+    Boolean(segments[3]) &&
+    segments[3] !== 'create' &&
+    segments.length === 4;
 
-  // Extract ID: /app/library/artists/$id or /app/library/artists/$id/edit
-  const segments = location.pathname.split('/');
-  const artistId = isEdit
-    ? segments[segments.length - 2]
-    : isDetail
-      ? segments[segments.length - 1]
+  const artistId =
+    segments[2] === 'artists' && segments[3] && segments[3] !== 'create'
+      ? isEdit
+        ? segments[segments.length - 2]
+        : segments[3]
       : null;
 
   const artist = useLibraryStore((state) =>
@@ -43,12 +45,10 @@ function ArtistsLayout() {
     : isEdit
       ? `Edit ${artist?.name ?? 'Artist'}`
       : isAddContent
-        ? 'Add Content'
-        : addType
-          ? `Add ${addType}`
-          : isDetail
-            ? (artist?.name ?? 'Artist Detail')
-            : 'Artists';
+        ? 'Create Album'
+        : isDetail
+          ? (artist?.name ?? 'Artist Detail')
+          : 'Artists';
 
   return (
     <div className="flex flex-col gap-4 p-4">

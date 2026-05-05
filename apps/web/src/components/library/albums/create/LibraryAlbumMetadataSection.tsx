@@ -87,11 +87,13 @@ export function LibraryAlbumMetadataSection({
       }
       if (file.type.startsWith('image/')) {
         onManualCoverFile(file);
+        /* v8 ignore start -- ref is attached before any user-driven handler runs */
         if (coverInputRef.current) {
           const dataTransfer = new DataTransfer();
           dataTransfer.items.add(file);
           coverInputRef.current.files = dataTransfer.files;
         }
+        /* v8 ignore stop */
       } else {
         setIsFormatModalOpen(true);
       }

@@ -11,6 +11,26 @@ export interface AlbumArtistOption {
   label: string;
 }
 
+/** Next artist id list after a checkbox toggle; `null` means leave selection unchanged. */
+export function nextAlbumArtistIds(value: string[], id: string, checked: boolean): string[] | null {
+  if (checked) {
+    if (!value.includes(id)) return [...value, id];
+    return null;
+  }
+  return value.filter((x) => x !== id);
+}
+
+/** Applies a checkbox toggle and calls `onChange` only when the selection actually changes. */
+export function applyAlbumArtistToggle(
+  value: string[],
+  id: string,
+  checked: boolean,
+  onChange: (next: string[]) => void,
+): void {
+  const next = nextAlbumArtistIds(value, id, checked);
+  if (next !== null) onChange(next);
+}
+
 interface AlbumTrackArtistsPickerProps {
   artists: AlbumArtistOption[];
   value: string[];
@@ -35,11 +55,7 @@ export function AlbumTrackArtistsPicker({
 
   const toggle = useCallback(
     (id: string, checked: boolean) => {
-      if (checked) {
-        if (!value.includes(id)) onChange([...value, id]);
-      } else {
-        onChange(value.filter((x) => x !== id));
-      }
+      applyAlbumArtistToggle(value, id, checked, onChange);
     },
     [onChange, value],
   );

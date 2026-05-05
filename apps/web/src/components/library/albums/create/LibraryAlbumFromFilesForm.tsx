@@ -49,7 +49,6 @@ export function LibraryAlbumFromFilesForm({
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);
-  const [pendingArtists, setPendingArtists] = useState<{ id: string; name: string }[]>([]);
 
   const {
     formData,
@@ -72,6 +71,8 @@ export function LibraryAlbumFromFilesForm({
     clearTracks,
     updateFormData,
     isFormValid,
+    pendingArtists,
+    setPendingArtists,
   } = useLibraryAlbumFromFilesForm({ initialArtistId });
 
   useEffect(() => {
@@ -142,7 +143,9 @@ export function LibraryAlbumFromFilesForm({
 
   const handleClearStagedArtist = useCallback(() => {
     const id = formData.artistId;
+    /* v8 ignore start -- remove draft only renders when id is a pending local draft */
     if (!isLocalPendingArtistId(id)) return;
+    /* v8 ignore stop */
     setPendingArtists((prev) => prev.filter((p) => p.id !== id));
     updateFormData('artistId', '');
   }, [formData.artistId, updateFormData]);
@@ -352,7 +355,7 @@ export function LibraryAlbumFromFilesForm({
             {isSubmitting ? (
               <>
                 <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
-                {progressStep ?? 'Creating...'}
+                {progressStep}
               </>
             ) : (
               <>
