@@ -45,7 +45,8 @@ export const UserSchema: z.ZodType<ZodUser> = z.object({
 });
 
 export const UserWithPrimaryEmailSchema = UserSchema.transform((user, ctx) => {
-  const primaryEmails = user.emailAddresses?.filter((email) => email.type === "primary") ?? [];
+  const primaryEmails =
+    user.emailAddresses?.filter((email) => email.type === "primary") ?? [];
 
   if (primaryEmails.length === 0) {
     ctx.addIssue({
@@ -62,6 +63,8 @@ export const UserWithPrimaryEmailSchema = UserSchema.transform((user, ctx) => {
   } as ZodUser & { emailAddresses: [ZodEmailAddress, ...ZodEmailAddress[]] };
 });
 
-export type ZodUserWithPrimaryEmail = z.infer<typeof UserWithPrimaryEmailSchema>;
+export type ZodUserWithPrimaryEmail = z.infer<
+  typeof UserWithPrimaryEmailSchema
+>;
 
 export type ZodUserInfer = z.infer<typeof UserSchema>;

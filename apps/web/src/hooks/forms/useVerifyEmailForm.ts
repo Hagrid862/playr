@@ -8,7 +8,7 @@ export const useVerifyEmailForm = (initialEmail: string = '') => {
   const [formData, setFormData] = useState<FormData>({ email: initialEmail, otpCode: '' });
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
 
-  const handleChange  = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
+  const handleChange = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
@@ -38,9 +38,12 @@ export const useVerifyEmailForm = (initialEmail: string = '') => {
     return result.success ? result.data : null;
   }, [formData]);
 
-  const getFieldError = useCallback((field: keyof FormData) => {
-    return touched[field] ? errors[field] : undefined;
-  }, [errors, touched]);
+  const getFieldError = useCallback(
+    (field: keyof FormData) => {
+      return touched[field] ? errors[field] : undefined;
+    },
+    [errors, touched],
+  );
 
   return {
     formData,

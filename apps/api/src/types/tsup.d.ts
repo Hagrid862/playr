@@ -7,4 +7,3 @@ declare module '@repo/configs/tsup/base' {
   import { Options } from 'tsup';
   export const baseConfig: Options;
 }
-

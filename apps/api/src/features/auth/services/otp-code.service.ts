@@ -3,6 +3,7 @@ import { HashingService } from '@/shared/services/hashing.service';
 import { Redis } from 'ioredis';
 import * as crypto from 'crypto';
 import type { EmailAddress } from '@repo/db';
+import { OTP_CODE_TTL } from '@/features/auth/constants/auth.constants';
 
 @Injectable()
 export class OtpCodeService {
@@ -34,12 +35,11 @@ export class OtpCodeService {
     try {
       const otp = crypto.randomInt(10000000, 99999999).toString();
       const hashedOtp = await this.hashingService.hash(otp);
-      const expirationTime = 15; // 15 minutes
       const key = `otp:${otpType}:${emailObj.email}`;
 
       this.logger.log(`Generated OTP for email id ${emailObj.id} and type ${otpType}`);
 
-      await this.redis.set(key, hashedOtp, 'EX', expirationTime * 60);
+      await this.redis.set(key, hashedOtp, 'EX', OTP_CODE_TTL * 60);
 
       return otp;
     } catch (error) {
@@ -60,7 +60,7 @@ export class OtpCodeService {
     const key = `otp:${otpType}:${emailObj.email}`;
     const claimKey = `${key}:claim`;
     const claimToken = crypto.randomUUID();
-    const claimTtlMs = 5000;
+    const claimTtlMs = 5000; //time in milliseconds to hold the claim lock, of the verification
 
     try {
       const claimResult = await this.redis.set(claimKey, claimToken, 'PX', claimTtlMs, 'NX');

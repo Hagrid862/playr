@@ -1,14 +1,21 @@
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { RegisterWelcomePanel } from '@/components/auth/RegisterWelcomePanel';
 import { Button } from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useRegister } from '@/hooks/api/auth';
 import { useRegisterForm } from '@/hooks/forms/useRegisterForm';
 import { CircleNotchIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type SyntheticEvent } from 'react';
-import {useAuthStore} from "@/stores/auth.store";
+import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/register')({
@@ -43,9 +50,8 @@ export function RouteComponent() {
 
         await navigate({
           to: '/auth/verify-email',
-          search: { email: response.data.user.emailAddresses[0].email }
+          search: { email: response.data.user.emailAddresses[0].email },
         });
-
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('Registration failed', err);

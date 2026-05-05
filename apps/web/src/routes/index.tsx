@@ -12,13 +12,12 @@ function App() {
   if (accessToken) {
     return <Navigate to="/app" />;
   } else if (!accessToken && user) {
-    const userEmail = user.emailAddresses?.[0]?.email ?? '' ;
-    if (userEmail){
+    const userEmail = user.emailAddresses?.[0]?.email ?? '';
+    if (userEmail) {
       return <Navigate to="/auth/verify-email" search={{ email: userEmail }} />;
     } else {
       return <Navigate to="/auth/login" />;
     }
-
   }
 
   return <LandingPage />;
