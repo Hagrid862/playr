@@ -1068,3 +1068,8 @@ enum Visibility {
   private
   community
 }
+
+enum OtpCodeType {
+  emailVerification
+  passwordReset
+}

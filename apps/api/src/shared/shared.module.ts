@@ -23,6 +23,7 @@ import { ImageService } from './services/image.service';
 import { PrismaService } from './services/prisma.service';
 import { StorageService } from './services/storage.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
+import { MailService } from '@/shared/services/mail.service';
 
 @Global()
 @Module({
@@ -36,6 +37,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     ImageService,
     HashingService,
     StorageService,
+    MailService,
     // Repositories
     UserRepository,
     EmailAddressRepository,
@@ -63,6 +65,7 @@ import { UnitOfWorkService } from './services/unit-of-work.service';
     UnitOfWorkService,
     ImageService,
     StorageService,
+    MailService,
     // Repositories
     UserRepository,
     EmailAddressRepository,

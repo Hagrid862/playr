@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiErrorResponseDto } from '../../common/dto/api-error.response.dto';
@@ -25,6 +25,7 @@ import {
   REFRESH_TOKEN_COOKIE_NAME,
   REFRESH_TOKEN_COOKIE_OPTIONS,
 } from './constants/cookie.constants';
+import { LoginRequestDto } from './dto/login.request.dto';
 import { LoginResponseDto } from './dto/login.response.dto';
 import { LogoutResponseDto } from './dto/logout.response.dto';
 import { RefreshResponseDto } from './dto/refresh.response.dto';
@@ -32,6 +33,12 @@ import { RegisterRequestDto } from './dto/register.request.dto';
 import { RegisterResponseDto } from './dto/register.response.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshTokenInterceptor } from './interceptors/refresh-token.interceptor';
+import { VerifyEmailResponseDto } from '@/features/auth/dto/verify-email.response.dto';
+import { VerifyEmailCommand } from '@/features/auth/commands/impl/verify-email.command';
+import { VerifyEmailRequestDto } from '@/features/auth/dto/verify-email.request.dto';
+import { ResendEmailVerificationCodeResponseDto } from '@/features/auth/dto/resend-email-verification-code.response.dto';
+import { ResendEmailVerificationCodeRequestDto } from '@/features/auth/dto/resend-email-verification-code.request.dto';
+import { ResendEmailVerificationCodeCommand } from '@/features/auth/commands/impl/resend-email-verification-code.command';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -67,6 +74,7 @@ export class AuthController {
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'Login a user' })
+  @ApiBody({ type: LoginRequestDto })
   @ApiResponse({
     status: 200,
     description: 'User logged in successfully',
@@ -74,17 +82,17 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Invalid credentials or email not verified',
+    description: 'Invalid credentials',
     type: ApiErrorResponseDto,
   })
   async login(@Request() req: ExpressRequest & { user: AuthenticatedUser }) {
-    return this.commandBus.execute(new LoginCommand(req.user.user));
+    return this.commandBus.execute(new LoginCommand(req.user.user, !!req.user.isEmailVerified));
   }
 
   @Post('logout')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @HttpCode(204)
-  @ApiOperation({ summary: 'Logout a user' })
+  @ApiOperation({ summary: 'Log out the user' })
   @ApiResponse({
     status: 204,
     description: 'User logged out successfully',
@@ -124,5 +132,49 @@ export class AuthController {
     }
 
     return this.commandBus.execute(new RefreshTokensCommand(refreshToken));
+  }
+
+  @Post('verify-email')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'verify email address' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email address verified successfully',
+    type: VerifyEmailResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email address not found or User not found for that email address',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired OTP code',
+    type: ApiErrorResponseDto,
+  })
+  async verifyEmail(@Body() body: VerifyEmailRequestDto) {
+    return this.commandBus.execute(new VerifyEmailCommand(body));
+  }
+
+  @Post('resend-email-verification-code')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Resend email verification code' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verification code resented successfully',
+    type: ResendEmailVerificationCodeResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email not found or already verified',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Failed to send verification email',
+    type: ApiErrorResponseDto,
+  })
+  async resendEmailVerification(@Body() body: ResendEmailVerificationCodeRequestDto) {
+    return this.commandBus.execute(new ResendEmailVerificationCodeCommand(body));
   }
 }

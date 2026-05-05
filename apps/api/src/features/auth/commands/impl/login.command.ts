@@ -1,5 +1,8 @@
 import { User } from '@repo/db';
 
 export class LoginCommand {
-  constructor(public readonly user: User) {}
+  constructor(
+    public readonly user: User,
+    public readonly isEmailVerified: boolean,
+  ) {}
 }

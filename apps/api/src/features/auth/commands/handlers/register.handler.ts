@@ -3,10 +3,13 @@ import { HashingService } from '@/shared/services/hashing.service';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { ConflictException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserSchema, ZodUser } from '@repo/contracts';
-import { EmailStatus } from '@repo/db';
+import { RegisterResponse, UserWithPrimaryEmailSchema } from '@repo/contracts';
+import { EmailStatus, EmailType } from '@repo/db';
 import { RegisterCommand } from '../impl/register.command';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
+import { EmailAuthService } from '@/features/auth/services/email-auth.service';
+
+type RegisterData = RegisterResponse['data'];
 
 @CommandHandler(RegisterCommand)
 export class RegisterHandler implements ICommandHandler<RegisterCommand> {
@@ -15,11 +18,12 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     private readonly hashingService: HashingService,
     private readonly prisma: PrismaService,
     private readonly unitOfWork: UnitOfWorkService,
+    private readonly emailAuthService: EmailAuthService,
   ) {}
 
-  async execute(command: RegisterCommand): Promise<ZodUser> {
+  async execute(command: RegisterCommand): Promise<RegisterData> {
     const { payload } = command;
-    // Note: username and email are already normalized (lowercase, trimmed) by Zod transforms
+    // Note: Zod transforms already normalize username and email (lowercase, trimmed)
     const { username, email, password, firstName, lastName, birthDate, gender } = payload;
 
     // Check for existing email and username in parallel
@@ -43,7 +47,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
 
     // Use transaction to ensure atomicity - if email creation fails, user is rolled back
     const user = await this.unitOfWork.runInTransaction(async () => {
-      const createdUser = await this.prisma.client.user.create({
+      return this.prisma.client.user.create({
         data: {
           username,
           password: hashedPassword,
@@ -51,33 +55,34 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
           lastName,
           birthDate: isoFormattedBirthDate,
           gender,
+          emailAddresses: {
+            create: {
+              email,
+              status: EmailStatus.created,
+              type: EmailType.primary,
+            },
+          },
         },
-        select: {
-          id: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          birthDate: true,
-          gender: true,
-          description: true,
-          avatarId: true,
-          createdAt: true,
-          updatedAt: true,
-          deletedAt: true,
+        include: {
+          emailAddresses: true,
         },
       });
-
-      await this.prisma.client.emailAddress.create({
-        data: {
-          email,
-          status: EmailStatus.verified, // TODO: change to created after creating email verification system
-          userId: createdUser.id,
-        },
-      });
-
-      return createdUser;
     });
 
-    return UserSchema.parse(user);
+    const sanitizedUser = UserWithPrimaryEmailSchema.parse(user);
+    const primaryEmailObject = sanitizedUser.emailAddresses?.find(
+      (e) => e.type === EmailType.primary,
+    );
+
+    if (!primaryEmailObject) {
+      throw new Error('User has no primary email address');
+    }
+
+    const isEmailSent = await this.emailAuthService.beginEmailVerification(primaryEmailObject);
+
+    return {
+      user: sanitizedUser,
+      isEmailSent,
+    };
   }
 }
