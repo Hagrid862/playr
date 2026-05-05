@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VerifyEmailForm } from './VerifyEmailForm';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
 
 // Mock the InputOTP component to prevent window-related errors during tests
 vi.mock('@/components/ui/input-otp', () => ({
