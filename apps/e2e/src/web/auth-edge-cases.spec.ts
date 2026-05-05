@@ -1,14 +1,21 @@
 import { expect, test } from "@playwright/test";
 import { LoginPage } from "./login.po";
 import { RegistrationPage } from "./registration.po";
+import {getOtpFromMailhog} from "./mailhog.helper";
+import {VerifyEmailPage} from "./verify-email.po";
+import {DashboardPage} from "./dashboard.po";
 
 test.describe("Auth Edge Cases", () => {
   let loginPage: LoginPage;
   let registrationPage: RegistrationPage;
+  let verifyEmailPage: VerifyEmailPage;
+  let dashboardPage: DashboardPage;
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
     registrationPage = new RegistrationPage(page);
+    verifyEmailPage = new VerifyEmailPage(page);
+    dashboardPage = new DashboardPage(page);
   });
 
   // ─── Login Failures ──────────────────────────────────────────────
@@ -22,11 +29,11 @@ test.describe("Auth Edge Cases", () => {
       "WrongPass123!",
     );
 
-    // Expect global error message
-    await expect(page.locator(".text-destructive")).toBeVisible({
+    // Expect Sonner toast error message
+    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.locator(".text-destructive")).toHaveText(
+    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
       /Invalid credentials|User not found/i,
     );
   });
@@ -56,15 +63,37 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.submit();
     await registrationPage.expectSuccess();
 
-    // 2. Try to login with wrong password
+    // 2. Should redirect to the email verification page with the user's email
+    await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
+    await expect(verifyEmailPage.pageTitle).toBeVisible();
+    await verifyEmailPage.expectEmailDisplayed(user.email);
+
+    // 3. Retrieve the OTP code sent via email (MailHog intercepts in dev/test)
+    const otpCode = await getOtpFromMailhog(user.email);
+    expect(otpCode).not.toBeNull();
+    expect(otpCode).toMatch(/^\d{8}$/);
+
+    // 4. Enter the OTP and submit verification
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await expect(verifyEmailPage.verifyButton).toBeEnabled();
+    await verifyEmailPage.clickVerify();
+
+    // 5. Should redirect to the dashboard after email verification
+    await expect(page).toHaveURL(/\/app/);
+
+    // 6. log out to test login
+    await dashboardPage.logout();
+    await expect(page).toHaveURL(/\/auth\/login/);
+
+    // 7. Try to log in with the wrong password
     // MUST meet complexity requirements to enable the login button
     await loginPage.goto();
     await loginPage.login(user.email, "WrongPassword123!");
 
-    await expect(page.locator(".text-destructive")).toBeVisible({
+    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.locator(".text-destructive")).toHaveText(
+    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
       /Invalid credentials/i,
     );
   });
@@ -116,9 +145,9 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.selectBirthDate(new Date(1998, 2, 10));
     await registrationPage.submit();
 
-    // Expect global error message for conflict
-    await expect(page.locator(".text-destructive").first()).toBeVisible();
-    await expect(page.locator(".text-destructive").first()).toHaveText(
+    // Expect Sonner toast error message for conflict
+    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible();
+    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
       /taken|exists|duplicate/i,
     );
   });
@@ -168,9 +197,9 @@ test.describe("Auth Edge Cases", () => {
     await registrationPage.selectBirthDate(new Date(1998, 2, 10));
     await registrationPage.submit();
 
-    // Expect global error message
-    await expect(page.locator(".text-destructive").first()).toBeVisible();
-    await expect(page.locator(".text-destructive").first()).toHaveText(
+    // Expect Sonner toast error message
+    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible();
+    await expect(page.locator('[data-sonner-toast]').first()).toHaveText(
       /taken|exists|duplicate/i,
     );
   });

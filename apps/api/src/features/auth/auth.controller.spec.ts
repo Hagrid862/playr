@@ -5,11 +5,19 @@ import { CommandBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Response as ExpressResponse } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  registerRequestBuilder,
+  resendEmailVerificationCodeRequestBuilder,
+  userBuilder,
+  verifyEmailRequestBuilder,
+} from '@repo/testing';
 import { AuthController } from './auth.controller';
 import { LoginCommand } from './commands/impl/login.command';
 import { LogoutCommand } from './commands/impl/logout.command';
 import { RefreshTokensCommand } from './commands/impl/refresh-tokens.command';
 import { RegisterCommand } from './commands/impl/register.command';
+import { VerifyEmailCommand } from './commands/impl/verify-email.command';
+import { ResendEmailVerificationCodeCommand } from './commands/impl/resend-email-verification-code.command';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -34,35 +42,27 @@ describe('AuthController', () => {
 
   describe('register', () => {
     it('should execute RegisterCommand', async () => {
-      const dto = {
-        email: 'test@example.com',
-        password: 'password',
-        username: 'testuser',
-        firstName: 'John',
-        lastName: 'Doe',
-        birthDate: '2000-01-01',
-        gender: 'male' as any,
-      };
+      const dto = registerRequestBuilder();
       const expectedResult = { id: 'user-id' };
       commandBus.execute.mockResolvedValue(expectedResult);
 
       const result = await controller.register(dto);
 
-      expect(commandBus.execute).toHaveBeenCalledWith(expect.any(RegisterCommand));
+      expect(commandBus.execute).toHaveBeenCalledWith(new RegisterCommand(dto));
       expect(result).toBe(expectedResult);
     });
   });
 
   describe('login', () => {
     it('should execute LoginCommand with user from request', async () => {
-      const mockUser = { id: 'user-id' } as any;
-      const req = { user: { user: mockUser } } as any;
+      const mockUser = userBuilder();
+      const req = { user: { user: mockUser, isEmailVerified: true } } as any;
       const expectedResult = { accessToken: 'token' };
       commandBus.execute.mockResolvedValue(expectedResult);
 
       const result = await controller.login(req);
 
-      expect(commandBus.execute).toHaveBeenCalledWith(new LoginCommand(mockUser));
+      expect(commandBus.execute).toHaveBeenCalledWith(new LoginCommand(mockUser, true));
       expect(result).toBe(expectedResult);
     });
   });
@@ -130,6 +130,32 @@ describe('AuthController', () => {
       const req = {} as any;
 
       await expect(controller.refresh(req)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('verify-email', () => {
+    it('should execute VerifyEmailCommand', async () => {
+      const dto = verifyEmailRequestBuilder();
+      const expectedResult = { success: true };
+      commandBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.verifyEmail(dto);
+
+      expect(commandBus.execute).toHaveBeenCalledWith(new VerifyEmailCommand(dto));
+      expect(result).toBe(expectedResult);
+    });
+  });
+
+  describe('resend-email-verification-code', () => {
+    it('should execute ResendEmailVerificationCodeCommand', async () => {
+      const dto = resendEmailVerificationCodeRequestBuilder();
+      const expectedResult = { success: true };
+      commandBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.resendEmailVerification(dto);
+
+      expect(commandBus.execute).toHaveBeenCalledWith(new ResendEmailVerificationCodeCommand(dto));
+      expect(result).toBe(expectedResult);
     });
   });
 });

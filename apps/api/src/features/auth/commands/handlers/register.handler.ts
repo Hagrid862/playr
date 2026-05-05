@@ -70,13 +70,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     });
 
     const sanitizedUser = UserWithPrimaryEmailSchema.parse(user);
-    const primaryEmailObject = sanitizedUser.emailAddresses?.find(
-      (e) => e.type === EmailType.primary,
-    );
-
-    if (!primaryEmailObject) {
-      throw new Error('User has no primary email address');
-    }
+    const primaryEmailObject = sanitizedUser.emailAddresses[0];
 
     const isEmailSent = await this.emailAuthService.beginEmailVerification(primaryEmailObject);
 

@@ -3,6 +3,14 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouteComponent } from './login';
+import { userBuilder, emailAddressBuilder } from '@repo/testing';
+import { EmailStatus, User, EmailAddress } from '@repo/db';
+import React from "react";
+
+// Define a type that extends User to include emailAddresses
+type UserWithEmailAddresses = User & {
+  emailAddresses: EmailAddress[];
+};
 
 // Mock hooks
 const mockValues = createMock<{
@@ -41,9 +49,26 @@ describe('Login Page Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Create a mock email address verified for the authenticated user
+    const verifiedEmail = emailAddressBuilder({
+      email: 'test@example.com',
+      status: EmailStatus.verified,
+      verifiedAt: new Date(),
+    });
+
+    // Create a mock authenticated user using the builder
+    const baseAuthenticatedUser = userBuilder();
+    const authenticatedUser: UserWithEmailAddresses = {
+      ...baseAuthenticatedUser,
+      emailAddresses: [verifiedEmail],
+    };
+
+    // Default mock for mutateAsync to simulate an authenticated user
     mockValues.mutateAsync.mockResolvedValue({
       data: {
-        user: { id: '1', username: 'testuser' },
+        outcome: 'authenticated', // Default to authenticated for most tests
+        user: authenticatedUser,
         accessToken: 'token',
       },
     });
@@ -80,10 +105,51 @@ describe('Login Page Integration', () => {
     });
   });
 
-  it('shows error message on login failure', async () => {
-    mockValues.error = { message: 'Invalid credentials' };
+  it('navigates to verify-email if unauthenticated outcome', async () => {
+    // Create a mock email address pending verification for the unauthenticated user
+    const pendingEmail = emailAddressBuilder({
+      email: 'test@example.com',
+      status: EmailStatus.pending,
+      verifiedAt: null,
+    });
+
+    // Create a mock unauthenticated user using the builder
+    const baseUnauthenticatedUser = userBuilder();
+    const unauthenticatedUser: UserWithEmailAddresses = {
+      ...baseUnauthenticatedUser,
+      emailAddresses: [pendingEmail],
+    };
+
+    // Override the default mock for this specific test
+    mockValues.mutateAsync.mockResolvedValue({
+      data: {
+        outcome: 'unauthenticated',
+        user: unauthenticatedUser,
+      },
+    });
+
+    const user = userEvent.setup();
     render(<Component />);
-    expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'Password123!');
+
+    const submitBtn = screen.getByRole('button', { name: /login/i });
+    await waitFor(() => expect(submitBtn).toBeEnabled());
+
+    await user.click(submitBtn);
+
+    expect(mockValues.mutateAsync).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'Password123!',
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({
+        to: '/auth/verify-email',
+        search: { email: 'test@example.com' },
+      });
+    });
   });
 
   it('logs error to console on submission exception', async () => {

@@ -236,6 +236,7 @@ describe('api-client', () => {
     });
 
     it('logs out on failed refresh', async () => {
+      useAuthStore.getState().setAuth(mockUser, 'expired-token');
       const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
 
       mockFetch.mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 401, statusText: '' }));
@@ -251,6 +252,7 @@ describe('api-client', () => {
     });
 
     it('logs out on refresh exception', async () => {
+      useAuthStore.getState().setAuth(mockUser, 'expired-token');
       const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
 
       mockFetch.mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 401, statusText: '' }));

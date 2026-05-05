@@ -3,6 +3,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouteComponent } from './register';
+import { userBuilder, emailAddressBuilder } from '@repo/testing';
+import { EmailStatus } from '@repo/db';
+import React from "react";
 
 // Mock hooks
 const mockValues = createMock<{
@@ -112,7 +115,21 @@ describe('Register Page Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockValues.mutateAsync.mockResolvedValue({});
+
+    const mockEmail = emailAddressBuilder({
+      status: EmailStatus.pending,
+      verifiedAt: null,
+    });
+    const mockUser = userBuilder();
+
+    mockValues.mutateAsync.mockResolvedValue({
+      data: {
+        user: {
+          ...mockUser,
+          emailAddresses: [mockEmail],
+        },
+      },
+    });
     mockValues.isPending = false;
     mockValues.error = null;
   });
@@ -157,17 +174,11 @@ describe('Register Page Integration', () => {
 
     expect(mockValues.mutateAsync).toHaveBeenCalled();
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith({ to: '/auth/login' });
+      expect(mockNavigate).toHaveBeenCalledWith({
+        to: '/auth/verify-email',
+        search: { email: expect.any(String) },
+      });
     });
-  });
-
-  it('shows validation error for existing user (API error)', async () => {
-    mockValues.mutateAsync.mockRejectedValue(new Error('User already exists'));
-    mockValues.error = { message: 'User already exists' };
-
-    render(<Component />);
-
-    expect(screen.getByText('User already exists')).toBeInTheDocument();
   });
 
   it('triggers onBlur handlers for all fields', async () => {

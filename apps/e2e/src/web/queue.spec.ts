@@ -3,20 +3,21 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DashboardPage } from "./dashboard.po";
 import { LibraryArtistsPage } from "./library-artists.po";
-import { LoginPage } from "./login.po";
 import { PlayerPage } from "./player.po";
 import { QueuePage } from "./queue.po";
 import { RegistrationPage } from "./registration.po";
+import {getOtpFromMailhog} from "./mailhog.helper";
+import {VerifyEmailPage} from "./verify-email.po";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 test.describe("Queue Management", () => {
   let page: Page;
-  let loginPage: LoginPage;
   let artistsPage: LibraryArtistsPage;
   let queuePage: QueuePage;
   let playerPage: PlayerPage;
   let dashboardPage: DashboardPage;
+  let verifyEmailPage: VerifyEmailPage;
 
   const timestamp = Date.now();
   const testUserData = {
@@ -34,11 +35,11 @@ test.describe("Queue Management", () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
-    loginPage = new LoginPage(page);
     artistsPage = new LibraryArtistsPage(page);
     queuePage = new QueuePage(page);
     playerPage = new PlayerPage(page);
     dashboardPage = new DashboardPage(page);
+    verifyEmailPage = new VerifyEmailPage(page);
 
     // Setup: Login and content creation
     const regPage = new RegistrationPage(page);
@@ -56,8 +57,22 @@ test.describe("Queue Management", () => {
     await regPage.submit();
     await regPage.expectSuccess();
 
-    await loginPage.goto();
-    await loginPage.login(testUserData.email, testUserData.password);
+    // 1. Should redirect to the email verification page with the user's email
+    await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
+    await expect(verifyEmailPage.pageTitle).toBeVisible();
+    await verifyEmailPage.expectEmailDisplayed(testUserData.email);
+
+    // 2. Retrieve the OTP code sent via email (MailHog intercepts in dev/test)
+    const otpCode = await getOtpFromMailhog(testUserData.email);
+    expect(otpCode).not.toBeNull();
+    expect(otpCode).toMatch(/^\d{8}$/);
+
+    // 3. Enter the OTP and submit verification
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await expect(verifyEmailPage.verifyButton).toBeEnabled();
+    await verifyEmailPage.clickVerify();
+
+    // 4. Should redirect to the dashboard after email verification
     await expect(page).toHaveURL(/\/app/);
 
     await dashboardPage.gotoLibraryOverview();
@@ -117,7 +132,7 @@ test.describe("Queue Management", () => {
   });
 
   test("should add tracks to queue and verify", async () => {
-    // On album page, right click Track 2 -> Add to Queue
+    // On album page, right-click Track 2 -> Add to Queue
     // (Assuming SongCard has a context menu or "Add to Queue" button)
     // Let's use the explicit "Add to Queue" trigger if available
     const track2Card = page.locator("div").filter({ hasText: track2 }).last();

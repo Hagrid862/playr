@@ -3,15 +3,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DashboardPage } from "./dashboard.po";
 import { LibraryArtistsPage } from "./library-artists.po";
-import { LoginPage } from "./login.po";
 import { PlayerPage } from "./player.po";
 import { RegistrationPage } from "./registration.po";
+import {getOtpFromMailhog} from "./mailhog.helper";
+import {VerifyEmailPage} from "./verify-email.po";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 test.describe("Playback Functionality", () => {
   let page: Page;
-  let loginPage: LoginPage;
+  let verifyEmailPage: VerifyEmailPage;
   let artistsPage: LibraryArtistsPage;
   let playerPage: PlayerPage;
   let dashboardPage: DashboardPage;
@@ -31,7 +32,7 @@ test.describe("Playback Functionality", () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
-    loginPage = new LoginPage(page);
+    verifyEmailPage = new VerifyEmailPage(page);
     artistsPage = new LibraryArtistsPage(page);
     playerPage = new PlayerPage(page);
     dashboardPage = new DashboardPage(page);
@@ -52,9 +53,23 @@ test.describe("Playback Functionality", () => {
     await regPage.submit();
     await regPage.expectSuccess();
 
-    await loginPage.goto();
-    await loginPage.login(testUserData.email, testUserData.password);
-    await expect(page).toHaveURL(/\/app/, { timeout: 20000 });
+    // 1. Should redirect to the email verification page with the user's email
+    await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
+    await expect(verifyEmailPage.pageTitle).toBeVisible();
+    await verifyEmailPage.expectEmailDisplayed(testUserData.email);
+
+    // 2. Retrieve the OTP code sent via email (MailHog intercepts in dev/test)
+    const otpCode = await getOtpFromMailhog(testUserData.email);
+    expect(otpCode).not.toBeNull();
+    expect(otpCode).toMatch(/^\d{8}$/);
+
+    // 3. Enter the OTP and submit verification
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await expect(verifyEmailPage.verifyButton).toBeEnabled();
+    await verifyEmailPage.clickVerify();
+
+    // 4. Should redirect to the dashboard after email verification
+    await expect(page).toHaveURL(/\/app/);
   });
 
   test.afterAll(async () => {

@@ -51,7 +51,7 @@ describe('ValidateUserHandler', () => {
       hashingService.compare.mockResolvedValue(true);
 
       const result = await handler.execute(new ValidateUserQuery('test@example.com', 'password'));
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ user: mockUser, isEmailVerified: true });
     });
 
     it('should return null if user not found', async () => {
@@ -71,18 +71,14 @@ describe('ValidateUserHandler', () => {
       expect(result).toBeNull();
     });
 
-    it('should throw UnauthorizedException if email not verified', async () => {
+    it('should return user with isEmailVerified false if email not verified', async () => {
       userRepository.getByEmailWithStatus.mockResolvedValue(
         Object.assign({}, mockUser, { emailStatus: EmailStatus.pending }),
       );
       hashingService.compare.mockResolvedValue(true);
 
-      await expect(
-        handler.execute(new ValidateUserQuery('test@example.com', 'password')),
-      ).rejects.toThrow(UnauthorizedException);
-      await expect(
-        handler.execute(new ValidateUserQuery('test@example.com', 'password')),
-      ).rejects.toThrow('Email not verified');
+      const result = await handler.execute(new ValidateUserQuery('test@example.com', 'password'));
+      expect(result).toEqual({ user: mockUser, isEmailVerified: false });
     });
 
     it('should throw UnauthorizedException if account is deleted', async () => {
@@ -132,8 +128,8 @@ describe('ValidateUserHandler', () => {
       const result = await handler.execute(new ValidateUserQuery('test@example.com', 'password'));
 
       // Assert
-      expect(result).not.toHaveProperty('emailStatus');
-      expect(result).toEqual(mockUser);
+      expect(result?.user).not.toHaveProperty('emailStatus');
+      expect(result).toEqual({ user: mockUser, isEmailVerified: true });
     });
 
     it('should handle mixed-case email by relying on repository normalization', async () => {
@@ -148,7 +144,7 @@ describe('ValidateUserHandler', () => {
 
       // Assert
       expect(userRepository.getByEmailWithStatus).toHaveBeenCalledWith('TEST@Example.Com');
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ user: mockUser, isEmailVerified: true });
     });
 
     it('should return null if password is an empty string', async () => {

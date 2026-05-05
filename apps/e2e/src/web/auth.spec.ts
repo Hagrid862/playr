@@ -2,9 +2,12 @@ import { expect, test } from "@playwright/test";
 import { DashboardPage } from "./dashboard.po";
 import { LoginPage } from "./login.po";
 import { RegistrationPage } from "./registration.po";
+import {getOtpFromMailhog} from "./mailhog.helper";
+import {VerifyEmailPage} from "./verify-email.po";
 
 test.describe("Authentication Workflow", () => {
   let loginPage: LoginPage;
+  let verifyEmailPage: VerifyEmailPage;
   let registrationPage: RegistrationPage;
   let dashboardPage: DashboardPage;
 
@@ -21,6 +24,7 @@ test.describe("Authentication Workflow", () => {
     loginPage = new LoginPage(page);
     registrationPage = new RegistrationPage(page);
     dashboardPage = new DashboardPage(page);
+    verifyEmailPage = new VerifyEmailPage(page);
 
     // Log console messages for debugging
     page.on("console", (msg) => {
@@ -57,17 +61,39 @@ test.describe("Authentication Workflow", () => {
       throw e;
     }
 
-    // 2. Login
+    // 2. Should redirect to the email verification page with the user's email
+    await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
+    await expect(verifyEmailPage.pageTitle).toBeVisible();
+    await verifyEmailPage.expectEmailDisplayed(testUserData.email);
+
+    // 3. Retrieve the OTP code sent via email (MailHog intercepts in dev/test)
+    const otpCode = await getOtpFromMailhog(testUserData.email);
+    expect(otpCode).not.toBeNull();
+    expect(otpCode).toMatch(/^\d{8}$/);
+
+    // 4. Enter the OTP and submit verification
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await expect(verifyEmailPage.verifyButton).toBeEnabled();
+    await verifyEmailPage.clickVerify();
+
+    // 5. Should redirect to the dashboard after email verification
+    await expect(page).toHaveURL(/\/app/);
+
+    // 6. Should log out to test separate login
+    await dashboardPage.logout();
+    await expect(page).toHaveURL(/\/auth\/login/);
+
+    // 7. Login
     await loginPage.goto();
     await loginPage.login(testUserData.email, testUserData.password);
     await expect(page).toHaveURL(/\/app/, { timeout: 10000 });
 
-    // 3. Session Persistence (Reload)
+    // 8. Session Persistence (Reload)
     await page.reload();
     await expect(page).toHaveURL(/\/app/);
     await expect(dashboardPage.logoutButton).toBeVisible();
 
-    // 4. Logout
+    // 9. Logout
     await dashboardPage.logout();
     await expect(page).toHaveURL(/\/auth\/login/);
   });

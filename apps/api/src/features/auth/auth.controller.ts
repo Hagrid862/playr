@@ -91,6 +91,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @HttpCode(204)
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Log out the user' })
@@ -115,6 +116,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({
     status: 200,
