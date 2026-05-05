@@ -7,7 +7,7 @@ import { VerifyEmailForm } from '@/components/auth/VerifyEmailForm';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResendTimer } from '@/hooks/use-resend-timer';
-import { SignOutIcon } from '@phosphor-icons/react';
+import {SignOutIcon} from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button.tsx';
 import {
   AlertDialog,
@@ -98,6 +98,7 @@ export function RouteComponent() {
     await navigate({ to: '/auth/login' });
   };
 
+
   return (
     <div className="flex flex-col min-h-screen w-full items-center justify-center bg-background">
       <Card className="mx-auto max-w-md">
@@ -146,7 +147,11 @@ export function RouteComponent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={handleLogout} variant="outline" size="sm">
+            <AlertDialogAction
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+            >
               <SignOutIcon />
               <span>Log out</span>
             </AlertDialogAction>

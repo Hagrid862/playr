@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/stores/auth.store';
 import {
-  BooksIcon,
+  BooksIcon, CircleNotchIcon,
   DiscIcon,
   GridFourIcon,
   HouseIcon,
@@ -23,13 +23,25 @@ import {
   SignOutIcon,
 } from '@phosphor-icons/react';
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import {useLogout} from "@/hooks/api/auth/useLogout";
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
   const router = useRouter();
   const navigate = useNavigate();
+  const {
+    mutateAsync: logoutHook,
+    isPending: logoutIsLoading,
+  } = useLogout();
 
   const handleLogout = async () => {
+    try{
+      await logoutHook({});
+    } catch (err) {
+      console.error('Failed to log out', err);
+      return;
+    }
+
     logout();
     await router.invalidate();
     await navigate({ to: '/auth/login' });
@@ -112,7 +124,11 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              disabled={logoutIsLoading}
+            >
+              {logoutIsLoading && <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />}
               <SignOutIcon />
               <span>Log out</span>
             </SidebarMenuButton>
