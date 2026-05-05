@@ -92,18 +92,35 @@ test.describe("Playback Functionality", () => {
     });
 
     await test.step("Create Album", async () => {
-      await page.goto("/app/library/albums/create");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("button", { name: "Pick existing artist" }).click();
-      await page.getByText(artistName).click();
-      await page.waitForLoadState("networkidle");
-      await expect(page).toHaveURL(/\/add-content\/album/);
+      await artistsPage.gotoArtistsList();
+      await artistsPage.expectArtistInList(artistName);
+      await artistsPage.clickArtistCard(artistName);
+      await artistsPage.expectArtistDetailPage(artistName);
 
-      await page.getByLabel("Album Title").waitFor({ state: "visible" });
-      await page.getByLabel("Album Title").fill(albumName);
-      await page.getByRole("button", { name: "Create Album" }).click();
+      const artistUrl = new URL(page.url());
+      const artistPath = artistUrl.pathname.replace(/\/+$/, "");
+      const artistId = artistPath.split("/").pop();
+      expect(artistId).toBeTruthy();
+
+      await page.goto(`/app/library/artists/${artistId}/add-content`);
       await page.waitForLoadState("networkidle");
-      await expect(page).toHaveURL(new RegExp(`/app/library/artists/`));
+
+      await page.getByLabel("Album title").waitFor({ state: "visible" });
+      await page.getByLabel("Album title").fill(albumName);
+
+      const dummyAudioPath = path.resolve(
+        __dirname,
+        "../../ui-tests/assets/test-audio.mp3",
+      );
+      await page
+        .locator('input[type="file"][accept="audio/*"]')
+        .setInputFiles(dummyAudioPath);
+
+      await page.getByRole("button", { name: /Create album & upload/ }).click();
+      await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, {
+        timeout: 60000,
+      });
+      await page.waitForLoadState("networkidle");
     });
 
     await test.step("Add Track", async () => {

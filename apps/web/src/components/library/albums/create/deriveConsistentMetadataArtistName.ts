@@ -18,5 +18,5 @@ export function deriveConsistentMetadataArtistName(
   if (artistCandidates.length === 0 || normalizedArtistKeys.size !== 1) {
     return null;
   }
-  return artistCandidates[0] ?? null;
+  return artistCandidates[0];
 }

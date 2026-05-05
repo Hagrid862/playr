@@ -3,9 +3,14 @@ import { AlbumType } from '@repo/db';
 import { albumBuilder, imageBuilder } from '@repo/testing/builders';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
+import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import { useEditAlbumForm, validateWithZod } from './useEditAlbumForm';
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
 
 const emptyTracksPayload: EditAlbumTracksSubmitPayload = {
   pendingArtistsToCreate: [],
@@ -214,6 +219,28 @@ describe('useEditAlbumForm', () => {
   });
 
   describe('submission', () => {
+    it('shows toast and skips onSubmit when prepareTracksSubmit fails', async () => {
+      const prepareFail = vi.fn(() => ({
+        ok: false as const,
+        error: 'Tracks not ready',
+      }));
+
+      const { result } = customRenderHook(() =>
+        useEditAlbumForm({
+          album: mockAlbum,
+          onSubmit: mockOnSubmit,
+          prepareTracksSubmit: prepareFail,
+        }),
+      );
+
+      await act(async () => {
+        result.current.form.handleSubmit();
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Tracks not ready');
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
     it('calls onSubmit with correct arguments', async () => {
       const { result } = customRenderHook(() =>
         useEditAlbumForm({

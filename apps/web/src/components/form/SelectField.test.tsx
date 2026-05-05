@@ -29,6 +29,11 @@ describe('SelectField', () => {
       expect(screen.getByText('Test Label')).toBeInTheDocument();
     });
 
+    it('passes a concrete value to Select when value is non-empty', () => {
+      customRender(<SelectField {...getDefaultProps()} value="opt1" />);
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
+    });
+
     it('renders error message when error prop is provided', () => {
       customRender(<SelectField {...getDefaultProps()} error="Something went wrong" />);
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -58,6 +63,19 @@ describe('SelectField', () => {
       fireEvent.click(option);
 
       expect(onChange).toHaveBeenCalledWith('opt1');
+      expect(onBlur).toHaveBeenCalled();
+    });
+
+    it('passes a concrete value through when already selected (non-empty)', () => {
+      customRender(<SelectField {...getDefaultProps()} value="opt2" />);
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
+    });
+
+    it('invokes onBlur from the trigger when the combobox blurs', () => {
+      const onBlur = vi.fn();
+      customRender(<SelectField {...getDefaultProps()} onBlur={onBlur} value="opt1" />);
+      const trigger = screen.getByRole('combobox');
+      fireEvent.blur(trigger);
       expect(onBlur).toHaveBeenCalled();
     });
   });

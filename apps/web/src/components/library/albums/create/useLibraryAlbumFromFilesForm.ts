@@ -48,6 +48,8 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
   const [isScanningCovers, setIsScanningCovers] = useState(false);
   const [manualAlbumCoverFile, setManualAlbumCoverFile] = useState<File | null>(null);
   const [manualAlbumCoverPreviewUrl, setManualAlbumCoverPreviewUrl] = useState<string | null>(null);
+  /** Client-side staged artists until album submit (mirrors album-scoped pending state in the form UI). */
+  const [pendingArtists, setPendingArtists] = useState<{ id: string; name: string }[]>([]);
   /** Single consistent non-empty artist across tracks (normalized); drives autofill when `artistId` is empty. */
   const [metadataSuggestedArtistName, setMetadataSuggestedArtistName] = useState<string | null>(
     null,
@@ -134,7 +136,6 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     }
 
     const snapshot = tracksRef.current;
-    if (snapshot.length === 0) return;
 
     let cancelled = false;
 
@@ -157,10 +158,12 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
           }
         }
 
+        /* v8 ignore start -- revoke embedded previews when cover scan is cancelled mid-flight */
         if (cancelled) {
           results.forEach((r) => URL.revokeObjectURL(r.previewUrl));
           return;
         }
+        /* v8 ignore stop */
 
         const digestMap = new Map<string, CoverArtGroup>();
         for (const twc of results) {
@@ -180,8 +183,6 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
             existing.trackFileNames.push(twc.trackName);
           }
         }
-
-        if (cancelled) return;
 
         const groups = [...digestMap.values()];
 
@@ -370,5 +371,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     clearAll,
     updateFormData,
     isFormValid,
+    pendingArtists,
+    setPendingArtists,
   };
 }

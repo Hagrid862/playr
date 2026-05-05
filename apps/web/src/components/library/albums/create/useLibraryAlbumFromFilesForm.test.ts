@@ -3,6 +3,7 @@ import {
   extractMetadataFromAudioFile,
 } from '@/lib/audio/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
+import { sha256HexFromBlob } from '@/lib/crypto/sha256HexFromBlob';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,6 +28,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
     global.URL.createObjectURL = vi.fn(() => 'mock-url');
     global.URL.revokeObjectURL = vi.fn();
     vi.mocked(cleanFilenameToTitle).mockImplementation((name) => name.replace('.mp3', ''));
+    vi.mocked(sha256HexFromBlob).mockImplementation(async (blob: Blob) => `digest-${blob.size}`);
   });
 
   const createAudioFile = (name: string) =>
@@ -53,6 +55,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
       expect(result.current.tracks).toEqual([]);
       expect(result.current.tracksWithCovers).toEqual([]);
       expect(result.current.isFormValid).toBe(false);
+      expect(result.current.pendingArtists).toEqual([]);
     });
   });
 
@@ -674,6 +677,24 @@ describe('useLibraryAlbumFromFilesForm', () => {
       expect(result.current.selectedCoverTrackId).toBeNull();
     });
 
+    it('revokes manual cover preview URL when removeManualAlbumCover runs', () => {
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+      const manual = new File(['m'], 'manual.jpg', { type: 'image/jpeg' });
+
+      act(() => {
+        result.current.setManualAlbumCover(manual);
+      });
+
+      act(() => {
+        result.current.removeManualAlbumCover();
+      });
+
+      expect(revokeSpy).toHaveBeenCalledWith('mock-url');
+      expect(result.current.manualAlbumCoverPreviewUrl).toBeNull();
+      expect(result.current.coverFileForUpload).toBeNull();
+    });
+
     it('merges identical embedded covers into one cover group', async () => {
       const sharedBytes = new Uint8Array([1, 2, 3, 4]);
       const mockCover = new File([sharedBytes], 'cover.jpg', { type: 'image/jpeg' });
@@ -692,6 +713,83 @@ describe('useLibraryAlbumFromFilesForm', () => {
       });
 
       expect(result.current.coverGroups[0]?.trackIds).toHaveLength(2);
+    });
+
+    it('skips revoke when removeManualAlbumCover has no preview URL', () => {
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.removeManualAlbumCover();
+      });
+
+      expect(result.current.manualAlbumCoverPreviewUrl).toBeNull();
+      expect(revokeSpy).not.toHaveBeenCalled();
+      revokeSpy.mockRestore();
+    });
+
+    it('allows setManualAlbumCover(null) when no manual preview exists', () => {
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.setManualAlbumCover(null);
+      });
+
+      expect(revokeSpy).not.toHaveBeenCalled();
+      revokeSpy.mockRestore();
+    });
+
+    it('revokes previous manual preview when replacing manual cover', () => {
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+      const f1 = new File(['a'], 'a.png', { type: 'image/png' });
+      const f2 = new File(['b'], 'b.png', { type: 'image/png' });
+
+      act(() => {
+        result.current.setManualAlbumCover(f1);
+        result.current.setManualAlbumCover(f2);
+      });
+
+      expect(revokeSpy).toHaveBeenCalledWith('mock-url');
+      revokeSpy.mockRestore();
+    });
+
+    it('aborts cover digest when unmounted before sha256 resolves', async () => {
+      vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
+        title: 'Song',
+        artist: 'A',
+        album: 'Alb',
+        year: 2024,
+        trackNo: 1,
+        diskNo: 1,
+      });
+      const coverFile = new File(['x'], 'c.jpg', { type: 'image/jpeg' });
+      vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
+
+      let finishSha!: (value: string) => void;
+      vi.mocked(sha256HexFromBlob).mockImplementation(
+        () =>
+          new Promise<string>((resolve) => {
+            finishSha = resolve;
+          }),
+      );
+
+      const { result, unmount } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('a.mp3')]));
+      });
+
+      await waitFor(() => {
+        expect(vi.mocked(sha256HexFromBlob)).toHaveBeenCalled();
+      });
+
+      unmount();
+
+      await act(async () => {
+        finishSha('digest-1');
+      });
     });
   });
 });

@@ -199,7 +199,7 @@ export function EditAlbumTracksSection({ tracks }: EditAlbumTracksSectionProps) 
   const privateArtists = useLibraryStore((s) => s.privateArtists);
 
   const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);
-  const afterCreateArtistRef = useRef<(localId: string) => void>(() => {});
+  const afterCreateArtistRef = useRef<((localId: string) => void) | null>(null);
 
   const {
     sortedExistingActive,
@@ -238,7 +238,8 @@ export function EditAlbumTracksSection({ tracks }: EditAlbumTracksSectionProps) 
   const handleConfirmNewArtistName = useCallback(
     (name: string) => {
       const localId = registerPendingArtist(name);
-      afterCreateArtistRef.current(localId);
+      afterCreateArtistRef.current?.(localId);
+      afterCreateArtistRef.current = null;
     },
     [registerPendingArtist],
   );

@@ -120,6 +120,92 @@ describe('CoverSelectionBanner', () => {
         screen.getByText(/Cover art found in 2 tracks \(1 unique image\)\./),
       ).toBeInTheDocument();
     });
+
+    it('shows plural unique images when multiple distinct covers remain', () => {
+      const onSelectCover = getOnSelectCover();
+      const thirdTrack = {
+        trackId: 'track-3',
+        trackName: 'track3.mp3',
+        coverFile: new File(['z'], 'cover3.jpg', { type: 'image/jpeg' }),
+        previewUrl: 'blob:url3',
+      };
+      const tracksWithCovers = [...defaultTracksWithCovers, thirdTrack];
+      const coverGroups: CoverArtGroup[] = [
+        {
+          digest: 'a',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-1'],
+          previewUrl: 'blob:url1',
+          trackFileNames: ['track1.mp3'],
+        },
+        {
+          digest: 'b',
+          representativeTrackId: 'track-2',
+          trackIds: ['track-2'],
+          previewUrl: 'blob:url2',
+          trackFileNames: ['track2.mp3'],
+        },
+      ];
+      customRender(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={tracksWithCovers}
+          coverGroups={coverGroups}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByText(/Cover art found in 3 tracks \(2 unique images\)\./),
+      ).toBeInTheDocument();
+    });
+
+    it('uses singular track wording when one file row reports multiple cover groups', () => {
+      const onSelectCover = getOnSelectCover();
+      const coverGroups: CoverArtGroup[] = [
+        {
+          digest: 'g1',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-1'],
+          previewUrl: 'blob:url1',
+          trackFileNames: ['track1.mp3'],
+        },
+        {
+          digest: 'g2',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-1'],
+          previewUrl: 'blob:url2',
+          trackFileNames: ['track1.mp3'],
+        },
+      ];
+      customRender(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={[defaultTracksWithCovers[0]]}
+          coverGroups={coverGroups}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByText(/Cover art found in 1 track \(2 unique images\)\./),
+      ).toBeInTheDocument();
+    });
+
+    it('shows helper subtitle for keeping custom image when album already has cover', () => {
+      const onSelectCover = getOnSelectCover();
+      customRender(
+        <CoverSelectionBanner
+          albumHasCover
+          tracksWithCovers={[defaultTracksWithCovers[0]]}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+      expect(screen.getByText('Custom image — not from these tracks')).toBeInTheDocument();
+    });
   });
 
   describe('selection', () => {
@@ -183,6 +269,82 @@ describe('CoverSelectionBanner', () => {
 
       await user.click(screen.getByRole('button', { name: '2 tracks' }));
       expect(onSelectCover).toHaveBeenCalledWith('track-1');
+    });
+
+    it('marks deduplicated group as selected when a non-representative track id is active', () => {
+      const onSelectCover = getOnSelectCover();
+      const coverGroups: CoverArtGroup[] = [
+        {
+          digest: 'a',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-1', 'track-2'],
+          previewUrl: 'blob:url1',
+          trackFileNames: ['track1.mp3', 'track2.mp3'],
+        },
+      ];
+      customRender(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={defaultTracksWithCovers}
+          coverGroups={coverGroups}
+          selectedCoverTrackId="track-2"
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: '2 tracks' }).className).toContain(
+        'border-primary',
+      );
+    });
+
+    it('marks group selected when selection matches representative but not trackIds membership', () => {
+      const onSelectCover = getOnSelectCover();
+      const coverGroups: CoverArtGroup[] = [
+        {
+          digest: 'edge',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-2'],
+          previewUrl: 'blob:url1',
+          trackFileNames: ['track2.mp3'],
+        },
+      ];
+      customRender(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={defaultTracksWithCovers}
+          coverGroups={coverGroups}
+          selectedCoverTrackId="track-1"
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: 'track2.mp3' }).className).toContain(
+        'border-primary',
+      );
+    });
+
+    it('uses Track fallback label when group has no file names', () => {
+      const onSelectCover = getOnSelectCover();
+      const coverGroups: CoverArtGroup[] = [
+        {
+          digest: 'noname',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-1'],
+          previewUrl: 'blob:url1',
+          trackFileNames: [],
+        },
+      ];
+      customRender(
+        <CoverSelectionBanner
+          albumHasCover={false}
+          tracksWithCovers={[defaultTracksWithCovers[0]]}
+          coverGroups={coverGroups}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: 'Track' })).toBeInTheDocument();
     });
   });
 
@@ -250,6 +412,116 @@ describe('CoverSelectionBanner', () => {
         screen.getByRole('button', { name: /Use embedded cover shared by 2 files/i }),
       );
       expect(onSelectCover).toHaveBeenCalledWith('track-1');
+    });
+
+    it('maps per-track covers when no coverGroups are provided (multi-track)', async () => {
+      const user = userEvent.setup();
+      const onSelectCover = getOnSelectCover();
+      customRender(
+        <CoverSelectionBanner
+          variant="prominent"
+          albumHasCover={false}
+          tracksWithCovers={defaultTracksWithCovers}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole('button', { name: 'Use embedded cover from track1.mp3' }),
+      );
+      expect(onSelectCover).toHaveBeenCalledWith('track-1');
+    });
+
+    it('uses track fallback in aria-label when single-file group has no file names', () => {
+      const onSelectCover = getOnSelectCover();
+      const coverGroups: CoverArtGroup[] = [
+        {
+          digest: 'empty-names',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-1'],
+          previewUrl: 'blob:url1',
+          trackFileNames: [],
+        },
+      ];
+      customRender(
+        <CoverSelectionBanner
+          variant="prominent"
+          albumHasCover={false}
+          tracksWithCovers={[defaultTracksWithCovers[0]]}
+          coverGroups={coverGroups}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByRole('button', { name: /Use embedded cover from track$/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('shows custom-image guidance and labels when album already has cover', () => {
+      const onSelectCover = getOnSelectCover();
+      customRender(
+        <CoverSelectionBanner
+          variant="prominent"
+          albumHasCover
+          tracksWithCovers={defaultTracksWithCovers}
+          selectedCoverTrackId={null}
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByText(
+          /Your custom image stays until you tap an embedded image below/i,
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', {
+          name: /Don't use embedded — keeps your custom image/i,
+        }),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Custom image')).toBeInTheDocument();
+    });
+
+    it('highlights selected embedded tile and leaves others unselected in prominent variant', () => {
+      const onSelectCover = getOnSelectCover();
+      const coverGroups: CoverArtGroup[] = [
+        {
+          digest: 'a',
+          representativeTrackId: 'track-1',
+          trackIds: ['track-1'],
+          previewUrl: 'blob:url1',
+          trackFileNames: ['track1.mp3'],
+        },
+        {
+          digest: 'b',
+          representativeTrackId: 'track-2',
+          trackIds: ['track-2'],
+          previewUrl: 'blob:url2',
+          trackFileNames: ['track2.mp3'],
+        },
+      ];
+      customRender(
+        <CoverSelectionBanner
+          variant="prominent"
+          albumHasCover={false}
+          tracksWithCovers={defaultTracksWithCovers}
+          coverGroups={coverGroups}
+          selectedCoverTrackId="track-2"
+          onSelectCover={onSelectCover}
+        />,
+      );
+
+      expect(
+        screen.getByRole('button', { name: /Use embedded cover from track2\.mp3/i })
+          .className,
+      ).toContain('border-primary');
+      expect(
+        screen.getByRole('button', { name: /Use embedded cover from track1\.mp3/i })
+          .className,
+      ).toContain('border-transparent');
     });
   });
 });
