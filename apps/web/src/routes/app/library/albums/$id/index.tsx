@@ -17,10 +17,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
+import {
+  albumTypeDisplayName,
+  buildGenreMiddleSegment,
+  formatAlbumReleaseDateSegment,
+  genreNamesFromAlbumGenres,
+} from '@/lib/library/albumDetailMeta';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
   DiscIcon,
@@ -95,7 +102,32 @@ function RouteComponent() {
     );
   }
 
-  const releaseYear = album.releaseDate ? new Date(album.releaseDate).getFullYear() : null;
+  const genreNames = genreNamesFromAlbumGenres(album.genres);
+  const genreMiddle = buildGenreMiddleSegment(genreNames);
+  const dateSegment = formatAlbumReleaseDateSegment(album.releaseDate ?? undefined);
+  const typeLabel = albumTypeDisplayName(album.type);
+
+  const genreMiddleEl = genreMiddle.showTooltip ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="cursor-default underline decoration-dotted underline-offset-2"
+          aria-label={`Genres: ${genreMiddle.tooltipLines.join(', ')}`}
+        >
+          {genreMiddle.text}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-xs">
+        <div className="flex flex-col gap-1 text-left text-sm">
+          {genreMiddle.tooltipLines.map((line, i) => (
+            <span key={`${i}-${line}`}>{line}</span>
+          ))}
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  ) : (
+    <span>{genreMiddle.text}</span>
+  );
 
   return (
     <div className="flex flex-col w-full min-h-full pb-8">
@@ -123,16 +155,20 @@ function RouteComponent() {
 
           {/* Quick Info */}
           <div className="flex-1 pb-2">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">
-                {album.type || 'Album'}
-              </p>
-              {releaseYear && (
+            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold">
+              <span className="text-primary tracking-widest uppercase">{typeLabel}</span>
+              <span className="text-stone-500" aria-hidden="true">
+                -
+              </span>
+              <span className="text-muted-foreground">{genreMiddleEl}</span>
+              {dateSegment ? (
                 <>
-                  <span className="text-stone-600 font-bold">•</span>
-                  <p className="text-xs font-bold text-muted-foreground uppercase">{releaseYear}</p>
+                  <span className="text-stone-500" aria-hidden="true">
+                    -
+                  </span>
+                  <span className="text-muted-foreground">{dateSegment}</span>
                 </>
-              )}
+              ) : null}
             </div>
             <h2 className="text-3xl font-bold text-white opacity-90 truncate max-w-2xl mb-1">
               {album.name}

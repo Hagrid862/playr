@@ -15,6 +15,8 @@ export type LibraryAlbumFromFilesFormData = Pick<
   'name' | 'description' | 'type' | 'releaseDate'
 > & {
   artistId: string;
+  /** Selected genre ids (library genres and/or `local:pending:…` drafts). */
+  genreIds: string[];
 };
 
 const initialFormData: LibraryAlbumFromFilesFormData = {
@@ -22,6 +24,7 @@ const initialFormData: LibraryAlbumFromFilesFormData = {
   description: '',
   type: 'album',
   artistId: '',
+  genreIds: [],
   releaseDate: null,
 };
 
@@ -311,6 +314,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     setFormData({
       ...initialFormData,
       artistId: options?.initialArtistId ?? '',
+      genreIds: [],
     });
     setManualAlbumCover(null);
   }, [clearTracks, options?.initialArtistId, setManualAlbumCover]);
@@ -324,6 +328,26 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     },
     [],
   );
+
+  const toggleGenreId = useCallback((genreId: string) => {
+    setFormData((prev) => {
+      const cur = prev.genreIds;
+      if (cur.includes(genreId)) {
+        return { ...prev, genreIds: cur.filter((x) => x !== genreId) };
+      }
+      return { ...prev, genreIds: [...cur, genreId] };
+    });
+  }, []);
+
+  const clearGenreSelection = useCallback(() => {
+    setFormData((prev) => ({ ...prev, genreIds: [] }));
+  }, []);
+
+  const appendGenreId = useCallback((genreId: string) => {
+    setFormData((prev) =>
+      prev.genreIds.includes(genreId) ? prev : { ...prev, genreIds: [...prev.genreIds, genreId] },
+    );
+  }, []);
 
   const selectedCoverFile = useMemo(
     () =>
@@ -343,10 +367,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
   );
 
   const isFormValid =
-    formData.name.trim().length > 0 &&
-    formData.artistId.length > 0 &&
-    !hasInvalidTracks &&
-    tracks.length > 0;
+    formData.name.trim().length > 0 && formData.artistId.length > 0 && !hasInvalidTracks;
 
   return {
     formData,
@@ -370,6 +391,9 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     clearTracks,
     clearAll,
     updateFormData,
+    toggleGenreId,
+    clearGenreSelection,
+    appendGenreId,
     isFormValid,
     pendingArtists,
     setPendingArtists,
