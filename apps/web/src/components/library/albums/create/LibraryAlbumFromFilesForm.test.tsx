@@ -6,7 +6,11 @@ import {
   extractMetadataFromAudioFile,
 } from '@/lib/audio/audio-metadata';
 import { customRender } from '@repo/testing/web';
-import { GetLibraryArtistNameAvailabilityResponseSchema } from '@repo/contracts';
+import {
+  CreateLibraryGenreResponseSchema,
+  GetLibraryArtistNameAvailabilityResponseSchema,
+  GetLibraryGenresResponseSchema,
+} from '@repo/contracts';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
@@ -58,15 +62,42 @@ vi.mock('@tanstack/react-router', () => ({
 const createAlbumMock = vi.fn();
 const bulkTracksMock = vi.fn();
 const createArtistMock = vi.fn();
+const createGenreMock = vi.fn();
 const uploadCoverMock = vi.fn();
 
-const { libraryStoreState, useLibraryArtistsMock } = vi.hoisted(() => ({
+const testGenreItem = {
+  id: 'genre-1',
+  name: 'Rock',
+  slug: 'rock',
+  description: null,
+  kind: 'system' as const,
+  libraryId: null,
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: '2024-01-01T00:00:00.000Z',
+  deletedAt: null,
+};
+
+const defaultGenresData = () =>
+  GetLibraryGenresResponseSchema.parse({
+    success: true,
+    data: {
+      items: [testGenreItem],
+      total: 1,
+      page: 1,
+      limit: 100,
+    },
+    error: null,
+    meta: { timestamp: 't', requestId: 'r', path: '/p' },
+  });
+
+const { libraryStoreState, useLibraryArtistsMock, useLibraryGenresMock } = vi.hoisted(() => ({
   libraryStoreState: {
     libraryId: 'lib-1' as string | null,
     privateArtists: [{ id: 'artist-1', name: 'Alpha' }] as { id: string; name: string }[],
     setPrivateArtists: vi.fn(),
   },
   useLibraryArtistsMock: vi.fn(() => ({ isLoading: false, data: undefined })),
+  useLibraryGenresMock: vi.fn(() => ({ isLoading: false, data: defaultGenresData() })),
 }));
 
 vi.mock('@/stores/library.store', () => ({
@@ -86,6 +117,19 @@ vi.mock('@/stores/library.store', () => ({
 
 vi.mock('@/hooks/api/library-artists/useLibraryArtists', () => ({
   useLibraryArtists: () => useLibraryArtistsMock(),
+}));
+
+vi.mock('@/hooks/api/library-genres/useLibraryGenres', () => ({
+  useLibraryGenres: () => useLibraryGenresMock(),
+}));
+
+vi.mock('@/hooks/api/library-genres/useCreateLibraryGenre', () => ({
+  useCreateLibraryGenre: () => ({
+    mutateAsync: createGenreMock,
+    get isPending() {
+      return false;
+    },
+  }),
 }));
 
 vi.mock('@/hooks/api/library-albums/useCreateLibraryAlbum', () => ({
@@ -177,7 +221,23 @@ describe('LibraryAlbumFromFilesForm', () => {
     createAlbumMock.mockResolvedValue({ data: { id: 'new-album-id' } });
     bulkTracksMock.mockResolvedValue(undefined);
     createArtistMock.mockResolvedValue({ data: { id: 'created-artist' } });
+    createGenreMock.mockResolvedValue(
+      CreateLibraryGenreResponseSchema.parse({
+        success: true,
+        data: {
+          ...testGenreItem,
+          id: 'created-genre',
+          name: 'Modal Genre',
+          slug: 'modalgenre',
+          kind: 'custom',
+          libraryId: 'lib-1',
+        },
+        error: null,
+        meta: { timestamp: 't', requestId: 'r', path: '/p' },
+      }),
+    );
     uploadCoverMock.mockResolvedValue(undefined);
+    useLibraryGenresMock.mockReturnValue({ isLoading: false, data: defaultGenresData() });
   });
 
   afterEach(() => {
@@ -191,7 +251,7 @@ describe('LibraryAlbumFromFilesForm', () => {
   it('renders cancel link and disabled submit while empty', () => {
     renderForm({ cancelTo: '/app/library/albums' });
 
-    expect(screen.getByRole('button', { name: /add audio files to continue/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^create album$/i })).toBeDisabled();
     expect(screen.getByRole('link', { name: /cancel/i })).toHaveAttribute(
       'href',
       '/app/library/albums',
@@ -370,6 +430,63 @@ describe('LibraryAlbumFromFilesForm', () => {
     await waitFor(() => {
       expect(createAlbumMock).toHaveBeenCalledWith(
         expect.objectContaining({ artistId: 'artist-1' }),
+      );
+    });
+  });
+
+  it('passes genreIds to create album when an existing genre is selected', async () => {
+    const user = userEvent.setup();
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('button', { name: /genres \(optional\)/i }));
+    await user.click(await screen.findByRole('option', { name: /^Rock$/i }));
+
+    await user.click(screen.getByRole('button', { name: /create album.*upload/i }));
+
+    await waitFor(() => {
+      expect(createGenreMock).not.toHaveBeenCalled();
+      expect(createAlbumMock).toHaveBeenCalledWith(
+        expect.objectContaining({ genreIds: ['genre-1'] }),
+      );
+    });
+  });
+
+  it('creates a genre before the album when staging a new genre from the modal', async () => {
+    const user = userEvent.setup();
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('button', { name: /genres \(optional\)/i }));
+    await user.click(await screen.findByRole('option', { name: /create new genre/i }));
+
+    expect(await screen.findByRole('heading', { name: /new genre/i })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/genre name/i), 'Modal Genre');
+    await user.click(screen.getByRole('button', { name: /add genre/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: /new genre/i })).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /create album.*upload/i }));
+
+    await waitFor(() => {
+      expect(createGenreMock).toHaveBeenCalledWith({ name: 'Modal Genre' });
+      expect(createAlbumMock).toHaveBeenCalledWith(
+        expect.objectContaining({ genreIds: ['created-genre'] }),
       );
     });
   });

@@ -42,6 +42,7 @@ const baseForm: LibraryAlbumFromFilesFormData = {
   description: '',
   type: 'album',
   artistId: 'a1',
+  genreIds: [],
   /** Null so the trigger shows “Pick a date” (formatted dates change the accessible name). */
   releaseDate: null,
 };
@@ -52,11 +53,33 @@ describe('LibraryAlbumMetadataSection (release date branch)', () => {
   const onClearStagedArtist = vi.fn();
   const onManualCoverFile = vi.fn();
   const onRemoveCover = vi.fn();
+  const onGenreSelectionChange = vi.fn();
+  const onRemoveGenreId = vi.fn();
 
   const artistOptions = [
     { value: '__create_new_artist__', label: '+ Create new artist…' },
     { value: 'a1', label: 'Alpha' },
   ];
+
+  const testGenre = {
+    id: 'g1',
+    name: 'Rock',
+    slug: 'rock',
+    description: null,
+    kind: 'system' as const,
+    libraryId: null,
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+    deletedAt: null,
+  };
+
+  const genrePropsFor = () => ({
+    genres: [testGenre],
+    pendingGenres: [] as { id: string; name: string }[],
+    isLoadingGenres: false,
+    onGenreSelectionChange,
+    onRemoveGenreId,
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,6 +102,7 @@ describe('LibraryAlbumMetadataSection (release date branch)', () => {
           onClearStagedArtist={onClearStagedArtist}
           onManualCoverFile={onManualCoverFile}
           onRemoveCover={onRemoveCover}
+          {...genrePropsFor()}
           {...overrides}
         />
       </TooltipProvider>,

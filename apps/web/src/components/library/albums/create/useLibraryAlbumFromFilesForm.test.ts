@@ -49,6 +49,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
         description: '',
         type: 'album',
         artistId: '',
+        genreIds: [],
         releaseDate: null,
       });
       expect(result.current.suggestedArtistName).toBeNull();
@@ -434,6 +435,11 @@ describe('useLibraryAlbumFromFilesForm', () => {
       act(() => {
         result.current.updateFormData('name', 'My Album');
         result.current.updateFormData('artistId', 'artist-123');
+      });
+
+      expect(result.current.isFormValid).toBe(true);
+
+      act(() => {
         result.current.addFiles(createFileList([createAudioFile('song.mp3')]));
       });
 

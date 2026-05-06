@@ -3,12 +3,14 @@ import {
   extractCoverFromAudioFile,
   extractMetadataFromAudioFile,
 } from '@/lib/audio/audio-metadata';
-import { albumBuilder, artistBuilder } from '@repo/testing/builders';
+import { albumBuilder, artistBuilder, imageBuilder } from '@repo/testing/builders';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
-import { ZodError } from 'zod';
+import { ZodError, z } from 'zod';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateTrackForm, validateWithZod } from './useCreateTrackForm';
+
+type SchemaType = z.infer<typeof CreateLibraryTrackRequestSchema>;
 
 vi.mock('@/lib/audio/audio-metadata', () => ({
   extractMetadataFromAudioFile: vi.fn().mockResolvedValue(null),
@@ -80,7 +82,9 @@ describe('useCreateTrackForm', () => {
     it('handles root-level validation errors (empty path)', () => {
       vi.mocked(CreateLibraryTrackRequestSchema.safeParse).mockReturnValueOnce({
         success: false,
-        error: new ZodError([{ path: [], message: 'Root error', code: 'custom' }]),
+        error: new ZodError([
+          { path: [], message: 'Root error', code: 'custom' },
+        ]) as ZodError<SchemaType>,
       });
 
       const errors = validateWithZod({
@@ -102,7 +106,7 @@ describe('useCreateTrackForm', () => {
         error: new ZodError([
           { path: ['title'], message: 'First error', code: 'custom' },
           { path: ['title'], message: 'Second error', code: 'custom' },
-        ]),
+        ]) as ZodError<SchemaType>,
       });
 
       const errors = validateWithZod({
@@ -663,7 +667,7 @@ describe('useCreateTrackForm', () => {
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(coverFile);
 
       // Case 1: Album already has a cover -> should NOT auto-use track cover
-      const albumWithCover = { ...mockAlbum, cover: { url: 'existing-url' } };
+      const albumWithCover = { ...mockAlbum, cover: imageBuilder({ url: 'existing-url' }) };
       const { result: result1 } = customRenderHook(() =>
         useCreateTrackForm({ album: albumWithCover, onSubmit: mockOnSubmit }),
       );
@@ -707,7 +711,7 @@ describe('useCreateTrackForm', () => {
       unmount();
 
       // The microtask will run but 'cancelled' will be true
-      await new Promise((resolve) => queueMicrotask(resolve));
+      await new Promise<void>((resolve) => queueMicrotask(resolve));
 
       // No assertion needed other than it doesn't crash or update unmounted state (which Vitest would catch)
     });
