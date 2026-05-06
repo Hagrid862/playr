@@ -42,6 +42,9 @@ import { ResendEmailVerificationCodeCommand } from '@/features/auth/commands/imp
 import {ForgotPasswordResponseDto} from "@/features/auth/dto/forgot-password.response.dto";
 import {ForgotPasswordRequestDto} from "@/features/auth/dto/forgot-password.request.dto";
 import {ForgotPasswordCommand} from "@/features/auth/commands/impl/forgot-password.command";
+import {RecoverPasswordResponseDto} from "@/features/auth/dto/recover-password.response.dto";
+import {RecoverPasswordRequestDto} from "@/features/auth/dto/recover-password.request.dto";
+import {RecoverPasswordCommand} from "@/features/auth/commands/impl/recover-password.command";
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -186,10 +189,10 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Send email code to retrieve password'})
+  @ApiOperation({ summary: 'send password retrieval code via email'})
   @ApiResponse({
     status: 200,
-    description: 'Send email code to retrieve password',
+    description: 'password retrieval code sent successfully',
     type: ForgotPasswordResponseDto,
   })
   @ApiResponse({
@@ -204,6 +207,28 @@ export class AuthController {
   })
   async forgotPassword(@Body() body: ForgotPasswordRequestDto) {
     return this.commandBus.execute(new ForgotPasswordCommand(body));
+  }
+
+  @Post('recover-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'finish password retrieval process by changing password'})
+  @ApiResponse({
+    status: 200,
+    description: 'password changed successfully',
+    type: RecoverPasswordResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email not found or Invalid or expired OTP code',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Failed to update user password',
+    type: ApiErrorResponseDto,
+  })
+  async recoverPassword(@Body() body: RecoverPasswordRequestDto) {
+    return this.commandBus.execute(new RecoverPasswordCommand(body));
   }
 
 }
