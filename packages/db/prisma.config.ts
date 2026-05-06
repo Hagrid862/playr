@@ -13,8 +13,16 @@ const databaseUrlFromProcessEnv = process.env.DATABASE_URL;
 function loadEnvFiles(): void {
   const opts = { quiet: true } as const;
   dotenv.config({ path: join(repoRoot, ".env"), ...opts });
-  dotenv.config({ path: join(repoRoot, ".env.local"), override: true, ...opts });
-  dotenv.config({ path: join(repoRoot, "apps", "api", ".env"), override: true, ...opts });
+  dotenv.config({
+    path: join(repoRoot, ".env.local"),
+    override: true,
+    ...opts,
+  });
+  dotenv.config({
+    path: join(repoRoot, "apps", "api", ".env"),
+    override: true,
+    ...opts,
+  });
 }
 
 /**
