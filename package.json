@@ -17,6 +17,7 @@
     "test:coverage": "turbo run test:coverage",
     "prisma:generate": "turbo run prisma:generate",
     "prisma:migrate": "turbo run prisma:migrate",
+    "prisma:reset": "turbo run prisma:reset",
     "prisma:push": "turbo run prisma:push",
     "prisma:studio": "turbo run prisma:studio"
   },
