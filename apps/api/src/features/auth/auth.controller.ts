@@ -39,6 +39,9 @@ import { VerifyEmailRequestDto } from '@/features/auth/dto/verify-email.request.
 import { ResendEmailVerificationCodeResponseDto } from '@/features/auth/dto/resend-email-verification-code.response.dto';
 import { ResendEmailVerificationCodeRequestDto } from '@/features/auth/dto/resend-email-verification-code.request.dto';
 import { ResendEmailVerificationCodeCommand } from '@/features/auth/commands/impl/resend-email-verification-code.command';
+import {ForgotPasswordResponseDto} from "@/features/auth/dto/forgot-password.response.dto";
+import {ForgotPasswordRequestDto} from "@/features/auth/dto/forgot-password.request.dto";
+import {ForgotPasswordCommand} from "@/features/auth/commands/impl/forgot-password.command";
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -180,4 +183,27 @@ export class AuthController {
   async resendEmailVerification(@Body() body: ResendEmailVerificationCodeRequestDto) {
     return this.commandBus.execute(new ResendEmailVerificationCodeCommand(body));
   }
+
+  @Post('forgot-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Send email code to retrieve password'})
+  @ApiResponse({
+    status: 200,
+    description: 'Send email code to retrieve password',
+    type: ForgotPasswordResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email not found',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Failed to send email for password retrieval',
+    type: ApiErrorResponseDto,
+  })
+  async forgotPassword(@Body() body: ForgotPasswordRequestDto) {
+    return this.commandBus.execute(new ForgotPasswordCommand(body));
+  }
+
 }
