@@ -1,4 +1,4 @@
 import {createZodDto} from "nestjs-zod";
-import { forgotPasswordRequestSchema } from '@repo/contracts';
+import { ForgotPasswordRequestSchema } from '@repo/contracts';
 
-export class ForgotPasswordRequestDto extends createZodDto(forgotPasswordRequestSchema) {}
+export class ForgotPasswordRequestDto extends createZodDto(ForgotPasswordRequestSchema) {}
