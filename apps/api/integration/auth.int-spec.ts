@@ -440,4 +440,177 @@ describe('AuthController (Integration)', () => {
       expect(cookies?.some((c) => c.includes('refreshToken=;'))).toBe(true);
     });
   });
+
+  describe('POST /auth/forgot-password', () => {
+    const forgotPasswordData = {
+      email: 'test@example.com',
+    };
+
+    it('should send password reset email successfully (200)', async () => {
+      const emailObj = emailAddressBuilder({
+        email: forgotPasswordData.email,
+        status: EmailStatus.verified,
+      });
+
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/forgot-password')
+        .send(forgotPasswordData)
+        .expect(200);
+
+      expect(response.body.data.isEmailSent).toBe(true);
+    });
+
+    it('should return 400 if email not found', async () => {
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/forgot-password')
+        .send(forgotPasswordData)
+        .expect(400);
+
+      expect(response.body.error.message).toBe('Email not found');
+    });
+
+    it('should return 400 if email format is invalid', async () => {
+      const invalidData = {
+        email: 'not-an-email',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/forgot-password')
+        .send(invalidData)
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should return 400 if email is empty', async () => {
+      const invalidData = {
+        email: '',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/forgot-password')
+        .send(invalidData)
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
+    });
+  });
+
+  describe('POST /auth/recover-password', () => {
+    const recoverPasswordData = {
+      email: 'test@example.com',
+      otpCode: '12345678',
+      newPassword: 'NewPassword123!',
+    };
+
+    it('should reset password successfully (200)', async () => {
+      const emailObj = emailAddressBuilder({
+        email: recoverPasswordData.email,
+        status: EmailStatus.verified,
+      });
+      const userObj = userBuilder({ id: emailObj.userId });
+
+      // Mock getting email (first call in handler for email lookup)
+      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce(emailObj);
+
+      // Mock getting user via email (second call in handler via userRepository.getByEmail)
+      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce({
+        ...emailObj,
+        user: userObj,
+      } as any);
+
+      // Mock OTP verification (Redis mock)
+      const redis = app.get('REDIS_CLIENT');
+      redis.set.mockResolvedValueOnce('OK'); // claim lock
+      redis.get.mockResolvedValueOnce('hashed-otp'); // get otp
+      redis.del.mockResolvedValueOnce(1); // delete otp
+      redis.eval.mockResolvedValueOnce(1); // release lock
+
+      // Mock user password update
+      prismaMock.client.user.update.mockResolvedValue({
+        ...userObj,
+        password: 'hashed-password',
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/recover-password')
+        .send(recoverPasswordData)
+        .expect(200);
+
+      expect(response.body.data.success).toBe(true);
+    });
+
+    it('should return 400 if email not found', async () => {
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/recover-password')
+        .send(recoverPasswordData)
+        .expect(400);
+
+      expect(response.body.error.message).toBe('Email not found');
+    });
+
+    it('should return 400 for invalid OTP code', async () => {
+      const emailObj = emailAddressBuilder({
+        email: recoverPasswordData.email,
+        status: EmailStatus.verified,
+      });
+      const userObj = userBuilder({ id: emailObj.userId });
+
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+        ...emailObj,
+        user: userObj,
+      } as any);
+
+      // Mock OTP verification failure
+      const redis = app.get('REDIS_CLIENT');
+      redis.set.mockResolvedValueOnce('OK');
+      redis.get.mockResolvedValueOnce('hashed-otp');
+      redis.eval.mockResolvedValueOnce(1);
+
+      // Argon2 verify returns false
+      const argon2 = await import('argon2');
+      vi.mocked(argon2.verify).mockResolvedValueOnce(false);
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/recover-password')
+        .send(recoverPasswordData)
+        .expect(400);
+
+      expect(response.body.error.message).toBe('Invalid or expired OTP code');
+    });
+
+    it('should return 400 if new password is too weak', async () => {
+      const weakPasswordData = {
+        ...recoverPasswordData,
+        newPassword: 'weak',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/recover-password')
+        .send(weakPasswordData)
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should return 400 if OTP code is missing', async () => {
+      const invalidData = {
+        email: recoverPasswordData.email,
+        newPassword: recoverPasswordData.newPassword,
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/recover-password')
+        .send(invalidData)
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
+    });
+  });
 });

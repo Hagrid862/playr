@@ -18,6 +18,10 @@ import { RefreshTokensCommand } from './commands/impl/refresh-tokens.command';
 import { RegisterCommand } from './commands/impl/register.command';
 import { VerifyEmailCommand } from './commands/impl/verify-email.command';
 import { ResendEmailVerificationCodeCommand } from './commands/impl/resend-email-verification-code.command';
+import { ForgotPasswordCommand } from './commands/impl/forgot-password.command';
+import { RecoverPasswordCommand } from './commands/impl/recover-password.command';
+import { ForgotPasswordRequestDto } from './dto/forgot-password.request.dto';
+import { RecoverPasswordRequestDto } from './dto/recover-password.request.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -105,6 +109,25 @@ describe('AuthController', () => {
         secure: false,
       });
     });
+
+    it('should use secure cookies in production environment', async () => {
+      configService.get.mockReturnValue('production');
+      const req = { user: { sessionId: 'session-id' } } as any;
+      const res = { clearCookie: vi.fn() } as unknown as ExpressResponse;
+
+      await controller.logout(req, res);
+
+      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', {
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      });
+      expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', {
+        path: '/auth/refresh',
+        sameSite: 'lax',
+        secure: true,
+      });
+    });
   });
 
   describe('refresh', () => {
@@ -155,6 +178,36 @@ describe('AuthController', () => {
       const result = await controller.resendEmailVerification(dto);
 
       expect(commandBus.execute).toHaveBeenCalledWith(new ResendEmailVerificationCodeCommand(dto));
+      expect(result).toBe(expectedResult);
+    });
+  });
+
+  describe('forgot-password', () => {
+    it('should execute ForgotPasswordCommand', async () => {
+      const dto: ForgotPasswordRequestDto = { email: 'test@example.com' };
+      const expectedResult = { isEmailSent: true };
+      commandBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.forgotPassword(dto);
+
+      expect(commandBus.execute).toHaveBeenCalledWith(new ForgotPasswordCommand(dto));
+      expect(result).toBe(expectedResult);
+    });
+  });
+
+  describe('recover-password', () => {
+    it('should execute RecoverPasswordCommand', async () => {
+      const dto: RecoverPasswordRequestDto = {
+        email: 'test@example.com',
+        otpCode: '12345678',
+        newPassword: 'NewPassword123!',
+      };
+      const expectedResult = { success: true };
+      commandBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.recoverPassword(dto);
+
+      expect(commandBus.execute).toHaveBeenCalledWith(new RecoverPasswordCommand(dto));
       expect(result).toBe(expectedResult);
     });
   });
