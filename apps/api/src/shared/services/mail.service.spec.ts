@@ -43,7 +43,7 @@ describe('MailService', () => {
     it('should successfully send an email and return true', async () => {
       mailerService.sendMail.mockResolvedValue({});
 
-      const result = await service.sendEmailVerificationCode(
+      const result = await service.sendOtpVerificationCodeViaEmail(
         mockEmailAddress,
         mockOtpCode,
         mockTtl,
@@ -70,7 +70,7 @@ describe('MailService', () => {
       const error = new Error('SMTP connection error');
       mailerService.sendMail.mockRejectedValue(error);
 
-      const result = await service.sendEmailVerificationCode(
+      const result = await service.sendOtpVerificationCodeViaEmail(
         mockEmailAddress,
         mockOtpCode,
         mockTtl,
@@ -89,7 +89,7 @@ describe('MailService', () => {
     it('should return false and log unknown error when non-Error object is thrown', async () => {
       mailerService.sendMail.mockRejectedValue('String error');
 
-      const result = await service.sendEmailVerificationCode(
+      const result = await service.sendOtpVerificationCodeViaEmail(
         mockEmailAddress,
         mockOtpCode,
         mockTtl,

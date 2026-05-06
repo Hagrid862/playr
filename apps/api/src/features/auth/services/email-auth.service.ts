@@ -5,6 +5,8 @@ import { EmailAddressRepository } from '@/shared/repositories/email-address.repo
 import type { EmailAddress } from '@repo/db';
 import { OTP_CODE_TTL } from '@/features/auth/constants/auth.constants';
 
+export type EmailAuthType = 'emailVerification' | 'passwordReset';
+
 @Injectable()
 export class EmailAuthService {
   private readonly logger = new Logger(EmailAuthService.name);
@@ -15,12 +17,13 @@ export class EmailAuthService {
     private readonly emailAddressRepository: EmailAddressRepository,
   ) {}
 
-  async beginEmailVerification(email: EmailAddress): Promise<boolean> {
+  async beginOtpVerificationViaEmail(email: EmailAddress, type: EmailAuthType): Promise<boolean> {
     try {
-      const otpCode = await this.otpCodeService.generateOTPCode(email, 'emailVerification');
-      const emailSent = await this.mailService.sendEmailVerificationCode(
+      const otpCode = await this.otpCodeService.generateOTPCode(email, type);
+      const emailSent = await this.mailService.sendOtpVerificationCodeViaEmail(
         email,
         otpCode,
+        type,
         OTP_CODE_TTL,
       );
 

@@ -60,7 +60,7 @@ describe('LoginHandler', () => {
     it('should return unauthenticated outcome when email is not verified', async () => {
       // Arrange
       emailAddressRepository.getPrimaryByUserId.mockResolvedValue(mockEmailAddress);
-      emailAuthService.beginEmailVerification.mockResolvedValue(true);
+      emailAuthService.beginOtpVerificationViaEmail.mockResolvedValue(true);
 
       const command = new LoginCommand(mockUser, false);
 
@@ -69,7 +69,7 @@ describe('LoginHandler', () => {
 
       // Assert
       expect(emailAddressRepository.getPrimaryByUserId).toHaveBeenCalledWith(mockUser.id);
-      expect(emailAuthService.beginEmailVerification).toHaveBeenCalledWith(mockEmailAddress);
+      expect(emailAuthService.beginOtpVerificationViaEmail).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
       expect(tokenService.generateAuthTokens).not.toHaveBeenCalled();
       expect(result).toEqual({
         outcome: 'unauthenticated',
@@ -125,7 +125,7 @@ describe('LoginHandler', () => {
       });
 
       emailAddressRepository.getPrimaryByUserId.mockResolvedValue(mockEmailAddress);
-      emailAuthService.beginEmailVerification.mockResolvedValue(false);
+      emailAuthService.beginOtpVerificationViaEmail.mockResolvedValue(false);
 
       const command = new LoginCommand(minimalUser, false);
 

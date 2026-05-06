@@ -32,7 +32,7 @@ export class ResendEmailVerificationCodeHandler implements ICommandHandler<Resen
       throw new BadRequestException('Email not found or already verified');
     }
 
-    const isEmailSent = await this.emailAuthService.beginEmailVerification(emailObject);
+    const isEmailSent = await this.emailAuthService.beginOtpVerificationViaEmail(emailObject, 'emailVerification');
 
     if (!isEmailSent) {
       throw new InternalServerErrorException('Failed to send verification email');

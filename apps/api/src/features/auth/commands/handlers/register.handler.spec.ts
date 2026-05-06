@@ -102,7 +102,7 @@ describe('RegisterHandler', () => {
       userRepository.getByUsername.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
       mockPrismaClient.user.create.mockResolvedValue(mockUserWithEmails as any);
-      emailAuthService.beginEmailVerification.mockResolvedValue(true);
+      emailAuthService.beginOtpVerificationViaEmail.mockResolvedValue(true);
 
       const command = new RegisterCommand(mockPayload);
 
@@ -127,7 +127,7 @@ describe('RegisterHandler', () => {
           }),
         }),
       );
-      expect(emailAuthService.beginEmailVerification).toHaveBeenCalledWith(mockEmailAddress);
+      expect(emailAuthService.beginOtpVerificationViaEmail).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
       expect(result).toEqual({
         user: expect.any(Object),
         isEmailSent: true,
@@ -200,7 +200,7 @@ describe('RegisterHandler', () => {
       hashingService.hash.mockResolvedValue('hashed-password');
 
       mockPrismaClient.user.create.mockResolvedValue(mockUserWithEmails as any);
-      emailAuthService.beginEmailVerification.mockRejectedValue(new Error('Email service error'));
+      emailAuthService.beginOtpVerificationViaEmail.mockRejectedValue(new Error('Email service error'));
 
       const command = new RegisterCommand(mockPayload);
 
@@ -223,7 +223,7 @@ describe('RegisterHandler', () => {
       userRepository.getByUsername.mockResolvedValue(null);
       hashingService.hash.mockResolvedValue('hashed-password');
       mockPrismaClient.user.create.mockResolvedValue(minimalUser as any);
-      emailAuthService.beginEmailVerification.mockResolvedValue(true);
+      emailAuthService.beginOtpVerificationViaEmail.mockResolvedValue(true);
 
       const command = new RegisterCommand(minimalPayload as any);
 

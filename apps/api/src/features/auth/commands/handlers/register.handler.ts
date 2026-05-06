@@ -72,7 +72,7 @@ export class RegisterHandler implements ICommandHandler<RegisterCommand> {
     const sanitizedUser = UserWithPrimaryEmailSchema.parse(user);
     const primaryEmailObject = sanitizedUser.emailAddresses[0];
 
-    const isEmailSent = await this.emailAuthService.beginEmailVerification(primaryEmailObject);
+    const isEmailSent = await this.emailAuthService.beginOtpVerificationViaEmail(primaryEmailObject, 'emailVerification');
 
     return {
       user: sanitizedUser,
