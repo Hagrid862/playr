@@ -4,12 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getLibraryAlbums } from './requests/getLibraryAlbums';
 
-export const useLibraryAlbums = (page = 1, limit = 20) => {
+export const useLibraryAlbums = (params: { page?: number; limit?: number; genreId?: string } = {}) => {
+  const { page = 1, limit = 20, genreId } = params;
   const setPrivateAlbums = useLibraryStore((state) => state.setPrivateAlbums);
 
   const query = useQuery<GetLibraryAlbumsResponse, Error>({
-    queryKey: ['library', 'albums', page, limit],
-    queryFn: () => getLibraryAlbums(page, limit),
+    queryKey: ['library', 'albums', page, limit, genreId],
+    queryFn: () => getLibraryAlbums({ page, limit, genreId }),
   });
 
   useEffect(() => {

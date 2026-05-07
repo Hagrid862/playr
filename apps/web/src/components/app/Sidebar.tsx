@@ -21,6 +21,7 @@ import {
   HouseIcon,
   MagnifyingGlassIcon,
   MicrophoneStageIcon,
+  MusicNotesIcon,
   SignOutIcon,
 } from '@phosphor-icons/react';
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
@@ -111,6 +112,14 @@ export function AppSidebar() {
                   <Link to="/app/library/albums" activeProps={{ 'data-active': 'true' }}>
                     <DiscIcon />
                     <span>Albums</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/app/library/genres" activeProps={{ 'data-active': 'true' }}>
+                    <MusicNotesIcon />
+                    <span>Genres</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
