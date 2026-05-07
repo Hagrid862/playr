@@ -4,7 +4,7 @@ import {RecoverPasswordCommand} from "@/features/auth/commands/impl/recover-pass
 import {OtpCodeService} from "@/features/auth/services/otp-code.service";
 import {UserRepository} from "@/shared/repositories/user.repository";
 import {EmailAddressRepository} from "@/shared/repositories/email-address.repository";
-import {BadRequestException, InternalServerErrorException} from "@nestjs/common";
+import {BadRequestException, InternalServerErrorException, Logger} from "@nestjs/common";
 import {HashingService} from "@/shared/services/hashing.service";
 
 
@@ -12,6 +12,8 @@ type RecoverPasswordData = RecoverPasswordResponse['data'];
 
 @CommandHandler(RecoverPasswordCommand)
 export class RecoverPasswordHandler implements ICommandHandler<RecoverPasswordCommand> {
+	private readonly logger = new Logger(RecoverPasswordHandler.name);
+
 	constructor(
 		private readonly otpCodeService: OtpCodeService,
 		private readonly userRepository: UserRepository,
@@ -20,18 +22,20 @@ export class RecoverPasswordHandler implements ICommandHandler<RecoverPasswordCo
 	) {}
 
 	async execute(command: RecoverPasswordCommand): Promise<RecoverPasswordData> {
-		const { email, otpCode, password } = command.payload;
+		const { email, otpCode, newPassword } = command.payload;
 
 		const emailObject = await this.emailAddressRepository.getByEmail(email);
 
 		if (!emailObject) {
-			throw new BadRequestException('Email not found');
+			this.logger.debug('Email not found');
+			return { success: false };
 		}
 
 		const userObject = await this.userRepository.getByEmail(email);
 
 		if (!userObject) {
-			throw new BadRequestException('User not found');
+			this.logger.debug('User not found');
+			return { success: false };
 		}
 
 		const isCodeValid = await this.otpCodeService.verifyOTPCode(
@@ -44,12 +48,12 @@ export class RecoverPasswordHandler implements ICommandHandler<RecoverPasswordCo
 			throw new BadRequestException('Invalid or expired OTP code');
 		}
 
-		const hashedPassword = await this.hashingService.hash(password);
+		const hashedPassword = await this.hashingService.hash(newPassword);
 
 		try {
 			await this.userRepository.update(userObject.id, {password: hashedPassword});
 		} catch (error) {
-			throw new InternalServerErrorException('Failed to update user password');
+			throw new InternalServerErrorException('Failed to update user password' + error);
 		}
 
 		return { success: isCodeValid };
