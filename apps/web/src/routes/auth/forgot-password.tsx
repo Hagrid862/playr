@@ -14,7 +14,7 @@ export const Route = createFileRoute('/auth/forgot-password')({
 	component: RouteComponent,
 });
 
-const RESEND_COOLDOWN_KEY = 'verify-email-resend-available-at';
+const RESEND_COOLDOWN_KEY = 'reset-password-code-resend-available-at';
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function RouteComponent() {
@@ -59,7 +59,7 @@ export function RouteComponent() {
 			const result = await forgotPassword(data);
 			if (result.success) {
 				setShowRecoverCard(true);
-
+				startResendTimer();
 				recoverPasswordHandleChange('email', forgotPasswordFormData.email)
 			}
 		} catch (err) {
