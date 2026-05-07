@@ -43,6 +43,7 @@ export function RouteComponent() {
 		isFormValid: recoverPasswordIsFormValid,
 		isPasswordFocused,
 		setIsPasswordFocused,
+		setTouched: recoverPasswordSetTouched,
 		handleChange: recoverPasswordHandleChange,
 		handleBlur: recoverPasswordHandleBlur,
 		handleSubmit: recoverPasswordHandleSubmit,
@@ -94,8 +95,17 @@ export function RouteComponent() {
 	const onGoBack = () => {
 		startResendTimer();
 		setShowRecoverCard(false);
+
+		// Reset first form with email
 		forgotPasswordHandleChange('email', '');
 		forgotPasswordSetTouched({ email: false });
+
+		// Reset second form with otp code and new password
+		recoverPasswordHandleChange('otpCode', '');
+		recoverPasswordHandleChange('email', "");
+		recoverPasswordHandleChange('newPassword', '');
+		recoverPasswordHandleChange('confirmPassword', '');
+		recoverPasswordSetTouched({ otpCode: false, newPassword: false, email: false, confirmPassword: false });
 	};
 
 	return (
@@ -119,6 +129,15 @@ export function RouteComponent() {
 							onBlur={forgotPasswordHandleBlur}
 							getFieldError={forgotPasswordGetFieldError}
 						/>
+						<Button
+							variant="outline"
+							size="sm"
+							className="w-full justify-center! gap-2"
+							onClick={() => window.history.back()}
+						>
+							<ArrowLeftIcon size={20} />
+							Cancel
+						</Button>
 					</CardContent>
 				</Card>
 			) : (
@@ -147,7 +166,7 @@ export function RouteComponent() {
 						<Button
 							variant="outline"
 							size="sm"
-							className="w-full !justify-center gap-2"
+							className="w-full justify-center! gap-2"
 							onClick={() => onGoBack()}
 						>
 							<ArrowLeftIcon size={20} />

@@ -68,6 +68,7 @@ export const useRecoverPasswordForm = () => {
 	return {
 		formData,
 		touched,
+		setTouched,
 		errors,
 		isFormValid,
 		isPasswordFocused,
