@@ -7,6 +7,7 @@ import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emailAddressBuilder } from '@repo/testing/builders';
 import { Logger } from '@nestjs/common';
+import {OTP_CODE_TTL} from "@/features/auth/constants/auth.constants";
 
 describe('EmailAuthService', () => {
   let service: EmailAuthService;
@@ -100,11 +101,10 @@ describe('EmailAuthService', () => {
     });
 
     describe('passwordReset type', () => {
-      it('should successfully begin password reset and return true', async () => {
+      it('should successfully begin password reset', async () => {
         // Arrange
         otpCodeService.generateOTPCode.mockResolvedValue(mockOtpCode);
         mailService.sendOtpVerificationCodeViaEmail.mockResolvedValue(true);
-        emailAddressRepository.edit.mockResolvedValue(mockEmailAddress);
 
         // Act
         const result = await service.beginOtpVerificationViaEmail(
@@ -122,11 +122,9 @@ describe('EmailAuthService', () => {
           mockEmailAddress,
           mockOtpCode,
           'passwordReset',
-          expect.any(Number),
+          OTP_CODE_TTL,
         );
-        expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailAddress.id, {
-          status: 'pending',
-        });
+        expect(emailAddressRepository.edit).not.toHaveBeenCalled();
       });
 
       it('should return false if email sending fails', async () => {
@@ -198,7 +196,7 @@ describe('EmailAuthService', () => {
         // Act
         const result = await service.beginOtpVerificationViaEmail(
           mockEmailAddress,
-          'passwordReset',
+          'emailVerification',
         );
 
         // Assert

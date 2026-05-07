@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { InternalServerErrorException} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { emailAddressBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
@@ -79,8 +79,8 @@ describe('ForgotPasswordHandler', () => {
       emailAddressRepository.getByEmail.mockResolvedValue(mockEmailObject as any);
       emailAuthService.beginOtpVerificationViaEmail.mockResolvedValue(false);
 
-      // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+      // Act &Assert
+      await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
       await expect(handler.execute(command)).rejects.toThrow(
         'Failed to send email for password retrieval',
       );
