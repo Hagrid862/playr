@@ -121,41 +121,40 @@ export function RouteComponent() {
             isResendLoading={resendEmailVerificationCodeIsLoading}
             resendTimer={resendTimer}
           />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                disabled={verifyEmailIsLoading}
+                className="flex items-center justify-center gap-1 text-muted-foreground hover:text-primary"
+              >
+                <SignOutIcon />
+                <span>Log out</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Logging out will reset your email verification progress. You&apos;ll need to verify
+                  your email again when you sign back in.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction onClick={handleLogout} variant="outline" size="sm">
+                  <SignOutIcon />
+                  <span>Log out</span>
+                </AlertDialogAction>
+                <AlertDialogCancel variant="default" size="sm">
+                  Cancel
+                </AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
-
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            disabled={verifyEmailIsLoading}
-            className="flex items-center justify-center gap-1 text-muted-foreground hover:text-primary mt-4"
-          >
-            <SignOutIcon />
-            <span>Log out</span>
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Logging out will reset your email verification progress. You&apos;ll need to verify
-              your email again when you sign back in.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={handleLogout} variant="outline" size="sm">
-              <SignOutIcon />
-              <span>Log out</span>
-            </AlertDialogAction>
-            <AlertDialogCancel variant="default" size="sm">
-              Cancel
-            </AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
