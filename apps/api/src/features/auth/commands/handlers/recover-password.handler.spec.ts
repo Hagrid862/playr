@@ -86,17 +86,19 @@ describe('RecoverPasswordHandler', () => {
       expect(result).toEqual({ success: true });
     });
 
-    it('should throw BadRequestException if email is not found', async () => {
+    it('should return success false if email is not found', async () => {
       // Arrange
       emailAddressRepository.getByEmail.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-      await expect(handler.execute(command)).rejects.toThrow('Email not found');
+      // Act
+      const result = await handler.execute(command);
+
+      // Assert
+      expect(result).toEqual({ success: false });
       expect(userRepository.getByEmail).not.toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException if user is not found', async () => {
+    it('should return success false if user is not found', async () => {
       // Arrange
       const mockEmailObject = emailAddressBuilder({
         email: 'test@example.com',
@@ -104,9 +106,11 @@ describe('RecoverPasswordHandler', () => {
       emailAddressRepository.getByEmail.mockResolvedValue(mockEmailObject as any);
       userRepository.getByEmail.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-      await expect(handler.execute(command)).rejects.toThrow('User not found');
+      // Act
+      const result = await handler.execute(command);
+
+      // Assert
+      expect(result).toEqual({ success: false });
       expect(otpCodeService.verifyOTPCode).not.toHaveBeenCalled();
     });
 

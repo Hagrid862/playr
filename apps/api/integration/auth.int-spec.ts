@@ -462,15 +462,15 @@ describe('AuthController (Integration)', () => {
       expect(response.body.data.isEmailSent).toBe(true);
     });
 
-    it('should return 400 if email not found', async () => {
+    it('should return 200 with isEmailSent false if email not found', async () => {
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .post('/auth/forgot-password')
         .send(forgotPasswordData)
-        .expect(400);
+        .expect(200);
 
-      expect(response.body.error.message).toBe('Email not found');
+      expect(response.body.data.isEmailSent).toBe(false);
     });
 
     it('should return 400 if email format is invalid', async () => {
@@ -544,15 +544,15 @@ describe('AuthController (Integration)', () => {
       expect(response.body.data.success).toBe(true);
     });
 
-    it('should return 400 if email not found', async () => {
+    it('should return 200 with success false if email not found', async () => {
       prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .post('/auth/recover-password')
         .send(recoverPasswordData)
-        .expect(400);
+        .expect(200);
 
-      expect(response.body.error.message).toBe('Email not found');
+      expect(response.body.data.success).toBe(false);
     });
 
     it('should return 400 for invalid OTP code', async () => {

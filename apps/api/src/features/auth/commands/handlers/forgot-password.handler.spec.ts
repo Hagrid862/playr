@@ -60,13 +60,15 @@ describe('ForgotPasswordHandler', () => {
       expect(result).toEqual({ isEmailSent: true });
     });
 
-    it('should throw BadRequestException if email is not found', async () => {
+    it('should return isEmailSent false if email is not found', async () => {
       // Arrange
       emailAddressRepository.getByEmail.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-      await expect(handler.execute(command)).rejects.toThrow('Email not found');
+      // Act
+      const result = await handler.execute(command);
+
+      // Assert
+      expect(result).toEqual({ isEmailSent: false });
     });
 
     it('should throw BadRequestException if sending email fails', async () => {
