@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
+import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
 import { CircleNotchIcon, InfoIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
+import { useMemo, useState, useCallback } from 'react';
+import type { ZodGenreInfer } from '@repo/contracts';
 
 export const Route = createFileRoute('/app/library/albums/$id/add-content/bulk')({
   component: BulkAddContentPage,
@@ -63,6 +66,21 @@ function BulkAddContentPage() {
 
   const album = albumResponse.data;
 
+  const { data: genresResponse, isLoading: isLoadingGenres } = useLibraryGenres({
+    page: 1,
+    limit: 100,
+  });
+  const genres = useMemo<ZodGenreInfer[]>(() => genresResponse?.data?.items ?? [], [genresResponse]);
+  const [pendingGenres, _setPendingGenres] = useState<{ id: string; name: string }[]>([]);
+
+  const handleRequestCreateGenre = useCallback((_onCreated: (genreId: string) => void) => {
+    // Currently BulkAddContentPage doesn't have the genre creation modal built-in
+    // we'll just log an error or we can implement the modal here too.
+    // However, it's out of scope for now if it doesn't have the modal.
+    // For type safety, we provide the callback prop.
+    console.warn("Genre creation is not supported directly in the bulk upload route yet");
+  }, []);
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <Alert className="border-primary/20 bg-primary/5">
@@ -85,6 +103,10 @@ function BulkAddContentPage() {
           album={album}
           onSubmit={handleSubmit}
           isLoading={isUploading || isUploadingCover}
+          genres={genres}
+          pendingGenres={pendingGenres}
+          isLoadingGenres={isLoadingGenres}
+          onRequestCreateGenre={handleRequestCreateGenre}
         />
       </div>
     </div>

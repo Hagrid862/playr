@@ -19,7 +19,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder({ explicit: false }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       expect(screen.getByText('track1.mp3')).toBeInTheDocument();
       expect(screen.getByDisplayValue(track.title)).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       fireEvent.change(screen.getByLabelText('Track Title'), { target: { value: 'New Title' } });
 
@@ -47,7 +47,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder({ diskNumber: 1 }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       fireEvent.change(screen.getByLabelText('Disk No.'), { target: { value: '2' } });
 
@@ -60,7 +60,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       const diskInput = screen.getByLabelText('Disk No.');
       await user.clear(diskInput);
@@ -74,7 +74,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder({ trackNumber: 1 }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       fireEvent.change(screen.getByLabelText('Track No.'), { target: { value: '3' } });
 
@@ -87,7 +87,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       const trackInput = screen.getByLabelText('Track No.');
       await user.clear(trackInput);
@@ -102,7 +102,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       const checkbox = screen.getByRole('checkbox', { name: 'Explicit Content' });
       await user.click(checkbox);
@@ -116,7 +116,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder({ explicit: true }),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       await user.click(screen.getByRole('checkbox', { name: 'Explicit Content' }));
 
@@ -131,7 +131,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       await user.click(screen.getByRole('button', { name: 'Remove track' }));
 
@@ -145,7 +145,7 @@ describe('BulkTrackCard', () => {
         ...trackBuilder(),
         file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
       };
-      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} />);
+      customRender(<BulkTrackCard track={track} onUpdate={mockOnUpdate} onRemove={mockOnRemove} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
       fireEvent.blur(screen.getByLabelText('Track Title'));
       fireEvent.blur(screen.getByLabelText('Disk No.'));

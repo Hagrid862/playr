@@ -1,4 +1,5 @@
 import type { BulkTrackItem } from '@/lib/types/library';
+import type { ZodGenreInfer } from '@repo/contracts';
 import { BulkTrackCard } from './BulkTrackCard';
 
 interface BulkTrackListProps {
@@ -6,6 +7,10 @@ interface BulkTrackListProps {
   onUpdateTrack: (id: string, updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => void;
   onRemoveTrack: (id: string) => void;
   onClearAll: () => void;
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
+  onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
 }
 
 export function BulkTrackList({
@@ -13,6 +18,10 @@ export function BulkTrackList({
   onUpdateTrack,
   onRemoveTrack,
   onClearAll,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
+  onRequestCreateGenre,
 }: BulkTrackListProps) {
   if (tracks.length === 0) return null;
 
@@ -35,6 +44,10 @@ export function BulkTrackList({
           <BulkTrackCard
             key={track.id}
             track={track}
+            genres={genres}
+            pendingGenres={pendingGenres}
+            isLoadingGenres={isLoadingGenres}
+            onRequestCreateGenre={onRequestCreateGenre}
             onUpdate={(updates) => onUpdateTrack(track.id, updates)}
             onRemove={() => onRemoveTrack(track.id)}
           />

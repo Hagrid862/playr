@@ -7,6 +7,8 @@ export interface BulkTrackItem {
   explicit: boolean;
   /** When set (non-empty), used for bulk create per-track artist assignment. */
   artistIds?: string[];
+  /** When set (non-empty), used for bulk create per-track genre assignment. */
+  genreIds?: string[];
 }
 
 export interface TrackWithCover {

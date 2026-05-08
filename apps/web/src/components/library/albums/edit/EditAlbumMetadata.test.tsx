@@ -77,7 +77,15 @@ describe('EditAlbumMetadata', () => {
   };
 
   it('renders correctly', () => {
-    customRender(<EditAlbumMetadata form={mockForm} />);
+    customRender(
+      <EditAlbumMetadata
+        form={mockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
     expect(screen.getByLabelText(/Album Type/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Release Date/i)).toBeInTheDocument();
   });
@@ -108,7 +116,15 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    customRender(<EditAlbumMetadata form={localMockForm} />);
+    customRender(
+      <EditAlbumMetadata
+        form={localMockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
     const select = screen.getByLabelText(/Album Type/i);
     await user.selectOptions(select, AlbumType.single);
     expect(handleChange).toHaveBeenCalledWith(AlbumType.single);
@@ -139,7 +155,15 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    customRender(<EditAlbumMetadata form={localMockForm} />);
+    customRender(
+      <EditAlbumMetadata
+        form={localMockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
     const select = screen.getByLabelText(/Album Type/i) as HTMLSelectElement;
 
     // Force a change event with invalid value directly since user.selectOptions only works with existing options
@@ -174,7 +198,15 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    customRender(<EditAlbumMetadata form={localMockForm} />);
+    customRender(
+      <EditAlbumMetadata
+        form={localMockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
     const mockClearButton = screen.queryByText('Clear Date');
     if (mockClearButton) {
       await user.click(mockClearButton);

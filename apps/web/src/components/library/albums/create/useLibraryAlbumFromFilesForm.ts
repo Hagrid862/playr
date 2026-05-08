@@ -261,6 +261,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
       trackNumber: 0,
       diskNumber: 1,
       explicit: false,
+      genreIds: [...formData.genreIds],
     }));
 
     setTracks((prev) => {
@@ -329,24 +330,60 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     [],
   );
 
+  const areGenreIdsEqual = (a: string[], b: string[]) => {
+    if (a.length !== b.length) return false;
+    const sa = [...a].sort();
+    const sb = [...b].sort();
+    return sa.every((v, i) => v === sb[i]);
+  };
+
   const toggleGenreId = useCallback((genreId: string) => {
     setFormData((prev) => {
-      const cur = prev.genreIds;
-      if (cur.includes(genreId)) {
-        return { ...prev, genreIds: cur.filter((x) => x !== genreId) };
-      }
-      return { ...prev, genreIds: [...cur, genreId] };
+      const oldIds = prev.genreIds;
+      const nextIds = oldIds.includes(genreId)
+        ? oldIds.filter((x) => x !== genreId)
+        : [...oldIds, genreId];
+
+      setTracks((tracks) =>
+        tracks.map((t) =>
+          areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...nextIds] } : t,
+        ),
+      );
+
+      return { ...prev, genreIds: nextIds };
     });
   }, []);
 
   const clearGenreSelection = useCallback(() => {
-    setFormData((prev) => ({ ...prev, genreIds: [] }));
+    setFormData((prev) => {
+      const oldIds = prev.genreIds;
+      const nextIds: string[] = [];
+
+      setTracks((tracks) =>
+        tracks.map((t) =>
+          areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...nextIds] } : t,
+        ),
+      );
+
+      return { ...prev, genreIds: nextIds };
+    });
   }, []);
 
   const appendGenreId = useCallback((genreId: string) => {
-    setFormData((prev) =>
-      prev.genreIds.includes(genreId) ? prev : { ...prev, genreIds: [...prev.genreIds, genreId] },
-    );
+    setFormData((prev) => {
+      if (prev.genreIds.includes(genreId)) return prev;
+
+      const oldIds = prev.genreIds;
+      const nextIds = [...oldIds, genreId];
+
+      setTracks((tracks) =>
+        tracks.map((t) =>
+          areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...nextIds] } : t,
+        ),
+      );
+
+      return { ...prev, genreIds: nextIds };
+    });
   }, []);
 
   const selectedCoverFile = useMemo(

@@ -289,7 +289,7 @@ describe('LibraryAlbumFromFilesForm', () => {
   });
 
   it('uses an empty library genre list when the genres query has no data', () => {
-    useLibraryGenresMock.mockReturnValue({ isLoading: false, data: undefined });
+    useLibraryGenresMock.mockReturnValue({ isLoading: false, data: undefined } as any);
     renderForm({ cancelTo: '/back' });
 
     expect(screen.getByRole('button', { name: /genres \(optional\)/i })).toBeInTheDocument();

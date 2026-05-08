@@ -53,6 +53,10 @@ describe('LibraryAlbumFromFilesTracksSection', () => {
     onUpdateTrack: mockOnUpdateTrack,
     onRemoveTrack: mockOnRemoveTrack,
     onClearTracks: mockOnClearTracks,
+    genres: [],
+    pendingGenres: [],
+    isLoadingGenres: false,
+    onRequestCreateGenre: vi.fn(),
   };
 
   beforeEach(() => {

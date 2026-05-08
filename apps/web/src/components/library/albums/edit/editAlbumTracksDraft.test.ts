@@ -52,6 +52,7 @@ describe('draftsEqualForTrack', () => {
     diskNumber: 1,
     explicit: false,
     artistIds: ['a1'],
+    genreIds: [],
   });
 
   it('returns true when server track matches draft on all fields', () => {

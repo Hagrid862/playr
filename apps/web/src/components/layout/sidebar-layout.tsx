@@ -44,7 +44,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger className="bg-stone-900/50 backdrop-blur-sm border border-white/10 text-white hover:bg-stone-800" />
             </div>
             <div className="flex min-h-0 min-w-0 flex-1 overflow-y-auto w-full">
-              <main className="w-full px-4 pb-44">{children}</main>
+              <main className="w-full px-4">{children}</main>
             </div>
             <div className="absolute p-2 bottom-2 left-0 right-0 z-[60] h-16 flex items-center justify-center max-w-[calc(100vw-2rem)] min-[800px]:max-w-250 mx-auto">
               <AppPlayer />

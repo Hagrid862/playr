@@ -91,6 +91,7 @@ function createTracksMock(
     removePendingArtist: vi.fn(),
     prepareTracksSubmit: vi.fn(() => ({ ok: true as const, payload: emptyPayload })),
     hasTrackDraftChanges: false,
+    updateAllTracksGenres: vi.fn(),
     ...overrides,
   };
 }
@@ -115,6 +116,7 @@ const stagedSample = {
   diskNumber: 1,
   explicit: false,
   artistIds: ['a1'] as string[],
+  genreIds: [] as string[],
 };
 
 describe('EditAlbumTracksSection', () => {
@@ -128,7 +130,7 @@ describe('EditAlbumTracksSection', () => {
   });
 
   it('renders audio upload area and empty tracks message', () => {
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
     expect(screen.getByText('Audio files')).toBeInTheDocument();
     expect(screen.getByText(/Click here or drop audio files/i)).toBeInTheDocument();
     expect(screen.getByText('No tracks on this album yet.')).toBeInTheDocument();
@@ -136,7 +138,7 @@ describe('EditAlbumTracksSection', () => {
 
   it('shows empty-artist helper when no library artists and no tracks', () => {
     libraryStoreState.privateArtists = [];
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
     expect(
       screen.getByText(/Load library artists or add a new artist from a track/i),
     ).toBeInTheDocument();
@@ -156,13 +158,14 @@ describe('EditAlbumTracksSection', () => {
           diskNumber: 1,
           explicit: false,
           artistIds: ['a1'],
+          genreIds: [],
         },
       },
       updateDraft: vi.fn(),
       scheduleTrackDelete,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     expect(screen.getByText('Album tracks (1)')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /remove track on save/i }));
@@ -182,12 +185,13 @@ describe('EditAlbumTracksSection', () => {
           diskNumber: 1,
           explicit: false,
           artistIds: ['a1'],
+          genreIds: [],
         },
       },
       updateDraft,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     const titleInput = screen.getByLabelText(/track title/i);
     fireEvent.change(titleInput, { target: { value: 'Renamed' } });
@@ -238,12 +242,13 @@ describe('EditAlbumTracksSection', () => {
           diskNumber: 1,
           explicit: false,
           artistIds: ['a1'],
+          genreIds: [],
         },
       },
       updateDraft,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /1 artist/i }));
     await user.click(screen.getByRole('button', { name: /\+ create new artist/i }));
@@ -266,7 +271,7 @@ describe('EditAlbumTracksSection', () => {
       draftById: {},
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     expect(screen.getByText('Album tracks (1)')).toBeInTheDocument();
     expect(screen.queryByLabelText(/track title/i)).not.toBeInTheDocument();
@@ -278,7 +283,7 @@ describe('EditAlbumTracksSection', () => {
       stagedTracks: [stagedSample],
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     expect(screen.getByText(/New tracks \(1\)/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /clear staged/i })).toBeInTheDocument();
@@ -293,7 +298,7 @@ describe('EditAlbumTracksSection', () => {
       updateStagedTrack,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     const stagedTitle = screen.getByLabelText(/track title/i);
     fireEvent.change(stagedTitle, {
@@ -360,7 +365,7 @@ describe('EditAlbumTracksSection', () => {
       ],
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     expect(screen.getByText(/Scanning metadata/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /remove staged track/i })).toBeDisabled();
@@ -379,7 +384,7 @@ describe('EditAlbumTracksSection', () => {
       removeStagedTrack,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /clear staged/i }));
     expect(clearStagedTracks).toHaveBeenCalled();
@@ -399,7 +404,7 @@ describe('EditAlbumTracksSection', () => {
       updateStagedTrack,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /1 artist/i }));
     await user.click(screen.getByRole('button', { name: /\+ create new artist/i }));
@@ -430,7 +435,7 @@ describe('EditAlbumTracksSection', () => {
       updateStagedTrack,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /select artists/i }));
     await user.click(screen.getByRole('button', { name: /\+ create new artist/i }));
@@ -451,7 +456,7 @@ describe('EditAlbumTracksSection', () => {
       pendingArtists: [{ id: 'local:pending:x', name: 'Soon' }],
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     expect(screen.getByText('Soon')).toBeInTheDocument();
   });
@@ -465,7 +470,7 @@ describe('EditAlbumTracksSection', () => {
       removePendingArtist,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /remove soon/i }));
     expect(removePendingArtist).toHaveBeenCalledWith('local:pending:x');
@@ -488,7 +493,7 @@ describe('EditAlbumTracksSection', () => {
       ],
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
     expect(screen.getByText(/Scanning metadata/i)).toBeInTheDocument();
   });
 
@@ -502,7 +507,7 @@ describe('EditAlbumTracksSection', () => {
       undoTrackDelete,
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(undoTrackDelete).toHaveBeenCalledWith('tr-9');
   });
@@ -519,11 +524,12 @@ describe('EditAlbumTracksSection', () => {
           diskNumber: 1,
           explicit: false,
           artistIds: ['a1'],
+          genreIds: [],
         },
       },
     };
 
-    customRender(<EditAlbumTracksSection tracks={tracks} />);
+    customRender(<EditAlbumTracksSection tracks={tracks} genres={[]} pendingGenres={[]} isLoadingGenres={false} onRequestCreateGenre={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: /1 artist/i }));
     await user.click(screen.getByRole('button', { name: /\+ create new artist/i }));
