@@ -12,23 +12,31 @@ vi.mock('@phosphor-icons/react', () => ({
 }));
 
 vi.mock('@/components/ui/input-otp', () => ({
-  InputOTP: vi.fn(({ value, onChange, disabled, children, ...props }: {
-    value?: string;
-    onChange?: (value: string) => void;
-    disabled?: boolean;
-    children?: React.ReactNode;
-  }) => (
-    <div data-testid="mock-input-otp" {...props}>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        disabled={disabled}
-        data-testid="mock-input-otp-input"
-      />
-      {children}
-    </div>
-  )),
+  InputOTP: vi.fn(
+    ({
+      value,
+      onChange,
+      disabled,
+      children,
+      ...props
+    }: {
+      value?: string;
+      onChange?: (value: string) => void;
+      disabled?: boolean;
+      children?: React.ReactNode;
+    }) => (
+      <div data-testid="mock-input-otp" {...props}>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          disabled={disabled}
+          data-testid="mock-input-otp-input"
+        />
+        {children}
+      </div>
+    ),
+  ),
   InputOTPGroup: vi.fn(({ children }: { children?: React.ReactNode }) => (
     <div data-testid="mock-input-otp-group">{children}</div>
   )),
@@ -38,27 +46,34 @@ vi.mock('@/components/ui/input-otp', () => ({
 }));
 
 vi.mock('@/components/auth/PasswordStrengthPopover', () => ({
-  PasswordStrengthPopover: vi.fn(({
-    id, value, onChange, onFocus, onBlur, hasError,
-  }: {
-    id?: string;
-    value?: string;
-    onChange?: (value: string) => void;
-    onFocus?: () => void;
-    onBlur?: () => void;
-    hasError?: boolean;
-  }) => (
-    <input
-      id={id}
-      type="password"
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      data-testid="mock-password-input"
-      data-has-error={String(hasError)}
-    />
-  )),
+  PasswordStrengthPopover: vi.fn(
+    ({
+      id,
+      value,
+      onChange,
+      onFocus,
+      onBlur,
+      hasError,
+    }: {
+      id?: string;
+      value?: string;
+      onChange?: (value: string) => void;
+      onFocus?: () => void;
+      onBlur?: () => void;
+      hasError?: boolean;
+    }) => (
+      <input
+        id={id}
+        type="password"
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        data-testid="mock-password-input"
+        data-has-error={String(hasError)}
+      />
+    ),
+  ),
 }));
 
 describe('RecoverPasswordForm', () => {
@@ -106,17 +121,29 @@ describe('RecoverPasswordForm', () => {
   });
 
   it('displays current OTP value from formData', () => {
-    render(<RecoverPasswordForm {...defaultProps} formData={{ ...mockFormData, otpCode: '12345678' }} />);
+    render(
+      <RecoverPasswordForm {...defaultProps} formData={{ ...mockFormData, otpCode: '12345678' }} />,
+    );
     expect(screen.getByTestId('mock-input-otp-input')).toHaveValue('12345678');
   });
 
   it('displays current new password value from formData', () => {
-    render(<RecoverPasswordForm {...defaultProps} formData={{ ...mockFormData, newPassword: 'secret123' }} />);
+    render(
+      <RecoverPasswordForm
+        {...defaultProps}
+        formData={{ ...mockFormData, newPassword: 'secret123' }}
+      />,
+    );
     expect(screen.getByTestId('mock-password-input')).toHaveValue('secret123');
   });
 
   it('displays current confirm password value from formData', () => {
-    render(<RecoverPasswordForm {...defaultProps} formData={{ ...mockFormData, confirmPassword: 'secret123' }} />);
+    render(
+      <RecoverPasswordForm
+        {...defaultProps}
+        formData={{ ...mockFormData, confirmPassword: 'secret123' }}
+      />,
+    );
     expect(screen.getByLabelText(/confirm password/i)).toHaveValue('secret123');
   });
 
@@ -134,7 +161,9 @@ describe('RecoverPasswordForm', () => {
 
   it('calls onChange when confirm password changes', () => {
     render(<RecoverPasswordForm {...defaultProps} />);
-    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'confirmpass' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'confirmpass' },
+    });
     expect(mockOnChange).toHaveBeenCalledWith('confirmPassword', 'confirmpass');
   });
 
@@ -169,7 +198,10 @@ describe('RecoverPasswordForm', () => {
     );
     const { container } = render(<RecoverPasswordForm {...defaultProps} />);
     expect(screen.getByText('Invalid code')).toBeInTheDocument();
-    expect(container.querySelectorAll('[data-slot="field"]')[0]).toHaveAttribute('data-invalid', 'true');
+    expect(container.querySelectorAll('[data-slot="field"]')[0]).toHaveAttribute(
+      'data-invalid',
+      'true',
+    );
   });
 
   it('displays new password error and sets data-invalid when getFieldError returns an error', () => {
@@ -178,7 +210,10 @@ describe('RecoverPasswordForm', () => {
     );
     const { container } = render(<RecoverPasswordForm {...defaultProps} />);
     expect(screen.getByText('Too weak')).toBeInTheDocument();
-    expect(container.querySelectorAll('[data-slot="field"]')[1]).toHaveAttribute('data-invalid', 'true');
+    expect(container.querySelectorAll('[data-slot="field"]')[1]).toHaveAttribute(
+      'data-invalid',
+      'true',
+    );
   });
 
   it('displays confirm password error and sets data-invalid when getFieldError returns an error', () => {
@@ -187,7 +222,10 @@ describe('RecoverPasswordForm', () => {
     );
     const { container } = render(<RecoverPasswordForm {...defaultProps} />);
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
-    expect(container.querySelectorAll('[data-slot="field"]')[2]).toHaveAttribute('data-invalid', 'true');
+    expect(container.querySelectorAll('[data-slot="field"]')[2]).toHaveAttribute(
+      'data-invalid',
+      'true',
+    );
   });
 
   it('disables submit button when isValid is false', () => {
@@ -209,7 +247,9 @@ describe('RecoverPasswordForm', () => {
 
   it('shows "Reset Password" text on submit button when not loading', () => {
     render(<RecoverPasswordForm {...defaultProps} isValid={true} isLoading={false} />);
-    expect(screen.getByRole('button', { name: /reset password/i })).toHaveTextContent('Reset Password');
+    expect(screen.getByRole('button', { name: /reset password/i })).toHaveTextContent(
+      'Reset Password',
+    );
   });
 
   it('calls onSubmit when form is submitted', () => {
@@ -228,36 +268,20 @@ describe('RecoverPasswordForm', () => {
   });
 
   it('disables resend button and shows timer text when resendTimer > 0', () => {
-    render(
-      <RecoverPasswordForm
-        {...defaultProps}
-        onResend={mockOnResend}
-        resendTimer={30}
-      />,
-    );
+    render(<RecoverPasswordForm {...defaultProps} onResend={mockOnResend} resendTimer={30} />);
     const resendButton = screen.getByRole('button', { name: /wait 30s to resend/i });
     expect(resendButton).toBeDisabled();
     expect(resendButton).toHaveTextContent('Wait 30s to resend');
   });
 
   it('shows "Resend Code" text when resendTimer is 0', () => {
-    render(
-      <RecoverPasswordForm
-        {...defaultProps}
-        onResend={mockOnResend}
-        resendTimer={0}
-      />,
-    );
+    render(<RecoverPasswordForm {...defaultProps} onResend={mockOnResend} resendTimer={0} />);
     expect(screen.getByRole('button', { name: /resend code/i })).toHaveTextContent('Resend Code');
   });
 
   it('disables resend button and shows spinner when isResendLoading is true', () => {
     render(
-      <RecoverPasswordForm
-        {...defaultProps}
-        onResend={mockOnResend}
-        isResendLoading={true}
-      />,
+      <RecoverPasswordForm {...defaultProps} onResend={mockOnResend} isResendLoading={true} />,
     );
     const resendButton = screen.getByRole('button', { name: /resend code/i });
     expect(resendButton).toBeDisabled();
@@ -266,22 +290,13 @@ describe('RecoverPasswordForm', () => {
 
   it('shows ArrowsClockwiseIcon on resend button when not resend loading', () => {
     render(
-      <RecoverPasswordForm
-        {...defaultProps}
-        onResend={mockOnResend}
-        isResendLoading={false}
-      />,
+      <RecoverPasswordForm {...defaultProps} onResend={mockOnResend} isResendLoading={false} />,
     );
     expect(screen.getByTestId('arrows-clockwise-icon')).toBeInTheDocument();
   });
 
   it('calls onResend when resend button is clicked', () => {
-    render(
-      <RecoverPasswordForm
-        {...defaultProps}
-        onResend={mockOnResend}
-      />,
-    );
+    render(<RecoverPasswordForm {...defaultProps} onResend={mockOnResend} />);
     fireEvent.click(screen.getByRole('button', { name: /resend code/i }));
     expect(mockOnResend).toHaveBeenCalledTimes(1);
   });

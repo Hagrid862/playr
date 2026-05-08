@@ -80,7 +80,9 @@ describe('ForgotPasswordForm', () => {
   });
 
   it('should enable the submit button when isValid is true and not loading or timed out', () => {
-    render(<ForgotPasswordForm {...defaultProps} isValid={true} isLoading={false} resendTimer={0} />);
+    render(
+      <ForgotPasswordForm {...defaultProps} isValid={true} isLoading={false} resendTimer={0} />,
+    );
     const submitButton = screen.getByRole('button', { name: /send reset code/i });
 
     expect(submitButton).toBeEnabled();
@@ -123,7 +125,9 @@ describe('ForgotPasswordForm', () => {
   });
 
   it('should render the correct icon for "Send Reset Code" state', () => {
-    render(<ForgotPasswordForm {...defaultProps} isValid={true} isLoading={false} resendTimer={0} />);
+    render(
+      <ForgotPasswordForm {...defaultProps} isValid={true} isLoading={false} resendTimer={0} />,
+    );
     expect(screen.getByTestId('arrows-clockwise-icon')).toBeInTheDocument();
   });
 });
