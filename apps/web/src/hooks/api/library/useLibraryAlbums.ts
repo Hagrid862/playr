@@ -4,7 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getLibraryAlbums } from '../library-albums/requests/getLibraryAlbums';
 
-export const useLibraryAlbums = (params: { page?: number; limit?: number; genreId?: string } = {}) => {
+export const useLibraryAlbums = (
+  params: { page?: number; limit?: number; genreId?: string } = {},
+) => {
   const { page = 1, limit = 20, genreId } = params;
   const setPrivateAlbums = useLibraryStore((state) => state.setPrivateAlbums);
 

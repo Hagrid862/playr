@@ -17,14 +17,17 @@ export const Route = createFileRoute('/app/library/genres/$genreId')({
 function GenreDetail() {
   const { genreId } = Route.useParams();
   const isMobile = useIsMobile();
-  
+
   const { data: genreData } = useLibraryGenre(genreId);
   const genre = genreData?.data;
 
   const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryAlbums({ genreId, limit: 50 });
   const albums = (albumsData?.data?.items ?? []) as any[];
 
-  const { data: tracksData, isLoading: isTracksLoading } = useLibraryTracks({ genreId, limit: 100 });
+  const { data: tracksData, isLoading: isTracksLoading } = useLibraryTracks({
+    genreId,
+    limit: 100,
+  });
   const rawTracks = (tracksData?.data?.items ?? []) as ZodTrack[];
   const tracks = rawTracks.map(zodTrackToPlaybackTrack);
 
@@ -32,7 +35,7 @@ function GenreDetail() {
   const currentTrackId = currentTrack?.id;
 
   const handlePlayTrack = (track: any) => {
-    const trackIndex = tracks.findIndex(t => t.id === track.id);
+    const trackIndex = tracks.findIndex((t) => t.id === track.id);
     const remainder = tracks.slice(trackIndex + 1);
     playTrack(track, remainder);
   };
@@ -44,7 +47,9 @@ function GenreDetail() {
       ) : (
         <div className="flex flex-col gap-2">
           <h2 className="text-4xl font-black tracking-tight">{genre?.name}</h2>
-          <p className="text-muted-foreground">{albums.length} albums • {tracks.length} songs</p>
+          <p className="text-muted-foreground">
+            {albums.length} albums • {tracks.length} songs
+          </p>
         </div>
       )}
 

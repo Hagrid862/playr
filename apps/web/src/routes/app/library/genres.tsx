@@ -12,8 +12,9 @@ export const Route = createFileRoute('/app/library/genres')({
 function GenresLayout() {
   const isMobile = useIsMobile();
   const location = useLocation();
-  const isRoot = location.pathname === '/app/library/genres' || location.pathname === '/app/library/genres/';
-  
+  const isRoot =
+    location.pathname === '/app/library/genres' || location.pathname === '/app/library/genres/';
+
   const { data: genresData, isLoading } = useLibraryGenres({ page: 1, limit: 100 });
   const genres = genresData?.data?.items ?? [];
 
@@ -72,9 +73,11 @@ function GenresLayout() {
                     to="/app/library/genres/$genreId"
                     params={{ genreId: genre.id }}
                     activeProps={{ className: 'bg-primary text-primary-foreground shadow-sm' }}
-                    inactiveProps={{ className: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground' }}
+                    inactiveProps={{
+                      className: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground',
+                    }}
                     className={cn(
-                      "flex h-10 items-center rounded-lg px-3 text-sm font-medium transition-all"
+                      'flex h-10 items-center rounded-lg px-3 text-sm font-medium transition-all',
                     )}
                   >
                     {genre.name}
