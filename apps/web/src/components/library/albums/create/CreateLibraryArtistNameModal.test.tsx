@@ -1,11 +1,30 @@
 import { checkLibraryArtistNameAvailability } from '@/hooks/api/library-artists/requests/checkLibraryArtistNameAvailability';
 import { customRender } from '@repo/testing/web';
 import { GetLibraryArtistNameAvailabilityResponseSchema } from '@repo/contracts';
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryArtistNameModal } from './CreateLibraryArtistNameModal';
+
+vi.mock('@/components/ui/dialog', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/ui/dialog')>();
+  const OriginalDialog = actual.Dialog;
+  return {
+    ...actual,
+    Dialog: (props: ComponentProps<typeof OriginalDialog>) => (
+      <div>
+        <button
+          type="button"
+          data-testid="emit-dialog-open-true"
+          aria-label="Emit dialog onOpenChange true"
+          onClick={() => props.onOpenChange?.(true)}
+        />
+        <OriginalDialog {...props} />
+      </div>
+    ),
+  };
+});
 
 /** Lets "Add artist" stay clickable when empty so `handleConfirm` runs its trimmed-name guard (production uses `disabled`). */
 vi.mock('@/components/ui/button', async (importOriginal) => {
@@ -207,6 +226,24 @@ describe('CreateLibraryArtistNameModal', () => {
 
     expect(checkLibraryArtistNameAvailability).not.toHaveBeenCalled();
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('does not clear fields when dialog requests open via onOpenChange(true)', async () => {
+    const user = userEvent.setup();
+    customRender(
+      <CreateLibraryArtistNameModal
+        open
+        onOpenChange={onOpenChange}
+        pendingArtistNames={[]}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/artist name/i), 'Draft');
+    fireEvent.click(screen.getByTestId('emit-dialog-open-true'));
+
+    expect(screen.getByLabelText(/artist name/i)).toHaveValue('Draft');
+    expect(onOpenChange).toHaveBeenCalledWith(true);
   });
 
   it('closes from the cancel button', async () => {

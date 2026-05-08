@@ -64,6 +64,10 @@ describe('albumTypeDisplayName', () => {
     expect(albumTypeDisplayName(AlbumType.ep)).toBe('Ep');
     expect(albumTypeDisplayName(AlbumType.compilation)).toBe('Compilation');
   });
+
+  it('falls back to Album when value does not match any enum member', () => {
+    expect(albumTypeDisplayName('not-an-album-type' as AlbumType)).toBe('Album');
+  });
 });
 
 describe('formatAlbumReleaseDateSegment', () => {
@@ -76,5 +80,9 @@ describe('formatAlbumReleaseDateSegment', () => {
   it('formats ISO strings', () => {
     expect(formatAlbumReleaseDateSegment('2024-06-15T12:00:00.000Z')).toMatch(/Jun/);
     expect(formatAlbumReleaseDateSegment('2024-06-15T12:00:00.000Z')).toMatch(/2024/);
+  });
+
+  it('returns null for an invalid Date instance', () => {
+    expect(formatAlbumReleaseDateSegment(new Date(Number.NaN))).toBeNull();
   });
 });

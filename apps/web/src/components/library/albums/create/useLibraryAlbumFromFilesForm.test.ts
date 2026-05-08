@@ -525,6 +525,45 @@ describe('useLibraryAlbumFromFilesForm', () => {
     });
   });
 
+  describe('genre selection', () => {
+    it('toggleGenreId removes a genre when it is already selected', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.toggleGenreId('g1');
+      });
+      expect(result.current.formData.genreIds).toEqual(['g1']);
+
+      act(() => {
+        result.current.toggleGenreId('g1');
+      });
+      expect(result.current.formData.genreIds).toEqual([]);
+    });
+
+    it('clearGenreSelection removes all genre ids', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.appendGenreId('a');
+        result.current.appendGenreId('b');
+        result.current.clearGenreSelection();
+      });
+
+      expect(result.current.formData.genreIds).toEqual([]);
+    });
+
+    it('appendGenreId is a no-op when the id is already present', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.appendGenreId('g1');
+        result.current.appendGenreId('g1');
+      });
+
+      expect(result.current.formData.genreIds).toEqual(['g1']);
+    });
+  });
+
   describe('selected cover', () => {
     it('removes cover image selection when all tracks are removed', async () => {
       const mockCover = new File(['cover'], 'cover.jpg', { type: 'image/jpeg' });

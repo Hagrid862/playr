@@ -72,9 +72,19 @@ describe('GetLibraryTracksHandler', () => {
     expect(libraryTrackRepository.getPaginated).toHaveBeenCalledWith(
       1,
       10,
-      { libraryId: mockLibrary.id, track: undefined },
+      { libraryId: mockLibrary.id, track: {} },
       { track: { trackNumber: 'asc' } },
-      { include: expect.any(Object) },
+      {
+        include: {
+          track: {
+            include: {
+              artists: true,
+              album: true,
+              genres: { include: { genre: true } },
+            },
+          },
+        },
+      },
     );
   });
 
@@ -97,6 +107,58 @@ describe('GetLibraryTracksHandler', () => {
       { track: { trackNumber: 'asc' } },
       expect.objectContaining({ include: expect.any(Object) }),
     );
+  });
+
+  it('should filter by genreId if provided', async () => {
+    const genreId = 'genre-456';
+    const genreQuery = new GetLibraryTracksQuery(userId, 1, 10, undefined, genreId);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
+    libraryTrackRepository.getPaginated.mockResolvedValue([mockItem]);
+    libraryTrackRepository.count.mockResolvedValue(1);
+
+    await handler.execute(genreQuery);
+
+    const expectedWhere = {
+      libraryId: mockLibrary.id,
+      track: { genres: { some: { genreId } } },
+    };
+
+    expect(libraryTrackRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      expectedWhere,
+      { track: { trackNumber: 'asc' } },
+      expect.objectContaining({ include: expect.any(Object) }),
+    );
+    expect(libraryTrackRepository.count).toHaveBeenCalledWith(expectedWhere);
+  });
+
+  it('should filter by albumId and genreId when both are provided', async () => {
+    const genreQuery = new GetLibraryTracksQuery(userId, 1, 10, 'album-123', 'genre-456');
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
+    libraryTrackRepository.getPaginated.mockResolvedValue([mockItem]);
+    libraryTrackRepository.count.mockResolvedValue(1);
+
+    await handler.execute(genreQuery);
+
+    const expectedWhere = {
+      libraryId: mockLibrary.id,
+      track: {
+        albumId: 'album-123',
+        genres: { some: { genreId: 'genre-456' } },
+      },
+    };
+
+    expect(libraryTrackRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      expectedWhere,
+      { track: { trackNumber: 'asc' } },
+      expect.objectContaining({ include: expect.any(Object) }),
+    );
+    expect(libraryTrackRepository.count).toHaveBeenCalledWith(expectedWhere);
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {

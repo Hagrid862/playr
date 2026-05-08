@@ -701,6 +701,34 @@ describe('LibraryAlbumMetadataSection', () => {
     expect(onUpdate).toHaveBeenCalledWith('releaseDate', expect.any(Date));
   });
 
+  it('clears release date when the calendar toggles the selected day off', async () => {
+    const user = userEvent.setup();
+    const selected = new Date(2026, 4, 15);
+    customRender(
+      <TooltipProvider>
+        <LibraryAlbumMetadataSection
+          formData={{ ...baseForm, releaseDate: selected }}
+          artists={[{ id: 'a1', name: 'Alpha' }]}
+          artistSelectOptions={artistOptions}
+          isLoadingArtists={false}
+          isStagedNewArtistSelected={false}
+          coverPreviewUrl={null}
+          onUpdate={onUpdate}
+          onArtistIdChange={onArtistIdChange}
+          onClearStagedArtist={onClearStagedArtist}
+          onManualCoverFile={onManualCoverFile}
+          onRemoveCover={onRemoveCover}
+          {...genrePropsFor()}
+        />
+      </TooltipProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /May.*15|May 15/ }));
+    await user.click(screen.getByText('15'));
+
+    expect(onUpdate).toHaveBeenCalledWith('releaseDate', null);
+  });
+
   it('clears the cover file input when preview URL becomes null', () => {
     const { rerender } = customRender(
       <TooltipProvider>
@@ -860,5 +888,148 @@ describe('LibraryAlbumMetadataSection', () => {
     await user.upload(input, png);
 
     expect(onManualCoverFile).toHaveBeenCalledWith(png);
+  });
+
+  it('orders genre chips with pending genres before existing picks', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{
+          ...baseForm,
+          genreIds: ['g1', 'local:pending:abc123'],
+        }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        artistSelectOptions={artistOptions}
+        isLoadingArtists={false}
+        isStagedNewArtistSelected={false}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistIdChange={onArtistIdChange}
+        onClearStagedArtist={onClearStagedArtist}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor({
+          pendingGenres: [{ id: 'local:pending:abc123', name: 'Fresh Genre' }],
+        })}
+      />,
+    );
+
+    const removeButtons = screen.getAllByRole('button', { name: /^Remove /i });
+    expect(removeButtons[0]).toHaveAccessibleName(/Fresh Genre/);
+    expect(removeButtons[1]).toHaveAccessibleName(/Rock/);
+  });
+
+  it('orders pending before server when the pending id appears first in genreIds', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{
+          ...baseForm,
+          genreIds: ['local:pending:abc123', 'g1'],
+        }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        artistSelectOptions={artistOptions}
+        isLoadingArtists={false}
+        isStagedNewArtistSelected={false}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistIdChange={onArtistIdChange}
+        onClearStagedArtist={onClearStagedArtist}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor({
+          pendingGenres: [{ id: 'local:pending:abc123', name: 'Fresh Genre' }],
+        })}
+      />,
+    );
+
+    const removeButtons = screen.getAllByRole('button', { name: /^Remove /i });
+    expect(removeButtons[0]).toHaveAccessibleName(/Fresh Genre/);
+    expect(removeButtons[1]).toHaveAccessibleName(/Rock/);
+  });
+
+  it('renders multiple pending genre chips without reordering when both are new', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{
+          ...baseForm,
+          genreIds: ['local:pending:first', 'local:pending:second'],
+        }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        artistSelectOptions={artistOptions}
+        isLoadingArtists={false}
+        isStagedNewArtistSelected={false}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistIdChange={onArtistIdChange}
+        onClearStagedArtist={onClearStagedArtist}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor({
+          pendingGenres: [
+            { id: 'local:pending:first', name: 'Alpha New' },
+            { id: 'local:pending:second', name: 'Beta New' },
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: /^Remove /i })).toHaveLength(2);
+  });
+
+  it('renders chips for two library genres without pending reordering', () => {
+    const jazz = {
+      id: 'g2',
+      name: 'Jazz',
+      slug: 'jazz',
+      description: null,
+      kind: 'system' as const,
+      libraryId: null,
+      createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+      deletedAt: null,
+    };
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{
+          ...baseForm,
+          genreIds: ['g1', 'g2'],
+        }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        artistSelectOptions={artistOptions}
+        isLoadingArtists={false}
+        isStagedNewArtistSelected={false}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistIdChange={onArtistIdChange}
+        onClearStagedArtist={onClearStagedArtist}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor({ genres: [testGenre, jazz] })}
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: /^Remove /i })).toHaveLength(2);
+  });
+
+  it('uses the empty-genres placeholder when the library has no genres', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={baseForm}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        artistSelectOptions={artistOptions}
+        isLoadingArtists={false}
+        isStagedNewArtistSelected={false}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistIdChange={onArtistIdChange}
+        onClearStagedArtist={onClearStagedArtist}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor({ genres: [] })}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /genres \(optional\)/i })).toHaveTextContent(
+      /No genres or create new/i,
+    );
   });
 });

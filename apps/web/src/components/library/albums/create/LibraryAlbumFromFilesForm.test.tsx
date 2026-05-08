@@ -22,6 +22,11 @@ const hookMergeRef = vi.hoisted(() => ({
   current: null as null | ((base: Record<string, unknown>) => Record<string, unknown>),
 }));
 
+/** Stable-object merge cache so returning `{ formData: {...} }` does not change identity every render (avoids update loops). */
+const orphanGenreMergeCache = vi.hoisted(() => ({
+  current: null as Record<string, unknown> | null,
+}));
+
 vi.mock('./useLibraryAlbumFromFilesForm', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./useLibraryAlbumFromFilesForm')>();
   return {
@@ -49,6 +54,7 @@ const createAlbumIsPending = vi.hoisted(() => ({ current: false }));
 const uploadCoverIsPending = vi.hoisted(() => ({ current: false }));
 const bulkTracksIsPending = vi.hoisted(() => ({ current: false }));
 const createArtistIsPending = vi.hoisted(() => ({ current: false }));
+const createGenreIsPending = vi.hoisted(() => ({ current: false }));
 
 const navigateMock = vi.fn();
 
@@ -127,7 +133,7 @@ vi.mock('@/hooks/api/library-genres/useCreateLibraryGenre', () => ({
   useCreateLibraryGenre: () => ({
     mutateAsync: createGenreMock,
     get isPending() {
-      return false;
+      return createGenreIsPending.current;
     },
   }),
 }));
@@ -242,10 +248,12 @@ describe('LibraryAlbumFromFilesForm', () => {
 
   afterEach(() => {
     hookMergeRef.current = null;
+    orphanGenreMergeCache.current = null;
     createAlbumIsPending.current = false;
     uploadCoverIsPending.current = false;
     bulkTracksIsPending.current = false;
     createArtistIsPending.current = false;
+    createGenreIsPending.current = false;
   });
 
   it('renders cancel link and disabled submit while empty', () => {
@@ -280,6 +288,13 @@ describe('LibraryAlbumFromFilesForm', () => {
     expect(typeTrigger).toBeInTheDocument();
   });
 
+  it('uses an empty library genre list when the genres query has no data', () => {
+    useLibraryGenresMock.mockReturnValue({ isLoading: false, data: undefined });
+    renderForm({ cancelTo: '/back' });
+
+    expect(screen.getByRole('button', { name: /genres \(optional\)/i })).toBeInTheDocument();
+  });
+
   it('submits create album flow after adding audio that matches a library artist', async () => {
     const user = userEvent.setup();
     renderForm({ cancelTo: '/back' });
@@ -298,6 +313,40 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(bulkTracksMock).toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith('Successfully created album and uploaded 1 track');
+    });
+  });
+
+  it('toasts album-only success and skips bulk tracks when there are no tracks', async () => {
+    const user = userEvent.setup();
+    const view = renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
+
+    hookMergeRef.current = () => ({
+      tracks: [],
+      coverFileForUpload: null,
+    });
+    view.rerender(
+      <TooltipProvider>
+        <LibraryAlbumFromFilesForm cancelTo="/back" />
+      </TooltipProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /^create album$/i }));
+
+    await waitFor(() => {
+      expect(createAlbumMock).toHaveBeenCalled();
+      expect(bulkTracksMock).not.toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('Successfully created album');
+      expect(navigateMock).toHaveBeenCalled();
     });
   });
 
@@ -488,6 +537,135 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(createAlbumMock).toHaveBeenCalledWith(
         expect.objectContaining({ genreIds: ['created-genre'] }),
       );
+    });
+  });
+
+  it('surfaces error when staged genre creation returns no data', async () => {
+    const user = userEvent.setup();
+    createGenreMock.mockResolvedValueOnce({
+      success: true,
+      data: null,
+      error: null,
+      meta: { timestamp: 't', requestId: 'r', path: '/p' },
+    });
+
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('button', { name: /genres \(optional\)/i }));
+    await user.click(await screen.findByRole('option', { name: /create new genre/i }));
+
+    await user.type(screen.getByLabelText(/genre name/i), 'Modal Genre');
+    await user.click(screen.getByRole('button', { name: /add genre/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: /new genre/i })).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /create album.*upload/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to create genre');
+    });
+  });
+
+  it('removes a genre via chip before submit', async () => {
+    const user = userEvent.setup();
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('button', { name: /genres \(optional\)/i }));
+    await user.click(await screen.findByRole('option', { name: /^Rock$/i }));
+
+    await user.click(screen.getByRole('button', { name: /remove rock/i }));
+
+    await user.click(screen.getByRole('button', { name: /create album.*upload/i }));
+
+    await waitFor(() => {
+      expect(createAlbumMock).toHaveBeenCalledWith(
+        expect.objectContaining({ genreIds: undefined }),
+      );
+    });
+  });
+
+  it('clears genres when choosing No genres from the picker', async () => {
+    const user = userEvent.setup();
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('button', { name: /genres \(optional\)/i }));
+    await user.click(await screen.findByRole('option', { name: /^Rock$/i }));
+
+    expect(screen.getByRole('button', { name: /remove rock/i })).toBeInTheDocument();
+
+    // Popover stays open after picking Rock (only "__no_genre__" closes it).
+    await user.click(screen.getByRole('option', { name: /^No genres$/ }));
+
+    expect(screen.queryByRole('button', { name: /remove rock/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /create album.*upload/i }));
+
+    await waitFor(() => {
+      expect(createAlbumMock).toHaveBeenCalledWith(
+        expect.objectContaining({ genreIds: undefined }),
+      );
+    });
+  });
+
+  it('surfaces missing pending genre row during submit', async () => {
+    const user = userEvent.setup();
+
+    const view = renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    orphanGenreMergeCache.current = null;
+    hookMergeRef.current = (base) => {
+      if (!orphanGenreMergeCache.current) {
+        const fd = base.formData as Record<string, unknown>;
+        orphanGenreMergeCache.current = {
+          formData: {
+            ...fd,
+            genreIds: ['local:pending:orphan-without-row'],
+          },
+        };
+      }
+      return orphanGenreMergeCache.current;
+    };
+
+    view.rerender(
+      <TooltipProvider>
+        <LibraryAlbumFromFilesForm cancelTo="/back" />
+      </TooltipProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /create album.*upload/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Genre name is missing');
     });
   });
 
@@ -1044,6 +1222,38 @@ describe('LibraryAlbumFromFilesForm', () => {
     );
 
     expect(screen.getByRole('button', { name: /creating artist/i })).toBeInTheDocument();
+  });
+
+  it('shows creating genre progress on the submit button while the genre mutation is pending', async () => {
+    const user = userEvent.setup();
+    vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
+      title: 'Song',
+      album: 'From Meta',
+      year: 2024,
+      trackNo: 1,
+      diskNo: 1,
+    });
+
+    const view = renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
+
+    createGenreIsPending.current = true;
+    view.rerender(
+      <TooltipProvider>
+        <LibraryAlbumFromFilesForm cancelTo="/back" />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getByRole('button', { name: /creating genre/i })).toBeInTheDocument();
   });
 
   it('shows plural uploading-tracks copy when multiple files exist while bulk upload is pending', async () => {
