@@ -1,15 +1,12 @@
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
 import { CreateLibraryResponseDto } from './dto/create-library.response.dto';
-import { GetLibraryAlbumsRequestDto } from './dto/get-library-albums.request.dto';
-import { GetLibraryAlbumsResponseDto } from './dto/get-library-albums.response.dto';
 import { GetLibraryResponseDto } from './dto/get-library.response.dto';
-import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
 import { GetLibraryQuery } from './queries/impl/get-library.query';
 
 @ApiTags('Library')
@@ -67,22 +64,5 @@ export class LibraryController {
   })
   getLibrary(@CurrentUser('id') userId: string) {
     return this.queryBus.execute(new GetLibraryQuery(userId));
-  }
-
-  @Get('albums')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all library albums' })
-  @ApiResponse({
-    status: 200,
-    description: 'Library albums retrieved successfully',
-    type: GetLibraryAlbumsResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-    type: ApiErrorResponseDto,
-  })
-  getAlbums(@CurrentUser('id') userId: string, @Query() query: GetLibraryAlbumsRequestDto) {
-    return this.queryBus.execute(new GetLibraryAlbumsQuery(userId, query.page, query.limit));
   }
 }

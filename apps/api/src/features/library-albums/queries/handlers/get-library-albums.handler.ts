@@ -25,6 +25,7 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
 
   async execute(query: GetLibraryAlbumsQuery): Promise<GetLibraryAlbumsResponse['data']> {
     const { userId, page, limit, genreId } = query;
+
     const library = await this.libraryRepository.getByUserId(userId);
 
     if (!library) {
