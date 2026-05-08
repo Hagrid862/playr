@@ -124,8 +124,6 @@ export class ForgotPasswordPage {
   }
 
   async expectResendTimerVisible() {
-    await expect(
-      this.page.getByText(/Wait \d+s to resend/),
-    ).toBeVisible();
+    await expect(this.page.getByText(/Wait \d+s to resend/)).toBeVisible();
   }
 }
