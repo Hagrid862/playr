@@ -1,7 +1,7 @@
-import {BadRequestException, Injectable, Logger} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import type { EmailAddress } from '@repo/db';
-import {EmailAuthType} from "@/features/auth/services/email-auth.service";
+import { EmailAuthType } from '@/features/auth/services/email-auth.service';
 
 @Injectable()
 export class MailService {
@@ -27,7 +27,9 @@ export class MailService {
           throw new BadRequestException(`Unsupported email auth type: ${type}`);
       }
 
-      this.logger.log(`Email verification code successfully sent to email id ${email.id} type ${type}`);
+      this.logger.log(
+        `Email verification code successfully sent to email id ${email.id} type ${type}`,
+      );
 
       return true;
     } catch (error) {

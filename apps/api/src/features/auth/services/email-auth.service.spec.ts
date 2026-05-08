@@ -7,7 +7,7 @@ import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emailAddressBuilder } from '@repo/testing/builders';
 import { Logger } from '@nestjs/common';
-import {OTP_CODE_TTL} from "@/features/auth/constants/auth.constants";
+import { OTP_CODE_TTL } from '@/features/auth/constants/auth.constants';
 
 describe('EmailAuthService', () => {
   let service: EmailAuthService;

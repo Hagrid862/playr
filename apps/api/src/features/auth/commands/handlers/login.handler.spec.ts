@@ -69,7 +69,10 @@ describe('LoginHandler', () => {
 
       // Assert
       expect(emailAddressRepository.getPrimaryByUserId).toHaveBeenCalledWith(mockUser.id);
-      expect(emailAuthService.beginOtpVerificationViaEmail).toHaveBeenCalledWith(mockEmailAddress, 'emailVerification');
+      expect(emailAuthService.beginOtpVerificationViaEmail).toHaveBeenCalledWith(
+        mockEmailAddress,
+        'emailVerification',
+      );
       expect(tokenService.generateAuthTokens).not.toHaveBeenCalled();
       expect(result).toEqual({
         outcome: 'unauthenticated',

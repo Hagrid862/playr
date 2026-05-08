@@ -1,4 +1,4 @@
-import { InternalServerErrorException} from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { emailAddressBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
@@ -87,4 +87,3 @@ describe('ForgotPasswordHandler', () => {
     });
   });
 });
-

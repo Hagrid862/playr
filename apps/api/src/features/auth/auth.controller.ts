@@ -39,12 +39,12 @@ import { VerifyEmailRequestDto } from '@/features/auth/dto/verify-email.request.
 import { ResendEmailVerificationCodeResponseDto } from '@/features/auth/dto/resend-email-verification-code.response.dto';
 import { ResendEmailVerificationCodeRequestDto } from '@/features/auth/dto/resend-email-verification-code.request.dto';
 import { ResendEmailVerificationCodeCommand } from '@/features/auth/commands/impl/resend-email-verification-code.command';
-import {ForgotPasswordResponseDto} from "@/features/auth/dto/forgot-password.response.dto";
-import {ForgotPasswordRequestDto} from "@/features/auth/dto/forgot-password.request.dto";
-import {ForgotPasswordCommand} from "@/features/auth/commands/impl/forgot-password.command";
-import {RecoverPasswordResponseDto} from "@/features/auth/dto/recover-password.response.dto";
-import {RecoverPasswordRequestDto} from "@/features/auth/dto/recover-password.request.dto";
-import {RecoverPasswordCommand} from "@/features/auth/commands/impl/recover-password.command";
+import { ForgotPasswordResponseDto } from '@/features/auth/dto/forgot-password.response.dto';
+import { ForgotPasswordRequestDto } from '@/features/auth/dto/forgot-password.request.dto';
+import { ForgotPasswordCommand } from '@/features/auth/commands/impl/forgot-password.command';
+import { RecoverPasswordResponseDto } from '@/features/auth/dto/recover-password.response.dto';
+import { RecoverPasswordRequestDto } from '@/features/auth/dto/recover-password.request.dto';
+import { RecoverPasswordCommand } from '@/features/auth/commands/impl/recover-password.command';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -189,7 +189,7 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(200)
-  @ApiOperation({ summary: 'send password retrieval code via email'})
+  @ApiOperation({ summary: 'send password retrieval code via email' })
   @ApiResponse({
     status: 200,
     description: 'password retrieval code sent successfully',
@@ -211,7 +211,7 @@ export class AuthController {
 
   @Post('recover-password')
   @HttpCode(200)
-  @ApiOperation({ summary: 'finish password retrieval process by changing password'})
+  @ApiOperation({ summary: 'finish password retrieval process by changing password' })
   @ApiResponse({
     status: 200,
     description: 'password changed successfully',
@@ -230,5 +230,4 @@ export class AuthController {
   async recoverPassword(@Body() body: RecoverPasswordRequestDto) {
     return this.commandBus.execute(new RecoverPasswordCommand(body));
   }
-
 }

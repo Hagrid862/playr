@@ -55,7 +55,10 @@ describe('ResendEmailVerificationCodeHandler', () => {
 
       // Assert
       expect(emailAddressRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(emailAuthService.beginOtpVerificationViaEmail).toHaveBeenCalledWith(mockEmailObject, 'emailVerification');
+      expect(emailAuthService.beginOtpVerificationViaEmail).toHaveBeenCalledWith(
+        mockEmailObject,
+        'emailVerification',
+      );
       expect(result).toEqual({ isEmailSent: true });
     });
 
