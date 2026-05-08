@@ -79,7 +79,7 @@ test.describe("Password Reset Workflow", () => {
     );
     const newPassword = "NewPass456!";
 
-    // ─── 1. Navigate to forget password ────────────────────────
+    // ─── 1. Navigate to forgot password ────────────────────────
     await loginPage.goto();
     await loginPage.forgotPasswordLink.click();
     await expect(page).toHaveURL(/\/auth\/forgot-password/);
@@ -90,13 +90,13 @@ test.describe("Password Reset Workflow", () => {
     await forgotPasswordPage.expectSendResetCodeButtonEnabled();
     await forgotPasswordPage.submitForgotPassword();
 
-    // ─── 3. Retrieve reset code from MailHog ───────────────────
+    // ─── 3. Wait for recover card and retrieve code from MailHog ─
+    await forgotPasswordPage.expectRecoverCardVisible();
     const resetCode = await getOtpFromMailhog(user.email);
     expect(resetCode).not.toBeNull();
     expect(resetCode).toMatch(/^\d{8}$/);
 
     // ─── 4. Fill recovery form ─────────────────────────────────
-    await forgotPasswordPage.expectRecoverCardVisible();
     await forgotPasswordPage.fillOtpCode(resetCode!);
     await forgotPasswordPage.fillNewPassword(newPassword);
     await forgotPasswordPage.fillConfirmPassword(newPassword);
@@ -136,8 +136,8 @@ test.describe("Password Reset Workflow", () => {
     await forgotPasswordPage.fillEmail(user.email);
     await forgotPasswordPage.submitForgotPassword();
 
-    const resetCode = await getOtpFromMailhog(user.email);
     await forgotPasswordPage.expectRecoverCardVisible();
+    const resetCode = await getOtpFromMailhog(user.email);
     await forgotPasswordPage.fillOtpCode(resetCode!);
 
     // Weak password
@@ -166,9 +166,9 @@ test.describe("Password Reset Workflow", () => {
     await forgotPasswordPage.fillEmail(user.email);
     await forgotPasswordPage.submitForgotPassword();
 
+    await forgotPasswordPage.expectRecoverCardVisible();
     const resetCode = await getOtpFromMailhog(user.email);
     expect(resetCode).not.toBeNull();
-    await forgotPasswordPage.expectRecoverCardVisible();
 
     // Click Go back
     await forgotPasswordPage.clickGoBack();
@@ -191,9 +191,9 @@ test.describe("Password Reset Workflow", () => {
     await forgotPasswordPage.fillEmail(user.email);
     await forgotPasswordPage.submitForgotPassword();
 
+    await forgotPasswordPage.expectRecoverCardVisible();
     const firstCode = await getOtpFromMailhog(user.email);
     expect(firstCode).not.toBeNull();
-    await forgotPasswordPage.expectRecoverCardVisible();
 
     // Resend should be on cooldown immediately
     await forgotPasswordPage.expectResendTimerVisible();
@@ -213,9 +213,9 @@ test.describe("Password Reset Workflow", () => {
     await forgotPasswordPage.fillEmail(user.email);
     await forgotPasswordPage.submitForgotPassword();
 
+    await forgotPasswordPage.expectRecoverCardVisible();
     // Wait for real code but don't use it
     await getOtpFromMailhog(user.email);
-    await forgotPasswordPage.expectRecoverCardVisible();
 
     // Enter wrong OTP
     await forgotPasswordPage.fillOtpCode("00000000");

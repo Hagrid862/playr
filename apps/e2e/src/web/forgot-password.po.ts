@@ -36,7 +36,7 @@ export class ForgotPasswordPage {
       .locator('[data-slot="card-title"]')
       .filter({ hasText: "Reset your password" });
     this.otpHiddenInput = page.locator("input[data-input-otp]");
-    this.newPasswordInput = page.getByLabel("New Password", { exact: false });
+    this.newPasswordInput = page.getByLabel("New Password", { exact: true });
     this.confirmPasswordInput = page.getByLabel("Confirm Password", {
       exact: true,
     });
