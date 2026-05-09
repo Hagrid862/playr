@@ -1087,4 +1087,122 @@ describe('useEditAlbumTracks', () => {
 
     vi.mocked(extractMetadataFromAudioFile).mockResolvedValue(null);
   });
+
+  describe('updateAllTracksGenres', () => {
+    it('updates drafts when genre id lists match old ids (order-insensitive)', () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      act(() => {
+        result.current.updateDraft('track-1', { genreIds: ['b', 'a'] });
+      });
+
+      act(() => {
+        result.current.updateAllTracksGenres(['a', 'b'], ['x']);
+      });
+
+      expect(result.current.draftById['track-1']?.genreIds).toEqual(['x']);
+    });
+
+    it('updates staged tracks seeded from album genres when old ids match', async () => {
+      const album = buildAlbumWithTrack({
+        genres: [
+          {
+            id: 'rel',
+            albumId: 'album-z',
+            genreId: 'seed-genre',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      });
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      const list = new DataTransfer();
+      list.items.add(new File(['x'], 'z.mp3', { type: 'audio/mp3' }));
+
+      await act(async () => {
+        result.current.addAudioFiles(list.files);
+      });
+
+      await waitFor(() => expect(result.current.stagedTracks.length).toBe(1));
+
+      act(() => {
+        result.current.updateAllTracksGenres(['seed-genre'], ['next-genre']);
+      });
+
+      expect(result.current.stagedTracks[0]?.genreIds).toEqual(['next-genre']);
+    });
+
+    it('does not mutate drafts when old genre id set matches no draft', () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      act(() => {
+        result.current.updateDraft('track-1', { genreIds: ['only-one'] });
+      });
+
+      const snapshot = result.current.draftById['track-1'];
+
+      act(() => {
+        result.current.updateAllTracksGenres(['unrelated'], ['z']);
+      });
+
+      expect(result.current.draftById['track-1']).toEqual(snapshot);
+    });
+
+    it('does not change staged rows when their genres do not match old ids', async () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      const list = new DataTransfer();
+      list.items.add(new File(['x'], 'solo.mp3', { type: 'audio/mp3' }));
+
+      await act(async () => {
+        result.current.addAudioFiles(list.files);
+      });
+
+      await waitFor(() => expect(result.current.stagedTracks.length).toBe(1));
+
+      act(() => {
+        result.current.updateStagedTrack(result.current.stagedTracks[0]!.id, {
+          genreIds: ['custom'],
+        });
+      });
+
+      const stagedBefore = result.current.stagedTracks[0];
+
+      act(() => {
+        result.current.updateAllTracksGenres(['other'], ['z']);
+      });
+
+      expect(result.current.stagedTracks[0]).toEqual(stagedBefore);
+    });
+
+    it('updates staged rows with undefined genreIds when they match an empty old id set', async () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      const list = new DataTransfer();
+      list.items.add(new File(['x'], 'solo.mp3', { type: 'audio/mp3' }));
+
+      await act(async () => {
+        result.current.addAudioFiles(list.files);
+      });
+
+      await waitFor(() => expect(result.current.stagedTracks.length).toBe(1));
+
+      const id = result.current.stagedTracks[0]!.id;
+
+      act(() => {
+        result.current.updateStagedTrack(id, { genreIds: undefined });
+      });
+
+      act(() => {
+        result.current.updateAllTracksGenres([], ['seeded']);
+      });
+
+      expect(result.current.stagedTracks[0]?.genreIds).toEqual(['seeded']);
+    });
+  });
 });

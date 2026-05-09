@@ -562,6 +562,232 @@ describe('useLibraryAlbumFromFilesForm', () => {
 
       expect(result.current.formData.genreIds).toEqual(['g1']);
     });
+
+    it('syncs tracks that mirror form genres when appending a second genre', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('song.mp3')]));
+      });
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      expect(result.current.tracks[0]?.genreIds).toEqual(['g1']);
+
+      act(() => {
+        result.current.appendGenreId('g2');
+      });
+
+      expect(result.current.formData.genreIds).toEqual(['g1', 'g2']);
+      expect(result.current.tracks[0]?.genreIds).toEqual(['g1', 'g2']);
+    });
+
+    it('does not sync tracks whose genre ids diverged from the form when toggling', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('song.mp3')]));
+      });
+
+      const trackId = result.current.tracks[0]?.id as string;
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      expect(result.current.tracks[0]?.genreIds).toEqual(['g1']);
+
+      act(() => {
+        result.current.updateTrack(trackId, { genreIds: ['other'] });
+      });
+
+      act(() => {
+        result.current.toggleGenreId('g1');
+      });
+
+      expect(result.current.formData.genreIds).toEqual([]);
+      expect(result.current.tracks[0]?.genreIds).toEqual(['other']);
+    });
+
+    it('does not sync when track genres differ in length from the album form snapshot', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('song.mp3')]));
+      });
+
+      const trackId = result.current.tracks[0]?.id as string;
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      act(() => {
+        result.current.updateTrack(trackId, { genreIds: ['g1', 'extra'] });
+      });
+
+      act(() => {
+        result.current.toggleGenreId('g1');
+      });
+
+      expect(result.current.formData.genreIds).toEqual([]);
+      expect(result.current.tracks[0]?.genreIds).toEqual(['g1', 'extra']);
+    });
+
+    it('does not sync when genre id sets match in size but not membership', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('song.mp3')]));
+      });
+
+      const trackId = result.current.tracks[0]?.id as string;
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      act(() => {
+        result.current.updateTrack(trackId, { genreIds: ['g2'] });
+      });
+
+      act(() => {
+        result.current.toggleGenreId('g1');
+      });
+
+      expect(result.current.formData.genreIds).toEqual([]);
+      expect(result.current.tracks[0]?.genreIds).toEqual(['g2']);
+    });
+
+    it('syncs tracks that still mirror the form when clearing genre selection', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('song.mp3')]));
+      });
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      expect(result.current.tracks[0]?.genreIds).toEqual(['g1']);
+
+      act(() => {
+        result.current.clearGenreSelection();
+      });
+
+      expect(result.current.formData.genreIds).toEqual([]);
+      expect(result.current.tracks[0]?.genreIds).toEqual([]);
+    });
+
+    it('treats undefined per-track genre ids as empty when syncing album genres', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(createFileList([createAudioFile('song.mp3')]));
+      });
+
+      const trackId = result.current.tracks[0]!.id;
+
+      act(() => {
+        result.current.updateTrack(trackId, { genreIds: undefined });
+      });
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      expect(result.current.tracks[0]?.genreIds).toEqual(['g1']);
+    });
+
+    it('applies genre toggles only to tracks that still mirror the album genre snapshot', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(
+          createFileList([createAudioFile('a.mp3'), createAudioFile('b.mp3')]),
+        );
+      });
+
+      const trackA = result.current.tracks[0]!;
+      const trackB = result.current.tracks[1]!;
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      act(() => {
+        result.current.updateTrack(trackB.id, { genreIds: ['ignored'] });
+      });
+
+      act(() => {
+        result.current.toggleGenreId('g1');
+      });
+
+      expect(result.current.formData.genreIds).toEqual([]);
+      expect(result.current.tracks.find((t) => t.id === trackA.id)?.genreIds).toEqual([]);
+      expect(result.current.tracks.find((t) => t.id === trackB.id)?.genreIds).toEqual(['ignored']);
+    });
+
+    it('applies appendGenreId only to tracks that mirror the prior album genre selection', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(
+          createFileList([createAudioFile('a.mp3'), createAudioFile('b.mp3')]),
+        );
+      });
+
+      const trackA = result.current.tracks[0]!;
+      const trackB = result.current.tracks[1]!;
+
+      act(() => {
+        result.current.appendGenreId('x');
+      });
+
+      act(() => {
+        result.current.updateTrack(trackB.id, { genreIds: ['solo'] });
+      });
+
+      act(() => {
+        result.current.appendGenreId('y');
+      });
+
+      expect(result.current.formData.genreIds).toEqual(['x', 'y']);
+      expect(result.current.tracks.find((t) => t.id === trackA.id)?.genreIds).toEqual(['x', 'y']);
+      expect(result.current.tracks.find((t) => t.id === trackB.id)?.genreIds).toEqual(['solo']);
+    });
+
+    it('clears genres only on tracks that mirrored the album selection when multiple tracks exist', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.addFiles(
+          createFileList([createAudioFile('a.mp3'), createAudioFile('b.mp3')]),
+        );
+      });
+
+      const trackA = result.current.tracks[0]!;
+      const trackB = result.current.tracks[1]!;
+
+      act(() => {
+        result.current.appendGenreId('g1');
+      });
+
+      act(() => {
+        result.current.updateTrack(trackB.id, { genreIds: ['other'] });
+      });
+
+      act(() => {
+        result.current.clearGenreSelection();
+      });
+
+      expect(result.current.formData.genreIds).toEqual([]);
+      expect(result.current.tracks.find((t) => t.id === trackA.id)?.genreIds).toEqual([]);
+      expect(result.current.tracks.find((t) => t.id === trackB.id)?.genreIds).toEqual(['other']);
+    });
   });
 
   describe('selected cover', () => {

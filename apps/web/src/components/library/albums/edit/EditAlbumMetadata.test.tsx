@@ -61,12 +61,19 @@ describe('EditAlbumMetadata', () => {
       name,
     }: {
       children: (field: {
-        state: { value: string | null };
+        state: { value: string | string[] | null };
         handleChange: (v: string | Date | null) => void;
         handleBlur: () => void;
       }) => React.ReactNode;
       name: string;
     }) => {
+      if (name === 'genreIds') {
+        return children({
+          state: { value: [] },
+          handleChange: vi.fn(),
+          handleBlur: vi.fn(),
+        });
+      }
       const value = name === 'type' ? AlbumType.album : null;
       return children({
         state: { value },
@@ -99,12 +106,19 @@ describe('EditAlbumMetadata', () => {
         name,
       }: {
         children: (field: {
-          state: { value: string | null };
+          state: { value: string | string[] | null };
           handleChange: (v: string | Date | null) => void;
           handleBlur: () => void;
         }) => React.ReactNode;
         name: string;
       }) => {
+        if (name === 'genreIds') {
+          return children({
+            state: { value: [] },
+            handleChange: vi.fn(),
+            handleBlur: vi.fn(),
+          });
+        }
         if (name === 'type') {
           return children({
             state: { value: AlbumType.album },
@@ -138,12 +152,19 @@ describe('EditAlbumMetadata', () => {
         name,
       }: {
         children: (field: {
-          state: { value: string | null };
+          state: { value: string | string[] | null };
           handleChange: (v: string | Date | null) => void;
           handleBlur: () => void;
         }) => React.ReactNode;
         name: string;
       }) => {
+        if (name === 'genreIds') {
+          return children({
+            state: { value: [] },
+            handleChange: vi.fn(),
+            handleBlur: vi.fn(),
+          });
+        }
         if (name === 'type') {
           return children({
             state: { value: AlbumType.album },
@@ -181,16 +202,30 @@ describe('EditAlbumMetadata', () => {
         name,
       }: {
         children: (field: {
-          state: { value: string | null };
+          state: { value: string | string[] | null };
           handleChange: (v: string | Date | null) => void;
           handleBlur: () => void;
         }) => React.ReactNode;
         name: string;
       }) => {
+        if (name === 'genreIds') {
+          return children({
+            state: { value: [] },
+            handleChange: vi.fn(),
+            handleBlur: vi.fn(),
+          });
+        }
         if (name === 'releaseDate') {
           return children({
             state: { value: new Date().toISOString() },
             handleChange,
+            handleBlur: vi.fn(),
+          });
+        }
+        if (name === 'type') {
+          return children({
+            state: { value: AlbumType.album },
+            handleChange: vi.fn(),
             handleBlur: vi.fn(),
           });
         }
@@ -207,13 +242,7 @@ describe('EditAlbumMetadata', () => {
         onGenreSelect={vi.fn()}
       />,
     );
-    const mockClearButton = screen.queryByText('Clear Date');
-    if (mockClearButton) {
-      await user.click(mockClearButton);
-    } else {
-      // If clear button not present in mock, we simulate onChange(null) directly since mock is simplistic
-      // Just trigger the onChange of DatePickerField. In our mock, DatePickerField does not have a clear button.
-      // I will add a clear button to the DatePickerField mock.
-    }
+    await user.click(screen.getByText('Clear Date'));
+    expect(handleChange).toHaveBeenCalledWith(null);
   });
 });

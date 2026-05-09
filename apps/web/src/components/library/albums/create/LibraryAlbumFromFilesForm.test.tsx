@@ -507,6 +507,36 @@ describe('LibraryAlbumFromFilesForm', () => {
     });
   });
 
+  it('applies a pending genre to the track when creating from the track genre picker', async () => {
+    const user = userEvent.setup();
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByRole('button', { name: /^track genres$/i }));
+    await user.click(await screen.findByRole('option', { name: /create new genre/i }));
+
+    expect(await screen.findByRole('heading', { name: /new genre/i })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/genre name/i), 'Track Picker Genre');
+    await user.click(screen.getByRole('button', { name: /add genre/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: /new genre/i })).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /^track genres$/i }));
+
+    expect(
+      await screen.findByRole('option', { name: /track picker genre \(new\)/i }),
+    ).toBeInTheDocument();
+  });
+
   it('creates a genre before the album when staging a new genre from the modal', async () => {
     const user = userEvent.setup();
     renderForm({ cancelTo: '/back' });

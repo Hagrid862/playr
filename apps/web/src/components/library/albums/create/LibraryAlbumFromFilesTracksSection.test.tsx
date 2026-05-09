@@ -3,6 +3,7 @@ import { trackBuilder } from '@repo/testing/builders';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LIBRARY_ALBUM_GENRE_CREATE_VALUE } from './libraryAlbumGenreConstants';
 import { LibraryAlbumFromFilesTracksSection } from './LibraryAlbumFromFilesTracksSection';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -16,10 +17,12 @@ vi.mock('../../tracks/bulk/BulkTrackCard', () => ({
     track,
     onUpdate,
     onRemove,
+    onRequestCreateGenre,
   }: {
     track: BulkTrackItem;
     onUpdate: (updates: Partial<BulkTrackItem>) => void;
     onRemove: () => void;
+    onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
   }) => (
     <div data-testid={`track-card-${track.id}`}>
       <span>{track.title}</span>
@@ -29,6 +32,35 @@ vi.mock('../../tracks/bulk/BulkTrackCard', () => ({
         onClick={() => onUpdate({ title: 'Updated' })}
       >
         Update
+      </button>
+      <button
+        type="button"
+        data-testid={`sentinel-genre-update-${track.id}`}
+        onClick={() =>
+          onUpdate({
+            genreIds: [...(track.genreIds ?? []), LIBRARY_ALBUM_GENRE_CREATE_VALUE],
+          })
+        }
+      >
+        Sentinel genre update
+      </button>
+      <button
+        type="button"
+        data-testid={`plain-genre-update-${track.id}`}
+        onClick={() => onUpdate({ genreIds: ['plain-genre'] })}
+      >
+        Plain genre update
+      </button>
+      <button
+        type="button"
+        data-testid={`request-genre-${track.id}`}
+        onClick={() =>
+          onRequestCreateGenre((gid) => {
+            onUpdate({ genreIds: [...(track.genreIds ?? []), gid] });
+          })
+        }
+      >
+        Request create genre
       </button>
       <button type="button" data-testid={`remove-${track.id}`} onClick={onRemove}>
         Remove
@@ -212,6 +244,104 @@ describe('LibraryAlbumFromFilesTracksSection', () => {
         />,
       );
       expect(screen.getByText('Creating...')).toBeInTheDocument();
+    });
+  });
+
+  describe('genre update wiring', () => {
+    it('routes genreIds containing the create sentinel through onRequestCreateGenre', () => {
+      const onRequestCreateGenre = vi.fn((cb: (id: string) => void) => {
+        cb('new-local-genre');
+      });
+      const track: BulkTrackItem = {
+        ...trackBuilder({ title: 'T' }),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+        genreIds: ['keep-me'],
+      };
+      customRender(
+        <LibraryAlbumFromFilesTracksSection
+          {...defaultProps}
+          tracks={[track]}
+          onRequestCreateGenre={onRequestCreateGenre}
+        />,
+      );
+
+      fireEvent.click(screen.getByTestId(`sentinel-genre-update-${track.id}`));
+
+      expect(onRequestCreateGenre).toHaveBeenCalled();
+      expect(mockOnUpdateTrack).toHaveBeenCalledWith(track.id, {
+        genreIds: ['keep-me', 'new-local-genre'],
+      });
+    });
+
+    it('strips only the create sentinel when the track previously had just the sentinel placeholder', () => {
+      const onRequestCreateGenre = vi.fn((cb: (id: string) => void) => {
+        cb('resolved-id');
+      });
+      const track: BulkTrackItem = {
+        ...trackBuilder({ title: 'T' }),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+        genreIds: [LIBRARY_ALBUM_GENRE_CREATE_VALUE],
+      };
+      customRender(
+        <LibraryAlbumFromFilesTracksSection
+          {...defaultProps}
+          tracks={[track]}
+          onRequestCreateGenre={onRequestCreateGenre}
+        />,
+      );
+
+      fireEvent.click(screen.getByTestId(`sentinel-genre-update-${track.id}`));
+
+      expect(mockOnUpdateTrack).toHaveBeenCalledWith(track.id, {
+        genreIds: ['resolved-id'],
+      });
+    });
+
+    it('handles tracks with no genreIds when merging the create sentinel', () => {
+      const onRequestCreateGenre = vi.fn((cb: (id: string) => void) => {
+        cb('gid');
+      });
+      const base = {
+        ...trackBuilder({ title: 'T' }),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      const track = { ...base } as typeof base & { genreIds?: string[] };
+      delete track.genreIds;
+
+      customRender(
+        <LibraryAlbumFromFilesTracksSection
+          {...defaultProps}
+          tracks={[track]}
+          onRequestCreateGenre={onRequestCreateGenre}
+        />,
+      );
+
+      fireEvent.click(screen.getByTestId(`sentinel-genre-update-${track.id}`));
+
+      expect(mockOnUpdateTrack).toHaveBeenCalledWith(track.id, { genreIds: ['gid'] });
+    });
+
+    it('forwards plain genre updates without invoking onRequestCreateGenre', () => {
+      const track = {
+        ...trackBuilder({ title: 'T' }),
+        file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+      };
+      customRender(<LibraryAlbumFromFilesTracksSection {...defaultProps} tracks={[track]} />);
+
+      fireEvent.click(screen.getByTestId(`plain-genre-update-${track.id}`));
+
+      expect(defaultProps.onRequestCreateGenre).not.toHaveBeenCalled();
+      expect(mockOnUpdateTrack).toHaveBeenCalledWith(track.id, { genreIds: ['plain-genre'] });
+    });
+  });
+
+  describe('showActions', () => {
+    it('omits footer actions when showActions is false', () => {
+      customRender(<LibraryAlbumFromFilesTracksSection {...defaultProps} showActions={false} />);
+      expect(screen.queryByRole('link', { name: /cancel/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /create album & upload/i }),
+      ).not.toBeInTheDocument();
     });
   });
 });

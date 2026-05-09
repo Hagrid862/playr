@@ -85,7 +85,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('Drop audio files anywhere to start uploading')).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('1 track ready')).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('2 tracks ready')).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
@@ -180,7 +180,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('Scanning tracks for cover art...')).toBeInTheDocument();
@@ -209,7 +209,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('CoverSelectionBanner')).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: 'Clear all' }));
@@ -253,7 +253,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: 'Update' }));
@@ -276,7 +276,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: 'Remove' }));
@@ -306,7 +306,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeDisabled();
@@ -327,7 +327,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByRole('button', { name: /Uploading/i })).toBeDisabled();
@@ -348,7 +348,7 @@ describe('BulkTrackUploadForm', () => {
         pendingGenres={[]}
         isLoadingGenres={false}
         onRequestCreateGenre={vi.fn()}
-      />
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: /Upload 1 track/i }));
