@@ -277,29 +277,32 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     setManualAlbumCoverFile(null);
   }, []);
 
-  const addFiles = useCallback((files: FileList | null) => {
-    if (!files?.length) return;
+  const addFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files?.length) return;
 
-    const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'));
-    if (audioFiles.length === 0) return;
+      const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'));
+      if (audioFiles.length === 0) return;
 
-    const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
-      id: `${Date.now()}-${i}-${file.name}`,
-      file,
-      title: cleanFilenameToTitle(file.name, { artists: [], album: '' }),
-      trackNumber: 0,
-      diskNumber: 1,
-      explicit: false,
-      genreIds: [...formData.genreIds],
-    }));
+      const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
+        id: `${Date.now()}-${i}-${file.name}`,
+        file,
+        title: cleanFilenameToTitle(file.name, { artists: [], album: '' }),
+        trackNumber: 0,
+        diskNumber: 1,
+        explicit: false,
+        genreIds: [...formData.genreIds],
+      }));
 
-    setTracks((prev) => {
-      const combined = [...prev, ...newTracks].sort((a, b) =>
-        a.file.name.localeCompare(b.file.name, undefined, { numeric: true }),
-      );
-      return combined.map((t, i) => ({ ...t, trackNumber: i + 1 }));
-    });
-  }, [formData.genreIds]);
+      setTracks((prev) => {
+        const combined = [...prev, ...newTracks].sort((a, b) =>
+          a.file.name.localeCompare(b.file.name, undefined, { numeric: true }),
+        );
+        return combined.map((t, i) => ({ ...t, trackNumber: i + 1 }));
+      });
+    },
+    [formData.genreIds],
+  );
 
   const updateTrack = useCallback(
     (id: string, updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => {

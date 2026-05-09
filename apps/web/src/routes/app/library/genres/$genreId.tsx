@@ -38,10 +38,7 @@ function GenreDetail() {
   const genre = genreData?.data;
 
   const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryAlbums({ genreId, limit: 50 });
-  const albums = useMemo<ZodLibraryAlbumInfer[]>(
-    () => albumsData?.data?.items ?? [],
-    [albumsData],
-  );
+  const albums = useMemo<ZodLibraryAlbumInfer[]>(() => albumsData?.data?.items ?? [], [albumsData]);
 
   const { data: tracksData, isLoading: isTracksLoading } = useLibraryTracks({
     genreId,
