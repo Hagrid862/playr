@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import type { FormData } from '@/hooks/forms/useLoginForm';
 import { CircleNotchIcon } from '@phosphor-icons/react';
 import { SyntheticEvent } from 'react';
+import { Link } from '@tanstack/react-router';
 
 interface LoginFormProps {
   id?: string;
@@ -53,7 +54,7 @@ export function LoginForm({
           color="primary"
           className="self-end px-0 text-sm h-auto font-normal"
         >
-          Forgot password?
+          <Link to="/auth/forgot-password">Forgot your password?</Link>
         </Button>
       </div>
 

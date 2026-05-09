@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAuthStore } from '@/stores/auth.store';
 import { userBuilder } from '@repo/testing';
@@ -22,7 +23,6 @@ vi.mock('@/hooks/api/auth', () => ({
 }));
 
 vi.mock('@/hooks/forms/useVerifyEmailForm', () => {
-  const { useState } = require('react');
   return {
     useVerifyEmailForm: () => {
       const [data, setData] = useState({ email: mockEmail, otpCode: '' });
@@ -31,7 +31,7 @@ vi.mock('@/hooks/forms/useVerifyEmailForm', () => {
         formData: data,
         isFormValid: data.otpCode.length === 8,
         handleChange: (field: string, value: string) => {
-          setData((prev: any) => ({ ...prev, [field]: value }));
+          setData((prev) => ({ ...prev, [field]: value }));
         },
         handleBlur: vi.fn(),
         handleSubmit: () => {
@@ -48,7 +48,6 @@ vi.mock('@/hooks/forms/useVerifyEmailForm', () => {
 
 // Mock resend timer hook
 vi.mock('@/hooks/use-resend-timer', () => {
-  const { useState } = require('react');
   return {
     useResendTimer: () => {
       const [timeLeft, setTimeLeft] = useState(0);

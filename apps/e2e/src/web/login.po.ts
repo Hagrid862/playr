@@ -17,7 +17,7 @@ export class LoginPage {
       name: "Don't have an account? Sign up!",
     });
     this.forgotPasswordLink = page.getByRole("link", {
-      name: "Forgot password?",
+      name: "Forgot your password?",
     });
   }
 

@@ -138,8 +138,8 @@ export function RouteComponent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Logging out will reset your email verification progress. You&apos;ll need to verify
-                  your email again when you sign back in.
+                  Logging out will reset your email verification progress. You&apos;ll need to
+                  verify your email again when you sign back in.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

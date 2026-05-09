@@ -1,5 +1,5 @@
 import { customRender } from '@repo/testing/web';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SongCard } from './SongCard';
 
@@ -86,38 +86,50 @@ describe('SongCard', () => {
   });
 
   describe('context menu', () => {
-    it('calls onEdit with track id', () => {
+    it('calls onEdit with track id', async () => {
       const onEdit = vi.fn();
       customRender(<SongCard {...getDefaultProps()} onEdit={onEdit} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
+      await waitFor(() => {
+        expect(screen.getByText('Edit')).toBeInTheDocument();
+      });
       fireEvent.click(screen.getByText('Edit'));
       expect(onEdit).toHaveBeenCalledWith('test-song-id');
     });
 
-    it('calls onDelete with id and title', () => {
+    it('calls onDelete with id and title', async () => {
       const onDelete = vi.fn();
       customRender(<SongCard {...getDefaultProps()} onDelete={onDelete} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
+      await waitFor(() => {
+        expect(screen.getByText('Delete')).toBeInTheDocument();
+      });
       fireEvent.click(screen.getByText('Delete'));
       expect(onDelete).toHaveBeenCalledWith({ id: 'test-song-id', title: 'Test Song' });
     });
 
-    it('calls onAddToQueue', () => {
+    it('calls onAddToQueue', async () => {
       const onAddToQueue = vi.fn();
       customRender(<SongCard {...getDefaultProps()} onAddToQueue={onAddToQueue} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
+      await waitFor(() => {
+        expect(screen.getByText('Add to Queue')).toBeInTheDocument();
+      });
       fireEvent.click(screen.getByText('Add to Queue'));
       expect(onAddToQueue).toHaveBeenCalled();
     });
 
-    it('calls onPlayNext', () => {
+    it('calls onPlayNext', async () => {
       const onPlayNext = vi.fn();
       customRender(<SongCard {...getDefaultProps()} onPlayNext={onPlayNext} />);
 
       fireEvent.contextMenu(screen.getByText('Test Song'));
+      await waitFor(() => {
+        expect(screen.getByText('Play Next')).toBeInTheDocument();
+      });
       fireEvent.click(screen.getByText('Play Next'));
       expect(onPlayNext).toHaveBeenCalled();
     });

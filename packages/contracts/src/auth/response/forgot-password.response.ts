@@ -1,10 +1,12 @@
-import {createApiResponseSchema} from "../../api";
-import {z} from "zod";
+import { createApiResponseSchema } from "../../api";
+import { z } from "zod";
 
 export const ForgotPasswordResponseSchema = createApiResponseSchema(
-	z.object({
-		isEmailSent: z.boolean(),
-	}),
+  z.object({
+    isEmailSent: z.boolean(),
+  }),
 );
 
-export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
+export type ForgotPasswordResponse = z.infer<
+  typeof ForgotPasswordResponseSchema
+>;

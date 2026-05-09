@@ -30,7 +30,10 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
     });
 
     if (!isEmailVerified) {
-      const isEmailSent = await this.emailAuthService.beginOtpVerificationViaEmail(primaryEmailObject, 'emailVerification');
+      const isEmailSent = await this.emailAuthService.beginOtpVerificationViaEmail(
+        primaryEmailObject,
+        'emailVerification',
+      );
 
       return {
         outcome: 'unauthenticated',

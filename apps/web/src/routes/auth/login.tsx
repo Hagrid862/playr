@@ -73,9 +73,6 @@ export function RouteComponent() {
         <Button asChild variant="link" color="primary" className="w-full mt-4">
           <Link to="/auth/register">Don&apos;t have an account? Sign up!</Link>
         </Button>
-        <Button asChild variant="link" color="primary" className="w-full mt-10">
-          <Link to="/auth/forgot-password">Forgot your password?</Link>
-        </Button>
       </div>
     </div>
   );
