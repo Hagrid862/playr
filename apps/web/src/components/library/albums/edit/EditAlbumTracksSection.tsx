@@ -268,7 +268,7 @@ export function EditAlbumTracksSection({
   isLoadingGenres,
   onRequestCreateGenre,
 }: EditAlbumTracksSectionProps) {
-  useLibraryArtists(1, 200);
+  useLibraryArtists(1, 100);
   const privateArtists = useLibraryStore((s) => s.privateArtists);
 
   const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);

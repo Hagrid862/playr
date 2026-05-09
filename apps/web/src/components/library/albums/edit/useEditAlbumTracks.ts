@@ -178,7 +178,7 @@ export function useEditAlbumTracks(album: ZodAlbum) {
       lastScannedStagedIds.current = '';
 
       const seedArtistIds = defaultArtistIds.length ? [...defaultArtistIds] : [];
-      const seedGenreIds = album.genres?.map((g) => g.id) ?? [];
+      const seedGenreIds = album.genres?.map((g) => g.genreId) ?? [];
 
       const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
         id: `${Date.now()}-${i}-${file.name}`,
