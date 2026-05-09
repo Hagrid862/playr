@@ -27,7 +27,7 @@ export class EmailAuthService {
         OTP_CODE_TTL,
       );
 
-      if (emailSent) {
+      if (emailSent && type === 'emailVerification') {
         await this.emailAddressRepository.edit(email.id, { status: 'pending' });
       }
 
