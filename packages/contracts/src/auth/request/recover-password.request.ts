@@ -11,7 +11,7 @@ export const RecoverPasswordRequestSchema = z.object({
 		.regex(/^[0-9]+$/, "OTP code must contain only digits")
 		.length(8, "OTP code must be exactly 8 digits")
 		.transform((val) => val.trim()),
-	password: zodPassword(),
+	newPassword: zodPassword(),
 });
 
 export type RecoverPasswordRequest = z.infer<typeof RecoverPasswordRequestSchema>;
