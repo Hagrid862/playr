@@ -48,14 +48,14 @@ describe('ResendEmailVerificationCodeHandler', () => {
         status: EmailStatus.created,
       });
       emailAddressRepository.getByEmail.mockResolvedValue(mockEmailObject as any);
-      emailAuthService.beginEmailVerification.mockResolvedValue(true);
+      emailAuthService.beginOtpVerificationViaEmail.mockResolvedValue(true);
 
       // Act
       const result = await handler.execute(command);
 
       // Assert
       expect(emailAddressRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);
-      expect(emailAuthService.beginEmailVerification).toHaveBeenCalledWith(mockEmailObject);
+      expect(emailAuthService.beginOtpVerificationViaEmail).toHaveBeenCalledWith(mockEmailObject, 'emailVerification');
       expect(result).toEqual({ isEmailSent: true });
     });
 
@@ -88,7 +88,7 @@ describe('ResendEmailVerificationCodeHandler', () => {
         status: EmailStatus.created,
       });
       emailAddressRepository.getByEmail.mockResolvedValue(mockEmailObject as any);
-      emailAuthService.beginEmailVerification.mockResolvedValue(false);
+      emailAuthService.beginOtpVerificationViaEmail.mockResolvedValue(false);
 
       // Act & Assert
       await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);

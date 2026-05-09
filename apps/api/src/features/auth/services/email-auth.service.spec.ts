@@ -55,11 +55,11 @@ describe('EmailAuthService', () => {
     it('should successfully begin email verification and return true', async () => {
       // Arrange
       otpCodeService.generateOTPCode.mockResolvedValue(mockOtpCode);
-      mailService.sendEmailVerificationCode.mockResolvedValue(true);
+      mailService.sendOtpVerificationCodeViaEmail.mockResolvedValue(true);
       emailAddressRepository.edit.mockResolvedValue(mockEmailAddress); // Mock successful edit
 
       // Act
-      const result = await service.beginEmailVerification(mockEmailAddress);
+      const result = await service.beginOtpVerificationViaEmail(mockEmailAddress);
 
       // Assert
       expect(result).toBe(true);
@@ -67,7 +67,7 @@ describe('EmailAuthService', () => {
         mockEmailAddress,
         'emailVerification',
       );
-      expect(mailService.sendEmailVerificationCode).toHaveBeenCalledWith(
+      expect(mailService.sendOtpVerificationCodeViaEmail).toHaveBeenCalledWith(
         mockEmailAddress,
         mockOtpCode,
         expect.any(Number), // OTP_CODE_TTL is a constant, so any number is fine
@@ -81,11 +81,11 @@ describe('EmailAuthService', () => {
     it('should return false if email sending fails', async () => {
       // Arrange
       otpCodeService.generateOTPCode.mockResolvedValue(mockOtpCode);
-      mailService.sendEmailVerificationCode.mockResolvedValue(false); // Simulate email sending failure
+      mailService.sendOtpVerificationCodeViaEmail.mockResolvedValue(false); // Simulate email sending failure
       emailAddressRepository.edit.mockResolvedValue(mockEmailAddress);
 
       // Act
-      const result = await service.beginEmailVerification(mockEmailAddress);
+      const result = await service.beginOtpVerificationViaEmail(mockEmailAddress);
 
       // Assert
       expect(result).toBe(false);
@@ -93,7 +93,7 @@ describe('EmailAuthService', () => {
         mockEmailAddress,
         'emailVerification',
       );
-      expect(mailService.sendEmailVerificationCode).toHaveBeenCalledWith(
+      expect(mailService.sendOtpVerificationCodeViaEmail).toHaveBeenCalledWith(
         mockEmailAddress,
         mockOtpCode,
         expect.any(Number),
@@ -108,7 +108,7 @@ describe('EmailAuthService', () => {
       otpCodeService.generateOTPCode.mockRejectedValue(error); // Simulate OTP generation failure
 
       // Act
-      const result = await service.beginEmailVerification(mockEmailAddress);
+      const result = await service.beginOtpVerificationViaEmail(mockEmailAddress);
 
       // Assert
       expect(result).toBe(false);
@@ -116,7 +116,7 @@ describe('EmailAuthService', () => {
         mockEmailAddress,
         'emailVerification',
       );
-      expect(mailService.sendEmailVerificationCode).not.toHaveBeenCalled();
+      expect(mailService.sendOtpVerificationCodeViaEmail).not.toHaveBeenCalled();
       expect(emailAddressRepository.edit).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledWith(
         'Failed to begin email verification flow',
@@ -132,7 +132,7 @@ describe('EmailAuthService', () => {
       otpCodeService.generateOTPCode.mockRejectedValue(error);
 
       // Act
-      const result = await service.beginEmailVerification(mockEmailAddress);
+      const result = await service.beginOtpVerificationViaEmail(mockEmailAddress);
 
       // Assert
       expect(result).toBe(false);
@@ -147,11 +147,11 @@ describe('EmailAuthService', () => {
       // Arrange
       const error = new Error('Database update failed');
       otpCodeService.generateOTPCode.mockResolvedValue(mockOtpCode);
-      mailService.sendEmailVerificationCode.mockResolvedValue(true);
+      mailService.sendOtpVerificationCodeViaEmail.mockResolvedValue(true);
       emailAddressRepository.edit.mockRejectedValue(error); // Simulate email status update failure
 
       // Act
-      const result = await service.beginEmailVerification(mockEmailAddress);
+      const result = await service.beginOtpVerificationViaEmail(mockEmailAddress);
 
       // Assert
       expect(result).toBe(false);
@@ -159,7 +159,7 @@ describe('EmailAuthService', () => {
         mockEmailAddress,
         'emailVerification',
       );
-      expect(mailService.sendEmailVerificationCode).toHaveBeenCalledWith(
+      expect(mailService.sendOtpVerificationCodeViaEmail).toHaveBeenCalledWith(
         mockEmailAddress,
         mockOtpCode,
         expect.any(Number),
@@ -180,7 +180,7 @@ describe('EmailAuthService', () => {
       otpCodeService.generateOTPCode.mockRejectedValue(unexpectedError); // Simulate a non-Error object being thrown
 
       // Act
-      const result = await service.beginEmailVerification(mockEmailAddress);
+      const result = await service.beginOtpVerificationViaEmail(mockEmailAddress);
 
       // Assert
       expect(result).toBe(false);

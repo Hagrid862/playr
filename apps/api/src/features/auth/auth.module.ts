@@ -14,6 +14,8 @@ import { OtpCodeService } from './services/otp-code.service';
 import { EmailAuthService } from './services/email-auth.service';
 import { VerifyEmailHandler } from '@/features/auth/commands/handlers/verify-email.handler';
 import { ResendEmailVerificationCodeHandler } from '@/features/auth/commands/handlers/resend-email-verification-code.handler';
+import {ForgotPasswordHandler} from "@/features/auth/commands/handlers/forgot-password.handler";
+import {RecoverPasswordHandler} from "@/features/auth/commands/handlers/recover-password.handler";
 
 @Module({
   imports: [CqrsModule, PassportModule],
@@ -31,6 +33,8 @@ import { ResendEmailVerificationCodeHandler } from '@/features/auth/commands/han
     EmailAuthService,
     VerifyEmailHandler,
     ResendEmailVerificationCodeHandler,
+    ForgotPasswordHandler,
+    RecoverPasswordHandler,
   ],
   exports: [TokenService],
 })
