@@ -299,7 +299,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
       );
       return combined.map((t, i) => ({ ...t, trackNumber: i + 1 }));
     });
-  }, []);
+  }, [formData.genreIds]);
 
   const updateTrack = useCallback(
     (id: string, updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => {

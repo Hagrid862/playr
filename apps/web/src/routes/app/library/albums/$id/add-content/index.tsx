@@ -16,7 +16,7 @@ import type { BulkTrackItem } from '@/lib/types/library';
 import type { ZodAlbumInfer, ZodGenreInfer } from '@repo/contracts';
 import { CircleNotchIcon, DiscIcon, InfoIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/app/library/albums/$id/add-content/')({
@@ -125,15 +125,20 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
     handleSubmit,
   } = useBulkTrackUpload({ album, onSubmit: onSubmitTracks });
 
-  useEffect(() => {
+  const usedGenreIdsFromTracks = useMemo(() => {
     const used = new Set<string>();
     for (const t of tracks) {
       for (const gid of t.genreIds ?? []) {
         used.add(gid);
       }
     }
-    setPendingGenres((prev) => prev.filter((p) => used.has(p.id)));
+    return used;
   }, [tracks]);
+
+  const activePendingGenres = useMemo(
+    () => pendingGenres.filter((p) => usedGenreIdsFromTracks.has(p.id)),
+    [pendingGenres, usedGenreIdsFromTracks],
+  );
 
   const hasInvalidTracks = tracks.some(
     (t) => !t.title.trim() || t.trackNumber < 1 || t.diskNumber < 1,
@@ -163,7 +168,7 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
             setCreateGenreModalOpen(open);
             if (!open) setActiveGenreCreationCallback(null);
           }}
-          pendingGenreNames={pendingGenres.map((p) => p.name)}
+          pendingGenreNames={activePendingGenres.map((p) => p.name)}
           existingGenres={genres.map((g) => ({ id: g.id, name: g.name, slug: g.slug }))}
           onConfirm={handleConfirmNewGenreName}
         />
@@ -238,7 +243,7 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
                   <LibraryAlbumFromFilesTracksSection
                     tracks={tracks}
                     genres={genres}
-                    pendingGenres={pendingGenres}
+                    pendingGenres={activePendingGenres}
                     isLoadingGenres={isLoadingGenres}
                     submitError={submitError}
                     isFormValid={isFormValid}

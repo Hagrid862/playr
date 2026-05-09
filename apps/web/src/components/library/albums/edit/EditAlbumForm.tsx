@@ -11,7 +11,8 @@ import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import { useEditAlbumTracks } from './useEditAlbumTracks';
 import { useEditAlbumForm } from './useEditAlbumForm';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useStore } from '@tanstack/react-store';
+import { useMemo, useState, useCallback } from 'react';
 import {
   LIBRARY_ALBUM_GENRE_CREATE_VALUE,
   LIBRARY_ALBUM_GENRE_NONE_VALUE,
@@ -76,6 +77,12 @@ export function EditAlbumForm({
     prepareTracksSubmit: tracksState.prepareTracksSubmit,
   });
 
+  const genreIds = useStore(form.store, (s): string[] => s.values.genreIds);
+  const visiblePendingGenres = useMemo(
+    () => pendingGenres.filter((p) => genreIds.includes(p.id)),
+    [pendingGenres, genreIds],
+  );
+
   const handleGenreSelectionChange = useCallback(
     (value: string) => {
       if (value === LIBRARY_ALBUM_GENRE_CREATE_VALUE) {
@@ -123,11 +130,6 @@ export function EditAlbumForm({
     setCreateGenreModalOpen(true);
   }, []);
 
-  useEffect(() => {
-    const currentIds = form.getFieldValue('genreIds');
-    setPendingGenres((prev) => prev.filter((p) => currentIds.includes(p.id)));
-  }, [form]);
-
   return (
     <GlobalDropzone
       onDrop={handleFiles}
@@ -149,7 +151,7 @@ export function EditAlbumForm({
           if (!open) setActiveGenreCreationCallback(null);
         }}
         onConfirm={handleConfirmNewGenreName}
-        pendingGenreNames={pendingGenres.map((p) => p.name)}
+        pendingGenreNames={visiblePendingGenres.map((p) => p.name)}
         existingGenres={genres}
       />
 
@@ -194,7 +196,7 @@ export function EditAlbumForm({
                   <EditAlbumMetadata
                     form={form}
                     genres={genres}
-                    pendingGenres={pendingGenres}
+                    pendingGenres={visiblePendingGenres}
                     isLoadingGenres={isLoadingGenres}
                     onGenreSelect={handleGenreSelectionChange}
                   />
@@ -208,7 +210,7 @@ export function EditAlbumForm({
                 <EditAlbumTracksSection
                   tracks={tracksState}
                   genres={genres}
-                  pendingGenres={pendingGenres}
+                  pendingGenres={visiblePendingGenres}
                   isLoadingGenres={isLoadingGenres}
                   onRequestCreateGenre={handleRequestCreateGenre}
                 />

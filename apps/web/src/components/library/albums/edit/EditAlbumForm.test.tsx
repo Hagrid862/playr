@@ -2,7 +2,7 @@ import type { ZodAlbum } from '@repo/contracts';
 import { albumBuilder } from '@repo/testing/builders';
 import { customRender } from '@repo/testing/web';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
-import { fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,15 +26,43 @@ const hoistedMocks = vi.hoisted(() => {
   const trackGenreCallbackMock = vi.fn();
   const updateAllTracksGenresMock = vi.fn();
 
-  const createMockTanStackForm = () => ({
-    handleSubmit: vi.fn(),
-    getFieldValue: vi.fn((name: string) =>
-      name === 'genreIds' ? genreIdsStateRef.current : undefined,
-    ),
-    setFieldValue: vi.fn((name: string, value: unknown) => {
-      if (name === 'genreIds') genreIdsStateRef.current = value as string[];
-    }),
-  });
+  const createMockTanStackForm = () => {
+    const listeners = new Set<() => void>();
+    let storeState: { values: { genreIds: string[] } } = {
+      values: { genreIds: [...genreIdsStateRef.current] },
+    };
+
+    const notifyStoreListeners = () => {
+      for (const listener of listeners) listener();
+    };
+
+    const store = {
+      get state() {
+        return storeState;
+      },
+      subscribe: (listener: () => void) => {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      },
+    };
+
+    return {
+      handleSubmit: vi.fn(),
+      getFieldValue: vi.fn((name: string) =>
+        name === 'genreIds' ? genreIdsStateRef.current : undefined,
+      ),
+      setFieldValue: vi.fn((name: string, value: unknown) => {
+        if (name === 'genreIds') {
+          genreIdsStateRef.current = value as string[];
+          storeState = { values: { genreIds: [...genreIdsStateRef.current] } };
+          notifyStoreListeners();
+        }
+      }),
+      store,
+    };
+  };
 
   let stableForm: ReturnType<typeof createMockTanStackForm> | null = null;
 
@@ -70,6 +98,7 @@ const hoistedMocks = vi.hoisted(() => {
     emptyTracksPayload,
     createMockTanStackForm,
     resetStableMockForm,
+    getStableMockForm,
     buildDefaultUseEditAlbumFormReturn,
     cloneFormReference,
     genreIdsStateRef,
@@ -81,6 +110,7 @@ const hoistedMocks = vi.hoisted(() => {
 const {
   createMockTanStackForm,
   resetStableMockForm,
+  getStableMockForm,
   buildDefaultUseEditAlbumFormReturn,
   cloneFormReference,
   genreIdsStateRef,
@@ -447,7 +477,7 @@ describe('EditAlbumForm', () => {
       expect(updateAllTracksGenresMock).toHaveBeenCalled();
     });
 
-    it('drops pending genre chips when genre ids no longer include pending ids (form effect)', async () => {
+    it('drops pending genre chips when genre ids no longer include pending ids', async () => {
       const user = userEvent.setup();
       const { rerender } = customRender(<EditAlbumForm {...defaultProps} />);
 
@@ -456,7 +486,9 @@ describe('EditAlbumForm', () => {
 
       expect(screen.getByTestId('pending-genre-count')).toHaveTextContent('1');
 
-      genreIdsStateRef.current = [];
+      await act(async () => {
+        getStableMockForm().setFieldValue('genreIds', []);
+      });
 
       vi.mocked(useEditAlbumFormMock).mockReturnValue({
         ...buildDefaultUseEditAlbumFormReturn(defaultProps.album),

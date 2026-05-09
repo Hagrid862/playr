@@ -18,7 +18,7 @@ import { useLibraryTracks } from '@/hooks/api/library-tracks/useLibraryTracks';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
-import type { ZodTrack } from '@repo/contracts';
+import type { ZodLibraryAlbumInfer, ZodTrack } from '@repo/contracts';
 import { DiscIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
@@ -38,20 +38,20 @@ function GenreDetail() {
   const genre = genreData?.data;
 
   const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryAlbums({ genreId, limit: 50 });
-  const albums = (albumsData?.data?.items ?? []) as any[];
+  const albums = useMemo<ZodLibraryAlbumInfer[]>(
+    () => albumsData?.data?.items ?? [],
+    [albumsData],
+  );
 
   const { data: tracksData, isLoading: isTracksLoading } = useLibraryTracks({
     genreId,
     limit: 100,
   });
-  const rawTracks = (tracksData?.data?.items ?? []) as ZodTrack[];
+  const rawTracks = useMemo<ZodTrack[]>(() => tracksData?.data?.items ?? [], [tracksData]);
 
   const albumTrackGroups = useMemo(() => {
     const coverByAlbumId = new Map<string, string | undefined>();
-    for (const item of albums as {
-      album?: { id?: string; cover?: { url?: string } };
-      albumId?: string;
-    }[]) {
+    for (const item of albums) {
       const aid = item.album?.id ?? item.albumId;
       const url = item.album?.cover?.url;
       if (aid && url) coverByAlbumId.set(aid, url);
@@ -73,7 +73,7 @@ function GenreDetail() {
     }
 
     const albumOrder = new Map<string, number>();
-    albums.forEach((item: { album?: { id?: string }; albumId?: string }, idx: number) => {
+    albums.forEach((item, idx) => {
       const aid = item.album?.id ?? item.albumId;
       if (aid) albumOrder.set(aid, idx);
     });
@@ -134,13 +134,13 @@ function GenreDetail() {
           </div>
         ) : albums.length > 0 ? (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {albums.map((item: any) => (
+            {albums.map((item) => (
               <MediaCard
                 key={item.id}
                 id={item.album?.id ?? item.albumId}
-                title={item.album.name}
-                subtitle={(item.album.artists as any[])?.map((a) => a.name).join(', ')}
-                coverUrl={item.album.cover?.url}
+                title={item.album?.name ?? ''}
+                subtitle={item.album?.artists?.map((a) => a.name).join(', ')}
+                coverUrl={item.album?.cover?.url ?? undefined}
                 link="/app/library/albums/$id"
               />
             ))}
