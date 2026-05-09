@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import type { FormData } from '@/hooks/forms/useLoginForm';
 import { CircleNotchIcon } from '@phosphor-icons/react';
 import { SyntheticEvent } from 'react';
-import {Link} from "@tanstack/react-router";
+import { Link } from '@tanstack/react-router';
 
 interface LoginFormProps {
   id?: string;
@@ -57,7 +57,7 @@ export function LoginForm({
           <Link to="/auth/forgot-password">Forgot your password?</Link>
         </Button>
       </div>
-      
+
       <Button
         type="submit"
         color="primary"
