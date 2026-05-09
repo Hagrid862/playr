@@ -23,7 +23,7 @@ export class ForgotPasswordHandler implements ICommandHandler<ForgotPasswordComm
 
     if (!emailObject) {
       this.logger.warn(
-        `Forgot password request for unknown email: ${email}. Returning isEmailSent: false.`,
+        `Forgot password request for unknown email:. Returning isEmailSent: false.`,
       );
       return { isEmailSent: false };
     }
@@ -32,14 +32,14 @@ export class ForgotPasswordHandler implements ICommandHandler<ForgotPasswordComm
       emailObject,
       'passwordReset',
     );
-    this.logger.log(`OTP email sent status for ${emailObject.email}: ${isEmailSent}`);
+    this.logger.log(`OTP email sent status for ${emailObject.id}: ${isEmailSent}`);;
 
     if (!isEmailSent) {
       throw new InternalServerErrorException('Failed to send email for password retrieval');
     }
 
     this.logger.debug(
-      `ForgotPasswordCommand successfully executed for email: ${email}. isEmailSent: true`,
+      `ForgotPasswordCommand successfully executed for email: ${emailObject.id}. isEmailSent: true`,
     );
     return { isEmailSent };
   }
