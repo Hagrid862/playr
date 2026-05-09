@@ -69,7 +69,12 @@ export function LibraryAlbumFromFilesTracksSection({
                 if (updates.genreIds?.includes(LIBRARY_ALBUM_GENRE_CREATE_VALUE)) {
                   onRequestCreateGenre((gid) => {
                     onUpdateTrack(track.id, {
-                      genreIds: [...(track.genreIds ?? []).filter((x) => x !== LIBRARY_ALBUM_GENRE_CREATE_VALUE), gid],
+                      genreIds: [
+                        ...(track.genreIds ?? []).filter(
+                          (x) => x !== LIBRARY_ALBUM_GENRE_CREATE_VALUE,
+                        ),
+                        gid,
+                      ],
                     });
                   });
                   return;

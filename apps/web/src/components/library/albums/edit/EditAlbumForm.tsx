@@ -46,7 +46,10 @@ export function EditAlbumForm({
     page: 1,
     limit: 100,
   });
-  const genres = useMemo<ZodGenreInfer[]>(() => genresResponse?.data?.items ?? [], [genresResponse]);
+  const genres = useMemo<ZodGenreInfer[]>(
+    () => genresResponse?.data?.items ?? [],
+    [genresResponse],
+  );
 
   const [createGenreModalOpen, setCreateGenreModalOpen] = useState(false);
   const [pendingGenres, setPendingGenres] = useState<{ id: string; name: string }[]>([]);

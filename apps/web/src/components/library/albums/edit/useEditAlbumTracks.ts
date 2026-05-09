@@ -257,28 +257,25 @@ export function useEditAlbumTracks(album: ZodAlbum) {
     return sa.every((v, i) => v === sb[i]);
   };
 
-  const updateAllTracksGenres = useCallback(
-    (oldIds: string[], newIds: string[]) => {
-      setDraftById((prev) => {
-        const next = { ...prev };
-        let changed = false;
-        Object.entries(next).forEach(([id, draft]) => {
-          if (areGenreIdsEqual(draft.genreIds, oldIds)) {
-            next[id] = { ...draft, genreIds: [...newIds] };
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
+  const updateAllTracksGenres = useCallback((oldIds: string[], newIds: string[]) => {
+    setDraftById((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      Object.entries(next).forEach(([id, draft]) => {
+        if (areGenreIdsEqual(draft.genreIds, oldIds)) {
+          next[id] = { ...draft, genreIds: [...newIds] };
+          changed = true;
+        }
       });
+      return changed ? next : prev;
+    });
 
-      setStagedTracks((prev) => {
-        return prev.map((t) =>
-          areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...newIds] } : t,
-        );
-      });
-    },
-    [],
-  );
+    setStagedTracks((prev) => {
+      return prev.map((t) =>
+        areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...newIds] } : t,
+      );
+    });
+  }, []);
 
   const scheduleTrackDelete = useCallback((trackId: string) => {
     setPendingDeleteIds((prev) => new Set(prev).add(trackId));

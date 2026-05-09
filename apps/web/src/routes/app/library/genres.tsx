@@ -49,16 +49,16 @@ function GenresLayout() {
     return <Outlet />;
   }
 
-  // Desktop Layout
+  // Desktop Layout — edge-to-edge in the main column; scroll lives in the panes, not the shell
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex flex-1 overflow-hidden">
+    <div className="-mx-4 -mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* First Column: Genre List */}
-        <div className="flex w-64 flex-col border-r bg-card/50 backdrop-blur-sm">
-          <div className="p-4 pt-6">
+        <div className="flex w-64 shrink-0 flex-col border-r bg-card/50 backdrop-blur-sm">
+          <div className="px-4 pb-3 pt-4">
             <h1 className="text-2xl font-bold tracking-tight">Genres</h1>
           </div>
-          <div className="flex-1 overflow-y-auto px-2 pb-8 custom-scrollbar">
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-24 custom-scrollbar">
             <div className="flex flex-col gap-1">
               {isLoading ? (
                 <div className="flex flex-col gap-2 px-2">
@@ -72,6 +72,7 @@ function GenresLayout() {
                     key={genre.id}
                     to="/app/library/genres/$genreId"
                     params={{ genreId: genre.id }}
+                    activeOptions={{ exact: true }}
                     activeProps={{ className: 'bg-primary text-primary-foreground shadow-sm' }}
                     inactiveProps={{
                       className: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground',
@@ -89,7 +90,7 @@ function GenresLayout() {
         </div>
 
         {/* Second Column: Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-24 custom-scrollbar">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}

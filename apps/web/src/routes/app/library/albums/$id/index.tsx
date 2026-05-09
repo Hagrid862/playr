@@ -117,7 +117,7 @@ function RouteComponent() {
           {genreMiddle.text}
         </span>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-xs">
+      <TooltipContent side="bottom" sideOffset={8} className="max-w-xs px-3 pt-2.5 pb-2">
         <div className="flex flex-col gap-1 text-left text-sm">
           {genreMiddle.tooltipLines.map((line, i) => (
             <span key={`${i}-${line}`}>{line}</span>

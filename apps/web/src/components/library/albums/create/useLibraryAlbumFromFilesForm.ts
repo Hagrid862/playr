@@ -7,7 +7,15 @@ import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import { sha256HexFromBlob } from '@/lib/crypto/sha256HexFromBlob';
 import type { BulkTrackItem, CoverArtGroup, TrackWithCover } from '@/lib/types/library';
 import type { CreateLibraryAlbumRequest } from '@repo/contracts';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { deriveConsistentMetadataArtistName } from './deriveConsistentMetadataArtistName';
 
 export type LibraryAlbumFromFilesFormData = Pick<
@@ -27,6 +35,27 @@ const initialFormData: LibraryAlbumFromFilesFormData = {
   genreIds: [],
   releaseDate: null,
 };
+
+function areGenreIdsEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort();
+  const sb = [...b].sort();
+  return sa.every((v, i) => v === sb[i]);
+}
+
+function applyAlbumGenreSnapshotToBulkTracks(
+  setTracks: Dispatch<SetStateAction<BulkTrackItem[]>>,
+  oldAlbumGenreIds: string[],
+  nextAlbumGenreIds: string[],
+) {
+  setTracks((tracks) =>
+    tracks.map((track) =>
+      areGenreIdsEqual(track.genreIds ?? [], oldAlbumGenreIds)
+        ? { ...track, genreIds: [...nextAlbumGenreIds] }
+        : track,
+    ),
+  );
+}
 
 export type LibraryAlbumFromFilesUploadStep =
   | 'idle'
@@ -330,13 +359,6 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     [],
   );
 
-  const areGenreIdsEqual = (a: string[], b: string[]) => {
-    if (a.length !== b.length) return false;
-    const sa = [...a].sort();
-    const sb = [...b].sort();
-    return sa.every((v, i) => v === sb[i]);
-  };
-
   const toggleGenreId = useCallback((genreId: string) => {
     setFormData((prev) => {
       const oldIds = prev.genreIds;
@@ -344,11 +366,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
         ? oldIds.filter((x) => x !== genreId)
         : [...oldIds, genreId];
 
-      setTracks((tracks) =>
-        tracks.map((t) =>
-          areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...nextIds] } : t,
-        ),
-      );
+      applyAlbumGenreSnapshotToBulkTracks(setTracks, oldIds, nextIds);
 
       return { ...prev, genreIds: nextIds };
     });
@@ -359,11 +377,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
       const oldIds = prev.genreIds;
       const nextIds: string[] = [];
 
-      setTracks((tracks) =>
-        tracks.map((t) =>
-          areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...nextIds] } : t,
-        ),
-      );
+      applyAlbumGenreSnapshotToBulkTracks(setTracks, oldIds, nextIds);
 
       return { ...prev, genreIds: nextIds };
     });
@@ -376,11 +390,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
       const oldIds = prev.genreIds;
       const nextIds = [...oldIds, genreId];
 
-      setTracks((tracks) =>
-        tracks.map((t) =>
-          areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...nextIds] } : t,
-        ),
-      );
+      applyAlbumGenreSnapshotToBulkTracks(setTracks, oldIds, nextIds);
 
       return { ...prev, genreIds: nextIds };
     });
