@@ -51,4 +51,4 @@ COPY --from=installer --chown=nestjs:nodejs /app .
 
 EXPOSE 8000
 
-CMD ["node", "apps/api/dist/main.mjs"]
+CMD ["node", "apps/api/dist/main.js"]
