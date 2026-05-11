@@ -28,7 +28,7 @@ export class EmailAuthService {
       );
 
       if (emailSent && type === 'emailVerification') {
-        await this.emailAddressRepository.edit(email.id, { status: 'pending' });
+        await this.emailAddressRepository.update(email.id, { status: 'pending' });
       }
 
       return emailSent;
