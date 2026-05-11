@@ -12,6 +12,7 @@ function mockAuthState(partial: Pick<AuthState, 'accessToken' | '_hasHydrated'>)
     isAuthenticated: false,
     _hasHydrated: partial._hasHydrated,
     setAuth: vi.fn(),
+    setUnauthenticatedUser: vi.fn(),
     updateAccessToken: vi.fn(),
     logout: vi.fn(),
   };

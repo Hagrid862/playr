@@ -36,6 +36,10 @@ describe('AuthController (Integration)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupJwtAuthPrismaMocks(prismaMock);
+    /** getByEmail / getPrimaryByEmailWithUser use findUnique; reset so prior tests do not leak implementations. */
+    prismaMock.client.emailAddress.findUnique.mockReset();
+    /** LoginHandler.getPrimaryByUserId uses findFirst; reset for the same reason. */
+    prismaMock.client.emailAddress.findFirst.mockReset();
   });
 
   afterAll(async () => {
@@ -163,8 +167,8 @@ describe('AuthController (Integration)', () => {
       });
       const userObj = userBuilder({ id: emailObj.userId });
 
-      // Mock getting email
-      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce(emailObj);
+      // Mock getting email (repository uses findUnique by email)
+      prismaMock.client.emailAddress.findUnique.mockResolvedValueOnce(emailObj);
 
       // Mock OTP verification (Redis mock)
       const redis = app.get('REDIS_CLIENT');
@@ -179,8 +183,8 @@ describe('AuthController (Integration)', () => {
         status: EmailStatus.verified,
       });
 
-      // Mock getting user (twice: once in repo, once in repo again but handled by Mock)
-      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce({
+      // userRepository.getByEmail → findUnique with include user
+      prismaMock.client.emailAddress.findUnique.mockResolvedValueOnce({
         ...emailObj,
         user: userObj,
       } as any);
@@ -200,7 +204,7 @@ describe('AuthController (Integration)', () => {
 
     it('should return 401 for invalid OTP code', async () => {
       const emailObj = emailAddressBuilder({ email: verifyData.email });
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(emailObj);
 
       // Mock OTP verification failure
       const redis = app.get('REDIS_CLIENT');
@@ -216,7 +220,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 400 if email not found', async () => {
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer()).post('/auth/verify-email').send(verifyData).expect(400);
     });
@@ -231,7 +235,7 @@ describe('AuthController (Integration)', () => {
         status: EmailStatus.created,
       });
 
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(emailObj);
 
       const response = await request(app.getHttpServer())
         .post('/auth/resend-email-verification-code')
@@ -247,7 +251,7 @@ describe('AuthController (Integration)', () => {
         status: EmailStatus.verified,
       });
 
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(emailObj);
 
       await request(app.getHttpServer())
         .post('/auth/resend-email-verification-code')
@@ -256,7 +260,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 400 if email not found', async () => {
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
         .post('/auth/resend-email-verification-code')
@@ -292,6 +296,7 @@ describe('AuthController (Integration)', () => {
         ...email,
         user: userBase,
       } as EmailAddress & { user: User });
+      prismaMock.client.emailAddress.findFirst.mockResolvedValue(email);
 
       // Mock session creation
       prismaMock.client.session.create.mockResolvedValue({
@@ -454,7 +459,7 @@ describe('AuthController (Integration)', () => {
         status: EmailStatus.verified,
       });
 
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(emailObj);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(emailObj);
 
       const response = await request(app.getHttpServer())
         .post('/auth/forgot-password')
@@ -465,7 +470,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 200 with isEmailSent false if email not found', async () => {
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .post('/auth/forgot-password')
@@ -516,11 +521,9 @@ describe('AuthController (Integration)', () => {
       });
       const userObj = userBuilder({ id: emailObj.userId });
 
-      // Mock getting email (first call in handler for email lookup)
-      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce(emailObj);
-
-      // Mock getting user via email (second call in handler via userRepository.getByEmail)
-      prismaMock.client.emailAddress.findFirst.mockResolvedValueOnce({
+      // getByEmail then userRepository.getByEmail — both use emailAddress.findUnique
+      prismaMock.client.emailAddress.findUnique.mockResolvedValueOnce(emailObj);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValueOnce({
         ...emailObj,
         user: userObj,
       } as any);
@@ -547,7 +550,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should return 200 with success false if email not found', async () => {
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue(null);
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .post('/auth/recover-password')
@@ -564,7 +567,7 @@ describe('AuthController (Integration)', () => {
       });
       const userObj = userBuilder({ id: emailObj.userId });
 
-      prismaMock.client.emailAddress.findFirst.mockResolvedValue({
+      prismaMock.client.emailAddress.findUnique.mockResolvedValue({
         ...emailObj,
         user: userObj,
       } as any);

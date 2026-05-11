@@ -42,8 +42,10 @@ const hoistedMocks = vi.hoisted(() => {
       },
       subscribe: (listener: () => void) => {
         listeners.add(listener);
-        return () => {
-          listeners.delete(listener);
+        return {
+          unsubscribe: () => {
+            listeners.delete(listener);
+          },
         };
       },
     };
