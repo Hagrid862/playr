@@ -311,6 +311,8 @@ export function LibraryAlbumFromFilesForm({
             album: album.data,
             tracks,
             artistIds: [artistId],
+            pendingGenres,
+            createLibraryGenre,
           });
         }
 

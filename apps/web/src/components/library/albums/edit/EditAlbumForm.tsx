@@ -10,9 +10,14 @@ import { EditAlbumTracksSection } from './EditAlbumTracksSection';
 import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import { useEditAlbumTracks } from './useEditAlbumTracks';
 import { useEditAlbumForm } from './useEditAlbumForm';
+import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
-import { useStore } from '@tanstack/react-store';
-import { useMemo, useState, useCallback } from 'react';
+import {
+  applyPendingGenreMapToEditPayload,
+  buildPendingGenreLocalToServerMap,
+  collectPendingGenreIdsForAlbumSubmit,
+} from '@/components/library/albums/resolvePendingGenresForSubmit';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   LIBRARY_ALBUM_GENRE_CREATE_VALUE,
   LIBRARY_ALBUM_GENRE_NONE_VALUE,
@@ -29,6 +34,7 @@ interface EditAlbumFormProps {
     tracks: EditAlbumTracksSubmitPayload,
     cover?: File,
     shouldDeleteCover?: boolean,
+    extras?: { pendingGenres: { id: string; name: string }[] },
   ) => Promise<void>;
   onCancel: () => void;
   /** @internal When true, cover input is not rendered. Used by tests to cover ref-null branch. */
@@ -52,6 +58,8 @@ export function EditAlbumForm({
     [genresResponse],
   );
 
+  const { mutateAsync: createLibraryGenre } = useCreateLibraryGenre();
+
   const [createGenreModalOpen, setCreateGenreModalOpen] = useState(false);
   const [pendingGenres, setPendingGenres] = useState<{ id: string; name: string }[]>([]);
   const [activeGenreCreationCallback, setActiveGenreCreationCallback] = useState<
@@ -59,6 +67,31 @@ export function EditAlbumForm({
   >(null);
 
   const tracksState = useEditAlbumTracks(album);
+
+  const onSubmitWithResolvedGenres = useCallback(
+    async (
+      values: UpdateLibraryAlbumRequest,
+      tracksPayload: EditAlbumTracksSubmitPayload,
+      cover?: File,
+      shouldDeleteCover?: boolean,
+    ) => {
+      const pendingNeeded = collectPendingGenreIdsForAlbumSubmit(values.genreIds, tracksPayload);
+      let nextValues = values;
+      let nextTracks = tracksPayload;
+      if (pendingNeeded.size > 0) {
+        const map = await buildPendingGenreLocalToServerMap(
+          pendingNeeded,
+          pendingGenres,
+          createLibraryGenre,
+        );
+        const applied = applyPendingGenreMapToEditPayload(values, tracksPayload, map);
+        nextValues = applied.values;
+        nextTracks = applied.tracks;
+      }
+      await onSubmit(nextValues, nextTracks, cover, shouldDeleteCover, { pendingGenres });
+    },
+    [createLibraryGenre, onSubmit, pendingGenres],
+  );
 
   const {
     form,
@@ -73,11 +106,20 @@ export function EditAlbumForm({
     handleCoverSelect,
   } = useEditAlbumForm({
     album,
-    onSubmit,
+    onSubmit: onSubmitWithResolvedGenres,
     prepareTracksSubmit: tracksState.prepareTracksSubmit,
   });
 
-  const genreIds = useStore(form.store, (s): string[] => s.values.genreIds);
+  const genreIds = useSyncExternalStore(
+    (onStoreChange) => {
+      const sub = form.store.subscribe(() => {
+        onStoreChange();
+      });
+      return () => sub.unsubscribe();
+    },
+    () => form.getFieldValue('genreIds'),
+    () => form.getFieldValue('genreIds'),
+  );
   const visiblePendingGenres = useMemo(
     () => pendingGenres.filter((p) => genreIds.includes(p.id)),
     [pendingGenres, genreIds],

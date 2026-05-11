@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
+import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { makeLocalPendingGenreId } from '@/components/library/albums/create/pendingLibraryGenre';
 import type { BulkTrackItem } from '@/lib/types/library';
@@ -53,6 +54,7 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
   const navigate = useNavigate();
   const { mutateAsync: bulkCreateTracks, isPending: isBulkPending } = useBulkCreateLibraryTracks();
   const { mutateAsync: uploadCover, isPending: isCoverPending } = useUploadLibraryAlbumCover();
+  const { mutateAsync: createLibraryGenre } = useCreateLibraryGenre();
 
   const { data: genresResponse, isLoading: isLoadingGenres } = useLibraryGenres({
     page: 1,
@@ -94,7 +96,12 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
         if (selectedCover) {
           await uploadCover({ id: album.id, file: selectedCover });
         }
-        await bulkCreateTracks({ album, tracks });
+        await bulkCreateTracks({
+          album,
+          tracks,
+          pendingGenres,
+          createLibraryGenre,
+        });
         toast.success(
           selectedCover
             ? `Uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''} and updated album cover`
@@ -108,7 +115,7 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
         throw error;
       }
     },
-    [album, bulkCreateTracks, navigate, uploadCover],
+    [album, bulkCreateTracks, createLibraryGenre, navigate, pendingGenres, uploadCover],
   );
 
   const {
