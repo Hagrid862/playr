@@ -1,4 +1,5 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
@@ -21,6 +22,7 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
     private readonly albumRepository: AlbumRepository,
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
     private readonly genreRepository: GenreRepository,
+    private readonly artistRepository: ArtistRepository,
   ) {}
 
   async execute(command: CreateLibraryAlbumCommand): Promise<ZodAlbum> {
@@ -47,6 +49,14 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
       }
     }
 
+    const dedupedArtistIds = [...new Set(request.artistIds)];
+    const ownedCount = await this.artistRepository.countActiveOwnedByUser(dedupedArtistIds, userId);
+    if (ownedCount !== dedupedArtistIds.length) {
+      throw new BadRequestException(
+        'One or more artists are invalid or you do not have permission to use them',
+      );
+    }
+
     const album = await this.unitOfWork.runInTransaction(async () => {
       const existingAlbum = await this.albumRepository.getByNameForOwner(request.name, userId);
 
@@ -67,9 +77,7 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
           },
         },
         artists: {
-          connect: {
-            id: request.artistId,
-          },
+          connect: dedupedArtistIds.map((id) => ({ id })),
         },
         ...(uniqueGenreIds && uniqueGenreIds.length > 0
           ? {

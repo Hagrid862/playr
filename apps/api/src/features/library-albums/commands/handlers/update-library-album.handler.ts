@@ -1,4 +1,5 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import {
@@ -18,6 +19,7 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
     private readonly albumRepository: AlbumRepository,
     private readonly libraryRepository: LibraryRepository,
     private readonly genreRepository: GenreRepository,
+    private readonly artistRepository: ArtistRepository,
   ) {}
 
   async execute(command: UpdateLibraryAlbumCommand): Promise<ZodAlbum> {
@@ -43,6 +45,17 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
       if (!assignable) {
         throw new BadRequestException(
           'One or more genres are invalid or not available to your library',
+        );
+      }
+    }
+
+    let uniqueArtistIds: string[] | undefined;
+    if (request.artistIds !== undefined) {
+      uniqueArtistIds = [...new Set(request.artistIds)];
+      const owned = await this.artistRepository.countActiveOwnedByUser(uniqueArtistIds, userId);
+      if (owned !== uniqueArtistIds.length) {
+        throw new BadRequestException(
+          'One or more artists are invalid or not available to your library',
         );
       }
     }
@@ -76,6 +89,13 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
               create: [...new Set(request.genreIds)].map((genreId) => ({
                 genre: { connect: { id: genreId } },
               })),
+            },
+          }
+        : {}),
+      ...(request.artistIds !== undefined
+        ? {
+            artists: {
+              set: [...new Set(request.artistIds)].map((artistId) => ({ id: artistId })),
             },
           }
         : {}),

@@ -10,7 +10,7 @@ import { GetLibraryAlbumTracksQuery } from '../impl/get-library-album-tracks.que
 const LIBRARY_TRACK_WITH_TRACK_INCLUDE = {
   track: {
     include: {
-      artists: true,
+      artists: { where: { deletedAt: null } },
       album: true,
       genres: { include: { genre: true } },
     },
