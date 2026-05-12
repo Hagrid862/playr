@@ -1,0 +1,18 @@
+# Override: disables Nest rate limiting for Playwright / parallel E2E (see apps/api `throttlingDisabled()`).
+#
+# Use with the stack you already run for tests — merge order matters (this file last wins on keys):
+#
+#   Full dev-in-Docker stack (api + web + …):
+#     docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#     pnpm run docker:test:up
+#
+#   Pre-built images (same shape as CI):
+#     docker compose -f docker-compose.prod.yml -f docker-compose.test.yml up -d
+#     pnpm run docker:test:up:prod
+#
+# Restart the `api` container after switching compose files so the env is applied.
+
+services:
+  api:
+    environment:
+      THROTTLE_ENABLED: "false"

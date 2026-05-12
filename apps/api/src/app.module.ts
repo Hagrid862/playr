@@ -1,5 +1,5 @@
 import { BullModule } from '@nestjs/bullmq';
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import { ExecutionContext, MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -14,6 +14,23 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { join } from 'path';
 
+function requestPathFromContext(context: ExecutionContext): string {
+  const req = context.switchToHttp().getRequest<{ originalUrl?: string; url?: string }>();
+  const raw = req.originalUrl ?? req.url ?? '';
+  return raw.split('?')[0];
+}
+
+/** True when the HTTP path is under the auth controller (`/auth`, optional global prefix). */
+function isAuthRoutePath(context: ExecutionContext): boolean {
+  const path = requestPathFromContext(context);
+  return path.includes('/auth/') || path.endsWith('/auth');
+}
+
+/** Matches `ThrottlerModule` `skipIf` checks (raw env string, not Zod-parsed config). */
+function throttlingDisabled(): boolean {
+  return process.env.THROTTLE_ENABLED === 'false';
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,9 +40,18 @@ import { join } from 'path';
     JwtModule.register({ global: true }),
     ThrottlerModule.forRoot([
       {
+        name: 'default',
         ttl: 60000,
         limit: 600,
-        skipIf: () => process.env.THROTTLE_ENABLED === 'false',
+        skipIf: (context: ExecutionContext) =>
+          throttlingDisabled() || isAuthRoutePath(context),
+      },
+      {
+        name: 'auth',
+        ttl: 60000,
+        limit: 10,
+        skipIf: (context: ExecutionContext) =>
+          throttlingDisabled() || !isAuthRoutePath(context),
       },
     ]),
     BullModule.forRootAsync({
