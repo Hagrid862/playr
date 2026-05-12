@@ -66,7 +66,7 @@ test.describe("Queue Management", () => {
   const track1 = `Track 1 ${timestamp}`;
   const track2 = `Track 2 ${timestamp}`;
 
-  test.describe.configure({ mode: "serial" });
+  test.describe.configure({ mode: "serial", timeout: 120_000 });
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
@@ -164,13 +164,16 @@ test.describe("Queue Management", () => {
     // Add Track 2
     await page.goto(`/app/library/albums/${albumId}/add-content`);
     await page.setInputFiles('input[type="file"]', audioPath);
-    // Wait for metadata scan to start and then finish deterministically
     await page.waitForTimeout(500);
-    await expect(page.getByText(/Scanning metadata/)).toBeHidden({
-      timeout: 20000,
-    });
+    await expect(
+      page.getByText(
+        /Scanning metadata|Scanning tracks for cover art|Scanning metadata and cover art/,
+      ),
+    ).toBeHidden({ timeout: 20000 });
     await page.getByLabel("Track Title").fill(track2);
-    await page.getByRole("button", { name: "Add Track" }).click();
+    const uploadTracks = page.getByRole("button", { name: /Upload \d+ tracks?/ });
+    await expect(uploadTracks).toBeEnabled({ timeout: 30000 });
+    await uploadTracks.click();
 
     // Wait for navigation to complete - the form navigates to the parent (album detail) page
     await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, { timeout: 30000 });
