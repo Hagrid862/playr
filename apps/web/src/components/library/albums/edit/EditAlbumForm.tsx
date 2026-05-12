@@ -110,6 +110,7 @@ export function EditAlbumForm({
     prepareTracksSubmit: tracksState.prepareTracksSubmit,
   });
 
+  const readGenreIdsSnapshot = () => form.getFieldValue('genreIds');
   const genreIds = useSyncExternalStore(
     (onStoreChange) => {
       const sub = form.store.subscribe(() => {
@@ -117,8 +118,8 @@ export function EditAlbumForm({
       });
       return () => sub.unsubscribe();
     },
-    () => form.getFieldValue('genreIds'),
-    () => form.getFieldValue('genreIds'),
+    readGenreIdsSnapshot,
+    readGenreIdsSnapshot,
   );
   const visiblePendingGenres = useMemo(
     () => pendingGenres.filter((p) => genreIds.includes(p.id)),

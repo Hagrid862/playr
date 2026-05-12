@@ -15,6 +15,13 @@ describe('useResendTimer', () => {
     vi.unstubAllGlobals(); // Clean up any global stubs
   });
 
+  it('treats expired localStorage timestamp as 0 remaining', () => {
+    window.localStorage.setItem(KEY, String(Date.now() - 60_000));
+    const { result } = renderHook(() => useResendTimer(KEY));
+    expect(result.current.timeLeft).toBe(0);
+    expect(result.current.isCounting).toBe(false);
+  });
+
   it('should initialize with 0 if no value in localStorage', () => {
     const { result } = renderHook(() => useResendTimer(KEY));
     expect(result.current.timeLeft).toBe(0);
@@ -118,5 +125,59 @@ describe('useResendTimer', () => {
     Object.defineProperty(window, 'localStorage', {
       get: () => originalLocalStorage,
     });
+  });
+
+  it('ignores storage events for other keys', () => {
+    const { result } = renderHook(() => useResendTimer(KEY, 60));
+    expect(result.current.timeLeft).toBe(0);
+
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: 'unrelated-key',
+          newValue: String(Date.now() + 60_000),
+        }),
+      );
+    });
+
+    expect(result.current.timeLeft).toBe(0);
+  });
+
+  it('returns 0 when localStorage.getItem throws inside try', () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    const { result } = renderHook(() => useResendTimer(KEY));
+    expect(result.current.timeLeft).toBe(0);
+    getItem.mockRestore();
+  });
+
+  it('startTimer still sets countdown when setItem throws', () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const { result } = renderHook(() => useResendTimer(KEY, 25));
+    act(() => {
+      result.current.startTimer();
+    });
+    expect(result.current.timeLeft).toBe(25);
+    expect(result.current.isCounting).toBe(true);
+    setItem.mockRestore();
+  });
+
+  it('clearTimer clears state when removeItem throws', () => {
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    const { result } = renderHook(() => useResendTimer(KEY, 10));
+    act(() => {
+      result.current.startTimer();
+    });
+    expect(result.current.timeLeft).toBe(10);
+    act(() => {
+      result.current.clearTimer();
+    });
+    expect(result.current.timeLeft).toBe(0);
+    removeItem.mockRestore();
   });
 });

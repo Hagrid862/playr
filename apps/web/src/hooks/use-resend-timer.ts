@@ -1,4 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import {
+  clearResendCooldownKey,
+  getResendCooldownSecondsRemaining,
+  persistResendCooldownExpiry,
+  subscribeResendCooldownStorage,
+} from './resend-cooldown-storage';
 
 /**
  * A hook that provides a persistent countdown timer.
@@ -6,21 +12,14 @@ import { useState, useEffect, useCallback } from 'react';
  * It also syncs across multiple tabs.
  */
 export const useResendTimer = (key: string, cooldownSeconds: number = 60) => {
-  const getRemainingTime = useCallback(() => {
-    if (typeof window === 'undefined') return 0;
-    let expiry: string | null;
-    try {
-      expiry = window.localStorage.getItem(key);
-    } catch {
-      return 0;
-    }
-    if (!expiry) return 0;
+  const getRemainingTime = useCallback(
+    () => getResendCooldownSecondsRemaining(key, globalThis.window),
+    [key],
+  );
 
-    const remaining = Math.ceil((Number(expiry) - Date.now()) / 1000);
-    return remaining > 0 ? remaining : 0;
-  }, [key]);
-
-  const [timeLeft, setTimeLeft] = useState<number>(() => getRemainingTime());
+  const [timeLeft, setTimeLeft] = useState<number>(() =>
+    getResendCooldownSecondsRemaining(key, globalThis.window),
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -28,36 +27,25 @@ export const useResendTimer = (key: string, cooldownSeconds: number = 60) => {
       setTimeLeft(remaining);
     }, 1000);
 
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === key) {
-        setTimeLeft(getRemainingTime());
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
+    const unsubscribeStorage = subscribeResendCooldownStorage(globalThis.window, key, () => {
+      setTimeLeft(getRemainingTime());
+    });
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', handleStorageChange);
+      unsubscribeStorage();
     };
   }, [getRemainingTime, key]);
 
   const startTimer = useCallback(() => {
+    const win = globalThis.window;
     const expiry = Date.now() + cooldownSeconds * 1000;
-    try {
-      window.localStorage.setItem(key, String(expiry));
-    } catch {
-      // Keep the current tab's countdown even when persistence is unavailable.
-    }
+    persistResendCooldownExpiry(win, key, expiry);
     setTimeLeft(cooldownSeconds);
   }, [key, cooldownSeconds]);
 
   const clearTimer = useCallback(() => {
-    try {
-      window.localStorage.removeItem(key);
-    } catch {
-      // Ignore unavailable storage.
-    }
+    clearResendCooldownKey(globalThis.window, key);
     setTimeLeft(0);
   }, [key]);
 

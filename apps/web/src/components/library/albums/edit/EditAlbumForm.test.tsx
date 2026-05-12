@@ -1,4 +1,4 @@
-import type { ZodAlbum } from '@repo/contracts';
+import type { UpdateLibraryAlbumRequest, ZodAlbum } from '@repo/contracts';
 import { albumBuilder } from '@repo/testing/builders';
 import { customRender } from '@repo/testing/web';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
@@ -7,12 +7,17 @@ import userEvent from '@testing-library/user-event';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditAlbumForm } from './EditAlbumForm';
+import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import {
-  type useEditAlbumForm,
+  useEditAlbumForm,
   useEditAlbumForm as useEditAlbumFormMock,
 } from './useEditAlbumForm';
 
 type UseEditAlbumFormReturn = ReturnType<typeof useEditAlbumForm>;
+
+const createLibraryGenreHoisted = vi.hoisted(() => ({
+  mutateAsync: vi.fn().mockResolvedValue({ data: { id: 'resolved-genre-id' } }),
+}));
 
 const hoistedMocks = vi.hoisted(() => {
   const emptyTracksPayload = {
@@ -153,6 +158,12 @@ vi.mock('@/hooks/api/library-genres/useLibraryGenres', () => ({
   })),
 }));
 
+vi.mock('@/hooks/api/library-genres/useCreateLibraryGenre', () => ({
+  useCreateLibraryGenre: vi.fn(() => ({
+    mutateAsync: createLibraryGenreHoisted.mutateAsync,
+  })),
+}));
+
 vi.mock('../create/CreateLibraryGenreNameModal', () => ({
   CreateLibraryGenreNameModal: ({
     open,
@@ -283,6 +294,7 @@ describe('EditAlbumForm', () => {
   beforeEach(() => {
     resetStableMockForm();
     vi.clearAllMocks();
+    createLibraryGenreHoisted.mutateAsync.mockResolvedValue({ data: { id: 'resolved-genre-id' } });
     vi.mocked(useEditAlbumFormMock).mockImplementation(
       ({ album }: { album: ZodAlbum }) =>
         buildDefaultUseEditAlbumFormReturn(album) as unknown as UseEditAlbumFormReturn,
@@ -508,6 +520,107 @@ describe('EditAlbumForm', () => {
       await user.click(screen.getByRole('button', { name: /test-metadata-create-genre/i }));
       await user.click(screen.getByRole('button', { name: /^emit-open-true$/i }));
       expect(screen.getByTestId('create-genre-modal')).toBeInTheDocument();
+    });
+
+    it('does not call createLibraryGenre when submit has no pending local genre ids', async () => {
+      vi.mocked(useEditAlbumFormMock).mockImplementation(
+        (props: Parameters<typeof useEditAlbumFormMock>[0]) => {
+          const base = buildDefaultUseEditAlbumFormReturn(props.album);
+          return {
+            ...base,
+            form: {
+              ...base.form,
+              handleSubmit: vi.fn(async () => {
+                await props.onSubmit(
+                  {
+                    name: props.album.name,
+                    description: props.album.description ?? '',
+                    type: props.album.type,
+                    releaseDate: props.album.releaseDate ?? null,
+                    coverId: props.album.coverId ?? undefined,
+                    genreIds: ['existing-server-genre'],
+                  } as UpdateLibraryAlbumRequest,
+                  hoistedMocks.emptyTracksPayload as unknown as EditAlbumTracksSubmitPayload,
+                  undefined,
+                  false,
+                );
+              }),
+            },
+          } as unknown as UseEditAlbumFormReturn;
+        },
+      );
+
+      const user = userEvent.setup();
+      customRender(<EditAlbumForm {...defaultProps} />);
+
+      createLibraryGenreHoisted.mutateAsync.mockClear();
+      mockOnSubmit.mockClear();
+
+      await user.click(screen.getByRole('button', { name: /Save changes/i }));
+
+      expect(createLibraryGenreHoisted.mutateAsync).not.toHaveBeenCalled();
+      expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+      expect(mockOnSubmit.mock.calls[0]?.[0]).toMatchObject({
+        genreIds: ['existing-server-genre'],
+      });
+    });
+
+    it('resolves pending genres before calling onSubmit', async () => {
+      const uuidSpy = vi
+        .spyOn(crypto, 'randomUUID')
+        .mockReturnValue('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+      const LOCAL = 'local:pending:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+      vi.mocked(useEditAlbumFormMock).mockImplementation(
+        (props: Parameters<typeof useEditAlbumFormMock>[0]) => {
+          const base = buildDefaultUseEditAlbumFormReturn(props.album);
+          return {
+            ...base,
+            form: {
+              ...base.form,
+              handleSubmit: vi.fn(async () => {
+                await props.onSubmit(
+                  {
+                    name: props.album.name,
+                    description: props.album.description ?? '',
+                    type: props.album.type,
+                    releaseDate: props.album.releaseDate ?? null,
+                    coverId: props.album.coverId ?? undefined,
+                    genreIds: [LOCAL],
+                  } as UpdateLibraryAlbumRequest,
+                  hoistedMocks.emptyTracksPayload as unknown as EditAlbumTracksSubmitPayload,
+                  undefined,
+                  false,
+                );
+              }),
+            },
+          } as unknown as UseEditAlbumFormReturn;
+        },
+      );
+
+      const user = userEvent.setup();
+      try {
+        customRender(<EditAlbumForm {...defaultProps} />);
+
+        await user.click(screen.getByRole('button', { name: /test-metadata-create-genre/i }));
+        await user.click(screen.getByRole('button', { name: /confirm-new-genre-name/i }));
+
+        createLibraryGenreHoisted.mutateAsync.mockClear();
+        mockOnSubmit.mockClear();
+
+        await user.click(screen.getByRole('button', { name: /Save changes/i }));
+
+        expect(createLibraryGenreHoisted.mutateAsync).toHaveBeenCalledWith({ name: 'Fresh Genre' });
+        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+        expect(mockOnSubmit.mock.calls[0]?.[0]).toMatchObject({
+          genreIds: ['resolved-genre-id'],
+        });
+        expect(mockOnSubmit.mock.calls[0]?.[4]).toMatchObject({
+          pendingGenres: [{ id: LOCAL, name: 'Fresh Genre' }],
+        });
+      } finally {
+        uuidSpy.mockRestore();
+      }
     });
 
     it('uses an empty genres list when the hook returns no items payload', () => {
