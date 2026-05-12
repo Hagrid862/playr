@@ -1,6 +1,7 @@
 import { MediaCard } from '@/components/library/MediaCard';
 import { Spinner } from '@/components/ui/spinner';
 import { useLibraryAlbums } from '@/hooks/api/library-albums/useLibraryAlbums';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { useLibraryStore } from '@/stores/library.store';
 import { DiscIcon } from '@phosphor-icons/react';
 import { createFileRoute } from '@tanstack/react-router';
@@ -46,8 +47,9 @@ function RouteComponent() {
             id={album.id}
             title={album.name}
             subtitle={
-              (album.artists?.map((artist) => artist.name).join(', ') ?? 'Unknown artist') +
-              ` - ${album.type}`
+              (album.artists?.length
+                ? album.artists.map((artist) => artist.name).join(', ')
+                : UNKNOWN_ARTIST_LABEL) + ` - ${album.type}`
             }
             coverUrl={album.cover?.url ?? undefined}
             link="/app/library/albums/$id"

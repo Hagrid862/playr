@@ -31,9 +31,10 @@ import {
   LIBRARY_ALBUM_GENRE_CREATE_VALUE,
   LIBRARY_ALBUM_GENRE_NONE_VALUE,
 } from './libraryAlbumGenreConstants';
-
-/** Select sentinel: opens the “new artist” modal instead of setting `artistId`. */
-const CREATE_NEW_ARTIST_SELECT_VALUE = '__create_new_artist__';
+import {
+  LIBRARY_ALBUM_ARTIST_CREATE_VALUE,
+  LIBRARY_ALBUM_ARTIST_NONE_VALUE,
+} from './libraryAlbumArtistConstants';
 
 export interface LibraryAlbumFromFilesFormProps {
   cancelTo: string;
@@ -92,6 +93,9 @@ export function LibraryAlbumFromFilesForm({
     toggleGenreId,
     clearGenreSelection,
     appendGenreId,
+    toggleArtistId,
+    clearArtistSelection,
+    appendArtistId,
     isFormValid,
     pendingArtists,
     setPendingArtists,
@@ -102,17 +106,21 @@ export function LibraryAlbumFromFilesForm({
   }, [formData.genreIds]);
 
   useEffect(() => {
+    setPendingArtists((prev) => prev.filter((p) => formData.artistIds.includes(p.id)));
+  }, [formData.artistIds]);
+
+  useEffect(() => {
     if (isLoadingArtists) return;
     const raw = suggestedArtistName?.trim();
     if (!raw) return;
-    if (formData.artistId !== '') return;
+    if (formData.artistIds.length > 0) return;
 
     const sugNorm = normalizeLibraryArtistNameForMatch(raw);
     const matches = artists.filter((a) => normalizeLibraryArtistNameForMatch(a.name) === sugNorm);
     if (matches.length > 1) return;
     if (matches.length === 1) {
       const id = matches[0]?.id;
-      if (id) updateFormData('artistId', id);
+      if (id) appendArtistId(id);
       return;
     }
     if (pendingArtists.some((p) => normalizeLibraryArtistNameForMatch(p.name) === sugNorm)) {
@@ -120,15 +128,15 @@ export function LibraryAlbumFromFilesForm({
     }
     const id = makeLocalPendingArtistId();
     setPendingArtists((prev) => [...prev, { id, name: raw }]);
-    updateFormData('artistId', id);
+    appendArtistId(id);
   }, [
+    appendArtistId,
     artists,
-    formData.artistId,
+    formData.artistIds.length,
     isLoadingArtists,
     pendingArtists,
     setPendingArtists,
     suggestedArtistName,
-    updateFormData,
   ]);
 
   const embeddedCoverPreviewUrl = useMemo(() => {
@@ -143,44 +151,36 @@ export function LibraryAlbumFromFilesForm({
     [genresResponse],
   );
 
-  const artistSelectOptions = useMemo(() => {
-    const createOption = { value: CREATE_NEW_ARTIST_SELECT_VALUE, label: '+ Create new artist…' };
-    const serverOpts = artists.map((a) => ({ value: a.id, label: a.name }));
-    const pendingOpts = pendingArtists.map((a) => ({
-      value: a.id,
-      label: `${a.name} (new)`,
-    }));
-    return [createOption, ...pendingOpts, ...serverOpts];
-  }, [artists, pendingArtists]);
-
-  const handleArtistIdChange = useCallback(
+  const handleArtistSelectionChange = useCallback(
     (value: string) => {
-      if (value === CREATE_NEW_ARTIST_SELECT_VALUE) {
+      if (value === LIBRARY_ALBUM_ARTIST_CREATE_VALUE) {
         setCreateArtistModalOpen(true);
         return;
       }
-      updateFormData('artistId', value);
+      if (value === LIBRARY_ALBUM_ARTIST_NONE_VALUE) {
+        clearArtistSelection();
+        return;
+      }
+      toggleArtistId(value);
     },
-    [updateFormData],
+    [clearArtistSelection, toggleArtistId],
   );
 
   const handleConfirmNewArtistName = useCallback(
     (name: string) => {
       const id = makeLocalPendingArtistId();
       setPendingArtists((prev) => [...prev, { id, name }]);
-      updateFormData('artistId', id);
+      appendArtistId(id);
     },
-    [setPendingArtists, updateFormData],
+    [appendArtistId, setPendingArtists],
   );
 
-  const handleClearStagedArtist = useCallback(() => {
-    const id = formData.artistId;
-    /* v8 ignore start -- remove draft only renders when id is a pending local draft */
-    if (!isLocalPendingArtistId(id)) return;
-    /* v8 ignore stop */
-    setPendingArtists((prev) => prev.filter((p) => p.id !== id));
-    updateFormData('artistId', '');
-  }, [formData.artistId, setPendingArtists, updateFormData]);
+  const handleRemoveArtistId = useCallback(
+    (id: string) => {
+      toggleArtistId(id);
+    },
+    [toggleArtistId],
+  );
 
   const handleGenreSelectionChange = useCallback(
     (value: string) => {
@@ -260,18 +260,21 @@ export function LibraryAlbumFromFilesForm({
       if (!isFormValid || !libraryId) return;
 
       try {
-        let artistId = formData.artistId;
-
-        if (isLocalPendingArtistId(artistId)) {
-          const pending = pendingArtists.find((p) => p.id === artistId);
-          if (!pending?.name.trim()) {
-            throw new Error('Artist name is missing');
+        const resolvedAlbumArtistIds: string[] = [];
+        for (const aid of formData.artistIds) {
+          if (isLocalPendingArtistId(aid)) {
+            const pending = pendingArtists.find((p) => p.id === aid);
+            if (!pending?.name.trim()) {
+              throw new Error('Artist name is missing');
+            }
+            const createdArtist = await createLibraryArtist({ name: pending.name.trim() });
+            if (!createdArtist.data) {
+              throw new Error('Failed to create artist');
+            }
+            resolvedAlbumArtistIds.push(createdArtist.data.id);
+          } else {
+            resolvedAlbumArtistIds.push(aid);
           }
-          const createdArtist = await createLibraryArtist({ name: pending.name.trim() });
-          if (!createdArtist.data) {
-            throw new Error('Failed to create artist');
-          }
-          artistId = createdArtist.data.id;
         }
 
         const resolvedGenreIds: string[] = [];
@@ -295,7 +298,7 @@ export function LibraryAlbumFromFilesForm({
           name: formData.name,
           description: formData.description,
           type: formData.type,
-          artistId,
+          artistIds: resolvedAlbumArtistIds,
           releaseDate: formData.releaseDate,
           genreIds: resolvedGenreIds.length > 0 ? resolvedGenreIds : undefined,
         });
@@ -310,7 +313,7 @@ export function LibraryAlbumFromFilesForm({
           await bulkCreateTracks({
             album: album.data,
             tracks,
-            artistIds: [artistId],
+            artistIds: resolvedAlbumArtistIds,
             pendingGenres,
             createLibraryGenre,
           });
@@ -389,13 +392,10 @@ export function LibraryAlbumFromFilesForm({
             <LibraryAlbumMetadataSection
               formData={formData}
               artists={artists}
-              artistSelectOptions={artistSelectOptions}
               isLoadingArtists={isLoadingArtists}
-              isStagedNewArtistSelected={isLocalPendingArtistId(formData.artistId)}
+              pendingArtists={pendingArtists}
               coverPreviewUrl={coverPreviewUrl}
               onUpdate={updateFormData}
-              onArtistIdChange={handleArtistIdChange}
-              onClearStagedArtist={handleClearStagedArtist}
               onManualCoverFile={setManualAlbumCover}
               onRemoveCover={handleRemoveCover}
               genres={genres}
@@ -403,6 +403,8 @@ export function LibraryAlbumFromFilesForm({
               isLoadingGenres={isLoadingGenres}
               onGenreSelectionChange={handleGenreSelectionChange}
               onRemoveGenreId={handleRemoveGenreId}
+              onArtistSelectionChange={handleArtistSelectionChange}
+              onRemoveArtistId={handleRemoveArtistId}
             />
           </aside>
 

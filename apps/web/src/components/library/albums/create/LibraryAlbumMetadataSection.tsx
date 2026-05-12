@@ -10,14 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ZodGenreInfer } from '@repo/contracts';
@@ -25,9 +17,12 @@ import { AlbumType } from '@repo/db';
 import { Link } from '@tanstack/react-router';
 import { CameraIcon, MusicNotesIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { LibraryAlbumArtistPicker } from './LibraryAlbumArtistPicker';
 import { LibraryAlbumGenrePicker } from './LibraryAlbumGenrePicker';
+import { isLocalPendingArtistId } from './pendingLibraryArtist';
 import { isLocalPendingGenreId } from './pendingLibraryGenre';
 import type { LibraryAlbumFromFilesFormData } from './useLibraryAlbumFromFilesForm';
+import { LIBRARY_ALBUM_ARTIST_NONE_VALUE } from './libraryAlbumArtistConstants';
 
 const albumTypeOptions = Object.entries(AlbumType).map(([key, value]) => ({
   value,
@@ -38,21 +33,14 @@ interface LibraryAlbumMetadataSectionProps {
   formData: LibraryAlbumFromFilesFormData;
   /** Server-loaded artists (for empty-state copy). */
   artists: { id: string; name: string }[];
-  /** Options for the artist select, including “Create new…” and any client-only pending artists. */
-  artistSelectOptions: { value: string; label: string }[];
   isLoadingArtists: boolean;
-  /** Client-only staged new artist (`local:pending:…`) is selected — artist row uses fused readonly select + clear. */
-  isStagedNewArtistSelected: boolean;
+  pendingArtists: { id: string; name: string }[];
   /** Manual upload and/or embedded track cover — what to show in the artwork tile */
   coverPreviewUrl: string | null;
   onUpdate: <K extends keyof LibraryAlbumFromFilesFormData>(
     field: K,
     value: LibraryAlbumFromFilesFormData[K],
   ) => void;
-  /** Artist field only; used to open “create artist” without writing a sentinel `artistId`. */
-  onArtistIdChange: (value: string) => void;
-  /** Clear staged new artist and reset artist selection. */
-  onClearStagedArtist: () => void;
   onManualCoverFile: (file: File | null) => void;
   /** Clears manual file if set, otherwise clears embedded cover selection */
   onRemoveCover: () => void;
@@ -62,18 +50,17 @@ interface LibraryAlbumMetadataSectionProps {
   isLoadingGenres: boolean;
   onGenreSelectionChange: (value: string) => void;
   onRemoveGenreId: (genreId: string) => void;
+  onArtistSelectionChange: (value: string) => void;
+  onRemoveArtistId: (artistId: string) => void;
 }
 
 export function LibraryAlbumMetadataSection({
   formData,
   artists,
-  artistSelectOptions,
   isLoadingArtists,
-  isStagedNewArtistSelected,
+  pendingArtists,
   coverPreviewUrl,
   onUpdate,
-  onArtistIdChange,
-  onClearStagedArtist,
   onManualCoverFile,
   onRemoveCover,
   genres,
@@ -81,8 +68,9 @@ export function LibraryAlbumMetadataSection({
   isLoadingGenres,
   onGenreSelectionChange,
   onRemoveGenreId,
+  onArtistSelectionChange,
+  onRemoveArtistId,
 }: LibraryAlbumMetadataSectionProps) {
-  const artistFieldId = useId();
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
   const [isMultipleFilesModalOpen, setIsMultipleFilesModalOpen] = useState(false);
@@ -152,6 +140,20 @@ export function LibraryAlbumMetadataSection({
       }),
     [formData.genreIds],
   );
+
+  const artistIdsForChips = useMemo(
+    () =>
+      [...formData.artistIds].sort((a, b) => {
+        const aNew = isLocalPendingArtistId(a);
+        const bNew = isLocalPendingArtistId(b);
+        if (aNew === bNew) return 0;
+        return aNew ? -1 : 1;
+      }),
+    [formData.artistIds],
+  );
+
+  const hasOnlyPendingArtists =
+    formData.artistIds.length > 0 && formData.artistIds.every((id) => isLocalPendingArtistId(id));
 
   return (
     <div className="flex flex-col gap-6 overflow-visible lg:max-h-full lg:min-h-0 lg:flex-1">
@@ -291,89 +293,50 @@ export function LibraryAlbumMetadataSection({
       </div>
 
       <div className="min-h-0 flex-1 space-y-6 lg:overflow-y-auto lg:pr-1">
-        <div className="space-y-1">
-          {isStagedNewArtistSelected ? (
-            <Field>
-              <FieldLabel htmlFor={artistFieldId}>Artist</FieldLabel>
-              <div className="flex w-full overflow-visible rounded-lg border border-input bg-background dark:bg-input/30">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      className="inline-flex min-w-0 flex-1 cursor-default outline-none"
-                      tabIndex={0}
-                    >
-                      <Select
-                        disabled
-                        value={formData.artistId === '' ? undefined : formData.artistId}
-                        onValueChange={onArtistIdChange}
-                      >
-                        <SelectTrigger
-                          id={artistFieldId}
-                          type="button"
-                          disabled
-                          className={cn(
-                            'h-8 min-w-0 flex-1 rounded-none border-0 shadow-none disabled:cursor-not-allowed disabled:opacity-100',
-                            'w-full bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent',
-                          )}
-                          onBlur={() => {}}
-                        >
-                          <SelectValue
-                            placeholder={
-                              isLoadingArtists
-                                ? 'Loading...'
-                                : artists.length === 0
-                                  ? 'Create or select artist'
-                                  : 'Select artist'
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent position="popper">
-                          <SelectGroup>
-                            {artistSelectOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={4} className="max-w-xs">
-                    This artist is not in your library yet. Remove the draft to pick a different
-                    artist.
-                  </TooltipContent>
-                </Tooltip>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  aria-label="Remove draft artist"
-                  onClick={onClearStagedArtist}
-                  className="h-8 w-8 shrink-0 rounded-none border-0 border-l border-input hover:bg-destructive/20 dark:border-input"
-                >
-                  <XIcon className="size-4" />
-                </Button>
-              </div>
-            </Field>
-          ) : (
-            <SelectField
-              label="Artist"
-              placeholder={
-                isLoadingArtists
-                  ? 'Loading...'
-                  : artists.length === 0
-                    ? 'Create or select artist'
-                    : 'Select artist'
-              }
-              value={formData.artistId}
-              options={artistSelectOptions}
-              disabled={isLoadingArtists}
-              onChange={onArtistIdChange}
-              onBlur={() => {}}
+        <div className="space-y-2">
+          {hasOnlyPendingArtists ? (
+            <ArtistPendingOnlyNotice
+              onClearAll={() => onArtistSelectionChange(LIBRARY_ALBUM_ARTIST_NONE_VALUE)}
             />
-          )}
-          {!isLoadingArtists && artists.length === 0 && !isStagedNewArtistSelected && (
+          ) : null}
+          <LibraryAlbumArtistPicker
+            selectedArtistIds={formData.artistIds}
+            artists={artists}
+            pendingArtists={pendingArtists}
+            isLoading={isLoadingArtists}
+            disabled={isLoadingArtists}
+            nonePlaceholder={artists.length === 0 ? 'No artists or create new' : 'No artists'}
+            onSelect={onArtistSelectionChange}
+          />
+          {formData.artistIds.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {artistIdsForChips.map((aid) => {
+                const pending = pendingArtists.find((p) => p.id === aid);
+                const a = artists.find((x) => x.id === aid);
+                const label = pending ? `${pending.name} (new)` : (a?.name ?? aid);
+                const isNewArtist = isLocalPendingArtistId(aid);
+                return (
+                  <Button
+                    key={aid}
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className={cn(
+                      'h-7 gap-1 pr-1 pl-2 text-xs font-normal',
+                      isNewArtist &&
+                        'border border-emerald-600/45 bg-emerald-500/15 text-emerald-950 hover:bg-emerald-500/25 dark:border-emerald-500/40 dark:bg-emerald-950/55 dark:text-emerald-100 dark:hover:bg-emerald-900/45',
+                    )}
+                    onClick={() => onRemoveArtistId(aid)}
+                    aria-label={`Remove ${label}`}
+                  >
+                    <span className="max-w-[10rem] truncate">{label}</span>
+                    <XIcon className="size-3.5 shrink-0 opacity-70" />
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
+          {!isLoadingArtists && artists.length === 0 && formData.artistIds.length === 0 && (
             <p className="text-xs text-muted-foreground">
               Choose <span className="font-medium text-foreground">Create new artist…</span> above,
               or{' '}
@@ -443,5 +406,44 @@ export function LibraryAlbumMetadataSection({
         </div>
       </div>
     </div>
+  );
+}
+
+function ArtistPendingOnlyNotice({ onClearAll }: { onClearAll: () => void }) {
+  const noticeId = useId();
+  return (
+    <Field>
+      <FieldLabel className="sr-only" htmlFor={noticeId}>
+        Draft artists notice
+      </FieldLabel>
+      <div className="flex w-full overflow-visible rounded-lg border border-input bg-background dark:bg-input/30">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              id={noticeId}
+              className="inline-flex min-h-8 min-w-0 flex-1 cursor-default items-center px-2.5 py-1.5 text-xs text-muted-foreground"
+              tabIndex={0}
+            >
+              Selected artists are drafts not in your library yet. Remove a draft from the chips
+              above to change your selection.
+            </span>
+          </TooltipTrigger>
+          <TooltipContent sideOffset={4} className="max-w-xs">
+            Create the album to save these artists to your library, or clear drafts to pick existing
+            artists.
+          </TooltipContent>
+        </Tooltip>
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          aria-label="Clear all draft artists"
+          onClick={onClearAll}
+          className="h-8 w-8 shrink-0 rounded-none border-0 border-l border-input hover:bg-destructive/20 dark:border-input"
+        >
+          <XIcon className="size-4" />
+        </Button>
+      </div>
+    </Field>
   );
 }

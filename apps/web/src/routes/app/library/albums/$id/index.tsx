@@ -21,13 +21,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
-import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import {
   albumTypeDisplayName,
   buildGenreMiddleSegment,
   formatAlbumReleaseDateSegment,
   genreNamesFromAlbumGenres,
 } from '@/lib/library/albumDetailMeta';
+import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
   DiscIcon,
@@ -174,18 +175,22 @@ function RouteComponent() {
               {album.name}
             </h2>
             <div className="flex items-center gap-1.5 text-sm text-stone-400 font-medium">
-              {album.artists?.map((artist, i) => (
-                <span key={artist.id} className="flex items-center">
-                  {i > 0 && <span className="mr-1.5">•</span>}
-                  <Link
-                    to="/app/library/artists/$id"
-                    params={{ id: artist.id }}
-                    className="hover:text-primary transition-colors hover:underline"
-                  >
-                    {artist.name}
-                  </Link>
-                </span>
-              ))}
+              {album.artists && album.artists.length > 0 ? (
+                album.artists.map((artist, i) => (
+                  <span key={artist.id} className="flex items-center">
+                    {i > 0 && <span className="mr-1.5">•</span>}
+                    <Link
+                      to="/app/library/artists/$id"
+                      params={{ id: artist.id }}
+                      className="hover:text-primary transition-colors hover:underline"
+                    >
+                      {artist.name}
+                    </Link>
+                  </span>
+                ))
+              ) : (
+                <span className="text-stone-400">{UNKNOWN_ARTIST_LABEL}</span>
+              )}
               {album.tracks && album.tracks.length > 0 && (
                 <>
                   <span className="mx-1.5">•</span>

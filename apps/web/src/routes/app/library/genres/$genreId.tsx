@@ -12,10 +12,11 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
-import { useLibraryGenre } from '@/hooks/api/library-genres/useLibraryGenre';
 import { useLibraryAlbums } from '@/hooks/api/library-albums/useLibraryAlbums';
+import { useLibraryGenre } from '@/hooks/api/library-genres/useLibraryGenre';
 import { useLibraryTracks } from '@/hooks/api/library-tracks/useLibraryTracks';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import type { ZodLibraryAlbumInfer, ZodTrack } from '@repo/contracts';
@@ -136,7 +137,11 @@ function GenreDetail() {
                 key={item.id}
                 id={item.album?.id ?? item.albumId}
                 title={item.album?.name ?? ''}
-                subtitle={item.album?.artists?.map((a) => a.name).join(', ')}
+                subtitle={
+                  item.album?.artists?.length
+                    ? item.album.artists.map((a) => a.name).join(', ')
+                    : UNKNOWN_ARTIST_LABEL
+                }
                 coverUrl={item.album?.cover?.url ?? undefined}
                 link="/app/library/albums/$id"
               />

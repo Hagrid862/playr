@@ -5,6 +5,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Spinner } from '@/components/ui/spinner';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { cn } from '@/lib/utils';
 import { PencilIcon, PlayIcon, QueueIcon, TrashIcon, WarningIcon } from '@phosphor-icons/react';
 import type { ZodArtist } from '@repo/contracts';
@@ -114,11 +115,9 @@ export function SongCard({
                 </span>
               )}
             </div>
-            {artists && artists.length > 0 && (
-              <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
-                {artists.map((a) => a.name).join(', ')}
-              </div>
-            )}
+            <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
+              {artists?.length ? artists.map((a) => a.name).join(', ') : UNKNOWN_ARTIST_LABEL}
+            </div>
           </div>
 
           <div className="text-sm font-bold text-stone-500 tabular-nums group-hover:text-stone-300">

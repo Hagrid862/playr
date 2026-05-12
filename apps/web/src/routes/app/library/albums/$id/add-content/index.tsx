@@ -1,6 +1,7 @@
 import { AlbumAudioDropCard } from '@/components/library/albums/create/AlbumAudioDropCard';
 import { CreateLibraryGenreNameModal } from '@/components/library/albums/create/CreateLibraryGenreNameModal';
 import { LibraryAlbumFromFilesTracksSection } from '@/components/library/albums/create/LibraryAlbumFromFilesTracksSection';
+import { makeLocalPendingGenreId } from '@/components/library/albums/create/pendingLibraryGenre';
 import { CoverSelectionBanner } from '@/components/library/tracks/bulk/CoverSelectionBanner';
 import { useBulkTrackUpload } from '@/components/library/tracks/bulk/useBulkTrackUpload';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -12,7 +13,7 @@ import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUpload
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
 import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
-import { makeLocalPendingGenreId } from '@/components/library/albums/create/pendingLibraryGenre';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import type { BulkTrackItem } from '@/lib/types/library';
 import type { ZodAlbumInfer, ZodGenreInfer } from '@repo/contracts';
 import { CircleNotchIcon, DiscIcon, InfoIcon, UploadSimpleIcon } from '@phosphor-icons/react';
@@ -208,7 +209,9 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
                   {album.name}
                 </p>
                 <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                  {album.artists?.map((a) => a.name).join(', ') ?? 'Unknown artist'}
+                  {album.artists?.length
+                    ? album.artists.map((a) => a.name).join(', ')
+                    : UNKNOWN_ARTIST_LABEL}
                 </p>
               </div>
             </div>

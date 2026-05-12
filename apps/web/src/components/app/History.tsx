@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { ArrowLeftIcon, MusicNotesIcon, PlayIcon, XIcon } from '@phosphor-icons/react';
@@ -89,7 +90,7 @@ export function History({ isVisible, onBack }: HistoryProps) {
                     {track.track?.title}
                   </div>
                   <div className="text-xs text-white/50 truncate">
-                    {track.track?.artists?.join(', ')}
+                    {track.track?.artists?.join(', ') || UNKNOWN_ARTIST_LABEL}
                   </div>
                 </div>
                 <div className="text-xs text-white/30 tabular-nums">
