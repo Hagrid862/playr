@@ -1,6 +1,7 @@
 import { AlbumType } from "@repo/db";
 import { z } from "zod";
 import { zodDateTimeNullable } from "../../utils";
+import { libraryArtistIdsSchema } from "../../utils/artist-ids";
 import { libraryGenreIdsSchema } from "../../utils/genre-ids";
 
 export const UpdateLibraryAlbumRequestSchema = z.object({
@@ -18,6 +19,8 @@ export const UpdateLibraryAlbumRequestSchema = z.object({
   coverId: z.string().nullable().optional(),
   /** When set (including `[]`), replaces all album genres. Omit to leave genres unchanged. */
   genreIds: libraryGenreIdsSchema.optional(),
+  /** When set (including `[]`), replaces all album artist credits. Omit to leave artists unchanged. */
+  artistIds: libraryArtistIdsSchema.optional(),
 });
 
 export type UpdateLibraryAlbumRequest = z.infer<
