@@ -71,7 +71,7 @@ describe('CreateAlbumForm', () => {
       name: '',
       description: '',
       type: AlbumType.album,
-      artistId: 'artist-123',
+      artistIds: ['artist-123'],
       releaseDate: null,
     },
     isLoading: false,

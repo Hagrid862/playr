@@ -93,6 +93,7 @@ function createTracksMock(
     prepareTracksSubmit: vi.fn(() => ({ ok: true as const, payload: emptyPayload })),
     hasTrackDraftChanges: false,
     updateAllTracksGenres: vi.fn(),
+    updateAllTracksArtists: vi.fn(),
     ...overrides,
   };
 }

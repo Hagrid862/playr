@@ -1205,4 +1205,112 @@ describe('useEditAlbumTracks', () => {
       expect(result.current.stagedTracks[0]?.genreIds).toEqual(['seeded']);
     });
   });
+
+  describe('updateAllTracksArtists', () => {
+    it('updates drafts when artist id lists match old ids (order-insensitive)', () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      act(() => {
+        result.current.updateDraft('track-1', { artistIds: ['b', 'a'] });
+      });
+
+      act(() => {
+        result.current.updateAllTracksArtists(['a', 'b'], ['x']);
+      });
+
+      expect(result.current.draftById['track-1']?.artistIds).toEqual(['x']);
+    });
+
+    it('updates staged tracks seeded from album artists when old ids match', async () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      const list = new DataTransfer();
+      list.items.add(new File(['x'], 'z.mp3', { type: 'audio/mp3' }));
+
+      await act(async () => {
+        result.current.addAudioFiles(list.files);
+      });
+
+      await waitFor(() => expect(result.current.stagedTracks.length).toBe(1));
+
+      act(() => {
+        result.current.updateAllTracksArtists(['artist-main'], ['next-artist']);
+      });
+
+      expect(result.current.stagedTracks[0]?.artistIds).toEqual(['next-artist']);
+    });
+
+    it('does not mutate drafts when old artist id set matches no draft', () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      act(() => {
+        result.current.updateDraft('track-1', { artistIds: ['only-one'] });
+      });
+
+      const snapshot = result.current.draftById['track-1'];
+
+      act(() => {
+        result.current.updateAllTracksArtists(['unrelated'], ['z']);
+      });
+
+      expect(result.current.draftById['track-1']).toEqual(snapshot);
+    });
+
+    it('does not change staged rows when their artists do not match old ids', async () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      const list = new DataTransfer();
+      list.items.add(new File(['x'], 'solo.mp3', { type: 'audio/mp3' }));
+
+      await act(async () => {
+        result.current.addAudioFiles(list.files);
+      });
+
+      await waitFor(() => expect(result.current.stagedTracks.length).toBe(1));
+
+      act(() => {
+        result.current.updateStagedTrack(result.current.stagedTracks[0]!.id, {
+          artistIds: ['custom-artist'],
+        });
+      });
+
+      const stagedBefore = result.current.stagedTracks[0];
+
+      act(() => {
+        result.current.updateAllTracksArtists(['other'], ['z']);
+      });
+
+      expect(result.current.stagedTracks[0]).toEqual(stagedBefore);
+    });
+
+    it('updates staged rows with undefined artistIds when they match an empty old id set', async () => {
+      const album = buildAlbumWithTrack();
+      const { result } = customRenderHook(() => useEditAlbumTracks(album));
+
+      const list = new DataTransfer();
+      list.items.add(new File(['x'], 'solo.mp3', { type: 'audio/mp3' }));
+
+      await act(async () => {
+        result.current.addAudioFiles(list.files);
+      });
+
+      await waitFor(() => expect(result.current.stagedTracks.length).toBe(1));
+
+      const id = result.current.stagedTracks[0]!.id;
+
+      act(() => {
+        result.current.updateStagedTrack(id, { artistIds: undefined });
+      });
+
+      act(() => {
+        result.current.updateAllTracksArtists([], ['seeded-artist']);
+      });
+
+      expect(result.current.stagedTracks[0]?.artistIds).toEqual(['seeded-artist']);
+    });
+  });
 });

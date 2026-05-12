@@ -1,4 +1,5 @@
 import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
 import { describe, expect, it, vi } from 'vitest';
 import { playbackTrackToQueueItem, zodTrackToPlaybackTrack } from './playback-mappers';
@@ -89,7 +90,7 @@ describe('playback-mappers', () => {
 
       expect(result.title).toBe('1');
       expect(result.albumName).toBe('Unknown album');
-      expect(result.artists).toEqual([]);
+      expect(result.artists).toEqual([UNKNOWN_ARTIST_LABEL]);
       expect(result.albumArt).toBeNull();
       expect(result.albumId).toBe('1');
     });
@@ -126,6 +127,22 @@ describe('playback-mappers', () => {
 
       const result = zodTrackToPlaybackTrack(track);
       expect(result.artists).toEqual(['Artist']);
+    });
+
+    it('uses unknown artist label when all artist names are empty', () => {
+      const track: ZodTrack = {
+        ...(trackBuilder({
+          id: '1',
+          title: 'Title',
+          duration: 120,
+          explicit: false,
+          visibility: 'public',
+        }) as ZodTrack),
+        artists: [artistBuilder({ name: '' }), artistBuilder({ name: '   ' })],
+      };
+
+      const result = zodTrackToPlaybackTrack(track);
+      expect(result.artists).toEqual([UNKNOWN_ARTIST_LABEL]);
     });
   });
 });

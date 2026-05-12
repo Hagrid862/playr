@@ -1,5 +1,6 @@
 import { extractCoverFromAudioFile } from '@/lib/audio/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { albumBuilder, artistBuilder } from '@repo/testing/builders';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
@@ -94,7 +95,7 @@ describe('useBulkTrackUpload', () => {
         result.current.addFiles([file] as unknown as FileList);
       });
       expect(cleanFilenameToTitle).toHaveBeenCalledWith('a.mp3', {
-        artists: [],
+        artists: [UNKNOWN_ARTIST_LABEL],
         album: mockAlbum.name,
       });
     });

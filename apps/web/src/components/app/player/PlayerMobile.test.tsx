@@ -1,3 +1,4 @@
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { PlaybackTrack } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -30,7 +31,7 @@ describe('PlayerMobile', () => {
     it('renders default empty state', () => {
       customRender(<PlayerMobile />);
       expect(screen.getByText('No track selected')).toBeInTheDocument();
-      expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
+      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
     });
 
     it('renders track details with cover', () => {

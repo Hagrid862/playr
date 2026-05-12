@@ -1,4 +1,5 @@
 import { customRender } from '@repo/testing/web';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SongCard } from './SongCard';
@@ -49,6 +50,14 @@ describe('SongCard', () => {
         />,
       );
       expect(screen.getByText('Artist 1, Artist 2')).toBeInTheDocument();
+    });
+
+    it('renders unknown artist label when artists are missing or empty', () => {
+      const { rerender } = customRender(<SongCard {...getDefaultProps()} artists={undefined} />);
+      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
+
+      rerender(<SongCard {...getDefaultProps()} artists={[]} />);
+      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
     });
 
     it('renders track number and play icon structure', () => {

@@ -1,4 +1,5 @@
 import { LibraryAlbumMetadataSection } from '@/components/library/albums/create/LibraryAlbumMetadataSection';
+import { LIBRARY_ALBUM_ARTIST_NONE_VALUE } from '@/components/library/albums/create/libraryAlbumArtistConstants';
 import type { LibraryAlbumFromFilesFormData } from '@/components/library/albums/create/useLibraryAlbumFromFilesForm';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { customRender } from '@repo/testing/web';
@@ -35,15 +36,15 @@ const baseForm: LibraryAlbumFromFilesFormData = {
   name: 'Test album',
   description: '',
   type: 'album',
-  artistId: 'a1',
+  artistIds: ['a1'],
   genreIds: [],
   releaseDate: null,
 };
 
 describe('LibraryAlbumMetadataSection', () => {
   const onUpdate = vi.fn();
-  const onArtistIdChange = vi.fn();
-  const onClearStagedArtist = vi.fn();
+  const onArtistSelectionChange = vi.fn();
+  const onRemoveArtistId = vi.fn();
   const onManualCoverFile = vi.fn();
   const onRemoveCover = vi.fn();
 
@@ -77,11 +78,6 @@ describe('LibraryAlbumMetadataSection', () => {
     ...overrides,
   });
 
-  const artistOptions = [
-    { value: '__create_new_artist__', label: '+ Create new artist…' },
-    { value: 'a1', label: 'Alpha' },
-  ];
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -91,13 +87,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -106,7 +101,7 @@ describe('LibraryAlbumMetadataSection', () => {
 
     fireEvent.blur(screen.getByLabelText(/album title/i));
     fireEvent.blur(screen.getByLabelText(/description/i));
-    fireEvent.blur(screen.getByRole('combobox', { name: /artist/i }));
+    fireEvent.blur(screen.getByRole('button', { name: /^artists$/i }));
     fireEvent.blur(screen.getByRole('combobox', { name: /album type/i }));
     fireEvent.blur(screen.getByRole('button', { name: /pick a date/i }));
   });
@@ -116,13 +111,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -150,13 +144,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -180,13 +173,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={{ ...baseForm, genreIds: ['g1'] }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -197,43 +189,160 @@ describe('LibraryAlbumMetadataSection', () => {
     expect(onRemoveGenreId).toHaveBeenCalledWith('g1');
   });
 
-  it('shows staged-artist readonly row with clear action', async () => {
+  it('shows draft-only notice when every selected artist id is a local pending draft', async () => {
     const user = userEvent.setup();
+    const localA = 'local:pending:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    const localB = 'local:pending:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
     renderWithTooltip(
       <LibraryAlbumMetadataSection
-        formData={{ ...baseForm, artistId: 'local:pending:x' }}
+        formData={{ ...baseForm, artistIds: [localA, localB] }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected
+        pendingArtists={[
+          { id: localA, name: 'Draft A' },
+          { id: localB, name: 'Draft B' },
+        ]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
       />,
     );
 
-    expect(screen.getByLabelText(/remove draft artist/i)).toBeInTheDocument();
-    fireEvent.blur(screen.getByRole('combobox', { name: /artist/i }));
-    await user.click(screen.getByLabelText(/remove draft artist/i));
-    expect(onClearStagedArtist).toHaveBeenCalled();
+    expect(
+      screen.getByText(/selected artists are drafts not in your library yet/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /clear all draft artists/i }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /clear all draft artists/i }));
+    expect(onArtistSelectionChange).toHaveBeenCalledWith(LIBRARY_ALBUM_ARTIST_NONE_VALUE);
+  });
+
+  it('lists pending artist chips before library artists when both are selected', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{ ...baseForm, artistIds: ['a1', 'local:pending:x'] }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        isLoadingArtists={false}
+        pendingArtists={[{ id: 'local:pending:x', name: 'Draft' }]}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
+      />,
+    );
+
+    const chipLabels = screen
+      .getAllByRole('button', { name: /^Remove / })
+      .map((el) => el.getAttribute('aria-label'));
+    expect(chipLabels).toEqual(['Remove Draft (new)', 'Remove Alpha']);
+  });
+
+  it('lists pending artist chips before library artists when pending is listed first in form data', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{ ...baseForm, artistIds: ['local:pending:x', 'a1'] }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        isLoadingArtists={false}
+        pendingArtists={[{ id: 'local:pending:x', name: 'Draft' }]}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
+      />,
+    );
+
+    const chipLabels = screen
+      .getAllByRole('button', { name: /^Remove / })
+      .map((el) => el.getAttribute('aria-label'));
+    expect(chipLabels).toEqual(['Remove Draft (new)', 'Remove Alpha']);
+  });
+
+  it('uses the raw id as chip label when an artist id is not in the library list', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{ ...baseForm, artistIds: ['not-in-artists'] }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        isLoadingArtists={false}
+        pendingArtists={[]}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Remove not-in-artists' })).toBeInTheDocument();
+  });
+
+  it('uses the raw id as chip label when a genre id is not in the genres list', () => {
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{ ...baseForm, artistIds: ['a1'], genreIds: ['not-in-genres'] }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        isLoadingArtists={false}
+        pendingArtists={[]}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Remove not-in-genres' })).toBeInTheDocument();
+  });
+
+  it('removes a pending artist via chip', async () => {
+    const user = userEvent.setup();
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{ ...baseForm, artistIds: ['local:pending:x'] }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        isLoadingArtists={false}
+        pendingArtists={[{ id: 'local:pending:x', name: 'Draft' }]}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /remove draft/i }));
+    expect(onRemoveArtistId).toHaveBeenCalledWith('local:pending:x');
   });
 
   it('shows add-artist hint when the library has no server artists', () => {
     renderWithTooltip(
       <LibraryAlbumMetadataSection
-        formData={{ ...baseForm, artistId: '' }}
+        formData={{ ...baseForm, artistIds: [] }}
         artists={[]}
-        artistSelectOptions={[artistOptions[0]]}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -249,13 +358,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -279,13 +387,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -310,13 +417,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -342,13 +448,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -366,13 +471,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -399,13 +503,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -423,13 +526,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -453,13 +555,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={{ ...baseForm, name: '' }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl="blob:http://local/cover"
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -469,68 +570,47 @@ describe('LibraryAlbumMetadataSection', () => {
     expect(screen.getByAltText('Cover preview')).toBeInTheDocument();
   });
 
-  it('shows staged artist placeholder Loading while artists load and selection is empty', () => {
+  it('shows artist picker loading state while artists load', () => {
     renderWithTooltip(
       <LibraryAlbumMetadataSection
-        formData={{ ...baseForm, artistId: '' }}
+        formData={{ ...baseForm, artistIds: [] }}
         artists={[]}
-        artistSelectOptions={[artistOptions[0]]}
-        isLoadingArtists
-        isStagedNewArtistSelected
+        pendingArtists={[]}
+        isLoadingArtists={true}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
       />,
     );
 
-    expect(screen.getByLabelText(/remove draft artist/i)).toBeInTheDocument();
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    const trigger = screen.getByLabelText(/^artists$/i);
+    expect(trigger).toBeDisabled();
+    expect(trigger).toHaveTextContent(/loading/i);
   });
 
-  it('shows staged Create or select artist when no server artists and selection is empty', () => {
+  it('shows empty artist placeholder when none selected', () => {
     renderWithTooltip(
       <LibraryAlbumMetadataSection
-        formData={{ ...baseForm, artistId: '' }}
-        artists={[]}
-        artistSelectOptions={[artistOptions[0]]}
-        isLoadingArtists={false}
-        isStagedNewArtistSelected
-        coverPreviewUrl={null}
-        onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
-        onManualCoverFile={onManualCoverFile}
-        onRemoveCover={onRemoveCover}
-        {...genrePropsFor()}
-      />,
-    );
-
-    expect(screen.getByText('Create or select artist')).toBeInTheDocument();
-  });
-
-  it('shows staged Select artist placeholder when server artists exist and selection is empty', () => {
-    renderWithTooltip(
-      <LibraryAlbumMetadataSection
-        formData={{ ...baseForm, artistId: '' }}
+        formData={{ ...baseForm, artistIds: [] }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
+        pendingArtists={[]}
         isLoadingArtists={false}
-        isStagedNewArtistSelected
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
       />,
     );
 
-    expect(screen.getByText('Select artist')).toBeInTheDocument();
+    const trigger = screen.getByLabelText(/^artists$/i);
+    expect(trigger).toHaveTextContent(/no artists/i);
   });
 
   it('shows preview image and remove when coverPreviewUrl is set', () => {
@@ -538,13 +618,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={{ ...baseForm, name: 'My LP' }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl="blob:http://local/cover"
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -562,13 +641,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl="blob:http://local/cover"
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -579,40 +657,18 @@ describe('LibraryAlbumMetadataSection', () => {
     expect(onRemoveCover).toHaveBeenCalled();
   });
 
-  it('shows loading placeholder on artist select while loading', () => {
-    renderWithTooltip(
-      <LibraryAlbumMetadataSection
-        formData={{ ...baseForm, artistId: '' }}
-        artists={[]}
-        artistSelectOptions={[artistOptions[0]]}
-        isLoadingArtists
-        isStagedNewArtistSelected={false}
-        coverPreviewUrl={null}
-        onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
-        onManualCoverFile={onManualCoverFile}
-        onRemoveCover={onRemoveCover}
-        {...genrePropsFor()}
-      />,
-    );
-
-    expect(screen.getByRole('combobox', { name: /artist/i })).toHaveTextContent(/loading/i);
-  });
-
   it('updates description through onUpdate', async () => {
     const user = userEvent.setup();
     renderWithTooltip(
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -632,13 +688,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -657,13 +712,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -681,13 +735,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -709,13 +762,12 @@ describe('LibraryAlbumMetadataSection', () => {
         <LibraryAlbumMetadataSection
           formData={{ ...baseForm, releaseDate: selected }}
           artists={[{ id: 'a1', name: 'Alpha' }]}
-          artistSelectOptions={artistOptions}
           isLoadingArtists={false}
-          isStagedNewArtistSelected={false}
+          pendingArtists={[]}
           coverPreviewUrl={null}
           onUpdate={onUpdate}
-          onArtistIdChange={onArtistIdChange}
-          onClearStagedArtist={onClearStagedArtist}
+          onArtistSelectionChange={onArtistSelectionChange}
+          onRemoveArtistId={onRemoveArtistId}
           onManualCoverFile={onManualCoverFile}
           onRemoveCover={onRemoveCover}
           {...genrePropsFor()}
@@ -735,13 +787,12 @@ describe('LibraryAlbumMetadataSection', () => {
         <LibraryAlbumMetadataSection
           formData={baseForm}
           artists={[{ id: 'a1', name: 'Alpha' }]}
-          artistSelectOptions={artistOptions}
           isLoadingArtists={false}
-          isStagedNewArtistSelected={false}
+          pendingArtists={[]}
           coverPreviewUrl="blob:x"
           onUpdate={onUpdate}
-          onArtistIdChange={onArtistIdChange}
-          onClearStagedArtist={onClearStagedArtist}
+          onArtistSelectionChange={onArtistSelectionChange}
+          onRemoveArtistId={onRemoveArtistId}
           onManualCoverFile={onManualCoverFile}
           onRemoveCover={onRemoveCover}
           {...genrePropsFor()}
@@ -767,13 +818,12 @@ describe('LibraryAlbumMetadataSection', () => {
         <LibraryAlbumMetadataSection
           formData={baseForm}
           artists={[{ id: 'a1', name: 'Alpha' }]}
-          artistSelectOptions={artistOptions}
           isLoadingArtists={false}
-          isStagedNewArtistSelected={false}
+          pendingArtists={[]}
           coverPreviewUrl={null}
           onUpdate={onUpdate}
-          onArtistIdChange={onArtistIdChange}
-          onClearStagedArtist={onClearStagedArtist}
+          onArtistSelectionChange={onArtistSelectionChange}
+          onRemoveArtistId={onRemoveArtistId}
           onManualCoverFile={onManualCoverFile}
           onRemoveCover={onRemoveCover}
           {...genrePropsFor()}
@@ -789,13 +839,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -822,13 +871,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -847,13 +895,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl="blob:http://local/bg"
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -869,13 +916,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor()}
@@ -895,16 +941,16 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={{
           ...baseForm,
+          artistIds: [],
           genreIds: ['g1', 'local:pending:abc123'],
         }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor({
@@ -913,9 +959,10 @@ describe('LibraryAlbumMetadataSection', () => {
       />,
     );
 
-    const removeButtons = screen.getAllByRole('button', { name: /^Remove /i });
-    expect(removeButtons[0]).toHaveAccessibleName(/Fresh Genre/);
-    expect(removeButtons[1]).toHaveAccessibleName(/Rock/);
+    expect(
+      screen.getByRole('button', { name: 'Remove Fresh Genre (new)' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Rock' })).toBeInTheDocument();
   });
 
   it('orders pending before server when the pending id appears first in genreIds', () => {
@@ -923,16 +970,16 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={{
           ...baseForm,
+          artistIds: [],
           genreIds: ['local:pending:abc123', 'g1'],
         }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor({
@@ -941,9 +988,10 @@ describe('LibraryAlbumMetadataSection', () => {
       />,
     );
 
-    const removeButtons = screen.getAllByRole('button', { name: /^Remove /i });
-    expect(removeButtons[0]).toHaveAccessibleName(/Fresh Genre/);
-    expect(removeButtons[1]).toHaveAccessibleName(/Rock/);
+    expect(
+      screen.getByRole('button', { name: 'Remove Fresh Genre (new)' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Rock' })).toBeInTheDocument();
   });
 
   it('renders multiple pending genre chips without reordering when both are new', () => {
@@ -951,16 +999,16 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={{
           ...baseForm,
+          artistIds: [],
           genreIds: ['local:pending:first', 'local:pending:second'],
         }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor({
@@ -972,7 +1020,8 @@ describe('LibraryAlbumMetadataSection', () => {
       />,
     );
 
-    expect(screen.getAllByRole('button', { name: /^Remove /i })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Remove Alpha New (new)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Beta New (new)' })).toBeInTheDocument();
   });
 
   it('renders chips for two library genres without pending reordering', () => {
@@ -991,23 +1040,24 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={{
           ...baseForm,
+          artistIds: [],
           genreIds: ['g1', 'g2'],
         }}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor({ genres: [testGenre, jazz] })}
       />,
     );
 
-    expect(screen.getAllByRole('button', { name: /^Remove /i })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Remove Rock' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Jazz' })).toBeInTheDocument();
   });
 
   it('uses the empty-genres placeholder when the library has no genres', () => {
@@ -1015,13 +1065,12 @@ describe('LibraryAlbumMetadataSection', () => {
       <LibraryAlbumMetadataSection
         formData={baseForm}
         artists={[{ id: 'a1', name: 'Alpha' }]}
-        artistSelectOptions={artistOptions}
         isLoadingArtists={false}
-        isStagedNewArtistSelected={false}
+        pendingArtists={[]}
         coverPreviewUrl={null}
         onUpdate={onUpdate}
-        onArtistIdChange={onArtistIdChange}
-        onClearStagedArtist={onClearStagedArtist}
+        onArtistSelectionChange={onArtistSelectionChange}
+        onRemoveArtistId={onRemoveArtistId}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
         {...genrePropsFor({ genres: [] })}
