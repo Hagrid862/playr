@@ -8,10 +8,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditAlbumForm } from './EditAlbumForm';
 import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
-import {
-  useEditAlbumForm,
-  useEditAlbumForm as useEditAlbumFormMock,
-} from './useEditAlbumForm';
+import { useEditAlbumForm, useEditAlbumForm as useEditAlbumFormMock } from './useEditAlbumForm';
 
 type UseEditAlbumFormReturn = ReturnType<typeof useEditAlbumForm>;
 

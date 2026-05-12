@@ -171,7 +171,9 @@ test.describe("Queue Management", () => {
       ),
     ).toBeHidden({ timeout: 20000 });
     await page.getByLabel("Track Title").fill(track2);
-    const uploadTracks = page.getByRole("button", { name: /Upload \d+ tracks?/ });
+    const uploadTracks = page.getByRole("button", {
+      name: /Upload \d+ tracks?/,
+    });
     await expect(uploadTracks).toBeEnabled({ timeout: 30000 });
     await uploadTracks.click();
 

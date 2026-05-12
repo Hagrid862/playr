@@ -136,9 +136,9 @@ describe('buildPendingGenreLocalToServerMap', () => {
   });
 
   it('throws when pending id is not listed in pendingGenres', async () => {
-    await expect(
-      buildPendingGenreLocalToServerMap(new Set([localA]), [], vi.fn()),
-    ).rejects.toThrow('Genre name is missing');
+    await expect(buildPendingGenreLocalToServerMap(new Set([localA]), [], vi.fn())).rejects.toThrow(
+      'Genre name is missing',
+    );
   });
 
   it('throws when create response has no id', async () => {

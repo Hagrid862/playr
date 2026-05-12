@@ -1,5 +1,11 @@
 import { BullModule } from '@nestjs/bullmq';
-import { ExecutionContext, MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  ExecutionContext,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -43,15 +49,13 @@ function throttlingDisabled(): boolean {
         name: 'default',
         ttl: 60000,
         limit: 600,
-        skipIf: (context: ExecutionContext) =>
-          throttlingDisabled() || isAuthRoutePath(context),
+        skipIf: (context: ExecutionContext) => throttlingDisabled() || isAuthRoutePath(context),
       },
       {
         name: 'auth',
         ttl: 60000,
         limit: 10,
-        skipIf: (context: ExecutionContext) =>
-          throttlingDisabled() || !isAuthRoutePath(context),
+        skipIf: (context: ExecutionContext) => throttlingDisabled() || !isAuthRoutePath(context),
       },
     ]),
     BullModule.forRootAsync({
