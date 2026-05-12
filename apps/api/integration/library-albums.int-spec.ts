@@ -148,6 +148,7 @@ describe('LibraryAlbumsController (Integration)', () => {
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.album.findFirst.mockResolvedValue(null); // No conflict
+      prismaMock.client.artist.count.mockResolvedValue(1);
       // create returns Album (without relations by default), but we can mock it returning our full object
       prismaMock.client.album.create.mockResolvedValue(mockAlbum);
       prismaMock.client.libraryAlbum.create.mockResolvedValue(mockLibraryAlbum);
@@ -165,7 +166,7 @@ describe('LibraryAlbumsController (Integration)', () => {
           description: 'Test Description',
           type: 'album',
           releaseDate: new Date().toISOString(),
-          artistId: 'artist-123',
+          artistIds: ['artist-123'],
         })
         .expect(201);
 
@@ -178,6 +179,7 @@ describe('LibraryAlbumsController (Integration)', () => {
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum); // Conflict
+      prismaMock.client.artist.count.mockResolvedValue(1);
 
       // UnitOfWork transaction mock
       prismaMock.mainClient.$transaction.mockImplementation(
@@ -192,7 +194,7 @@ describe('LibraryAlbumsController (Integration)', () => {
           description: 'Test Description',
           type: 'album',
           releaseDate: new Date().toISOString(),
-          artistId: 'artist-123',
+          artistIds: ['artist-123'],
         })
         .expect(409);
     });
