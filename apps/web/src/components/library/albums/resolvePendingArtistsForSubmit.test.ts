@@ -33,9 +33,9 @@ describe('collectPendingArtistIdsFromBulkTracks', () => {
   });
 
   it('ignores tracks without artistIds', () => {
-    expect(
-      collectPendingArtistIdsFromBulkTracks([track(), track({ artistIds: [] })]),
-    ).toEqual(new Set());
+    expect(collectPendingArtistIdsFromBulkTracks([track(), track({ artistIds: [] })])).toEqual(
+      new Set(),
+    );
   });
 
   it('ignores only server artist ids', () => {
@@ -140,9 +140,9 @@ describe('buildPendingArtistLocalToServerMap', () => {
   });
 
   it('throws when pending id is not listed in pendingArtists', async () => {
-    await expect(buildPendingArtistLocalToServerMap(new Set([localA]), [], vi.fn())).rejects.toThrow(
-      'Artist name is missing',
-    );
+    await expect(
+      buildPendingArtistLocalToServerMap(new Set([localA]), [], vi.fn()),
+    ).rejects.toThrow('Artist name is missing');
   });
 
   it('throws when create response has no id', async () => {
@@ -228,7 +228,10 @@ describe('applyPendingArtistMapToEditPayload', () => {
 describe('mergePendingArtistDrafts', () => {
   it('dedupes by id and prefers the first occurrence (album before tracks)', () => {
     const album = [{ id: '1', name: 'From album' }];
-    const trackDrafts = [{ id: '1', name: 'From track' }, { id: '2', name: 'Only tracks' }];
+    const trackDrafts = [
+      { id: '1', name: 'From track' },
+      { id: '2', name: 'Only tracks' },
+    ];
     expect(mergePendingArtistDrafts(album, trackDrafts)).toEqual([
       { id: '1', name: 'From album' },
       { id: '2', name: 'Only tracks' },
@@ -236,6 +239,8 @@ describe('mergePendingArtistDrafts', () => {
   });
 
   it('returns track-only drafts when album is empty', () => {
-    expect(mergePendingArtistDrafts([], [{ id: 'x', name: 'X' }])).toEqual([{ id: 'x', name: 'X' }]);
+    expect(mergePendingArtistDrafts([], [{ id: 'x', name: 'X' }])).toEqual([
+      { id: 'x', name: 'X' },
+    ]);
   });
 });

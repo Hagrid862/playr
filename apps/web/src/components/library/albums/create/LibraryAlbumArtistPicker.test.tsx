@@ -51,7 +51,9 @@ describe('LibraryAlbumArtistPicker', () => {
     renderPicker({
       selectedArtistIds: [],
       artists,
-      pendingArtists: [{ id: 'local:pending:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'Zeta (new)' }],
+      pendingArtists: [
+        { id: 'local:pending:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'Zeta (new)' },
+      ],
     });
 
     await user.click(screen.getByRole('button', { name: /^artists$/i }));
@@ -74,9 +76,7 @@ describe('LibraryAlbumArtistPicker', () => {
     const search = await screen.findByRole('textbox', { name: /search artists/i });
     await user.type(search, 'zzz');
 
-    expect(
-      await screen.findByText(/No artists match “zzz”/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/No artists match “zzz”/)).toBeInTheDocument();
   });
 
   it('closes the popover after choosing No artists', async () => {

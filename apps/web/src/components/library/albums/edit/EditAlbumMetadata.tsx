@@ -99,9 +99,7 @@ export function EditAlbumMetadata({
                   pendingArtists={pendingArtists}
                   isLoading={isLoadingArtists}
                   disabled={isLoadingArtists}
-                  nonePlaceholder={
-                    artists.length === 0 ? 'No artists or create new' : 'No artists'
-                  }
+                  nonePlaceholder={artists.length === 0 ? 'No artists or create new' : 'No artists'}
                   onSelect={onArtistSelect}
                 />
                 {field.state.value.length > 0 ? (

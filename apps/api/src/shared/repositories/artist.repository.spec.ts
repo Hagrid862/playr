@@ -373,6 +373,30 @@ describe('ArtistRepository', () => {
     });
   });
 
+  describe('countActiveOwnedByUser', () => {
+    it('returns 0 without querying when artistIds is empty', async () => {
+      const result = await repository.countActiveOwnedByUser([], 'user-1');
+
+      expect(result).toBe(0);
+      expect(mockPrismaClient.artist.count).not.toHaveBeenCalled();
+    });
+
+    it('counts active artists owned by the user for the given ids', async () => {
+      mockPrismaClient.artist.count.mockResolvedValue(2);
+
+      const result = await repository.countActiveOwnedByUser(['artist-1', 'artist-2'], 'user-1');
+
+      expect(result).toBe(2);
+      expect(mockPrismaClient.artist.count).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['artist-1', 'artist-2'] },
+          deletedAt: null,
+          access: { some: { userId: 'user-1', role: AccessRole.owner } },
+        },
+      });
+    });
+  });
+
   describe('create', () => {
     it('should create artist without include', async () => {
       const createInput = { name: 'New Artist' } as Prisma.ArtistCreateInput;

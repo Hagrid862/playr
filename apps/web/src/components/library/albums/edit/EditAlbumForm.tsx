@@ -26,7 +26,7 @@ import {
   buildPendingGenreLocalToServerMap,
   collectPendingGenreIdsForAlbumSubmit,
 } from '@/components/library/albums/resolvePendingGenresForSubmit';
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   LIBRARY_ALBUM_GENRE_CREATE_VALUE,
   LIBRARY_ALBUM_GENRE_NONE_VALUE,
@@ -202,10 +202,6 @@ export function EditAlbumForm({
     () => pendingAlbumArtists.filter((p) => artistIds.includes(p.id)),
     [pendingAlbumArtists, artistIds],
   );
-
-  useEffect(() => {
-    setPendingAlbumArtists((prev) => prev.filter((p) => artistIds.includes(p.id)));
-  }, [artistIds]);
 
   const handleArtistSelectionChange = useCallback(
     (value: string) => {

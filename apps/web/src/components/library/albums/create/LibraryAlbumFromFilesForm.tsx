@@ -103,11 +103,11 @@ export function LibraryAlbumFromFilesForm({
 
   useEffect(() => {
     setPendingGenres((prev) => prev.filter((p) => formData.genreIds.includes(p.id)));
-  }, [formData.genreIds]);
+  }, [formData.genreIds, setPendingGenres]);
 
   useEffect(() => {
     setPendingArtists((prev) => prev.filter((p) => formData.artistIds.includes(p.id)));
-  }, [formData.artistIds]);
+  }, [formData.artistIds, setPendingArtists]);
 
   useEffect(() => {
     if (isLoadingArtists) return;

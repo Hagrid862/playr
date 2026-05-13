@@ -98,7 +98,10 @@ describe('CreateLibraryAlbumHandler', () => {
     const result = await handler.execute(command);
 
     expect(result.id).toBe(mockAlbumId);
-    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith([mockArtistId], mockUserId);
+    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith(
+      [mockArtistId],
+      mockUserId,
+    );
     expect(albumRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         artists: { connect: [{ id: mockArtistId }] },

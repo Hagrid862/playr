@@ -40,7 +40,7 @@ export class RedisModule implements OnModuleDestroy {
     try {
       await this.redis.quit();
       this.logger.log('Redis connection closed gracefully');
-    } catch (_error) {
+    } catch {
       this.logger.warn('Redis quit failed, forcing disconnect');
       this.redis.disconnect();
     }

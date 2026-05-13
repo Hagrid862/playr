@@ -79,21 +79,14 @@ export function LibraryAlbumArtistPicker({
   }, []);
 
   const filteredPending = useMemo(() => {
-    return pendingArtists
-      .filter((p) => matchesArtistSearch(search, p.name))
-      .sort(sortByName);
+    return pendingArtists.filter((p) => matchesArtistSearch(search, p.name)).sort(sortByName);
   }, [pendingArtists, search]);
 
   const filteredLibrary = useMemo(() => {
     return artists.filter((a) => matchesArtistSearch(search, a.name)).sort(sortByName);
   }, [artists, search]);
 
-  const displayValue = triggerSummary(
-    selectedArtistIds,
-    artists,
-    pendingArtists,
-    nonePlaceholder,
-  );
+  const displayValue = triggerSummary(selectedArtistIds, artists, pendingArtists, nonePlaceholder);
 
   const handlePick = useCallback(
     (value: string) => {

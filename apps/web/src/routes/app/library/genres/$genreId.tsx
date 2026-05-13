@@ -139,11 +139,7 @@ function GenreDetail() {
   return (
     <div className="flex min-h-0 flex-col gap-8 px-4 pb-40 max-md:pb-[max(10rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))] md:px-6 md:pb-40 md:pt-8">
       {isMobile ? (
-        <PageHeader
-          title={genre?.name ?? 'Genre'}
-          description={countsSubtitle}
-          showBackButton
-        />
+        <PageHeader title={genre?.name ?? 'Genre'} description={countsSubtitle} showBackButton />
       ) : (
         <div className="flex flex-col gap-2">
           <h2 className="text-4xl font-black tracking-tight">{genre?.name}</h2>

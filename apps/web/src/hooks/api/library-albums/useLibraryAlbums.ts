@@ -25,7 +25,7 @@ export const useLibraryAlbums = (
 
       setPrivateAlbums(albums);
     }
-  }, [query.data, setPrivateAlbums]);
+  }, [genreId, query.data, setPrivateAlbums]);
 
   return query;
 };

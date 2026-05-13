@@ -257,7 +257,10 @@ describe('UpdateLibraryAlbumHandler', () => {
 
     await handler.execute(command);
 
-    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith(['ar1', 'ar2'], mockUserId);
+    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith(
+      ['ar1', 'ar2'],
+      mockUserId,
+    );
     expect(albumRepository.update).toHaveBeenCalledWith(
       mockAlbumId,
       expect.objectContaining({

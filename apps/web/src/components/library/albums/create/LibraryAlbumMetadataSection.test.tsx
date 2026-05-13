@@ -216,9 +216,7 @@ describe('LibraryAlbumMetadataSection', () => {
     expect(
       screen.getByText(/selected artists are drafts not in your library yet/i),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /clear all draft artists/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /clear all draft artists/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /clear all draft artists/i }));
     expect(onArtistSelectionChange).toHaveBeenCalledWith(LIBRARY_ALBUM_ARTIST_NONE_VALUE);
@@ -959,9 +957,7 @@ describe('LibraryAlbumMetadataSection', () => {
       />,
     );
 
-    expect(
-      screen.getByRole('button', { name: 'Remove Fresh Genre (new)' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Fresh Genre (new)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Rock' })).toBeInTheDocument();
   });
 
@@ -988,9 +984,7 @@ describe('LibraryAlbumMetadataSection', () => {
       />,
     );
 
-    expect(
-      screen.getByRole('button', { name: 'Remove Fresh Genre (new)' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Fresh Genre (new)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Rock' })).toBeInTheDocument();
   });
 

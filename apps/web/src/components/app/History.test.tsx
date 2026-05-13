@@ -1,3 +1,4 @@
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { QueueItem } from '@repo/contracts';
@@ -138,6 +139,34 @@ describe('History', () => {
 
       customRender(<History isVisible={true} onBack={mockOnBack} />);
       expect(screen.getByAltText('Cover art')).toHaveAttribute('src', 'cover-only.jpg');
+    });
+
+    it('shows unknown artist label when artists list is empty', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        createPlayerStateMock({
+          history: [
+            testQueueItem({
+              queueId: '01900000-0000-7000-8000-0000000000c1',
+              track: {
+                id: '1',
+                title: 'No Artists Track',
+                trackId: '1',
+                artists: [],
+                albumName: 'Album',
+                albumId: 'album-1',
+                albumArt: null,
+                duration: 100,
+                explicit: false,
+              },
+            }),
+          ],
+          playTrack: mockPlayTrack,
+          toggleQueue: mockToggleQueue,
+        }),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
     });
 
     it('renders placeholder when albumArt is missing', () => {

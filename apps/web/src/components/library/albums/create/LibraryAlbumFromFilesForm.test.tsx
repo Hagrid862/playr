@@ -842,7 +842,9 @@ describe('LibraryAlbumFromFilesForm', () => {
           name: string;
         }[]
       ).map((p) =>
-        (base.formData as { artistIds: string[] }).artistIds.includes(p.id) ? { ...p, name: '   ' } : p,
+        (base.formData as { artistIds: string[] }).artistIds.includes(p.id)
+          ? { ...p, name: '   ' }
+          : p,
       ),
     });
 
@@ -1071,9 +1073,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.queryByRole('heading', { name: /new artist/i })).not.toBeInTheDocument();
     });
 
-    await user.click(
-      screen.getByRole('button', { name: /remove modal artist \(new\)/i }),
-    );
+    await user.click(screen.getByRole('button', { name: /remove modal artist \(new\)/i }));
 
     await waitFor(() => {
       expect(

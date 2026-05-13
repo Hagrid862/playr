@@ -794,7 +794,9 @@ describe('EditAlbumForm', () => {
       const user = userEvent.setup();
       artistIdsStateRef.current = ['artist-existing'];
       customRender(<EditAlbumForm {...defaultProps} />);
-      await user.click(screen.getByRole('button', { name: /test-metadata-toggle-existing-artist/i }));
+      await user.click(
+        screen.getByRole('button', { name: /test-metadata-toggle-existing-artist/i }),
+      );
       expect(artistIdsStateRef.current).toEqual([]);
       expect(updateAllTracksArtistsMock).toHaveBeenCalledWith(['artist-existing'], []);
     });
@@ -803,7 +805,9 @@ describe('EditAlbumForm', () => {
       const user = userEvent.setup();
       artistIdsStateRef.current = [];
       customRender(<EditAlbumForm {...defaultProps} />);
-      await user.click(screen.getByRole('button', { name: /test-metadata-toggle-existing-artist/i }));
+      await user.click(
+        screen.getByRole('button', { name: /test-metadata-toggle-existing-artist/i }),
+      );
       expect(artistIdsStateRef.current).toEqual(['artist-existing']);
       expect(updateAllTracksArtistsMock).toHaveBeenCalledWith([], ['artist-existing']);
     });
@@ -984,7 +988,9 @@ describe('EditAlbumForm', () => {
 
         await user.click(screen.getByRole('button', { name: /Save changes/i }));
 
-        expect(createLibraryArtistHoisted.mutateAsync).toHaveBeenCalledWith({ name: 'Fresh Artist' });
+        expect(createLibraryArtistHoisted.mutateAsync).toHaveBeenCalledWith({
+          name: 'Fresh Artist',
+        });
         expect(mockOnSubmit).toHaveBeenCalledTimes(1);
         expect(mockOnSubmit.mock.calls[0]?.[0]).toMatchObject({
           artistIds: ['resolved-artist-id'],
