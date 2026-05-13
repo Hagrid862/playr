@@ -12,9 +12,9 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
-import { useLibraryAlbums } from '@/hooks/api/library-albums/useLibraryAlbums';
+import { useLibraryAlbumsInfinite } from '@/hooks/api/library-albums/useLibraryAlbumsInfinite';
 import { useLibraryGenre } from '@/hooks/api/library-genres/useLibraryGenre';
-import { useLibraryTracks } from '@/hooks/api/library-tracks/useLibraryTracks';
+import { useLibraryTracksInfinite } from '@/hooks/api/library-tracks/useLibraryTracksInfinite';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
@@ -29,6 +29,14 @@ export const Route = createFileRoute('/app/library/genres/$genreId')({
   component: GenreDetail,
 });
 
+const GENRE_PAGE_SIZE = 50;
+
+function formatLoadedOfTotal(loaded: number, total: number | undefined, pluralNoun: string) {
+  if (total == null) return `${loaded} ${pluralNoun}`;
+  if (loaded >= total) return `${total} ${pluralNoun}`;
+  return `${loaded} of ${total} ${pluralNoun}`;
+}
+
 function GenreDetail() {
   const { genreId } = Route.useParams();
   const isMobile = useIsMobile();
@@ -38,14 +46,32 @@ function GenreDetail() {
   const { data: genreData } = useLibraryGenre(genreId);
   const genre = genreData?.data;
 
-  const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryAlbums({ genreId, limit: 50 });
-  const albums = useMemo<ZodLibraryAlbumInfer[]>(() => albumsData?.data?.items ?? [], [albumsData]);
+  const albumsQuery = useLibraryAlbumsInfinite({ genreId, limit: GENRE_PAGE_SIZE });
+  const tracksQuery = useLibraryTracksInfinite({ genreId, limit: GENRE_PAGE_SIZE });
 
-  const { data: tracksData, isLoading: isTracksLoading } = useLibraryTracks({
-    genreId,
-    limit: 100,
-  });
-  const rawTracks = useMemo<ZodTrack[]>(() => tracksData?.data?.items ?? [], [tracksData]);
+  const albums = useMemo<ZodLibraryAlbumInfer[]>(() => {
+    const pages = albumsQuery.data?.pages;
+    if (!pages?.length) return [];
+    return pages.flatMap((page) => page.data?.items ?? []);
+  }, [albumsQuery.data]);
+
+  const rawTracks = useMemo<ZodTrack[]>(() => {
+    const pages = tracksQuery.data?.pages;
+    if (!pages?.length) return [];
+    return pages.flatMap((page) => page.data?.items ?? []);
+  }, [tracksQuery.data]);
+
+  const albumsTotal = albumsQuery.data?.pages[0]?.data?.total;
+  const tracksTotal = tracksQuery.data?.pages[0]?.data?.total;
+
+  const countsSubtitle = useMemo(
+    () =>
+      `${formatLoadedOfTotal(albums.length, albumsTotal, 'albums')} • ${formatLoadedOfTotal(rawTracks.length, tracksTotal, 'songs')}`,
+    [albums.length, albumsTotal, rawTracks.length, tracksTotal],
+  );
+
+  const isAlbumsLoading = albumsQuery.isPending;
+  const isTracksLoading = tracksQuery.isPending;
 
   const albumTrackGroups = useMemo(() => {
     const coverByAlbumId = new Map<string, string | undefined>();
@@ -108,16 +134,20 @@ function GenreDetail() {
     }
   };
 
+  const tracksHasMore = tracksQuery.hasNextPage === true;
+
   return (
-    <div className="flex min-h-0 flex-col gap-8 px-4 pb-32 md:px-6 md:pb-0 md:pt-8">
+    <div className="flex min-h-0 flex-col gap-8 px-4 pb-40 max-md:pb-[max(10rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))] md:px-6 md:pb-40 md:pt-8">
       {isMobile ? (
-        <PageHeader title={genre?.name ?? 'Genre'} showBackButton />
+        <PageHeader
+          title={genre?.name ?? 'Genre'}
+          description={countsSubtitle}
+          showBackButton
+        />
       ) : (
         <div className="flex flex-col gap-2">
           <h2 className="text-4xl font-black tracking-tight">{genre?.name}</h2>
-          <p className="text-muted-foreground">
-            {albums.length} albums • {rawTracks.length} songs
-          </p>
+          <p className="text-muted-foreground">{countsSubtitle}</p>
         </div>
       )}
 
@@ -150,14 +180,38 @@ function GenreDetail() {
         ) : (
           <p className="px-2 text-sm text-muted-foreground">No albums in this genre.</p>
         )}
+        {albums.length > 0 && albumsQuery.hasNextPage ? (
+          <div className="flex justify-center py-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => albumsQuery.fetchNextPage()}
+              disabled={albumsQuery.isFetchingNextPage}
+              className="text-xs"
+            >
+              {albumsQuery.isFetchingNextPage ? 'Loading...' : 'Load more'}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       <Separator className="opacity-50" />
 
       {/* Songs — same structure as album detail track list */}
-      <div className="flex flex-col gap-6 px-0 md:px-2">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-6 px-0 pb-4 md:px-2 md:pb-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 md:px-0">
           <h3 className="text-xl font-bold text-white/90">Songs</h3>
+          {tracksHasMore ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => tracksQuery.fetchNextPage()}
+              disabled={tracksQuery.isFetchingNextPage}
+              className="shrink-0 text-xs"
+            >
+              {tracksQuery.isFetchingNextPage ? 'Loading…' : 'Load more songs'}
+            </Button>
+          ) : null}
         </div>
 
         {isTracksLoading ? (
@@ -242,6 +296,19 @@ function GenreDetail() {
                 </div>
               );
             })}
+            {tracksHasMore ? (
+              <div className="flex justify-center border-t border-white/5 pt-6 pb-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => tracksQuery.fetchNextPage()}
+                  disabled={tracksQuery.isFetchingNextPage}
+                  className="text-xs text-muted-foreground"
+                >
+                  {tracksQuery.isFetchingNextPage ? 'Loading…' : 'Load more songs'}
+                </Button>
+              </div>
+            ) : null}
           </div>
         )}
       </div>
