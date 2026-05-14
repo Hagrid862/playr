@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PlaybackDeviceRegistryService } from './playback-device-registry.service';
-import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
-import { Redis } from 'ioredis';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Logger } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
+import { Redis } from 'ioredis';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
+import { PlaybackDeviceRegistryService } from './playback-device-registry.service';
 
 describe('PlaybackDeviceRegistryService', () => {
   let service: PlaybackDeviceRegistryService;
@@ -110,7 +110,7 @@ describe('PlaybackDeviceRegistryService', () => {
       const result = await service.listDevices(userId, 'any', 'any');
 
       expect(result.devices).toHaveLength(1);
-      expect(result.devices[0].deviceId).toBe('ok');
+      expect(result.devices[0].id).toBe('ok');
     });
   });
 });

@@ -52,6 +52,8 @@ export default defineConfig({
         'src/components/layout/sidebar-layout.tsx',
         'src/**/__tests__/**/*',
         'src/lib/types/**/*',
+        /** Barrel-only re-exports; coverage attributes 0% to export lines. */
+        'src/lib/playback/sync/playback-sync.ts',
       ],
     },
     setupFiles: ['./src/setupTests.ts'],

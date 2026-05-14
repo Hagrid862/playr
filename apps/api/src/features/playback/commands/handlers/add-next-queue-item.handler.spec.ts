@@ -3,6 +3,7 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { fixtureQueueItem, playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetNextQueueItemCommand } from '../impl/set-next-queue-item.command';
 import { SetNextQueueItemHandler } from './add-next-queue-item.handler';
 
@@ -21,32 +22,41 @@ describe('SetNextQueueItemHandler', () => {
     explicit: false,
   };
 
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
     trackData,
     queue: [
-      { track: trackData, position: 0, queueId: 'q1' },
-      { track: { ...trackData, id: 'track-2' }, position: 1, queueId: 'q2' },
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000001',
+        track: trackData,
+        position: 0,
+        originalPosition: 0,
+        type: 'queue',
+      }),
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000002',
+        track: { ...trackData, id: 'track-2' },
+        position: 1,
+        originalPosition: 1,
+        type: 'playingNext',
+      }),
     ],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
-    version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
-  it('adds track as next item in queue', async () => {
+  it('inserts as first playingNext after manual queue and reindexes positions', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetNextQueueItemHandler(persistence);
-    const newTrack = { track: { ...trackData, id: 'track-next' }, position: 0, queueId: 'next-1' };
+    const newTrack = fixtureQueueItem({
+      queueId: '01900000-0000-7000-8000-0000000000aa',
+      track: { ...trackData, id: 'track-next' },
+      position: 0,
+      originalPosition: 0,
+      type: 'queue',
+    });
     const command = new SetNextQueueItemCommand(userId, sessionId, {
       track: newTrack,
       expectedVersion: 1,
@@ -58,14 +68,52 @@ describe('SetNextQueueItemHandler', () => {
 
     const result = await handler.execute(command);
     expect(result.queue).toHaveLength(3);
-    const inserted = result.queue.find((i) => i.track.id === 'track-next');
-    expect(inserted?.position).toBe(1);
+    expect(result.queue[0].track.id).toBe('track-1');
+    expect(result.queue[0].type).toBe('queue');
+    expect(result.queue[1].track.id).toBe('track-next');
+    expect(result.queue[1].type).toBe('playingNext');
+    expect(result.queue[2].track.id).toBe('track-2');
+    expect(result.queue[0].position).toBe(0);
+    expect(result.queue[1].position).toBe(1);
+    expect(result.queue[2].position).toBe(2);
   });
 
-  it('adds track at position 0 if current track not in queue', async () => {
+  it('inserts at position 0 when shuffled', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetNextQueueItemHandler(persistence);
-    const newTrack = { track: { ...trackData, id: 'track-next' }, position: 0, queueId: 'next-2' };
+    const newTrack = fixtureQueueItem({
+      queueId: '01900000-0000-7000-8000-0000000000dd',
+      track: { ...trackData, id: 'track-next' },
+      position: 0,
+      originalPosition: 0,
+      type: 'queue',
+    });
+    const command = new SetNextQueueItemCommand(userId, sessionId, {
+      track: newTrack,
+      expectedVersion: 1,
+    });
+
+    const shuffledState: PlaybackState = { ...initialState, shuffle: true };
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      return { ...shuffledState, ...merge(shuffledState) } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+    expect(result.queue[0].track.id).toBe('track-next');
+    expect(result.queue[0].type).toBe('playingNext');
+    expect(result.queue[0].position).toBe(0);
+  });
+
+  it('inserts as first playingNext when current track is not represented in queue items', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetNextQueueItemHandler(persistence);
+    const newTrack = fixtureQueueItem({
+      queueId: '01900000-0000-7000-8000-0000000000bb',
+      track: { ...trackData, id: 'track-next' },
+      position: 0,
+      originalPosition: 0,
+      type: 'queue',
+    });
     const command = new SetNextQueueItemCommand(userId, sessionId, {
       track: newTrack,
       expectedVersion: 1,
@@ -80,14 +128,96 @@ describe('SetNextQueueItemHandler', () => {
     });
 
     const result = await handler.execute(command);
-    expect(result.queue[0].track.id).toBe('track-next');
+    expect(result.queue[0].track.id).toBe('track-1');
+    expect(result.queue[1].track.id).toBe('track-next');
+    expect(result.queue[1].type).toBe('playingNext');
+    expect(result.queue[1].position).toBe(1);
+  });
+
+  it('sets originalPosition if not provided', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetNextQueueItemHandler(persistence);
+    const newTrack = fixtureQueueItem({
+      queueId: '01900000-0000-7000-8000-0000000000bb',
+      track: { ...trackData, id: 'track-next' },
+      position: 0,
+      originalPosition: undefined as any,
+      type: 'queue',
+    });
+    const command = new SetNextQueueItemCommand(userId, sessionId, {
+      track: newTrack,
+      expectedVersion: 1,
+    });
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      return { ...initialState, ...merge(initialState) } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+    // maxOriginalPos in initialState is 1 (from track-2), so new item should get 1 + 1 = 2
+    expect(result.queue[1].originalPosition).toBe(2);
+  });
+
+  it('handles legacy queue items missing type and originalPosition', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const handler = new SetNextQueueItemHandler(persistence);
+    const newTrack = fixtureQueueItem({
+      queueId: '01900000-0000-7000-8000-0000000000be',
+      track: { ...trackData, id: 'track-next' },
+      position: 0,
+      originalPosition: undefined as any,
+      type: 'queue',
+    });
+    const command = new SetNextQueueItemCommand(userId, sessionId, {
+      track: newTrack,
+      expectedVersion: 1,
+    });
+
+    const legacyState: PlaybackState = {
+      ...initialState,
+      queue: [
+        fixtureQueueItem({
+          queueId: '01900000-0000-7000-8000-000000000010',
+          track: { ...trackData, id: 'legacy-manual' },
+          position: 10,
+          originalPosition: undefined as any,
+          type: undefined as any,
+        }),
+        fixtureQueueItem({
+          queueId: '01900000-0000-7000-8000-000000000011',
+          track: { ...trackData, id: 'existing-playing-next' },
+          position: 11,
+          originalPosition: 11,
+          type: 'playingNext',
+        }),
+      ],
+    };
+
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      return { ...legacyState, ...merge(legacyState) } as PlaybackState;
+    });
+
+    const result = await handler.execute(command);
+    expect(result.queue.map((q) => q.track.id)).toEqual([
+      'legacy-manual',
+      'track-next',
+      'existing-playing-next',
+    ]);
+    expect(result.queue[1].type).toBe('playingNext');
+    expect(result.queue[1].originalPosition).toBe(12);
   });
 
   it('throws BadRequestException when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new SetNextQueueItemHandler(persistence);
     const command = new SetNextQueueItemCommand(userId, sessionId, {
-      track: { track: trackData, position: 0, queueId: 'next-3' },
+      track: fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-0000000000cc',
+        track: trackData,
+        position: 0,
+        originalPosition: 0,
+        type: 'queue',
+      }),
       expectedVersion: 0,
     });
 

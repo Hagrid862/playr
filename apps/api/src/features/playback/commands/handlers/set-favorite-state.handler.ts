@@ -1,7 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlaybackState } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { SetFavoriteStateCommand } from '../impl/set-favorite-state.command';
 
 @CommandHandler(SetFavoriteStateCommand)
@@ -11,11 +11,7 @@ export class SetFavoriteStateHandler implements ICommandHandler<SetFavoriteState
   async execute(command: SetFavoriteStateCommand): Promise<PlaybackState> {
     const { favorite, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-playback-state to create state first one.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       return {

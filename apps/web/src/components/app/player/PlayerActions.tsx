@@ -12,9 +12,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
-import { listPlaybackDevices, setActivePlaybackDevice } from '@/lib/playback-sync';
+import {
+  firePlaybackCommand,
+  listPlaybackDevices,
+  setActivePlaybackDevice,
+} from '@/lib/playback/sync/playback-sync';
 import { cn } from '@/lib/utils';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
   CheckIcon,
   DotsThreeIcon,
@@ -179,7 +183,7 @@ export function PlayerActions() {
         onOpenChange={(open) => {
           setIsDevicePopoverOpen(open);
           if (open) {
-            void listPlaybackDevices();
+            firePlaybackCommand(listPlaybackDevices(), 'listPlaybackDevices');
           }
         }}
       >
@@ -207,20 +211,26 @@ export function PlayerActions() {
               ) : (
                 playbackDevices.map((device) => (
                   <button
-                    key={device.deviceId}
+                    key={device.id}
                     type="button"
                     className={cn(
                       'w-full flex items-center justify-between rounded px-2 py-1.5 text-sm transition-colors',
-                      device.deviceId === activeDeviceId
+                      device.id === activeDeviceId
                         ? 'bg-white/10 text-white'
                         : 'text-white/70 hover:text-white hover:bg-white/5',
                     )}
-                    onClick={() => void setActivePlaybackDevice(device.deviceId)}
+                    onClick={() => {
+                      if (device.id === activeDeviceId) return;
+                      firePlaybackCommand(
+                        setActivePlaybackDevice(device.id),
+                        'setActivePlaybackDevice',
+                      );
+                    }}
                   >
                     <span className="truncate">
-                      {device.isCurrentDevice ? 'Web player (this device)' : device.deviceName}
+                      {device.isCurrentDevice ? 'Web player (this device)' : device.name}
                     </span>
-                    {device.deviceId === activeDeviceId ? <CheckIcon size={14} /> : null}
+                    {device.id === activeDeviceId ? <CheckIcon size={14} /> : null}
                   </button>
                 ))
               )}

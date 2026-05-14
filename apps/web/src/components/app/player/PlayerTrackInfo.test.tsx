@@ -1,12 +1,13 @@
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { PlaybackTrack, StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerTrackInfo } from './PlayerTrackInfo';
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
 
@@ -57,13 +58,14 @@ describe('PlayerTrackInfo', () => {
     vi.mocked(usePlayerStore).mockReturnValue(buildState());
   });
 
-  const renderTrackInfo = () =>
+  const renderTrackInfo = (props?: Partial<React.ComponentProps<typeof PlayerTrackInfo>>) =>
     customRender(
       <PlayerTrackInfo
         formatTime={formatTime}
         formatTimeLeft={formatTimeLeft}
         onSeek={onSeek}
         onSeekCommit={onSeekCommit}
+        {...props}
       />,
     );
 
@@ -131,6 +133,28 @@ describe('PlayerTrackInfo', () => {
       renderTrackInfo();
       expect(screen.getByText('Lossless Song')).toBeInTheDocument();
       expect(screen.getByLabelText('Lossless quality')).toBeInTheDocument();
+    });
+
+    it('renders MP3 badge when showMp3StreamBadge is true', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: {
+            id: '1',
+            title: 'Codec Song',
+            trackId: '1',
+            artists: ['Artist A'],
+            albumName: 'Album A',
+            albumId: '1',
+            albumArt: null,
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+        }),
+      );
+
+      renderTrackInfo({ showMp3StreamBadge: true });
+      expect(screen.getByText('Codec Song')).toBeInTheDocument();
+      expect(screen.getByLabelText('MP3 stream')).toHaveTextContent('MP3');
     });
 
     it('renders correctly when duration is zero', () => {

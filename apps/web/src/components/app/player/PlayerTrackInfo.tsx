@@ -1,7 +1,8 @@
+import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { MusicNotesIcon, SparkleIcon } from '@phosphor-icons/react';
 import { StreamAudioQuality } from '@repo/contracts';
 import { useRef, useState } from 'react';
@@ -11,6 +12,8 @@ interface PlayerTrackInfoProps {
   formatTimeLeft: (time: number, total: number) => string;
   onSeek: (time: number) => void;
   onSeekCommit: (time: number) => void;
+  /** Shown when the stream uses the MP3 format fallback (e.g. after Opus decode error). */
+  showMp3StreamBadge?: boolean;
 }
 
 export function PlayerTrackInfo({
@@ -18,13 +21,14 @@ export function PlayerTrackInfo({
   formatTimeLeft,
   onSeek,
   onSeekCommit,
+  showMp3StreamBadge = false,
 }: PlayerTrackInfoProps) {
   const { currentTrack, currentTime, duration, setCurrentTime, quality } = usePlayerStore();
   const [isHoveringSlider, setIsHoveringSlider] = useState(false);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const latestSeekTimeRef = useRef<number | null>(null);
 
-  const isLossless = quality === StreamAudioQuality.lossless;
+  const isLossless = quality === StreamAudioQuality.lossless && !showMp3StreamBadge;
 
   const trackTitle = currentTrack?.title || 'No track selected';
   const trackArtist = currentTrack?.artists?.join(', ') || 'Unknown Artist';
@@ -72,6 +76,28 @@ export function PlayerTrackInfo({
                     className="bg-stone-800 text-stone-200 border-stone-700 text-xs font-medium"
                   >
                     Playing in Lossless Quality
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {showMp3StreamBadge && (
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="xs"
+                      className="shrink-0 rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wide text-emerald-400 cursor-default"
+                      aria-label="MP3 stream"
+                    >
+                      MP3
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-stone-800 text-stone-200 border-stone-700 text-xs font-medium z-999"
+                  >
+                    Playing MP3 stream (compatibility fallback, quality might be worse)
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

@@ -2,7 +2,7 @@ import { AudioFileRepository } from '@/shared/repositories/audio-file.repository
 import { StorageService } from '@/shared/services/storage.service';
 import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { StreamAudioQuality } from '@repo/contracts';
+import { StreamAudioQuality, StreamPreferredFormat } from '@repo/contracts';
 import { AudioFile, AudioFormat, AudioQuality, FileBucket, ProcessingStatus } from '@repo/db';
 import { GetTrackStreamQuery } from '../impl/get-track-stream.query';
 
@@ -14,7 +14,10 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
   ) {}
 
   async execute(query: GetTrackStreamQuery) {
-    const { trackId, requestedQuality } = query;
+    const { trackId, requestedQuality, preferredFormat } = query;
+
+    const PREFERRED_LOSSY_SCORE = 100;
+    const NON_PREFERRED_LOSSY_SCORE = 90;
 
     // Find all completed audio files for this track
     const audioFiles = await this.audioFileRepository.findMany({
@@ -28,6 +31,18 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
       throw new NotFoundException('No processed audio file found for this track');
     }
 
+    const lossyFormatScore = (format: AudioFormat): number => {
+      if (format === AudioFormat.opus)
+        return preferredFormat === StreamPreferredFormat.mp3
+          ? NON_PREFERRED_LOSSY_SCORE
+          : PREFERRED_LOSSY_SCORE;
+      if (format === AudioFormat.mp3)
+        return preferredFormat === StreamPreferredFormat.mp3
+          ? PREFERRED_LOSSY_SCORE
+          : NON_PREFERRED_LOSSY_SCORE;
+      return 0;
+    };
+
     // Quality mapping and selection logic
     const getQualityScore = (file: AudioFile, target: StreamAudioQuality): number => {
       const format = file.format as AudioFormat;
@@ -40,22 +55,19 @@ export class GetTrackStreamHandler implements IQueryHandler<GetTrackStreamQuery>
 
         case StreamAudioQuality.high:
           if (quality === AudioQuality.high) {
-            if (format === AudioFormat.opus) return 100;
-            if (format === AudioFormat.mp3) return 90;
+            return lossyFormatScore(format);
           }
           return 0;
 
         case StreamAudioQuality.standard:
           if (quality === AudioQuality.standard) {
-            if (format === AudioFormat.opus) return 100;
-            if (format === AudioFormat.mp3) return 90;
+            return lossyFormatScore(format);
           }
           return 0;
 
         case StreamAudioQuality.low:
           if (quality === AudioQuality.low) {
-            if (format === AudioFormat.opus) return 100;
-            if (format === AudioFormat.mp3) return 90;
+            return lossyFormatScore(format);
           }
           return 0;
 

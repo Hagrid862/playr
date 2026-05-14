@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { ArrowLeftIcon, MusicNotesIcon, PlayIcon, XIcon } from '@phosphor-icons/react';
 import type { QueueItem } from '@repo/contracts';
 import React from 'react';
@@ -72,7 +72,7 @@ export function History({ isVisible, onBack }: HistoryProps) {
                   {track.track?.albumArt ? (
                     <img
                       src={track.track?.albumArt}
-                      alt={track.track?.title}
+                      alt={track.track?.title || 'Cover art'}
                       className="h-full w-full object-cover group-hover:opacity-40 transition-opacity"
                     />
                   ) : (

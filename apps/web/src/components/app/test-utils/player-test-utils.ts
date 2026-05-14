@@ -1,4 +1,4 @@
-import type { PlayerState } from '@/stores/player.store';
+import type { PlayerState } from '@/stores/player-store/player.store';
 import { vi } from 'vitest';
 
 export function createPlayerStateMock(overrides: Partial<PlayerState> = {}): PlayerState {
@@ -18,13 +18,14 @@ export function createPlayerStateMock(overrides: Partial<PlayerState> = {}): Pla
     playbackVersion: 0,
     playbackFavorited: 'not-set',
     playbackInLibrary: false,
-    activeDeviceId: '',
+    activeDeviceId: null,
     localPlaybackDeviceId: '',
     playbackDevices: [],
     applyPlaybackStateFromServer: vi.fn(),
     setLocalPlaybackDeviceId: vi.fn(),
     setPlaybackDevices: vi.fn(),
     playTrack: vi.fn(),
+    playQueueItem: vi.fn(),
     pause: vi.fn(),
     resume: vi.fn(),
     togglePlay: vi.fn(),

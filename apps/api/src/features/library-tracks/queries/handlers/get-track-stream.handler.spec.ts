@@ -2,7 +2,7 @@ import { AudioFileRepository } from '@/shared/repositories/audio-file.repository
 import { StorageService } from '@/shared/services/storage.service';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { StreamAudioQuality } from '@repo/contracts';
+import { StreamAudioQuality, StreamPreferredFormat } from '@repo/contracts';
 import { AudioFormat, AudioQuality, FileBucket } from '@repo/db';
 import { audioFileBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
@@ -253,6 +253,105 @@ describe('GetTrackStreamHandler', () => {
         expect(storageService.getFileStream).toHaveBeenCalledWith(
           FileBucket.public,
           'low-opus',
+          expect.any(Object),
+        );
+      });
+
+      it('should prefer low quality mp3 over opus when format=mp3', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.opus,
+            quality: AudioQuality.low,
+            size: 20,
+            bucket: FileBucket.public,
+            key: 'low-opus',
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.low,
+            size: 20,
+            bucket: FileBucket.public,
+            key: 'low-mp3',
+          }),
+        ]);
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.low,
+          '',
+          StreamPreferredFormat.mp3,
+        );
+        await handler.execute(query);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(
+          FileBucket.public,
+          'low-mp3',
+          expect.any(Object),
+        );
+      });
+
+      it('should prefer standard mp3 over standard opus when format=mp3', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.opus,
+            quality: AudioQuality.standard,
+            size: 40,
+            bucket: FileBucket.private,
+            key: 'std-opus',
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.standard,
+            size: 40,
+            bucket: FileBucket.private,
+            key: 'std-mp3',
+          }),
+        ]);
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          '',
+          StreamPreferredFormat.mp3,
+        );
+        await handler.execute(query);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(
+          FileBucket.private,
+          'std-mp3',
+          expect.any(Object),
+        );
+      });
+
+      it('should prefer standard opus when format=opus (explicit default)', async () => {
+        audioFileRepository.findMany.mockResolvedValue([
+          audioFileBuilder({
+            id: 'audio-file-1',
+            format: AudioFormat.opus,
+            quality: AudioQuality.standard,
+            size: 40,
+            bucket: FileBucket.private,
+            key: 'std-opus',
+          }),
+          audioFileBuilder({
+            id: 'audio-file-2',
+            format: AudioFormat.mp3,
+            quality: AudioQuality.standard,
+            size: 40,
+            bucket: FileBucket.private,
+            key: 'std-mp3',
+          }),
+        ]);
+        const query = new GetTrackStreamQuery(
+          mockTrackId,
+          StreamAudioQuality.standard,
+          '',
+          StreamPreferredFormat.opus,
+        );
+        await handler.execute(query);
+        expect(storageService.getFileStream).toHaveBeenCalledWith(
+          FileBucket.private,
+          'std-opus',
           expect.any(Object),
         );
       });

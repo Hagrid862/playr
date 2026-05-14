@@ -5,11 +5,12 @@ import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
 
 const DEVICE_TTL_SECONDS = 90;
 
-type DeviceIcon = PlaybackDevice['deviceIcon'];
+type DeviceIcon = PlaybackDevice['icon'];
 
 type DeviceRecord = {
   deviceId: string;
   deviceName: string;
+  /** Same values as `PlaybackDevice.icon`; stored under legacy field name in Redis. */
   deviceIcon: DeviceIcon;
   updatedAt: string;
 };
@@ -70,7 +71,9 @@ export class PlaybackDeviceRegistryService {
       })
       .filter((item): item is DeviceRecord => item !== null)
       .map((item) => ({
-        ...item,
+        id: item.deviceId,
+        name: item.deviceName,
+        icon: item.deviceIcon,
         isActive: item.deviceId === activeDeviceId,
         isCurrentDevice: item.deviceId === currentDeviceId,
       }));

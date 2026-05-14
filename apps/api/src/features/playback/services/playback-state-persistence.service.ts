@@ -20,8 +20,7 @@ const ATOMIC_SET_MAX_ATTEMPTS = 8;
 
 const PLAYBACK_STATE_DEFAULT: Pick<
   PlaybackStatePayload,
-  | 'deviceName'
-  | 'deviceIcon'
+  | 'devices'
   | 'isPlaying'
   | 'currentTime'
   | 'volume'
@@ -29,9 +28,11 @@ const PLAYBACK_STATE_DEFAULT: Pick<
   | 'shuffle'
   | 'favorited'
   | 'inLibrary'
+  | 'queue'
+  | 'history'
+  | 'activeDeviceId'
 > = {
-  deviceName: 'unknown',
-  deviceIcon: 'other',
+  devices: [],
   isPlaying: false,
   currentTime: 0,
   volume: 0.8,
@@ -39,6 +40,9 @@ const PLAYBACK_STATE_DEFAULT: Pick<
   shuffle: false,
   favorited: 'not-set',
   inLibrary: false,
+  queue: [],
+  history: [],
+  activeDeviceId: null,
 };
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -54,13 +58,11 @@ export class PlaybackStatePersistenceService {
    */
   async createIfAbsent(
     userId: string,
-    sessionId: string,
     partial: Partial<PlaybackStatePayload> & Pick<PlaybackStatePayload, 'trackData'>,
   ): Promise<PlaybackState> {
     const mergedPayload = PlaybackStatePayloadSchema.parse({
       ...PLAYBACK_STATE_DEFAULT,
       ...partial,
-      sessionId,
       userId,
     });
 
@@ -188,6 +190,93 @@ export class PlaybackStatePersistenceService {
         const next: PlaybackState = {
           ...parsed,
           ...merged,
+          version: parsed.version + 1,
+          updatedAt: new Date().toISOString(),
+        };
+
+        let execResult: [error: Error | null, result: unknown][] | null;
+        try {
+          execResult = await conn.multi().set(key, JSON.stringify(next)).exec();
+        } catch (error) {
+          await conn.unwatch();
+          this.logger.error(`Redis MULTI/EXEC failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        if (execResult === null || execResult.some(([error]) => error !== null)) {
+          if (execResult !== null) {
+            const firstError = execResult.find(([error]) => error !== null)?.[0];
+            this.logger.error(`Redis command failed in transaction: ${String(firstError)}`);
+            await conn.unwatch();
+          }
+
+          const base = Math.min(10 * 2 ** attempt, 1000);
+          const jitter = Math.floor(Math.random() * Math.min(base, 50));
+          await sleep(base + jitter);
+          continue;
+        }
+
+        return next;
+      } finally {
+        await conn.quit();
+      }
+    }
+
+    throw new ServiceUnavailableException(
+      'Playback state could not be saved due to concurrent updates; please retry.',
+    );
+  }
+
+  /**
+   * If the disconnected device is the active output, clear `activeDeviceId` and pause.
+   * Returns the new state when a write occurred, otherwise `null`.
+   */
+  async pauseAndClearActiveIfDeviceMatches(
+    userId: string,
+    disconnectedDeviceId: string,
+  ): Promise<PlaybackState | null> {
+    const key = `state:${userId}`;
+    for (let attempt = 0; attempt < ATOMIC_SET_MAX_ATTEMPTS; attempt++) {
+      const conn = await this.redis.duplicate();
+      try {
+        try {
+          await conn.watch(key);
+        } catch (error) {
+          this.logger.error(`Redis WATCH failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        let raw: string | null;
+        try {
+          raw = await conn.get(key);
+        } catch (error) {
+          this.logger.error(`Redis GET failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        if (!raw) {
+          await conn.unwatch();
+          return null;
+        }
+
+        let parsed: PlaybackState;
+        try {
+          parsed = PlaybackStateSchema.parse(JSON.parse(raw));
+        } catch {
+          await conn.unwatch();
+          this.logger.error('Failed to parse playback state.');
+          throw new InternalServerErrorException('Failed to parse playback state.');
+        }
+
+        if (parsed.activeDeviceId !== disconnectedDeviceId) {
+          await conn.unwatch();
+          return null;
+        }
+
+        const next: PlaybackState = {
+          ...parsed,
+          activeDeviceId: null,
+          isPlaying: false,
           version: parsed.version + 1,
           updatedAt: new Date().toISOString(),
         };

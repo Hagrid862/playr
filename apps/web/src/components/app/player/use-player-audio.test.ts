@@ -1,14 +1,15 @@
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
+import { testQueueItem } from '@/test-utils/queue-test-fixtures';
 import type { PlaybackTrack } from '@repo/contracts';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
-import { waitFor } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayerAudio } from './use-player-audio';
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: Object.assign(vi.fn(), {
     subscribe: vi.fn(),
   }),
@@ -18,8 +19,11 @@ vi.mock('@/stores/auth.store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock('@/lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   emitCurrentTimeSync: vi.fn(),
+  firePlaybackCommand: vi.fn(() => {
+    /* args evaluated at call site before mock runs; no-op */
+  }),
   isPlaybackSyncConnected: vi.fn(),
 }));
 
@@ -68,6 +72,7 @@ describe('usePlayerAudio', () => {
     nextTrack,
     pause,
     repeatMode: 'off',
+    isShuffled: false,
     setAvailableQualities,
     queue: [],
   };
@@ -204,13 +209,171 @@ describe('usePlayerAudio', () => {
     });
   });
 
+  describe('handleStreamError (format fallback)', () => {
+    function minimalAudioElement(overrides: Partial<HTMLAudioElement> = {}): HTMLAudioElement {
+      return {
+        currentTime: 0,
+        readyState: 0,
+        src: '',
+        pause: vi.fn(),
+        play: vi.fn().mockResolvedValue(undefined),
+        load: vi.fn(),
+        error: null,
+        ...overrides,
+      } as unknown as HTMLAudioElement;
+    }
+
+    it('appends format=mp3 to stream URL after first stream error', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: playbackTrackStub('track-1'),
+        quality: 'auto',
+      } as PlayerState);
+
+      const { result } = customRenderHook(() => usePlayerAudio());
+      expect(result.current.getAudioUrl()).toBe(
+        'http://localhost:8000/library/tracks/track-1/stream?token=test-token',
+      );
+
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current =
+        minimalAudioElement({ currentTime: 12.5 });
+
+      await act(async () => {
+        result.current.handleStreamError();
+      });
+
+      expect(result.current.getAudioUrl()).toContain('format=mp3');
+      expect(result.current.getAudioUrl()).toContain('/library/tracks/track-1/stream');
+    });
+
+    it('resets format override when track id changes', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: playbackTrackStub('track-1'),
+        quality: 'auto',
+      } as PlayerState);
+
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current =
+        minimalAudioElement({ currentTime: 5 });
+
+      await act(async () => {
+        result.current.handleStreamError();
+      });
+      expect(result.current.getAudioUrl()).toContain('format=mp3');
+
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: playbackTrackStub('track-2'),
+        quality: 'auto',
+      } as PlayerState);
+      rerender();
+
+      expect(result.current.getAudioUrl()).toBe(
+        'http://localhost:8000/library/tracks/track-2/stream?token=test-token',
+      );
+    });
+
+    it('logs when stream error fires after mp3 fallback', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: playbackTrackStub('track-1'),
+        quality: 'auto',
+      } as PlayerState);
+
+      const { result } = customRenderHook(() => usePlayerAudio());
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current =
+        minimalAudioElement({
+          currentTime: 1,
+          error: { code: 4 } as unknown as MediaError,
+        });
+
+      await act(async () => {
+        result.current.handleStreamError();
+      });
+      await act(async () => {
+        result.current.handleStreamError();
+      });
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[AppPlayer] Stream error after mp3 fallback',
+        expect.objectContaining({ trackId: 'track-1' }),
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('no-ops when audio element is missing', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: playbackTrackStub('track-1'),
+        quality: 'auto',
+      } as PlayerState);
+
+      const { result } = customRenderHook(() => usePlayerAudio());
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = null;
+
+      await act(async () => {
+        result.current.handleStreamError();
+      });
+
+      expect(result.current.getAudioUrl()).toBe(
+        'http://localhost:8000/library/tracks/track-1/stream?token=test-token',
+      );
+    });
+
+    it('no-ops when current track is missing', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: null,
+      } as PlayerState);
+
+      const { result } = customRenderHook(() => usePlayerAudio());
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current =
+        minimalAudioElement({ currentTime: 1 });
+
+      await act(async () => {
+        result.current.handleStreamError();
+      });
+
+      expect(result.current.getAudioUrl()).toBe('');
+    });
+
+    it('uses 0 for restore position when currentTime is not finite', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: playbackTrackStub('track-1'),
+        quality: 'auto',
+      } as PlayerState);
+
+      const { result } = customRenderHook(() => usePlayerAudio());
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current =
+        minimalAudioElement({
+          currentTime: Number.NaN as unknown as number,
+        });
+
+      await act(async () => {
+        result.current.handleStreamError();
+      });
+
+      expect(result.current.getAudioUrl()).toContain('format=mp3');
+    });
+  });
+
   describe('handleTrackEnd', () => {
     it('calls nextTrack on track end when repeat is off and track has a next item', () => {
       vi.mocked(usePlayerStore).mockReturnValue({
         ...defaultStore,
         repeatMode: 'off',
-        currentTrack: { id: 'track-1' } as unknown,
-        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+        currentTrack: playbackTrackStub('track-1'),
+        queue: [
+          testQueueItem({
+            queueId: '01900000-0000-7000-8000-000000000b02',
+            track: playbackTrackStub('track-2'),
+            position: 0,
+            originalPosition: 0,
+          }),
+        ],
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
@@ -222,8 +385,8 @@ describe('usePlayerAudio', () => {
       vi.mocked(usePlayerStore).mockReturnValue({
         ...defaultStore,
         repeatMode: 'off',
-        currentTrack: { id: 'track-2' } as unknown,
-        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+        currentTrack: playbackTrackStub('track-2'),
+        queue: [],
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
@@ -235,8 +398,8 @@ describe('usePlayerAudio', () => {
       vi.mocked(usePlayerStore).mockReturnValue({
         ...defaultStore,
         repeatMode: 'all',
-        currentTrack: { id: 'track-2' } as unknown,
-        queue: [{ track: { id: 'track-1' } }, { track: { id: 'track-2' } }] as unknown,
+        currentTrack: playbackTrackStub('track-2'),
+        queue: [],
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
       result.current.handleTrackEnd();
@@ -250,7 +413,7 @@ describe('usePlayerAudio', () => {
         repeatMode: 'one',
       } as PlayerState);
       const { result } = customRenderHook(() => usePlayerAudio());
-      const playMock = vi.fn();
+      const playMock = vi.fn().mockResolvedValue(undefined);
       const audioEl = {
         currentTime: 10,
         play: playMock,
@@ -260,6 +423,52 @@ describe('usePlayerAudio', () => {
       result.current.handleTrackEnd();
       expect(audioEl.currentTime).toBe(0);
       expect(playMock).toHaveBeenCalled();
+    });
+
+    it('logs non-AbortError when repeat-one play rejects', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        repeatMode: 'one',
+      } as PlayerState);
+      const { result } = customRenderHook(() => usePlayerAudio());
+      const playError = new Error('play failed');
+      playError.name = 'NotAllowedError';
+      const playMock = vi.fn().mockRejectedValue(playError);
+      const audioEl = {
+        currentTime: 10,
+        play: playMock,
+      } as unknown as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      result.current.handleTrackEnd();
+      await Promise.resolve();
+
+      expect(consoleSpy).toHaveBeenCalledWith('[AppPlayer] Repeat-one play error:', playError);
+      consoleSpy.mockRestore();
+    });
+
+    it('does not log when repeat-one play rejects with AbortError', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        repeatMode: 'one',
+      } as PlayerState);
+      const { result } = customRenderHook(() => usePlayerAudio());
+      const abortError = new Error('Aborted');
+      abortError.name = 'AbortError';
+      const playMock = vi.fn().mockRejectedValue(abortError);
+      const audioEl = {
+        currentTime: 10,
+        play: playMock,
+      } as unknown as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      result.current.handleTrackEnd();
+      await Promise.resolve();
+
+      expect(consoleSpy).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
     });
 
     it('does nothing if repeatMode is one but audioRef.current is null', () => {
@@ -368,6 +577,52 @@ describe('usePlayerAudio', () => {
       } as PlayerState);
       rerender();
       expect(audioEl.currentTime).toBe(50);
+    });
+
+    it('does not seek when audio is within 1s of store time', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 20,
+      } as PlayerState);
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
+      const audioEl = { currentTime: 20.5 } as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      rerender();
+
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 21,
+      } as PlayerState);
+      rerender();
+
+      expect(audioEl.currentTime).toBe(20.5);
+    });
+
+    it('does not seek when store time changes slightly but audio is far off (guards server echo)', () => {
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 0,
+      } as PlayerState);
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
+      const audioEl = { currentTime: 0 } as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      rerender();
+
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 100,
+      } as PlayerState);
+      rerender();
+      expect(audioEl.currentTime).toBe(100);
+
+      audioEl.currentTime = 0;
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTime: 100.5,
+      } as PlayerState);
+      rerender();
+
+      expect(audioEl.currentTime).toBe(0);
     });
 
     it('handleTimeUpdate does nothing if audioRef.current is null', () => {

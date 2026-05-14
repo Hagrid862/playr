@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { XIcon } from '@phosphor-icons/react';
-import { usePlayerStore } from '@/stores/player.store';
 
 export function Lyrics() {
   const { toggleQueue, currentTrack } = usePlayerStore();

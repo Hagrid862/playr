@@ -1,6 +1,10 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
-import { usePlayerStore } from '@/stores/player.store';
+import {
+  emitCurrentTimeSync,
+  firePlaybackCommand,
+  isPlaybackSyncConnected,
+} from '@/lib/playback/sync/playback-sync';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { PlayerActions } from './player/PlayerActions';
 import { PlayerControls } from './player/PlayerControls';
 import { PlayerMobile } from './player/PlayerMobile';
@@ -15,9 +19,11 @@ export function AppPlayer() {
     handleTimeUpdate,
     handleLoadedMetadata,
     handleTrackEnd,
+    handleStreamError,
     getAudioUrl,
     formatTime,
     formatTimeLeft,
+    isMp3FormatFallback,
   } = usePlayerAudio();
 
   const handleSeek = (time: number) => {
@@ -31,7 +37,7 @@ export function AppPlayer() {
       return;
     }
 
-    void emitCurrentTimeSync(time);
+    firePlaybackCommand(emitCurrentTimeSync(time), 'emitCurrentTimeSync');
   };
 
   return (
@@ -43,6 +49,7 @@ export function AppPlayer() {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleTrackEnd}
+        onError={handleStreamError}
       />
 
       {isMobile ? (
@@ -58,6 +65,7 @@ export function AppPlayer() {
             formatTimeLeft={formatTimeLeft}
             onSeek={handleSeek}
             onSeekCommit={handleSeekCommit}
+            showMp3StreamBadge={isMp3FormatFallback}
           />
 
           {/* Island 3: Actions (Right) */}

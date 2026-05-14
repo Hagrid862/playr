@@ -4,7 +4,7 @@ import { HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { StreamAudioQuality } from '@repo/contracts';
+import { StreamAudioQuality, StreamPreferredFormat } from '@repo/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateLibraryTrackCommand } from './commands/impl/create-library-track.command';
 import { DeleteLibraryTrackCommand } from './commands/impl/delete-library-track.command';
@@ -238,6 +238,56 @@ describe('LibraryTracksController', () => {
       ).rejects.toThrow(
         'Invalid quality requested, must be one of: ' +
           Object.values(StreamAudioQuality).join(', '),
+      );
+      expect(queryBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('should pass format preference to stream query', async () => {
+      const mockRes = {
+        status: vi.fn(),
+        set: vi.fn(),
+        end: vi.fn(),
+      } as any;
+      const mockStream = { pipe: vi.fn() };
+
+      queryBus.execute.mockResolvedValue({
+        stream: mockStream,
+        metadata: {
+          start: 0,
+          end: 99,
+          totalSize: 100,
+          mimeType: 'audio/mpeg',
+          quality: 'standard',
+          format: 'mp3',
+          isPartial: false,
+        },
+      });
+
+      await controller.getTrackStream(
+        trackId,
+        '',
+        StreamAudioQuality.standard,
+        mockRes,
+        StreamPreferredFormat.mp3,
+      );
+
+      expect(queryBus.execute).toHaveBeenCalledWith(
+        new GetTrackStreamQuery(
+          trackId,
+          StreamAudioQuality.standard,
+          '',
+          StreamPreferredFormat.mp3,
+        ),
+      );
+    });
+
+    it('should throw BadRequestException if format is invalid', async () => {
+      const mockRes = {} as any;
+      await expect(
+        controller.getTrackStream(trackId, '', StreamAudioQuality.standard, mockRes, 'wav'),
+      ).rejects.toThrow(
+        'Invalid format requested, must be one of: ' +
+          Object.values(StreamPreferredFormat).join(', '),
       );
       expect(queryBus.execute).not.toHaveBeenCalled();
     });

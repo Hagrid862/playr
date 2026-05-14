@@ -1,16 +1,19 @@
-import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
-import { cleanFilenameToTitle } from '@/lib/clean-audio-filename';
+import {
+  extractCoverFromAudioFile,
+  extractMetadataFromAudioFile,
+} from '@/lib/audio/audio-metadata';
+import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBulkAlbumUploadForm } from './useBulkAlbumUploadForm';
 
-vi.mock('@/lib/audio-metadata', () => ({
+vi.mock('@/lib/audio/audio-metadata', () => ({
   extractMetadataFromAudioFile: vi.fn(),
   extractCoverFromAudioFile: vi.fn(),
 }));
 
-vi.mock('@/lib/clean-audio-filename', () => ({
+vi.mock('@/lib/audio/clean-audio-filename', () => ({
   cleanFilenameToTitle: vi.fn(),
 }));
 

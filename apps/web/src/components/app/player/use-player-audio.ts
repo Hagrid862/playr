@@ -1,10 +1,19 @@
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
+import {
+  emitCurrentTimeSync,
+  firePlaybackCommand,
+  isPlaybackSyncConnected,
+} from '@/lib/playback/sync/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const PLAYBACK_TIME_SYNC_INTERVAL_MS = 1500;
+
+const isNoActiveDevice = (value: string | null | undefined): boolean => {
+  return value == null || value === '';
+};
 
 /**
  * Hook to manage audio element synchronization with player store
@@ -14,12 +23,14 @@ export function usePlayerAudio() {
   const timeToRestoreRef = useRef<number | null>(null);
   const lastTimeSyncAtRef = useRef<number>(0);
   const lastSyncedSecondRef = useRef<number | null>(null);
+  const prevStoreTimeRef = useRef<number>(0);
   const {
     currentTrack,
     isPlaying,
     volume,
     currentTime,
     queue,
+    isShuffled,
     quality,
     setCurrentTime,
     setDuration,
@@ -34,6 +45,18 @@ export function usePlayerAudio() {
 
   const { accessToken } = useAuthStore();
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  const [streamFormatOverrideState, setStreamFormatOverrideState] = useState<{
+    trackId: string | null;
+    format: 'default' | 'mp3';
+  }>({
+    trackId: null,
+    format: 'default',
+  });
+  const streamFormatOverride =
+    currentTrack?.id != null && streamFormatOverrideState.trackId === currentTrack.id
+      ? streamFormatOverrideState.format
+      : 'default';
 
   useEffect(() => {
     return usePlayerStore.subscribe((state, prevState) => {
@@ -81,20 +104,20 @@ export function usePlayerAudio() {
     fetchQualities();
   }, [currentTrack, accessToken, apiBaseUrl, setAvailableQualities]);
 
-  // Sync isPlaying with audio element
+  // Sync isPlaying with audio element (pause/play only — not queue/shuffle)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     const shouldOutputAudio =
-      !isPlaybackSyncConnected() || !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
+      !isPlaybackSyncConnected() ||
+      isNoActiveDevice(activeDeviceId) ||
+      activeDeviceId === localPlaybackDeviceId;
 
-    // If not playing, always try to pause (even if src is not loaded yet)
     if (!isPlaying || !shouldOutputAudio) {
       audio.pause();
       return;
     }
 
-    // If playing, we need src to be loaded
     if (!audio.src) return;
 
     const playPromise = async () => {
@@ -114,21 +137,26 @@ export function usePlayerAudio() {
       }
     };
 
-    playPromise();
-  }, [isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId]);
+    void playPromise();
+  }, [isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId, streamFormatOverride]);
 
-  // Sync volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
   }, [volume]);
 
-  // Sync currentTime from store (for seeking)
+  // Seek: only apply large jumps to the element (avoids stutter from queue/reorder server echoes)
   useEffect(() => {
-    if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 1) {
-      audioRef.current.currentTime = currentTime;
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
+    const prev = prevStoreTimeRef.current;
+    prevStoreTimeRef.current = currentTime;
+    const deltaAudio = Math.abs(audio.currentTime - currentTime);
+    if (deltaAudio <= 1) return;
+    const storeDelta = Math.abs(currentTime - prev);
+    if (storeDelta < 0.75) return;
+    audio.currentTime = currentTime;
   }, [currentTime]);
 
   useEffect(() => {
@@ -139,7 +167,9 @@ export function usePlayerAudio() {
   const handleTimeUpdate = () => {
     const audio = audioRef.current;
     const shouldOutputAudio =
-      !isPlaybackSyncConnected() || !activeDeviceId || activeDeviceId === localPlaybackDeviceId;
+      !isPlaybackSyncConnected() ||
+      isNoActiveDevice(activeDeviceId) ||
+      activeDeviceId === localPlaybackDeviceId;
     if (!audio || !shouldOutputAudio) {
       return;
     }
@@ -151,7 +181,7 @@ export function usePlayerAudio() {
       !isPlaybackSyncConnected() ||
       !isPlaying ||
       !currentTrack ||
-      !activeDeviceId ||
+      isNoActiveDevice(activeDeviceId) ||
       activeDeviceId !== localPlaybackDeviceId ||
       playbackVersion === 0
     ) {
@@ -169,7 +199,7 @@ export function usePlayerAudio() {
 
     lastSyncedSecondRef.current = currentSecond;
     lastTimeSyncAtRef.current = now;
-    void emitCurrentTimeSync(localCurrentTime);
+    firePlaybackCommand(emitCurrentTimeSync(localCurrentTime), 'emitCurrentTimeSync');
   };
 
   const handleLoadedMetadata = () => {
@@ -194,15 +224,18 @@ export function usePlayerAudio() {
     if (repeatMode === 'one') {
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
-        audioRef.current.play();
+        audioRef.current.play().catch((err: unknown) => {
+          if (err instanceof Error && err.name !== 'AbortError') {
+            console.error('[AppPlayer] Repeat-one play error:', err);
+          }
+        });
       }
       return;
     }
 
-    const currentIndex = queue.findIndex((t) => t.track.id === currentTrack?.id);
-    const hasNext = currentIndex > -1 && currentIndex < queue.length - 1;
+    const ordered = getOrderedNextQueue(queue, isShuffled);
+    const hasNext = ordered.length > 0;
 
-    // If the queue ended and repeat is off, stop playback.
     if (repeatMode === 'off' && !hasNext) {
       pause();
       return;
@@ -218,7 +251,29 @@ export function usePlayerAudio() {
     if (quality !== 'auto') {
       queryParams.append('quality', quality);
     }
+    if (streamFormatOverride === 'mp3') {
+      queryParams.append('format', 'mp3');
+    }
     return `${apiBaseUrl}/library/tracks/${currentTrack.id}/stream?${queryParams.toString()}`;
+  };
+
+  const handleStreamError = () => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) {
+      return;
+    }
+    if (streamFormatOverride === 'mp3') {
+      console.error('[AppPlayer] Stream error after mp3 fallback', {
+        trackId: currentTrack.id,
+        error: audio.error,
+      });
+      return;
+    }
+    timeToRestoreRef.current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    setStreamFormatOverrideState({
+      trackId: currentTrack.id,
+      format: 'mp3',
+    });
   };
 
   const formatTime = (time: number) => {
@@ -237,9 +292,11 @@ export function usePlayerAudio() {
     handleTimeUpdate,
     handleLoadedMetadata,
     handleTrackEnd,
+    handleStreamError,
     getAudioUrl,
     formatTime,
     formatTimeLeft,
     nextTrack,
+    isMp3FormatFallback: streamFormatOverride === 'mp3',
   };
 }

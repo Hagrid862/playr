@@ -1,11 +1,14 @@
-import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from '@/lib/audio-metadata';
+import {
+  extractCoverFromAudioFile,
+  extractMetadataFromAudioFile,
+} from '@/lib/audio/audio-metadata';
 import { albumBuilder, artistBuilder } from '@repo/testing/builders';
 import { customRenderHook } from '@repo/testing/web';
 import { act, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateTrackForm } from './useCreateTrackForm';
 
-vi.mock('@/lib/audio-metadata', () => ({
+vi.mock('@/lib/audio/audio-metadata', () => ({
   extractMetadataFromAudioFile: vi.fn().mockResolvedValue(null),
   extractCoverFromAudioFile: vi.fn().mockResolvedValue(null),
 }));

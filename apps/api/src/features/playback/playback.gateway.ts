@@ -13,7 +13,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { PlaybackState } from '@repo/contracts';
+import { PlaybackDevice, PlaybackState } from '@repo/contracts';
 import { Server, Socket } from 'socket.io';
 import { getCorsOrigin } from '../../common/config/cors-config';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
@@ -61,8 +61,9 @@ import { SetPlaybackStateResponseDto } from './dto/response/set-playback-state.r
 import { GetPlaybackStateQuery } from './queries/impl/get-playback-state.query';
 import { GetQueueStateQuery } from './queries/impl/get-queue-state.query';
 import { PlaybackDeviceRegistryService } from './services/playback-device-registry.service';
+import { PlaybackStatePersistenceService } from './services/playback-state-persistence.service';
 
-type DeviceIcon = PlaybackState['deviceIcon'];
+type DeviceIcon = PlaybackDevice['icon'];
 
 type PlaybackSocketContext = {
   userId: string;
@@ -91,6 +92,7 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     private readonly queryBus: QueryBus,
     private readonly tokenService: TokenService,
     private readonly playbackDeviceRegistry: PlaybackDeviceRegistryService,
+    private readonly playbackStatePersistence: PlaybackStatePersistenceService,
   ) {}
 
   afterInit(server: Server) {
@@ -151,10 +153,28 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   async handleDisconnect(client: Socket) {
     if (!client.data?.user?.user?.id || !client.data?.playbackDeviceId) return;
-    await this.playbackDeviceRegistry.removeDevice(
-      client.data.user.user.id as string,
-      client.data.playbackDeviceId as string,
-    );
+    const userId = client.data.user.user.id as string;
+    const deviceId = client.data.playbackDeviceId as string;
+    try {
+      await this.playbackDeviceRegistry.removeDevice(userId, deviceId);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.warn(
+        `Playback disconnect removeDevice failed for user ${userId}: ${err.message}`,
+      );
+    }
+    try {
+      const updated = await this.playbackStatePersistence.pauseAndClearActiveIfDeviceMatches(
+        userId,
+        deviceId,
+      );
+      if (updated) {
+        this.server.to(`user:${userId}`).emit('event:playback-state-updated', updated);
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.warn(`Playback disconnect pause failed for user ${userId}: ${err.message}`);
+    }
   }
 
   @UseGuards(WsJwtGuard)

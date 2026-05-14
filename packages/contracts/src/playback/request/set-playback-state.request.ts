@@ -4,7 +4,6 @@ import { PlaybackStateSchema } from "../schemas/playback.schema";
 export const SetPlaybackStateRequestSchema = z
   .object({
     state: PlaybackStateSchema.omit({
-      sessionId: true,
       activeDeviceId: true,
       userId: true,
       version: true,

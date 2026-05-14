@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlaybackState } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { ReorderQueueItemsCommand } from '../impl/reorder-queue-items.command';
 
 function sortedQueueIds(items: { queueId: string }[]): string[] {
@@ -15,11 +16,7 @@ export class ReorderQueueItemsHandler implements ICommandHandler<ReorderQueueIte
   async execute(command: ReorderQueueItemsCommand): Promise<PlaybackState> {
     const { items: received, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-queue-state to create state first one.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
       const currentOrdered = [...current.queue].sort((a, b) => a.position - b.position);

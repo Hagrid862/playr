@@ -1,6 +1,6 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
-import { usePlayerStore } from '@/stores/player.store';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import type { PlaybackTrack } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
@@ -28,12 +28,15 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: vi.fn(),
 }));
 
-vi.mock('@/lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   emitCurrentTimeSync: vi.fn(),
+  firePlaybackCommand: vi.fn(() => {
+    /* args evaluated at call site before mock runs; no-op */
+  }),
   isPlaybackSyncConnected: vi.fn(),
 }));
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
 
@@ -76,10 +79,12 @@ describe('AppPlayer', () => {
     handleTimeUpdate: vi.fn(),
     handleLoadedMetadata: vi.fn(),
     handleTrackEnd: vi.fn(),
+    handleStreamError: vi.fn(),
     getAudioUrl: vi.fn().mockReturnValue('audio-url.mp3'),
     formatTime: vi.fn(),
     formatTimeLeft: vi.fn(),
     nextTrack: vi.fn(),
+    isMp3FormatFallback: false,
   } as ReturnType<typeof usePlayerAudio>;
 
   beforeEach(() => {
@@ -198,6 +203,9 @@ describe('AppPlayer', () => {
 
         fireEvent.ended(audioEl);
         expect(mockUsePlayerAudio.handleTrackEnd).toHaveBeenCalled();
+
+        fireEvent.error(audioEl);
+        expect(mockUsePlayerAudio.handleStreamError).toHaveBeenCalled();
       }
     });
   });

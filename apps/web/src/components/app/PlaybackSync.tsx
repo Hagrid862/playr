@@ -1,4 +1,4 @@
-import { disconnectPlaybackSync, connectPlaybackSync } from '@/lib/playback-sync';
+import { connectPlaybackSync, disconnectPlaybackSync } from '@/lib/playback/sync/playback-sync';
 import { useAuthStore } from '@/stores/auth.store';
 import { useEffect } from 'react';
 

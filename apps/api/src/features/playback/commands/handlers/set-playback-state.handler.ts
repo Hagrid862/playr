@@ -1,6 +1,11 @@
 import { BadRequestException, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { PlaybackState, PlaybackStatePayload, PlaybackStatePayloadSchema } from '@repo/contracts';
+import {
+  PLAYBACK_HISTORY_MAX_LENGTH,
+  PlaybackState,
+  PlaybackStatePayload,
+  PlaybackStatePayloadSchema,
+} from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
 import { SetPlaybackStateCommand } from './../impl/set-playback-state.command';
 
@@ -10,11 +15,41 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
 
   constructor(private readonly persistence: PlaybackStatePersistenceService) {}
 
+  private upsertDeviceById(
+    devices: PlaybackStatePayload['devices'],
+    device: { id: string; name: string; icon: PlaybackStatePayload['devices'][number]['icon'] },
+  ): PlaybackStatePayload['devices'] {
+    const map = new Map<string, PlaybackStatePayload['devices'][number]>();
+    for (const d of devices) map.set(d.id, d);
+    map.set(device.id, device);
+    return [...map.values()];
+  }
+
+  private mergeDevices(
+    currentDevices: PlaybackStatePayload['devices'],
+    payloadDevices: PlaybackStatePayload['devices'],
+    activeDevice: PlaybackStatePayload['devices'][number],
+    claimActiveDevice: boolean,
+  ): PlaybackStatePayload['devices'] {
+    // Update must not drop other connected devices: merge rather than replace.
+    const base = currentDevices ?? [];
+    if (payloadDevices.length > 0) {
+      const map = new Map<string, PlaybackStatePayload['devices'][number]>();
+      for (const d of base) map.set(d.id, d);
+      for (const d of payloadDevices) map.set(d.id, d);
+      if (claimActiveDevice) {
+        map.set(activeDevice.id, activeDevice);
+      }
+      return [...map.values()];
+    }
+
+    // If client sent no devices, only inject active device metadata (when claiming).
+    return claimActiveDevice ? this.upsertDeviceById(base, activeDevice) : base;
+  }
+
   async execute(command: SetPlaybackStateCommand): Promise<PlaybackState> {
     const state: PlaybackStatePayload = {
       ...command.request.state,
-      sessionId: command.sessionId,
-      activeDeviceId: '',
       userId: command.userId,
     };
 
@@ -29,23 +64,37 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       throw new BadRequestException('Data sent was not valid.');
     }
 
+    const payload: PlaybackStatePayload = {
+      ...serialized.data,
+      history: serialized.data.history.slice(0, PLAYBACK_HISTORY_MAX_LENGTH),
+    };
+
+    const activeDevice: PlaybackStatePayload['devices'][number] = {
+      id: command.playbackDeviceId,
+      name: command.playbackDeviceName,
+      icon: command.playbackDeviceIcon,
+    };
+
     if (expectedVersion === 0) {
       const firstState = claimActiveDevice
         ? {
-            ...serialized.data,
+            ...payload,
             activeDeviceId: command.playbackDeviceId,
-            deviceName: command.playbackDeviceName,
-            deviceIcon: command.playbackDeviceIcon,
+            devices: this.upsertDeviceById(payload.devices, activeDevice),
           }
-        : serialized.data;
-      return this.persistence.createIfAbsent(command.userId, command.sessionId, firstState);
+        : payload;
+      return this.persistence.createIfAbsent(command.userId, firstState);
     } else {
       return this.persistence.applyMutation(command.userId, expectedVersion, (current) => ({
         ...current,
-        ...serialized.data,
+        ...payload,
+        devices: this.mergeDevices(
+          current.devices,
+          payload.devices,
+          activeDevice,
+          claimActiveDevice,
+        ),
         activeDeviceId: claimActiveDevice ? command.playbackDeviceId : current.activeDeviceId,
-        deviceName: claimActiveDevice ? command.playbackDeviceName : current.deviceName,
-        deviceIcon: claimActiveDevice ? command.playbackDeviceIcon : current.deviceIcon,
       }));
     }
   }

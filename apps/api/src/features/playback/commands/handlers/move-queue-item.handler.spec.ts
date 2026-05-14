@@ -3,40 +3,52 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import {
+  fixtureQueueItem,
+  fixtureTrack,
+  playbackStateFixture,
+} from '../../test-utils/playback-state.fixture';
 import { MoveQueueItemCommand } from '../impl/move-queue-item.command';
 import { MoveQueueItemHandler } from './move-queue-item.handler';
 
 describe('MoveQueueItemHandler', () => {
   const userId = 'user-1';
   const sessionId = 'session-1';
-  const initialState: PlaybackState = {
+  const initialState: PlaybackState = playbackStateFixture({
     userId,
-    sessionId,
     activeDeviceId: 'device-1',
-    trackData: { id: 't1' } as any,
+    trackData: fixtureTrack,
     queue: [
-      { track: { id: 'track-1' } as any, position: 0, queueId: 'q1' },
-      { track: { id: 'track-2' } as any, position: 1, queueId: 'q2' },
-      { track: { id: 'track-3' } as any, position: 2, queueId: 'q3' },
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000001',
+        track: { ...fixtureTrack, id: 'track-1', trackId: 'track-1' },
+        position: 0,
+        originalPosition: 0,
+      }),
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000002',
+        track: { ...fixtureTrack, id: 'track-2', trackId: 'track-2' },
+        position: 1,
+        originalPosition: 1,
+      }),
+      fixtureQueueItem({
+        queueId: '01900000-0000-7000-8000-000000000003',
+        track: { ...fixtureTrack, id: 'track-3', trackId: 'track-3' },
+        position: 2,
+        originalPosition: 2,
+      }),
     ],
     currentTime: 10,
     volume: 0.5,
-    repeatMode: 'off',
-    shuffle: false,
-    favorited: 'not-set',
-    inLibrary: false,
     version: 1,
-    updatedAt: new Date().toISOString(),
-    deviceName: 'Web',
-    deviceIcon: 'desktop',
     isPlaying: true,
-  };
+  });
 
   it('moves an item to a new position', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new MoveQueueItemHandler(persistence);
     const command = new MoveQueueItemCommand(userId, sessionId, {
-      itemId: 'q1',
+      itemId: '01900000-0000-7000-8000-000000000001',
       newPosition: 2,
       expectedVersion: 1,
     });
@@ -46,15 +58,16 @@ describe('MoveQueueItemHandler', () => {
     });
 
     const result = await handler.execute(command);
-    expect(result.queue[2].queueId).toBe('q1');
+    expect(result.queue[2].queueId).toBe('01900000-0000-7000-8000-000000000001');
     expect(result.queue[2].position).toBe(2);
+    expect(result.queue[2].originalPosition).toBe(0);
   });
 
   it('throws BadRequestException if item not found', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new MoveQueueItemHandler(persistence);
     const command = new MoveQueueItemCommand(userId, sessionId, {
-      itemId: 'q-not-exists',
+      itemId: '01900000-0000-7000-8000-00000000cafe',
       newPosition: 0,
       expectedVersion: 1,
     });
@@ -70,7 +83,7 @@ describe('MoveQueueItemHandler', () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
     const handler = new MoveQueueItemHandler(persistence);
     const command = new MoveQueueItemCommand(userId, sessionId, {
-      itemId: 'q1',
+      itemId: '01900000-0000-7000-8000-000000000001',
       newPosition: 1,
       expectedVersion: 0,
     });

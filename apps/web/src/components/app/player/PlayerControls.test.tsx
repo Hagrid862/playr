@@ -1,11 +1,11 @@
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerControls } from './PlayerControls';
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
 

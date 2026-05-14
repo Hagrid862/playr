@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMounted } from '@/hooks/use-is-mounted';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import { useEffect, useState } from 'react';
 import { Lyrics } from '../app/Lyrics';
 import { AppPlayer } from '../app/Player';

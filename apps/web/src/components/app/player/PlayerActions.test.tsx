@@ -1,5 +1,5 @@
-import * as playbackSync from '@/lib/playback-sync';
-import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import * as playbackSync from '@/lib/playback/sync/playback-sync';
+import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
@@ -46,12 +46,15 @@ const { findPopoverTriggerChild, findPopoverContentChild } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/stores/player.store', () => ({
+vi.mock('@/stores/player-store/player.store', () => ({
   usePlayerStore: vi.fn(),
 }));
-vi.mock('@/lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   listPlaybackDevices: vi.fn(),
   setActivePlaybackDevice: vi.fn(),
+  firePlaybackCommand: vi.fn(() => {
+    /* args evaluated at call site before mock runs; no-op */
+  }),
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => ({
@@ -206,20 +209,18 @@ describe('PlayerActions', () => {
           activeDeviceId: 'device-2',
           playbackDevices: [
             {
-              deviceId: 'device-1',
-              deviceName: 'Chrome',
-              deviceIcon: 'desktop',
+              id: 'device-1',
+              name: 'Chrome',
+              icon: 'desktop',
               isActive: false,
               isCurrentDevice: false,
-              updatedAt: new Date().toISOString(),
             },
             {
-              deviceId: 'device-2',
-              deviceName: 'Firefox',
-              deviceIcon: 'desktop',
+              id: 'device-2',
+              name: 'Firefox',
+              icon: 'desktop',
               isActive: true,
               isCurrentDevice: true,
-              updatedAt: new Date().toISOString(),
             },
           ],
         }),
@@ -232,6 +233,37 @@ describe('PlayerActions', () => {
       expect(playbackSync.listPlaybackDevices).toHaveBeenCalled();
       fireEvent.click(screen.getByRole('button', { name: /Chrome/i }));
       expect(playbackSync.setActivePlaybackDevice).toHaveBeenCalledWith('device-1');
+    });
+
+    it('does not switch device when clicking the active device', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          activeDeviceId: 'device-2',
+          playbackDevices: [
+            {
+              id: 'device-1',
+              name: 'Chrome',
+              icon: 'desktop',
+              isActive: false,
+              isCurrentDevice: false,
+            },
+            {
+              id: 'device-2',
+              name: 'Firefox',
+              icon: 'desktop',
+              isActive: true,
+              isCurrentDevice: true,
+            },
+          ],
+        }),
+      );
+
+      customRender(<PlayerActions />);
+      fireEvent.click(screen.getByRole('button', { name: /volume/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Web player \(this device\)/i }));
+
+      expect(playbackSync.setActivePlaybackDevice).not.toHaveBeenCalled();
+      expect(playbackSync.firePlaybackCommand).toHaveBeenCalledTimes(1);
     });
 
     it('does not list devices when popover closes', () => {

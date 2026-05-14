@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
   PauseIcon,
   PlayIcon,

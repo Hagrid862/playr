@@ -1,4 +1,4 @@
-import type { PlaybackState } from '@repo/contracts';
+import type { PlaybackDevice } from '@repo/contracts';
 
 const DEVICE_ID_KEY = 'playr_playback_device_id';
 
@@ -21,7 +21,7 @@ function getDeviceName(): string {
   return detectDesktopBrowserFromUserAgent(ua);
 }
 
-function getDeviceIcon(): PlaybackState['deviceIcon'] {
+function getDeviceIcon(): PlaybackDevice['icon'] {
   if (typeof navigator === 'undefined') return 'desktop';
   return navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop';
 }

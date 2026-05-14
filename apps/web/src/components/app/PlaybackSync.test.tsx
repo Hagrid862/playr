@@ -1,4 +1,4 @@
-import { connectPlaybackSync, disconnectPlaybackSync } from '@/lib/playback-sync';
+import { connectPlaybackSync, disconnectPlaybackSync } from '@/lib/playback/sync/playback-sync';
 import type { AuthState } from '@/stores/auth.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { render } from '@testing-library/react';
@@ -21,12 +21,12 @@ vi.mock('@/stores/auth.store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock('@/lib/playback-sync', () => ({
+vi.mock('@/lib/playback/sync/playback-sync', () => ({
   connectPlaybackSync: vi.fn(),
   disconnectPlaybackSync: vi.fn(),
 }));
 
-describe('PlaybackSync', () => {
+describe('components/app/PlaybackSync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

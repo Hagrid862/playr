@@ -12,6 +12,40 @@ import { VerifyEmailPage } from "./verify-email.po";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Gets the unique album track card by title.
+ * @param page - The page object.
+ * @param trackTitle - The title of the track to get.
+ * @returns The unique album track card.
+ */
+async function getUniqueAlbumTrackCard(page: Page, trackTitle: string) {
+  const trackCards = page
+    .locator("div.group.cursor-pointer")
+    .filter({ hasText: trackTitle });
+  await expect(trackCards).toHaveCount(1);
+  return trackCards.first();
+}
+
+/**
+ * Plays a track from the album page and waits until the player shows the track
+ * and progress advances. Scoped to the real card to avoid matching unrelated divs.
+ * @param page - The page object.
+ * @param playerPage - The player page object.
+ * @param trackTitle - The title of the track to play.
+ * @returns The track card.
+ */
+async function playTrackFromAlbum(
+  page: Page,
+  playerPage: PlayerPage,
+  trackTitle: string,
+) {
+  const trackCard = await getUniqueAlbumTrackCard(page, trackTitle);
+  await trackCard.scrollIntoViewIfNeeded();
+  await trackCard.hover();
+  await trackCard.click();
+  await playerPage.expectPlaying(trackTitle);
+}
+
 test.describe("Queue Management", () => {
   let page: Page;
   let artistsPage: LibraryArtistsPage;
@@ -133,10 +167,9 @@ test.describe("Queue Management", () => {
   });
 
   test("should add tracks to queue and verify", async () => {
-    await page.locator("div").filter({ hasText: track1 }).last().click();
-    await expect(playerPage.trackTitle).toHaveText(track1);
+    await playTrackFromAlbum(page, playerPage, track1);
 
-    const track2Card = page.locator("div").filter({ hasText: track2 }).last();
+    const track2Card = await getUniqueAlbumTrackCard(page, track2);
     // Use right-click to open context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to Queue" }).click();
@@ -167,11 +200,10 @@ test.describe("Queue Management", () => {
     }
 
     // Play Track 1
-    await page.locator("div").filter({ hasText: track1 }).last().click();
-    await expect(playerPage.trackTitle).toHaveText(track1);
+    await playTrackFromAlbum(page, playerPage, track1);
 
     // Add Track 2 as Play Next
-    const track2Card = page.locator("div").filter({ hasText: track2 }).last();
+    const track2Card = await getUniqueAlbumTrackCard(page, track2);
     // Use right-click for context menu
     await track2Card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Play Next" }).click();
@@ -228,8 +260,7 @@ test.describe("Queue Management", () => {
     }
 
     // Play Track 1 on primary page
-    await page.locator("div").filter({ hasText: track1 }).last().click();
-    await expect(playerPage.trackTitle).toHaveText(track1);
+    await playTrackFromAlbum(page, playerPage, track1);
 
     // Create a new context to simulate another window
     const newContext = await browser.newContext();

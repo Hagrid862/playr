@@ -1,7 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlaybackState } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { SetQueueCommand } from '../impl/set-queue.command';
 
 @CommandHandler(SetQueueCommand)
@@ -11,14 +11,15 @@ export class SetQueueHandler implements ICommandHandler<SetQueueCommand> {
   async execute(command: SetQueueCommand): Promise<PlaybackState> {
     const { items, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-queue-state to create state first one.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
-      return { ...current, queue: items };
+      const queue = items.map((item, index) => ({
+        ...item,
+        position: index,
+        originalPosition: item.originalPosition,
+      }));
+      return { ...current, queue };
     });
   }
 }

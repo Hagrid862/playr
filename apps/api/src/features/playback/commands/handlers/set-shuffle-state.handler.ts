@@ -1,7 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlaybackState } from '@repo/contracts';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
+import { requirePlaybackMutationExpectedVersion } from '../../utils/playback-mutation-guards';
 import { SetShuffleStateCommand } from '../impl/set-shuffle-state.command';
 
 @CommandHandler(SetShuffleStateCommand)
@@ -11,13 +11,14 @@ export class SetShuffleStateHandler implements ICommandHandler<SetShuffleStateCo
   async execute(command: SetShuffleStateCommand): Promise<PlaybackState> {
     const { shuffle, expectedVersion } = command.request;
 
-    if (expectedVersion === 0) {
-      throw new BadRequestException(
-        'expectedVersion must be the current server version; use set-playback-state to create state first.',
-      );
-    }
+    requirePlaybackMutationExpectedVersion(expectedVersion);
 
     return this.persistence.applyMutation(command.userId, expectedVersion, (current) => {
+      if (shuffle === current.shuffle) {
+        // applyMutation manages version/updatedAt; merge is typed without them, so cast when returning unchanged current.
+        return current as Omit<PlaybackState, 'version' | 'updatedAt'>;
+      }
+
       return {
         ...current,
         shuffle,
