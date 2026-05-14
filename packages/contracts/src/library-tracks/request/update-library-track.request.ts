@@ -1,5 +1,6 @@
 import { Visibility } from "@repo/db";
 import { z } from "zod";
+import { libraryGenreIdsSchema } from "../../utils/genre-ids";
 
 export const UpdateLibraryTrackRequestSchema = z.object({
   title: z
@@ -14,6 +15,8 @@ export const UpdateLibraryTrackRequestSchema = z.object({
   lyrics: z.string().max(10000).optional(),
   visibility: z.enum(Visibility).optional(),
   artistIds: z.array(z.string()).min(1).optional(),
+  /** When set (including `[]`), replaces all track genres. Omit to leave genres unchanged. */
+  genreIds: libraryGenreIdsSchema.optional(),
 });
 
 export type UpdateLibraryTrackRequest = z.infer<

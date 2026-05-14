@@ -104,9 +104,13 @@ export class AudioProcessingWorker extends WorkerHost {
           userId,
         );
         if (hasAccess && (!track.duration || Math.round(duration) !== track.duration)) {
-          await this.trackRepository.update(trackId, {
-            duration: Math.round(duration),
-          });
+          await this.trackRepository.update(
+            trackId,
+            {
+              duration: Math.round(duration),
+            },
+            { includeRelations: false },
+          );
         }
       }
 

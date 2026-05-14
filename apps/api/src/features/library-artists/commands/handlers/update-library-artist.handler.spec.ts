@@ -1,8 +1,16 @@
 import { ArtistRepository } from '@/shared/repositories/artist.repository';
-import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
+import { LibraryRepository } from '@/shared/repositories/library.repository';
+import {
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Visibility } from '@repo/db';
-import { artistBuilder } from '@repo/testing/builders';
+import { artistBuilder, libraryBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpdateLibraryArtistCommand } from '../impl/update-library-artist.command';
@@ -11,9 +19,12 @@ import { UpdateLibraryArtistHandler } from './update-library-artist.handler';
 describe('UpdateLibraryArtistHandler', () => {
   let handler: UpdateLibraryArtistHandler;
   let artistRepository: DeepMocked<ArtistRepository>;
+  let libraryRepository: DeepMocked<LibraryRepository>;
+  let genreRepository: DeepMocked<GenreRepository>;
 
   const mockUserId = 'user-123';
   const mockArtistId = 'artist-123';
+  const mockLibrary = libraryBuilder({ id: 'library-123', userId: mockUserId });
   const mockArtist = artistBuilder({
     id: mockArtistId,
     name: 'Old Name',
@@ -27,11 +38,15 @@ describe('UpdateLibraryArtistHandler', () => {
 
   beforeEach(async () => {
     artistRepository = createMock<ArtistRepository>();
+    libraryRepository = createMock<LibraryRepository>();
+    genreRepository = createMock<GenreRepository>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateLibraryArtistHandler,
         { provide: ArtistRepository, useValue: artistRepository },
+        { provide: LibraryRepository, useValue: libraryRepository },
+        { provide: GenreRepository, useValue: genreRepository },
       ],
     }).compile();
 
@@ -57,6 +72,55 @@ describe('UpdateLibraryArtistHandler', () => {
     expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, dto);
   });
 
+  it('should clear genres when genreIds is an empty array', async () => {
+    const dto = { genreIds: [] as string[] };
+    const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
+
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    artistRepository.update.mockResolvedValue(mockArtist);
+
+    await handler.execute(command);
+
+    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, []);
+    expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
+      name: undefined,
+      description: undefined,
+      genres: { deleteMany: {}, create: [] },
+    });
+  });
+
+  it('should replace artist genres when genreIds are provided', async () => {
+    const dto = { genreIds: ['genre-1', 'genre-1', 'genre-2'] };
+    const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
+    const mockUpdatedArtist = { ...mockArtist };
+
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    artistRepository.update.mockResolvedValue(mockUpdatedArtist);
+
+    await handler.execute(command);
+
+    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, [
+      'genre-1',
+      'genre-1',
+      'genre-2',
+    ]);
+    expect(artistRepository.update).toHaveBeenCalledWith(mockArtistId, {
+      name: undefined,
+      description: undefined,
+      genres: {
+        deleteMany: {},
+        create: [
+          { genre: { connect: { id: 'genre-1' } } },
+          { genre: { connect: { id: 'genre-2' } } },
+        ],
+      },
+    });
+  });
+
   it('should update an artist description only without checking name conflict', async () => {
     const dto = { description: 'New Description' };
     const command = new UpdateLibraryArtistCommand(mockArtistId, dto, mockUserId);
@@ -74,6 +138,31 @@ describe('UpdateLibraryArtistHandler', () => {
       name: undefined,
       description: 'New Description',
     });
+  });
+
+  it('should throw PreconditionFailedException when genreIds are provided and library is missing', async () => {
+    const command = new UpdateLibraryArtistCommand(
+      mockArtistId,
+      { genreIds: ['genre-1'] },
+      mockUserId,
+    );
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    libraryRepository.getByUserId.mockResolvedValue(null);
+
+    await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
+  });
+
+  it('should throw BadRequestException when provided genre ids are not assignable', async () => {
+    const command = new UpdateLibraryArtistCommand(
+      mockArtistId,
+      { genreIds: ['genre-1'] },
+      mockUserId,
+    );
+    artistRepository.findOne.mockResolvedValue(mockArtist);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+
+    await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });
 
   it('should throw NotFoundException if artist is missing', async () => {

@@ -1,4 +1,4 @@
-import { type Genre } from "@repo/db";
+import { GenreKind, type Genre } from "@repo/db";
 import z from "zod";
 import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 import { AlbumGenreSchema, type ZodAlbumGenre } from "./album-genre.schema";
@@ -11,11 +11,19 @@ export interface ZodGenre extends Genre {
   tracks?: ZodTrackGenre[];
 }
 
+export const DeletedGenreSchema = z.object({
+  id: z.string(),
+});
+
+export type ZodDeletedGenre = z.infer<typeof DeletedGenreSchema>;
+
 export const GenreSchema: z.ZodType<ZodGenre> = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
   description: z.string().nullable(),
+  kind: z.enum(GenreKind),
+  libraryId: z.string().nullable(),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),

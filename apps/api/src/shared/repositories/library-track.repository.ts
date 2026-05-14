@@ -31,6 +31,7 @@ export class LibraryTrackRepository {
           include: {
             artists: true,
             album: true,
+            genres: { include: { genre: true } },
           },
         },
       },
@@ -59,6 +60,7 @@ export class LibraryTrackRepository {
           include: {
             artists: true,
             album: true,
+            genres: { include: { genre: true } },
           },
         },
       },

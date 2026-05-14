@@ -1,9 +1,14 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
-import { InternalServerErrorException, PreconditionFailedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumType, Track, Visibility } from '@repo/db';
 import { albumBuilder, libraryBuilder, trackBuilder } from '@repo/testing/builders';
@@ -19,6 +24,7 @@ describe('CreateLibraryTrackHandler', () => {
   let albumRepository: DeepMocked<AlbumRepository>;
   let trackRepository: DeepMocked<TrackRepository>;
   let libraryTrackRepository: DeepMocked<LibraryTrackRepository>;
+  let genreRepository: DeepMocked<GenreRepository>;
 
   const userId = 'user-123';
   const command = new CreateLibraryTrackCommand(
@@ -67,8 +73,10 @@ describe('CreateLibraryTrackHandler', () => {
     albumRepository = createMock<AlbumRepository>();
     trackRepository = createMock<TrackRepository>();
     libraryTrackRepository = createMock<LibraryTrackRepository>();
+    genreRepository = createMock<GenreRepository>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -78,6 +86,7 @@ describe('CreateLibraryTrackHandler', () => {
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: TrackRepository, useValue: trackRepository },
         { provide: LibraryTrackRepository, useValue: libraryTrackRepository },
+        { provide: GenreRepository, useValue: genreRepository },
       ],
     }).compile();
 
@@ -125,5 +134,51 @@ describe('CreateLibraryTrackHandler', () => {
     trackRepository.create.mockResolvedValue({ ...mockTrack, title: 123 });
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);
+  });
+
+  it('should throw BadRequestException when genre ids are not assignable', async () => {
+    const genreCommand = new CreateLibraryTrackCommand(
+      {
+        ...command.body,
+        genreIds: ['g1'],
+      },
+      userId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
+
+    await expect(handler.execute(genreCommand)).rejects.toThrow(BadRequestException);
+    expect(unitOfWork.runInTransaction).not.toHaveBeenCalled();
+  });
+
+  it('should dedupe genre ids when creating track', async () => {
+    const genreCommand = new CreateLibraryTrackCommand(
+      {
+        ...command.body,
+        genreIds: ['g1', 'g1', 'g2'],
+      },
+      userId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    trackRepository.create.mockResolvedValue(mockTrack);
+
+    await handler.execute(genreCommand);
+
+    expect(genreRepository.areGenreIdsAssignableToLibrary).toHaveBeenCalledWith(mockLibrary.id, [
+      'g1',
+      'g2',
+    ]);
+    expect(trackRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        genres: {
+          create: [{ genre: { connect: { id: 'g1' } } }, { genre: { connect: { id: 'g2' } } }],
+        },
+      }),
+    );
   });
 });

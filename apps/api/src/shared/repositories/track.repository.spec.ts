@@ -4,7 +4,7 @@ import { trackBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../services/prisma.service';
-import { TrackRepository } from './track.repository';
+import { DEFAULT_TRACK_INCLUDE, TrackRepository } from './track.repository';
 
 describe('TrackRepository', () => {
   let repository: TrackRepository;
@@ -63,7 +63,12 @@ describe('TrackRepository', () => {
       expect(result).toEqual(mockTrack);
       expect(mockTx.track.findFirst).toHaveBeenCalledWith({
         where: { id: 'track-123', deletedAt: null },
-        include: { artists: true, album: true, access: true },
+        include: {
+          artists: true,
+          album: true,
+          access: true,
+          genres: { include: { genre: true } },
+        },
       });
     });
   });
@@ -73,6 +78,18 @@ describe('TrackRepository', () => {
       mockTx.track.findMany.mockResolvedValue([mockTrack]);
       const result = await repository.findMany({ take: 5 });
       expect(result).toEqual([mockTrack]);
+      expect(mockTx.track.findMany).toHaveBeenCalledWith({
+        where: { deletedAt: null },
+        take: 5,
+        skip: undefined,
+        orderBy: { createdAt: 'desc' },
+        include: DEFAULT_TRACK_INCLUDE,
+      });
+    });
+
+    it('should omit include when includeRelations is false', async () => {
+      mockTx.track.findMany.mockResolvedValue([mockTrack]);
+      await repository.findMany({ take: 5, includeRelations: false });
       expect(mockTx.track.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
         take: 5,
@@ -122,6 +139,21 @@ describe('TrackRepository', () => {
       const data = { title: 'New Track' } as any;
       const result = await repository.create(data);
       expect(result).toEqual(mockTrack);
+      expect(mockTx.track.create).toHaveBeenCalledWith({
+        data,
+        include: {
+          artists: true,
+          album: true,
+          access: true,
+          genres: { include: { genre: true } },
+        },
+      });
+    });
+
+    it('should omit include when includeRelations is false', async () => {
+      mockTx.track.create.mockResolvedValue(mockTrack);
+      const data = { title: 'New Track' } as any;
+      await repository.create(data, { includeRelations: false });
       expect(mockTx.track.create).toHaveBeenCalledWith({ data });
     });
   });
@@ -132,7 +164,26 @@ describe('TrackRepository', () => {
       const data = { title: 'Updated' };
       const result = await repository.update('track-123', data);
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.update).toHaveBeenCalledWith({ where: { id: 'track-123' }, data });
+      expect(mockTx.track.update).toHaveBeenCalledWith({
+        where: { id: 'track-123' },
+        data,
+        include: {
+          artists: true,
+          album: true,
+          access: true,
+          genres: { include: { genre: true } },
+        },
+      });
+    });
+
+    it('should omit include when includeRelations is false', async () => {
+      mockTx.track.update.mockResolvedValue(mockTrack);
+      const data = { title: 'Updated' };
+      await repository.update('track-123', data, { includeRelations: false });
+      expect(mockTx.track.update).toHaveBeenCalledWith({
+        where: { id: 'track-123' },
+        data,
+      });
     });
   });
 

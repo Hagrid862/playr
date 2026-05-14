@@ -1,8 +1,10 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import {
+  BadRequestException,
   ConflictException,
   InternalServerErrorException,
   PreconditionFailedException,
@@ -18,6 +20,7 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
     private readonly libraryRepository: LibraryRepository,
     private readonly albumRepository: AlbumRepository,
     private readonly libraryAlbumRepository: LibraryAlbumRepository,
+    private readonly genreRepository: GenreRepository,
   ) {}
 
   async execute(command: CreateLibraryAlbumCommand): Promise<ZodAlbum> {
@@ -27,6 +30,21 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
 
     if (!library) {
       throw new PreconditionFailedException('User library not found');
+    }
+
+    const uniqueGenreIds =
+      request.genreIds !== undefined ? [...new Set(request.genreIds)] : undefined;
+
+    if (uniqueGenreIds !== undefined) {
+      const assignable = await this.genreRepository.areGenreIdsAssignableToLibrary(
+        library.id,
+        uniqueGenreIds,
+      );
+      if (!assignable) {
+        throw new BadRequestException(
+          'One or more genres are invalid or not available to your library',
+        );
+      }
     }
 
     const album = await this.unitOfWork.runInTransaction(async () => {
@@ -59,6 +77,15 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
             id: request.artistId,
           },
         },
+        ...(uniqueGenreIds && uniqueGenreIds.length > 0
+          ? {
+              genres: {
+                create: uniqueGenreIds.map((genreId) => ({
+                  genre: { connect: { id: genreId } },
+                })),
+              },
+            }
+          : {}),
       });
 
       await this.libraryAlbumRepository.create({

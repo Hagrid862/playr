@@ -122,6 +122,7 @@ model Library {
   artists           LibraryArtist[] @relation("LibraryArtistLibrary")
   albums            LibraryAlbum[]  @relation("LibraryAlbumLibrary")
   tracks            LibraryTrack[]  @relation("LibraryTrackLibrary")
+  genres            Genre[]         @relation("LibraryGenres")
   playlists         Playlist[]      @relation("LibraryPlaylistLibrary")
   importedPlaylists Playlist[]      @relation("ImportedPlaylistLibrary")
 
@@ -439,10 +440,14 @@ model Track {
 // -----------------------------------------------------------
 
 model Genre {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  slug        String  @unique
-  description String? @db.Text
+  id          String    @id @default(cuid())
+  name        String
+  slug        String
+  description String?   @db.Text
+  kind        GenreKind @default(system)
+
+  libraryId String?
+  library   Library? @relation("LibraryGenres", fields: [libraryId], references: [id], onDelete: Cascade)
 
   artists ArtistGenre[] @relation("GenreArtists")
   albums  AlbumGenre[]  @relation("GenreAlbums")
@@ -453,6 +458,9 @@ model Genre {
   deletedAt DateTime?
 
   @@index([name])
+  @@index([slug])
+  @@index([kind])
+  @@index([libraryId])
   @@map("genres")
 }
 
@@ -1055,6 +1063,11 @@ enum ProcessingStatus {
   processing
   complete
   failed
+}
+
+enum GenreKind {
+  system
+  custom
 }
 
 enum AccessRole {

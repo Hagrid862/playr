@@ -1,6 +1,7 @@
 import { AlbumType } from "@repo/db";
 import { z } from "zod";
 import { zodDateTimeNullable } from "../../utils";
+import { libraryGenreIdsSchema } from "../../utils/genre-ids";
 
 export const UpdateLibraryAlbumRequestSchema = z.object({
   name: z
@@ -15,6 +16,8 @@ export const UpdateLibraryAlbumRequestSchema = z.object({
   type: z.enum(AlbumType).optional(),
   releaseDate: zodDateTimeNullable().optional(),
   coverId: z.string().nullable().optional(),
+  /** When set (including `[]`), replaces all album genres. Omit to leave genres unchanged. */
+  genreIds: libraryGenreIdsSchema.optional(),
 });
 
 export type UpdateLibraryAlbumRequest = z.infer<

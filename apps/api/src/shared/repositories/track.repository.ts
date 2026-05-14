@@ -8,6 +8,13 @@ import {
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
+export const DEFAULT_TRACK_INCLUDE = {
+  artists: true,
+  album: true,
+  access: true,
+  genres: { include: { genre: true } },
+} as const;
+
 @Injectable()
 export class TrackRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -19,7 +26,7 @@ export class TrackRepository {
   async findOne(where: TrackWhereInput, includeRelations = false): Promise<Track | null> {
     return await this.prisma.client.track.findFirst({
       where: { ...where, deletedAt: null },
-      include: includeRelations ? { artists: true, album: true, access: true } : undefined,
+      include: includeRelations ? DEFAULT_TRACK_INCLUDE : undefined,
     });
   }
 
@@ -28,7 +35,9 @@ export class TrackRepository {
     take?: number;
     skip?: number;
     orderBy?: TrackOrderByWithRelationInput;
+    includeRelations?: boolean;
   }): Promise<Track[]> {
+    const includeRelations = options.includeRelations ?? true;
     return await this.prisma.client.track.findMany({
       take: options.take,
       skip: options.skip,
@@ -37,6 +46,7 @@ export class TrackRepository {
         deletedAt: null,
       },
       orderBy: options.orderBy ?? { createdAt: 'desc' },
+      ...(includeRelations ? { include: DEFAULT_TRACK_INCLUDE } : {}),
     });
   }
 
@@ -87,16 +97,29 @@ export class TrackRepository {
   // CREATE
   // ─────────────────────────────────────────────────────────────
 
-  async create(data: TrackCreateInput): Promise<Track> {
-    return await this.prisma.client.track.create({ data });
+  async create(data: TrackCreateInput, options?: { includeRelations?: boolean }): Promise<Track> {
+    const includeRelations = options?.includeRelations ?? true;
+    return await this.prisma.client.track.create({
+      data,
+      ...(includeRelations ? { include: DEFAULT_TRACK_INCLUDE } : {}),
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
   // UPDATE
   // ─────────────────────────────────────────────────────────────
 
-  async update(id: string, data: TrackUpdateInput): Promise<Track> {
-    return await this.prisma.client.track.update({ where: { id }, data });
+  async update(
+    id: string,
+    data: TrackUpdateInput,
+    options?: { includeRelations?: boolean },
+  ): Promise<Track> {
+    const includeRelations = options?.includeRelations ?? true;
+    return await this.prisma.client.track.update({
+      where: { id },
+      data,
+      ...(includeRelations ? { include: DEFAULT_TRACK_INCLUDE } : {}),
+    });
   }
 
   // ─────────────────────────────────────────────────────────────

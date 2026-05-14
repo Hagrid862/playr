@@ -58,6 +58,7 @@ describe('LibraryArtistRepository', () => {
             include: {
               avatar: true,
               banner: true,
+              genres: { include: { genre: true } },
             },
           },
         },
@@ -86,6 +87,7 @@ describe('LibraryArtistRepository', () => {
             include: {
               avatar: true,
               banner: true,
+              genres: { include: { genre: true } },
             },
           },
         },

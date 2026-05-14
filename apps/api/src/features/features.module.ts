@@ -3,6 +3,7 @@ import { AudioProcessingModule } from './audio-processing/audio-processing.modul
 import { AuthModule } from './auth/auth.module';
 import { AlbumsModule } from './library-albums/library-albums.module';
 import { LibraryArtistsModule } from './library-artists/library-artists.module';
+import { LibraryGenresModule } from './library-genres/library-genres.module';
 import { LibraryTracksModule } from './library-tracks/library-tracks.module';
 import { LibraryModule } from './library/library.module';
 import { PlaybackModule } from './playback/playback.module';
@@ -12,6 +13,7 @@ import { PlaybackModule } from './playback/playback.module';
     AuthModule,
     LibraryModule,
     LibraryArtistsModule,
+    LibraryGenresModule,
     AlbumsModule,
     LibraryTracksModule,
     AudioProcessingModule,
