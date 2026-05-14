@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { AudioProcessingModule } from '../audio-processing/audio-processing.module';
+import { PlaybackModule } from '../playback/playback.module';
 import { BulkCreateLibraryTracksHandler } from './commands/handlers/bulk-create-library-tracks.handler';
 import { BulkUploadTrackAudioHandler } from './commands/handlers/bulk-upload-track-audio.handler';
 import { CreateLibraryTrackHandler } from './commands/handlers/create-library-track.handler';
@@ -30,7 +31,7 @@ export const QueryHandlers = [
 ];
 
 @Module({
-  imports: [CqrsModule, AudioProcessingModule],
+  imports: [CqrsModule, AudioProcessingModule, PlaybackModule],
   controllers: [LibraryTracksController],
   providers: [...CommandHandlers, ...QueryHandlers],
 })

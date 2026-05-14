@@ -9,7 +9,7 @@ import { PlaybackState } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Redis } from 'ioredis';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
-import { playbackStateFixture } from '../test-utils/playback-state.fixture';
+import { playbackStateFixture, fixtureQueueItem } from '../test-utils/playback-state.fixture';
 import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
 import { PlaybackStatePersistenceService } from './playback-state-persistence.service';
 
@@ -462,6 +462,94 @@ describe('PlaybackStatePersistenceService', () => {
 
       await promise;
       expect(caughtError).toBeInstanceOf(ServiceUnavailableException);
+    });
+  });
+
+  describe('purgeDeletedLibraryTrack', () => {
+    it('returns unchanged when key missing', async () => {
+      connMock.get.mockResolvedValueOnce(null);
+      const r = await service.purgeDeletedLibraryTrack(userId, 'track-x');
+      expect(r).toEqual({ kind: 'unchanged' });
+    });
+
+    it('returns unchanged when deleted id is not referenced', async () => {
+      const st = playbackStateFixture({ userId, queue: [], version: 2 });
+      connMock.get.mockResolvedValueOnce(JSON.stringify(st));
+      const r = await service.purgeDeletedLibraryTrack(userId, 'other-track');
+      expect(r).toEqual({ kind: 'unchanged' });
+      expect(connMock.unwatch).toHaveBeenCalled();
+    });
+
+    it('deletes key when current track matches and queue is empty after filter', async () => {
+      const st = playbackStateFixture({
+        userId,
+        queue: [],
+        version: 2,
+        trackData: {
+          id: 'gone',
+          trackId: 'gone',
+          title: 'X',
+          artists: ['A'],
+          albumName: 'Al',
+          albumId: 'alb',
+          albumArt: null,
+          duration: 60,
+          explicit: false,
+        },
+      });
+      connMock.get.mockResolvedValueOnce(JSON.stringify(st));
+      connMock.multi.mockReturnValue({
+        del: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue(okExecResult),
+      } as unknown as RedisMulti);
+
+      const r = await service.purgeDeletedLibraryTrack(userId, 'gone');
+      expect(r).toEqual({ kind: 'removed' });
+    });
+
+    it('promotes next queue track when current matches', async () => {
+      const nextTrack = {
+        id: 'next',
+        trackId: 'next',
+        title: 'Next',
+        artists: ['A'],
+        albumName: 'Al',
+        albumId: 'alb',
+        albumArt: null,
+        duration: 90,
+        explicit: false,
+      };
+      const st = playbackStateFixture({
+        userId,
+        version: 3,
+        trackData: {
+          id: 'gone',
+          trackId: 'gone',
+          title: 'X',
+          artists: ['A'],
+          albumName: 'Al',
+          albumId: 'alb',
+          albumArt: null,
+          duration: 60,
+          explicit: false,
+        },
+        queue: [fixtureQueueItem({ track: nextTrack })],
+      });
+      connMock.get.mockResolvedValueOnce(JSON.stringify(st));
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(okExecResult),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+      const r = await service.purgeDeletedLibraryTrack(userId, 'gone');
+      expect(r.kind).toBe('updated');
+      if (r.kind === 'updated') {
+        expect(r.state.trackData.id).toBe('next');
+        expect(r.state.queue).toHaveLength(0);
+        expect(r.state.isPlaying).toBe(false);
+        expect(r.state.currentTime).toBe(0);
+      }
     });
   });
 });

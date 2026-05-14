@@ -12,6 +12,7 @@ import {
   PlaybackStatePayload,
   PlaybackStatePayloadSchema,
   PlaybackStateSchema,
+  type PlaybackTrack,
 } from '@repo/contracts';
 import { Redis } from 'ioredis';
 import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
@@ -46,6 +47,11 @@ const PLAYBACK_STATE_DEFAULT: Pick<
 };
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export type PurgeDeletedLibraryTrackResult =
+  | { kind: 'unchanged' }
+  | { kind: 'updated'; state: PlaybackState }
+  | { kind: 'removed' };
 
 @Injectable()
 export class PlaybackStatePersistenceService {
@@ -304,6 +310,145 @@ export class PlaybackStatePersistenceService {
         }
 
         return next;
+      } finally {
+        await conn.quit();
+      }
+    }
+
+    throw new ServiceUnavailableException(
+      'Playback state could not be saved due to concurrent updates; please retry.',
+    );
+  }
+
+  /**
+   * Removes references to a soft-deleted library track from persisted playback state.
+   */
+  async purgeDeletedLibraryTrack(
+    userId: string,
+    deletedTrackId: string,
+  ): Promise<PurgeDeletedLibraryTrackResult> {
+    const key = `state:${userId}`;
+    const matches = (track: PlaybackTrack) =>
+      track.id === deletedTrackId || track.trackId === deletedTrackId;
+
+    for (let attempt = 0; attempt < ATOMIC_SET_MAX_ATTEMPTS; attempt++) {
+      const conn = await this.redis.duplicate();
+      try {
+        try {
+          await conn.watch(key);
+        } catch (error) {
+          this.logger.error(`Redis WATCH failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        let raw: string | null;
+        try {
+          raw = await conn.get(key);
+        } catch (error) {
+          this.logger.error(`Redis GET failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        if (!raw) {
+          await conn.unwatch();
+          return { kind: 'unchanged' };
+        }
+
+        let parsed: PlaybackState;
+        try {
+          parsed = PlaybackStateSchema.parse(JSON.parse(raw));
+        } catch {
+          await conn.unwatch();
+          this.logger.error('Failed to parse playback state.');
+          throw new InternalServerErrorException('Failed to parse playback state.');
+        }
+
+        const queue = parsed.queue
+          .filter((q) => !matches(q.track))
+          .map((q, i) => ({ ...q, position: i }));
+        const history = parsed.history
+          .filter((q) => !matches(q.track))
+          .map((q, i) => ({ ...q, position: i }));
+
+        const currentMatches = matches(parsed.trackData);
+        const nothingFiltered =
+          queue.length === parsed.queue.length && history.length === parsed.history.length;
+        if (!currentMatches && nothingFiltered) {
+          await conn.unwatch();
+          return { kind: 'unchanged' };
+        }
+
+        if (currentMatches && queue.length === 0) {
+          let execResult: [error: Error | null, result: unknown][] | null;
+          try {
+            execResult = await conn.multi().del(key).exec();
+          } catch (error) {
+            await conn.unwatch();
+            this.logger.error(`Redis MULTI/EXEC failed: ${String(error)}`);
+            throw new InternalServerErrorException('Failed to update playback state.');
+          }
+
+          if (execResult === null || execResult.some(([error]) => error !== null)) {
+            if (execResult !== null) {
+              const firstError = execResult.find(([error]) => error !== null)?.[0];
+              this.logger.error(`Redis command failed in transaction: ${String(firstError)}`);
+              await conn.unwatch();
+            }
+
+            const base = Math.min(10 * 2 ** attempt, 1000);
+            const jitter = Math.floor(Math.random() * Math.min(base, 50));
+            await sleep(base + jitter);
+            continue;
+          }
+
+          return { kind: 'removed' };
+        }
+
+        let trackData = parsed.trackData;
+        let currentTime = parsed.currentTime;
+        let isPlaying = parsed.isPlaying;
+        let nextQueue = queue;
+        if (currentMatches) {
+          trackData = queue[0]!.track;
+          nextQueue = queue.slice(1).map((q, i) => ({ ...q, position: i }));
+          currentTime = 0;
+          isPlaying = false;
+        }
+
+        const next: PlaybackState = {
+          ...parsed,
+          trackData,
+          queue: nextQueue,
+          history,
+          currentTime,
+          isPlaying,
+          version: parsed.version + 1,
+          updatedAt: new Date().toISOString(),
+        };
+
+        let execResult: [error: Error | null, result: unknown][] | null;
+        try {
+          execResult = await conn.multi().set(key, JSON.stringify(next)).exec();
+        } catch (error) {
+          await conn.unwatch();
+          this.logger.error(`Redis MULTI/EXEC failed: ${String(error)}`);
+          throw new InternalServerErrorException('Failed to update playback state.');
+        }
+
+        if (execResult === null || execResult.some(([error]) => error !== null)) {
+          if (execResult !== null) {
+            const firstError = execResult.find(([error]) => error !== null)?.[0];
+            this.logger.error(`Redis command failed in transaction: ${String(firstError)}`);
+            await conn.unwatch();
+          }
+
+          const base = Math.min(10 * 2 ** attempt, 1000);
+          const jitter = Math.floor(Math.random() * Math.min(base, 50));
+          await sleep(base + jitter);
+          continue;
+        }
+
+        return { kind: 'updated', state: next };
       } finally {
         await conn.quit();
       }

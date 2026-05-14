@@ -1,3 +1,5 @@
+import { PlaybackGateway } from '@/features/playback/playback.gateway';
+import { PlaybackStatePersistenceService } from '@/features/playback/services/playback-state-persistence.service';
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
@@ -6,11 +8,13 @@ import { UnitOfWorkService } from '@/shared/services/unit-of-work.service';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { type Track, AudioFormat, FileBucket, ProcessingStatus, Visibility } from '@repo/db';
+import { PlaybackState } from '@repo/contracts';
 import { audioFileBuilder, trackBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeleteLibraryTrackCommand } from '../impl/delete-library-track.command';
 import { DeleteLibraryTrackHandler } from './delete-library-track.handler';
+import { playbackStateFixture } from '../../../playback/test-utils/playback-state.fixture';
 
 describe('DeleteLibraryTrackHandler', () => {
   let handler: DeleteLibraryTrackHandler;
@@ -19,6 +23,8 @@ describe('DeleteLibraryTrackHandler', () => {
   let libraryTrackRepository: DeepMocked<LibraryTrackRepository>;
   let audioFileRepository: DeepMocked<AudioFileRepository>;
   let storageService: DeepMocked<StorageService>;
+  let playbackStatePersistence: DeepMocked<PlaybackStatePersistenceService>;
+  let playbackGateway: DeepMocked<PlaybackGateway>;
 
   const userId = 'user-123';
   const trackId = 'track-123';
@@ -40,10 +46,13 @@ describe('DeleteLibraryTrackHandler', () => {
     libraryTrackRepository = createMock<LibraryTrackRepository>();
     audioFileRepository = createMock<AudioFileRepository>();
     storageService = createMock<StorageService>();
+    playbackStatePersistence = createMock<PlaybackStatePersistenceService>();
+    playbackGateway = createMock<PlaybackGateway>();
 
     unitOfWork.runInTransaction.mockImplementation(async (cb) => cb());
     audioFileRepository.listByTrackId.mockResolvedValue([]);
     libraryTrackRepository.listIdsByTrackAndUser.mockResolvedValue(['library-track-1']);
+    playbackStatePersistence.purgeDeletedLibraryTrack.mockResolvedValue({ kind: 'unchanged' });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -53,6 +62,8 @@ describe('DeleteLibraryTrackHandler', () => {
         { provide: LibraryTrackRepository, useValue: libraryTrackRepository },
         { provide: AudioFileRepository, useValue: audioFileRepository },
         { provide: StorageService, useValue: storageService },
+        { provide: PlaybackStatePersistenceService, useValue: playbackStatePersistence },
+        { provide: PlaybackGateway, useValue: playbackGateway },
       ],
     }).compile();
 
@@ -95,6 +106,35 @@ describe('DeleteLibraryTrackHandler', () => {
     expect(libraryTrackRepository.deleteMany).toHaveBeenCalledWith(['library-track-1']);
     expect(audioFileRepository.delete).toHaveBeenCalledWith('audio-1');
     expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, 'audio/key');
+    expect(playbackStatePersistence.purgeDeletedLibraryTrack).toHaveBeenCalledWith(userId, trackId);
+    expect(playbackGateway.emitPlaybackStateToUserRoom).not.toHaveBeenCalled();
+    expect(playbackGateway.emitPlaybackSessionEndedToUserRoom).not.toHaveBeenCalled();
+  });
+
+  it('broadcasts updated playback state when purge returns updated', async () => {
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
+    audioFileRepository.listByTrackId.mockResolvedValue([]);
+    const nextState: PlaybackState = playbackStateFixture({ userId, version: 3 });
+    playbackStatePersistence.purgeDeletedLibraryTrack.mockResolvedValue({
+      kind: 'updated',
+      state: nextState,
+    });
+
+    await handler.execute(command);
+
+    expect(playbackGateway.emitPlaybackStateToUserRoom).toHaveBeenCalledWith(userId, nextState);
+    expect(playbackGateway.emitPlaybackSessionEndedToUserRoom).not.toHaveBeenCalled();
+  });
+
+  it('broadcasts session ended when purge removes playback document', async () => {
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
+    audioFileRepository.listByTrackId.mockResolvedValue([]);
+    playbackStatePersistence.purgeDeletedLibraryTrack.mockResolvedValue({ kind: 'removed' });
+
+    await handler.execute(command);
+
+    expect(playbackGateway.emitPlaybackSessionEndedToUserRoom).toHaveBeenCalledWith(userId);
+    expect(playbackGateway.emitPlaybackStateToUserRoom).not.toHaveBeenCalled();
   });
 
   it('should throw NotFoundException if track not found or access denied', async () => {

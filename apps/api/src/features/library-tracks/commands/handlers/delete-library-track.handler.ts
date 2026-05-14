@@ -1,3 +1,5 @@
+import { PlaybackGateway } from '@/features/playback/playback.gateway';
+import { PlaybackStatePersistenceService } from '@/features/playback/services/playback-state-persistence.service';
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
@@ -19,6 +21,8 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
     private readonly libraryTrackRepository: LibraryTrackRepository,
     private readonly audioFileRepository: AudioFileRepository,
     private readonly storageService: StorageService,
+    private readonly playbackStatePersistence: PlaybackStatePersistenceService,
+    private readonly playbackGateway: PlaybackGateway,
   ) {}
 
   async execute(command: DeleteLibraryTrackCommand): Promise<ZodTrack> {
@@ -47,6 +51,20 @@ export class DeleteLibraryTrackHandler implements ICommandHandler<DeleteLibraryT
       this.storageService.deleteFile(audioFile.bucket as FileBucket, audioFile.key).catch((err) => {
         this.logger.error(`Failed to cleanup audio file from S3: ${audioFile.key}`, err);
       });
+    }
+
+    try {
+      const purge = await this.playbackStatePersistence.purgeDeletedLibraryTrack(userId, id);
+      if (purge.kind === 'updated') {
+        this.playbackGateway.emitPlaybackStateToUserRoom(userId, purge.state);
+      } else if (purge.kind === 'removed') {
+        this.playbackGateway.emitPlaybackSessionEndedToUserRoom(userId);
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.warn(
+        `Playback purge after track delete failed for user ${userId}: ${err.message}`,
+      );
     }
 
     return track;
