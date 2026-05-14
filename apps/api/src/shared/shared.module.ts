@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { AlbumAccessGuard } from './guards/album-access.guard';
 import { ArtistAccessGuard } from './guards/artist-access.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtAuthGuardForSearch } from './guards/jwt-auth-for-search.guard';
 import { TrackAccessGuard } from './guards/track-access.guard';
 import { AlbumRepository } from './repositories/album.repository';
 import { ArtistRepository } from './repositories/artist.repository';
@@ -64,6 +65,7 @@ import { MailService } from '@/shared/services/mail.service';
     PlaylistRepository,
     // guards
     JwtAuthGuard,
+    JwtAuthGuardForSearch,
     AlbumAccessGuard,
     ArtistAccessGuard,
     TrackAccessGuard,
@@ -97,6 +99,7 @@ import { MailService } from '@/shared/services/mail.service';
     PlaylistRepository,
     // guards
     JwtAuthGuard,
+    JwtAuthGuardForSearch,
     AlbumAccessGuard,
     ArtistAccessGuard,
     TrackAccessGuard,
