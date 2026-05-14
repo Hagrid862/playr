@@ -117,43 +117,59 @@ test.describe("Queue Management", () => {
     await artistsPage.clickAddArtist();
     await artistsPage.createArtist({ name: artistName });
 
-    // Create Album
-    await page.goto("/app/library/albums/create");
-    await page.getByRole("button", { name: "Pick existing artist" }).click();
-    await page.getByText(artistName).click();
-    await page.getByLabel("Album Title").waitFor({ state: "visible" });
-    await page.getByLabel("Album Title").fill(albumName);
-    await page.getByRole("button", { name: "Create Album" }).click();
-    await page.waitForLoadState("networkidle");
-
-    // Get album ID from URL or list
-    await page.locator("a").filter({ hasText: albumName }).first().click();
-    await page.waitForLoadState("networkidle");
-    const albumUrl = new URL(page.url());
-    const albumPathname = albumUrl.pathname.replace(/\/+$/, "");
-    const albumId = albumPathname.split("/").pop();
-
-    // Add Track 1
-    await page.goto(`/app/library/albums/${albumId}/add-content`);
-    await page.getByLabel("Track Title").waitFor({ state: "visible" });
-    await page.getByLabel("Track Title").fill(track1);
     const audioPath = path.resolve(
       __dirname,
       "../../ui-tests/assets/test-audio.mp3",
     );
-    await page.setInputFiles('input[type="file"]', audioPath);
-    await page.getByRole("button", { name: "Add Track" }).click();
 
-    // Wait for navigation to complete - the form navigates to the parent (album detail) page
-    await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, { timeout: 30000 });
+    // Create Album (artist add-content — same flow as albums/create, artist pre-selected)
+    await artistsPage.gotoArtistsList();
+    await artistsPage.expectArtistInList(artistName);
+    await artistsPage.clickArtistCard(artistName);
+
+    const artistUrl = new URL(page.url());
+    const artistPath = artistUrl.pathname.replace(/\/+$/, "");
+    const artistId = artistPath.split("/").pop();
+    expect(artistId).toBeTruthy();
+
+    await page.goto(`/app/library/artists/${artistId}/add-content`);
     await page.waitForLoadState("networkidle");
+
+    await page.getByLabel("Album title").waitFor({ state: "visible" });
+    await page.getByLabel("Album title").fill(albumName);
+
+    await page
+      .locator('input[type="file"][accept="audio/*"]')
+      .setInputFiles(audioPath);
+    // Wait for metadata scan to potentially start and then finish
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Scanning metadata/)).toBeHidden({
+      timeout: 20000,
+    });
+
+    // Rename the first track staged during album creation to track1
+    await page.getByLabel("Track Title").fill(track1);
+
+    await page.getByRole("button", { name: /Create album & upload/ }).click();
+    await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, { timeout: 60000 });
+    await page.waitForLoadState("networkidle");
+
+    const albumUrl = new URL(page.url());
+    const albumPathname = albumUrl.pathname.replace(/\/+$/, "");
+    const albumId = albumPathname.split("/").pop();
+    expect(albumId).toBeTruthy();
+
     await expect(page.getByText(track1)).toBeVisible({ timeout: 30000 });
 
     // Add Track 2
     await page.goto(`/app/library/albums/${albumId}/add-content`);
-    await page.getByLabel("Track Title").waitFor({ state: "visible" });
-    await page.getByLabel("Track Title").fill(track2);
     await page.setInputFiles('input[type="file"]', audioPath);
+    // Wait for metadata scan to start and then finish deterministically
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Scanning metadata/)).toBeHidden({
+      timeout: 20000,
+    });
+    await page.getByLabel("Track Title").fill(track2);
     await page.getByRole("button", { name: "Add Track" }).click();
 
     // Wait for navigation to complete - the form navigates to the parent (album detail) page

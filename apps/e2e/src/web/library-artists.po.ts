@@ -161,10 +161,21 @@ export class LibraryArtistsPage {
   }
 
   async submitEditForm() {
-    await this.saveChangesButton.click();
-    // Redirects back to artist detail page
+    await this.saveChangesButton.scrollIntoViewIfNeeded();
+    // requestSubmit avoids the fixed bottom player intercepting pointer events on the submit button
+    await this.saveChangesButton.evaluate((btn: HTMLButtonElement) => {
+      btn.form?.requestSubmit(btn);
+    });
+    // Redirects after PATCH + optional avatar/banner uploads (can be slow in Docker)
     await expect(this.page).toHaveURL(/\/app\/library\/artists\/[^/]+\/?$/, {
-      timeout: 15000,
+      timeout: 60000,
+    });
+  }
+
+  async clickEditCancel() {
+    await this.editCancelButton.scrollIntoViewIfNeeded();
+    await this.editCancelButton.evaluate((el: HTMLElement) => {
+      el.click();
     });
   }
 

@@ -162,10 +162,13 @@ export function useCreateTrackForm({ album, onSubmit }: UseCreateTrackFormProps)
         album: meta?.album ?? '',
       };
 
-      form.setFieldValue(
-        'title',
-        meta?.title || cleanFilenameToTitle(audioFileForScan.name, metaContext),
-      );
+      const existingTitle = (form.state.values.title ?? '').trim();
+      if (!existingTitle) {
+        form.setFieldValue(
+          'title',
+          meta?.title || cleanFilenameToTitle(audioFileForScan.name, metaContext),
+        );
+      }
       form.setFieldValue('trackNumber', meta?.trackNo ?? 1);
       form.setFieldValue('diskNumber', meta?.diskNo ?? 1);
 

@@ -55,6 +55,10 @@ vi.mock('./EditAlbumModals', () => ({
   EditAlbumModals: () => <div>Modals</div>,
 }));
 
+vi.mock('./EditAlbumTracksSection', () => ({
+  EditAlbumTracksSection: () => <div data-testid="edit-album-tracks">Tracks column</div>,
+}));
+
 describe('EditAlbumForm', () => {
   const mockOnSubmit = vi.fn();
   const mockOnCancel = vi.fn();
@@ -72,8 +76,9 @@ describe('EditAlbumForm', () => {
 
   it('renders correctly', () => {
     customRender(<EditAlbumForm {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /Save Changes/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Save changes/i })).toBeInTheDocument();
     expect(screen.getByText('Metadata Fields')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-album-tracks')).toBeInTheDocument();
   });
 
   it('calls onCancel when cancel button is clicked', async () => {
@@ -107,7 +112,7 @@ describe('EditAlbumForm', () => {
     } as unknown as UseEditAlbumFormReturn);
 
     customRender(<EditAlbumForm {...defaultProps} />);
-    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await user.click(screen.getByRole('button', { name: /Save changes/i }));
     expect(mockForm.handleSubmit).toHaveBeenCalled();
   });
 

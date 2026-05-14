@@ -1,14 +1,28 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  CreateLibraryArtistRequestSchema,
+  GetLibraryArtistAlbumsRequestSchema,
+  GetLibraryArtistNameAvailabilityRequestSchema,
+  GetLibraryArtistsRequestSchema,
+  UpdateLibraryArtistRequestSchema,
+} from '@repo/contracts';
+import { AlbumType } from '@repo/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CreateLibraryArtistCommand } from './commands/impl/create-library-artist.command';
 import { DeleteLibraryArtistCommand } from './commands/impl/delete-library-artist.command';
 import { UpdateLibraryArtistCommand } from './commands/impl/update-library-artist.command';
 import { UploadLibraryArtistAvatarCommand } from './commands/impl/upload-library-artist-avatar.command';
 import { UploadLibraryArtistBannerCommand } from './commands/impl/upload-library-artist-banner.command';
+import { CreateLibraryArtistRequestDto } from './dto/request/create-library-artist.request.dto';
+import { GetLibraryArtistAlbumsRequestDto } from './dto/request/get-library-artist-albums.request.dto';
+import { GetLibraryArtistNameAvailabilityRequestDto } from './dto/request/get-library-artist-name-availability.request.dto';
+import { GetLibraryArtistsRequestDto } from './dto/request/get-library-artists.request.dto';
+import { UpdateLibraryArtistRequestDto } from './dto/request/update-library-artist.request.dto';
 import { LibraryArtistsController } from './library-artists.controller';
 import { GetLibraryArtistAlbumsQuery } from './queries/impl/get-library-artist-albums.query';
+import { GetLibraryArtistNameAvailabilityQuery } from './queries/impl/get-library-artist-name-availability.query';
 import { GetLibraryArtistQuery } from './queries/impl/get-library-artist.query';
 import { GetLibraryArtistsQuery } from './queries/impl/get-library-artists.query';
 
@@ -35,14 +49,16 @@ describe('LibraryArtistsController', () => {
   describe('createArtist', () => {
     it('should execute CreateArtistCommand with correct parameters', async () => {
       const userId = 'user-123';
-      const request = { name: 'New Artist' };
-      const expectedResult = { id: 'artist-123', ...request };
+      const request: CreateLibraryArtistRequestDto = CreateLibraryArtistRequestSchema.parse({
+        name: 'New Artist',
+      });
+      const expectedResult = { id: 'artist-123', name: request.name };
       commandBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.createArtist(request as any, userId);
+      const result = await controller.createArtist(request, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
-        new CreateLibraryArtistCommand(request as any, userId),
+        new CreateLibraryArtistCommand(request, userId),
       );
       expect(result).toBe(expectedResult);
     });
@@ -51,7 +67,10 @@ describe('LibraryArtistsController', () => {
   describe('getLibraryArtists', () => {
     it('should execute GetLibraryArtistsQuery with correct parameters', async () => {
       const userId = 'user-123';
-      const query = { page: 1, limit: 10 };
+      const query: GetLibraryArtistsRequestDto = GetLibraryArtistsRequestSchema.parse({
+        page: 1,
+        limit: 10,
+      });
       const expectedResult = {
         items: [],
         total: 0,
@@ -60,10 +79,29 @@ describe('LibraryArtistsController', () => {
       };
       queryBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.getLibraryArtists(userId, query as any);
+      const result = await controller.getLibraryArtists(userId, query);
 
       expect(queryBus.execute).toHaveBeenCalledWith(
         new GetLibraryArtistsQuery(userId, query.page, query.limit),
+      );
+      expect(result).toBe(expectedResult);
+    });
+  });
+
+  describe('getLibraryArtistNameAvailability', () => {
+    it('should execute GetLibraryArtistNameAvailabilityQuery with correct parameters', async () => {
+      const userId = 'user-123';
+      const query: GetLibraryArtistNameAvailabilityRequestDto =
+        GetLibraryArtistNameAvailabilityRequestSchema.parse({
+          name: 'Proposed Artist',
+        });
+      const expectedResult = { available: true };
+      queryBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.getLibraryArtistNameAvailability(userId, query);
+
+      expect(queryBus.execute).toHaveBeenCalledWith(
+        new GetLibraryArtistNameAvailabilityQuery(userId, query.name),
       );
       expect(result).toBe(expectedResult);
     });
@@ -87,14 +125,16 @@ describe('LibraryArtistsController', () => {
     it('should execute UpdateArtistCommand with correct parameters', async () => {
       const userId = 'user-123';
       const artistId = 'artist-123';
-      const request = { name: 'Updated Artist' };
-      const expectedResult = { id: artistId, ...request };
+      const request: UpdateLibraryArtistRequestDto = UpdateLibraryArtistRequestSchema.parse({
+        name: 'Updated Artist',
+      });
+      const expectedResult = { id: artistId, name: request.name };
       commandBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.updateArtist(artistId, request as any, userId);
+      const result = await controller.updateArtist(artistId, request, userId);
 
       expect(commandBus.execute).toHaveBeenCalledWith(
-        new UpdateLibraryArtistCommand(artistId, request as any, userId),
+        new UpdateLibraryArtistCommand(artistId, request, userId),
       );
       expect(result).toBe(expectedResult);
     });
@@ -118,7 +158,11 @@ describe('LibraryArtistsController', () => {
     it('should execute GetLibraryArtistAlbumsQuery with correct parameters', async () => {
       const userId = 'user-123';
       const artistId = 'artist-123';
-      const query = { page: 1, limit: 10, type: 'album' };
+      const query: GetLibraryArtistAlbumsRequestDto = GetLibraryArtistAlbumsRequestSchema.parse({
+        page: 1,
+        limit: 10,
+        type: AlbumType.album,
+      });
       const expectedResult = {
         items: [],
         total: 0,
@@ -127,16 +171,10 @@ describe('LibraryArtistsController', () => {
       };
       queryBus.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.getLibraryArtistAlbums(userId, artistId, query as any);
+      const result = await controller.getLibraryArtistAlbums(userId, artistId, query);
 
       expect(queryBus.execute).toHaveBeenCalledWith(
-        new GetLibraryArtistAlbumsQuery(
-          userId,
-          artistId,
-          query.page,
-          query.limit,
-          query.type as any,
-        ),
+        new GetLibraryArtistAlbumsQuery(userId, artistId, query.page, query.limit, query.type),
       );
       expect(result).toBe(expectedResult);
     });

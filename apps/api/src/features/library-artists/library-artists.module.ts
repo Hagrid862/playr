@@ -6,6 +6,7 @@ import { UpdateLibraryArtistHandler } from './commands/handlers/update-library-a
 import { UploadLibraryArtistAvatarHandler } from './commands/handlers/upload-library-artist-avatar.handler';
 import { UploadLibraryArtistBannerHandler } from './commands/handlers/upload-library-artist-banner.handler';
 import { LibraryArtistsController } from './library-artists.controller';
+import { GetLibraryArtistNameAvailabilityHandler } from './queries/handlers/get-library-artist-name-availability.handler';
 import { GetLibraryArtistHandler } from './queries/handlers/get-library-artist.handler';
 import { GetLibraryArtistsHandler } from './queries/handlers/get-library-artists.handler';
 import { GetLibraryArtistAlbumsHandler } from './queries/handlers/get-library-artist-albums.handler';
@@ -14,6 +15,7 @@ import { GetLibraryArtistAlbumsHandler } from './queries/handlers/get-library-ar
   imports: [CqrsModule],
   controllers: [LibraryArtistsController],
   providers: [
+    GetLibraryArtistNameAvailabilityHandler,
     GetLibraryArtistHandler,
     GetLibraryArtistsHandler,
     GetLibraryArtistAlbumsHandler,

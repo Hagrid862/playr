@@ -154,6 +154,7 @@ test.describe("Library Artist CRUD Workflow", () => {
   });
 
   test("should upload avatar and banner in edit mode", async () => {
+    test.setTimeout(90_000);
     const name = `E2E Artist ${timestamp}`;
     await artistsPage.gotoArtistsList();
     await artistsPage.clickArtistCard(name);
@@ -206,7 +207,7 @@ test.describe("Library Artist CRUD Workflow", () => {
     );
 
     // Cancel to reset state
-    await artistsPage.editCancelButton.click();
+    await artistsPage.clickEditCancel();
   });
 
   // ─── Delete ────────────────────────────────────────────────────

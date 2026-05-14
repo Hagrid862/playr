@@ -92,38 +92,65 @@ test.describe("Playback Functionality", () => {
     });
 
     await test.step("Create Album", async () => {
-      await page.goto("/app/library/albums/create");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("button", { name: "Pick existing artist" }).click();
-      await page.getByText(artistName).click();
-      await page.waitForLoadState("networkidle");
-      await expect(page).toHaveURL(/\/add-content\/album/);
+      await artistsPage.gotoArtistsList();
+      await artistsPage.expectArtistInList(artistName);
+      await artistsPage.clickArtistCard(artistName);
+      await artistsPage.expectArtistDetailPage(artistName);
 
-      await page.getByLabel("Album Title").waitFor({ state: "visible" });
-      await page.getByLabel("Album Title").fill(albumName);
-      await page.getByRole("button", { name: "Create Album" }).click();
+      const artistUrl = new URL(page.url());
+      const artistPath = artistUrl.pathname.replace(/\/+$/, "");
+      const artistId = artistPath.split("/").pop();
+      expect(artistId).toBeTruthy();
+
+      await page.goto(`/app/library/artists/${artistId}/add-content`);
       await page.waitForLoadState("networkidle");
-      await expect(page).toHaveURL(new RegExp(`/app/library/artists/`));
+
+      await page.getByLabel("Album title").waitFor({ state: "visible" });
+      await page.getByLabel("Album title").fill(albumName);
+
+      const dummyAudioPath = path.resolve(
+        __dirname,
+        "../../ui-tests/assets/test-audio.mp3",
+      );
+      await page
+        .locator('input[type="file"][accept="audio/*"]')
+        .setInputFiles(dummyAudioPath);
+
+      // Wait for metadata scan to potentially start and then finish
+      await page.waitForTimeout(500);
+      await expect(page.getByText(/Scanning metadata/)).toBeHidden({
+        timeout: 20000,
+      });
+
+      // Rename the first track staged during album creation to avoid "Test audio" collision
+      await page.getByLabel("Track Title").fill("Initial Track");
+
+      await page.getByRole("button", { name: /Create album & upload/ }).click();
+      await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, {
+        timeout: 60000,
+      });
+      await page.waitForLoadState("networkidle");
     });
 
     await test.step("Add Track", async () => {
-      // 5. Add Track
-      await page.locator("a").filter({ hasText: albumName }).first().click();
-      await page.waitForLoadState("networkidle");
-
-      // Wait for album detail and get ID
       await expect(page).toHaveURL(/\/app\/library\/albums\/[^/]+/);
       const albumUrl = page.url().split("?")[0];
       const albumId = albumUrl.split("/").filter(Boolean).pop();
+      expect(albumId).toBeTruthy();
 
       await page.goto(`/app/library/albums/${albumId}/add-content`);
-      await page.getByLabel("Track Title").waitFor({ state: "visible" });
-      await page.getByLabel("Track Title").fill(trackName);
+      await page.waitForLoadState("networkidle");
       const dummyAudioPath = path.resolve(
         __dirname,
         "../../ui-tests/assets/test-audio.mp3",
       );
       await page.setInputFiles('input[type="file"]', dummyAudioPath);
+      // Wait for metadata scan to start and then finish deterministically
+      await page.waitForTimeout(500);
+      await expect(page.getByText(/Scanning metadata/)).toBeHidden({
+        timeout: 20000,
+      });
+      await page.getByLabel("Track Title").fill(trackName);
 
       // Corrected Label: "Add Track" instead of "Create Track"
       await page.getByRole("button", { name: "Add Track" }).click();
@@ -139,11 +166,14 @@ test.describe("Playback Functionality", () => {
     });
   });
   test("should play the track and toggle play/pause", async () => {
-    // Click Play on the album page - specifically looking for the big Play button in the header actions area
-    await test.step("Click Play on album page", async () => {
-      const playButton = page.getByRole("button", { name: /^Play$/ }).first();
-      await playButton.waitFor({ state: "visible", timeout: 10000 });
-      await playButton.click();
+    // Click on the specifically added track to play it
+    await test.step("Click Play on the added track", async () => {
+      const trackRow = page
+        .locator("div.group.cursor-pointer")
+        .filter({ hasText: trackName });
+      await trackRow.scrollIntoViewIfNeeded();
+      await trackRow.hover();
+      await trackRow.click();
     });
 
     // Verify track info in player

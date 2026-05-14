@@ -21,7 +21,6 @@ function AlbumLayout() {
 
   const isIndex =
     location.pathname === '/app/library/albums' || location.pathname === '/app/library/albums/';
-  const isBulkCreate = segments.includes('bulk-create');
   const isCreate = segments.includes('create');
   const isEdit = segments.includes('edit');
   const isAddContent = segments.includes('add-content');
@@ -34,17 +33,15 @@ function AlbumLayout() {
     albumId ? state.privateAlbums.find((a) => a.id === albumId) : null,
   );
 
-  const title = isBulkCreate
-    ? 'Bulk Create Album'
-    : isCreate
-      ? 'Create Album'
-      : isEdit
-        ? `Edit ${album?.name ?? 'Album'}`
-        : isAddContent
-          ? 'Add Content'
-          : isDetail
-            ? (album?.name ?? 'Album Detail')
-            : 'Albums';
+  const title = isCreate
+    ? 'Create Album'
+    : isEdit
+      ? `Edit ${album?.name ?? 'Album'}`
+      : isAddContent
+        ? 'Add Content'
+        : isDetail
+          ? (album?.name ?? 'Album Detail')
+          : 'Albums';
 
   return (
     <div className="flex flex-col gap-4 p-4">

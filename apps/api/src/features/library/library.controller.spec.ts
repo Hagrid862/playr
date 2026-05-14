@@ -2,8 +2,6 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { GetLibraryArtistQuery } from '../library-artists/queries/impl/get-library-artist.query';
-import { GetLibraryArtistsQuery } from '../library-artists/queries/impl/get-library-artists.query';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
 import { LibraryController } from './library.controller';
 import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
@@ -51,36 +49,6 @@ describe('LibraryController', () => {
       const result = await controller.getLibrary(userId);
 
       expect(queryBus.execute).toHaveBeenCalledWith(new GetLibraryQuery(userId));
-      expect(result).toBe(expectedResult);
-    });
-  });
-
-  describe('getArtists', () => {
-    it('should execute GetLibraryArtistsQuery with user id and pagination params', async () => {
-      const userId = 'user-123';
-      const query = { page: 1, limit: 10 };
-      const expectedResult = { items: [], total: 0, page: 1, limit: 10 };
-      queryBus.execute.mockResolvedValue(expectedResult);
-
-      const result = await controller.getArtists(userId, query);
-
-      expect(queryBus.execute).toHaveBeenCalledWith(
-        new GetLibraryArtistsQuery(userId, query.page, query.limit),
-      );
-      expect(result).toBe(expectedResult);
-    });
-  });
-
-  describe('getArtist', () => {
-    it('should execute GetLibraryArtistQuery with user id and artist id', async () => {
-      const userId = 'user-123';
-      const artistId = 'artist-123';
-      const expectedResult = { id: artistId, name: 'Artist' };
-      queryBus.execute.mockResolvedValue(expectedResult);
-
-      const result = await controller.getArtist(userId, artistId);
-
-      expect(queryBus.execute).toHaveBeenCalledWith(new GetLibraryArtistQuery(userId, artistId));
       expect(result).toBe(expectedResult);
     });
   });

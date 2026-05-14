@@ -20,26 +20,26 @@ export function EditAlbumHero({
   serverErrors,
 }: EditAlbumHeroProps) {
   return (
-    <div className="flex flex-col md:flex-row gap-8 md:gap-10">
-      <div className="flex flex-col items-center gap-3 shrink-0">
-        <div className="relative">
+    <div className="flex flex-col gap-8 overflow-visible md:flex-row md:gap-10">
+      <div className="flex shrink-0 flex-col items-center gap-3 overflow-visible">
+        <div className="relative shrink-0 overflow-visible">
           {currentCoverUrl && (
             <img
               src={currentCoverUrl}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 size-40 rounded-2xl object-cover blur-xl opacity-40 scale-105 translate-y-2 saturate-150 pointer-events-none"
+              className="pointer-events-none absolute inset-0 size-40 scale-100 translate-y-4 rounded-2xl object-cover opacity-35 blur-lg saturate-150"
             />
           )}
           <div
-            className="group relative size-40 rounded-2xl bg-stone-900 border-2 border-stone-700/60 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all cursor-pointer shadow-xl"
+            className="group relative flex size-40 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-stone-700/60 bg-stone-900 shadow-xl transition-all hover:border-primary/50"
             onClick={onCoverClick}
           >
             {currentCoverUrl ? (
               <img
                 src={currentCoverUrl}
                 alt={albumName}
-                className="size-full object-cover group-hover:opacity-60 transition-opacity"
+                className="size-full rounded-[13px] object-cover transition-opacity group-hover:opacity-60"
               />
             ) : (
               <MusicNotesIcon
@@ -48,11 +48,11 @@ export function EditAlbumHero({
                 weight="duotone"
               />
             )}
-            <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[13px] bg-stone-950/60 opacity-0 transition-opacity group-hover:opacity-100">
               <div className="flex flex-col items-center gap-1.5">
                 <CameraIcon size={22} className="text-white" />
-                <span className="text-[9px] font-bold text-white uppercase tracking-widest">
-                  {currentCoverUrl ? 'Change Cover' : 'Upload Cover'}
+                <span className="text-[9px] font-bold uppercase tracking-widest text-white">
+                  {currentCoverUrl ? 'Change cover' : 'Upload cover'}
                 </span>
               </div>
             </div>
@@ -77,7 +77,7 @@ export function EditAlbumHero({
         )}
       </div>
 
-      <div className="flex-1 flex flex-col gap-5">
+      <div className="flex flex-1 flex-col gap-6">
         <form.Field name="name">
           {(field: {
             state: { value: string; meta: { isTouched: boolean; errors: unknown[] } };
@@ -86,7 +86,7 @@ export function EditAlbumHero({
             handleBlur: () => void;
           }) => (
             <TextField
-              label="Album Title"
+              label="Album title"
               placeholder="e.g. Nevermind"
               value={field.state.value || ''}
               error={
@@ -133,7 +133,7 @@ export function EditAlbumHero({
               }
               onChange={field.handleChange}
               onBlur={field.handleBlur}
-              className="min-h-28"
+              className="min-h-32"
             />
           )}
         </form.Field>

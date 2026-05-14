@@ -33,6 +33,11 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
+
+    /* Isolate tests from system media player and mute audio */
+    launchOptions: {
+      args: ["--mute-audio"],
+    },
   },
 
   /* Configure projects for major browsers */
