@@ -13,7 +13,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { PlaybackDevice, PlaybackState } from '@repo/contracts';
+import { PlaybackDevice, PlaybackState, type PresenceTouchResponse } from '@repo/contracts';
 import { Server, Socket } from 'socket.io';
 import { getCorsOrigin } from '../../common/config/cors-config';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
@@ -177,6 +177,16 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
   }
 
+  /** Emit full playback state to every socket in `user:<userId>` (e.g. after library-track delete). */
+  emitPlaybackStateToUserRoom(userId: string, state: PlaybackState): void {
+    this.server.to(`user:${userId}`).emit('event:playback-state-updated', state);
+  }
+
+  /** Notify clients that persisted playback was removed (e.g. last track deleted). */
+  emitPlaybackSessionEndedToUserRoom(userId: string): void {
+    this.server.to(`user:${userId}`).emit('event:playback-session-ended', {});
+  }
+
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('query:get-state')
   async handleGetPlayback(@ConnectedSocket() client: Socket): Promise<GetPlaybackStateResponseDto> {
@@ -185,6 +195,18 @@ export class PlaybackGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
     const result = await this.queryBus.execute(new GetPlaybackStateQuery(userId));
     return result;
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:presence-touch')
+  async handlePresenceTouch(@ConnectedSocket() client: Socket): Promise<PresenceTouchResponse> {
+    const context = await this.authenticate(client);
+    await this.playbackDeviceRegistry.registerOrUpdateDevice(context.userId, {
+      deviceId: context.playbackDeviceId,
+      deviceName: context.playbackDeviceName,
+      deviceIcon: context.playbackDeviceIcon,
+    });
+    return { ok: true, serverTime: new Date().toISOString() };
   }
 
   @UseGuards(WsJwtGuard)
