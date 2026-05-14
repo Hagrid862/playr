@@ -1,4 +1,9 @@
 import type { StoreApi } from 'zustand';
+import {
+  playerStoreAvailableQualitiesDefault,
+  playerStorePlaybackInitialSlice,
+  playerStorePersistedDefaults,
+} from './player-store.initial-state';
 import { mapServerPlaybackToPatch } from './player-store.map-server-state';
 import type { PlayerState } from './player-store.types';
 
@@ -7,7 +12,11 @@ export function createPlayerServerActions(
   get: StoreApi<PlayerState>['getState'],
 ): Pick<
   PlayerState,
-  'applyPlaybackStateFromServer' | 'setLocalPlaybackDeviceId' | 'setPlaybackDevices'
+  | 'applyPlaybackStateFromServer'
+  | 'clearSessionPlayback'
+  | 'resetForLogout'
+  | 'setLocalPlaybackDeviceId'
+  | 'setPlaybackDevices'
 > {
   return {
     applyPlaybackStateFromServer: (state) => {
@@ -23,6 +32,23 @@ export function createPlayerServerActions(
         ),
       );
     },
+    clearSessionPlayback: () => {
+      const { volume, quality, availableQualities, localPlaybackDeviceId } = get();
+      set({
+        ...playerStorePlaybackInitialSlice,
+        volume,
+        quality,
+        availableQualities,
+        localPlaybackDeviceId,
+      });
+    },
+    resetForLogout: () =>
+      set({
+        ...playerStorePlaybackInitialSlice,
+        ...playerStorePersistedDefaults,
+        availableQualities: playerStoreAvailableQualitiesDefault,
+        localPlaybackDeviceId: '',
+      }),
     setLocalPlaybackDeviceId: (localPlaybackDeviceId) => set({ localPlaybackDeviceId }),
     setPlaybackDevices: (playbackDevices) => set({ playbackDevices }),
   };

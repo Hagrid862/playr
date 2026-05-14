@@ -22,6 +22,8 @@ export function createPlayerStateMock(overrides: Partial<PlayerState> = {}): Pla
     localPlaybackDeviceId: '',
     playbackDevices: [],
     applyPlaybackStateFromServer: vi.fn(),
+    clearSessionPlayback: vi.fn(),
+    resetForLogout: vi.fn(),
     setLocalPlaybackDeviceId: vi.fn(),
     setPlaybackDevices: vi.fn(),
     playTrack: vi.fn(),

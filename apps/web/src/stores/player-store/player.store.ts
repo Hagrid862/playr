@@ -1,4 +1,3 @@
-import { StreamAudioQuality } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { idbStorage } from '../idb-storage';
@@ -7,6 +6,11 @@ import { createPlayerQueueActions } from './player-store.actions.queue';
 import { createPlayerServerActions } from './player-store.actions.server';
 import { createPlayerTransportActions } from './player-store.actions.transport';
 import { createPlayerUiActions } from './player-store.actions.ui';
+import {
+  playerStoreAvailableQualitiesDefault,
+  playerStorePlaybackInitialSlice,
+  playerStorePersistedDefaults,
+} from './player-store.initial-state';
 import type { PlayerState } from './player-store.types';
 
 export type { PlayerState } from './player-store.types';
@@ -34,28 +38,10 @@ const playerStoreInitialState: Pick<
   | 'isQueueOpen'
   | 'sidebarView'
 > = {
-  currentTrack: null,
-  isPlaying: false,
-  volume: 1,
-  currentTime: 0,
-  duration: 0,
-  quality: 'auto',
-  availableQualities: ['auto'] as (StreamAudioQuality | 'auto')[],
-  queue: [],
-  originalQueue: [],
-  history: [],
-  repeatMode: 'off',
-  isShuffled: false,
-
-  playbackVersion: 0,
-  playbackFavorited: 'not-set',
-  playbackInLibrary: false,
-  activeDeviceId: null,
+  ...playerStorePlaybackInitialSlice,
+  ...playerStorePersistedDefaults,
+  availableQualities: playerStoreAvailableQualitiesDefault,
   localPlaybackDeviceId: '',
-  playbackDevices: [],
-
-  isQueueOpen: false,
-  sidebarView: 'queue',
 };
 
 export const usePlayerStore = create<PlayerState>()(
