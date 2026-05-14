@@ -7,3 +7,11 @@ export const DeleteLibraryAlbumRequestSchema = z.object({
 export type DeleteLibraryAlbumRequest = z.infer<
   typeof DeleteLibraryAlbumRequestSchema
 >;
+
+export const DeleteLibraryAlbumQuerySchema = z.object({
+  keepTracks: z.coerce.boolean().optional().default(false),
+});
+
+export type DeleteLibraryAlbumQuery = z.infer<
+  typeof DeleteLibraryAlbumQuerySchema
+>;
