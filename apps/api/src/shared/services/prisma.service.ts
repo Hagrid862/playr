@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { createPrismaClient, PrismaClient } from '@repo/db';
+import { createPrismaClient, createExtendedPrismaClient, type PrismaClient, ExtendedPrismaClient } from '@repo/db';
 import {
   TRANSACTION_CONTEXT,
   type ITransactionContext,
@@ -7,7 +7,8 @@ import {
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-  private prisma: PrismaClient;
+  private basePrisma: PrismaClient;
+  private extendedPrisma: ExtendedPrismaClient;
 
   constructor(
     @Inject(forwardRef(() => TRANSACTION_CONTEXT))
@@ -17,22 +18,29 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     if (!databaseUrl) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
-    this.prisma = createPrismaClient(databaseUrl);
+    this.basePrisma = createPrismaClient(databaseUrl);
+    this.extendedPrisma = createExtendedPrismaClient(databaseUrl);
   }
 
   async onModuleInit() {
-    await this.prisma.$connect();
+    await this.basePrisma.$connect();
+    await this.extendedPrisma.$connect();
   }
 
   async onModuleDestroy() {
-    await this.prisma.$disconnect();
+    await this.basePrisma.$disconnect();
+    await this.extendedPrisma.$disconnect();
   }
 
   get client() {
-    return this.transactionContext.getTransactionalClient() ?? this.prisma;
+    return this.transactionContext.getTransactionalClient() ?? this.basePrisma;
+  }
+
+  get extended() {
+    return this.extendedPrisma;
   }
 
   get mainClient() {
-    return this.prisma;
+    return this.basePrisma;
   }
 }
