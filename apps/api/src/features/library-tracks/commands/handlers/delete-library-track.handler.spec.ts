@@ -137,6 +137,36 @@ describe('DeleteLibraryTrackHandler', () => {
     expect(playbackGateway.emitPlaybackStateToUserRoom).not.toHaveBeenCalled();
   });
 
+  it('logs and continues when playback purge throws', async () => {
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
+    audioFileRepository.listByTrackId.mockResolvedValue([]);
+    playbackStatePersistence.purgeDeletedLibraryTrack.mockRejectedValue(new Error('Redis down'));
+
+    const warnSpy = vi.spyOn(handler['logger'], 'warn');
+
+    const result = await handler.execute(command);
+
+    expect(result).toEqual(mockTrack);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `Playback purge after track delete failed for user ${userId}: Redis down`,
+    );
+  });
+
+  it('wraps non-Error purge failures for the warning log', async () => {
+    trackRepository.getByIdForOwner.mockResolvedValue(mockTrack);
+    audioFileRepository.listByTrackId.mockResolvedValue([]);
+    playbackStatePersistence.purgeDeletedLibraryTrack.mockRejectedValue('not-an-error');
+
+    const warnSpy = vi.spyOn(handler['logger'], 'warn');
+
+    const result = await handler.execute(command);
+
+    expect(result).toEqual(mockTrack);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `Playback purge after track delete failed for user ${userId}: not-an-error`,
+    );
+  });
+
   it('should throw NotFoundException if track not found or access denied', async () => {
     trackRepository.getByIdForOwner.mockResolvedValue(null);
 

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PlaybackState } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import Redis from 'ioredis';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { GetPlaybackStateQuery } from '../impl/get-playback-state.query';
 import { GetPlaybackStateHandler } from './get-playback-state.handler';
@@ -83,6 +83,25 @@ describe('GetPlaybackStateHandler', () => {
     const result = await handler.execute(query);
     expect(result).toBeNull();
     expect(redis.del).toHaveBeenCalledWith(`state:${userId}`);
+  });
+
+  it('returns null and deletes key when updatedAt does not parse to a finite instant', async () => {
+    const redis = createMock<Redis>();
+    const handler = createHandler(redis);
+    const query = new GetPlaybackStateQuery(userId);
+    const parseSpy = vi.spyOn(Date, 'parse').mockReturnValue(Number.NaN);
+
+    redis.get.mockResolvedValue(
+      JSON.stringify({
+        ...state,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
+
+    const result = await handler.execute(query);
+    expect(result).toBeNull();
+    expect(redis.del).toHaveBeenCalledWith(`state:${userId}`);
+    parseSpy.mockRestore();
   });
 
   it('throws InternalServerErrorException on invalid JSON', async () => {
