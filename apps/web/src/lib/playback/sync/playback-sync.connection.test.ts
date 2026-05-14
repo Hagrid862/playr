@@ -7,7 +7,9 @@ import {
   disconnectPlaybackSync,
   getPlaybackSocket,
   isPlaybackSyncConnected,
+  PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS,
 } from './playback-sync';
+import { emitPresenceTouch } from './playback-sync.commands';
 import {
   asSocketMock,
   basePlaybackSyncTestState,
@@ -103,6 +105,54 @@ describe('playback-sync connection', () => {
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalled();
 
       expect(mockSocket.emit).toHaveBeenCalledWith('query:list-devices', {}, expect.any(Function));
+    });
+
+    it('swallows rejected presence-touch on initial connect', async () => {
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, cb?: (r: unknown) => void) => {
+          if (event === 'query:get-state' && cb) cb(null);
+          if (event === 'query:list-devices' && cb) cb({ devices: [] });
+        },
+      );
+      const emitPresenceTouchMock = vi.mocked(emitPresenceTouch);
+      emitPresenceTouchMock.mockRejectedValueOnce(new Error('presence failed on connect'));
+      emitPresenceTouchMock.mockResolvedValue(undefined);
+
+      connectPlaybackSync('token');
+      const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
+      connectHandler();
+      await flushMicrotasks();
+
+      emitPresenceTouchMock.mockReset();
+      emitPresenceTouchMock.mockResolvedValue(undefined);
+    });
+
+    it('swallows rejected presence-touch from the heartbeat interval', async () => {
+      vi.useFakeTimers();
+      try {
+        mockSocket.emit.mockImplementation(
+          (event: string, _data: unknown, cb?: (r: unknown) => void) => {
+            if (event === 'query:get-state' && cb) cb(null);
+            if (event === 'query:list-devices' && cb) cb({ devices: [] });
+          },
+        );
+        const emitPresenceTouchMock = vi.mocked(emitPresenceTouch);
+        emitPresenceTouchMock.mockResolvedValueOnce(undefined);
+        emitPresenceTouchMock.mockRejectedValue(new Error('presence failed'));
+
+        connectPlaybackSync('token');
+        const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
+        connectHandler();
+
+        await vi.advanceTimersByTimeAsync(PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS);
+        await flushMicrotasks();
+
+        expect(emitPresenceTouchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+      } finally {
+        vi.useRealTimers();
+        vi.mocked(emitPresenceTouch).mockReset();
+        vi.mocked(emitPresenceTouch).mockResolvedValue(undefined);
+      }
     });
 
     it('recovers when first listPlaybackDevices call fails on connect', async () => {

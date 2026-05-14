@@ -261,6 +261,15 @@ describe('playback-sync commands', () => {
         expect.any(Function),
       );
     });
+
+    it('returns early when playback socket is not connected', async () => {
+      await emitPresenceTouch();
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'command:presence-touch',
+        expect.any(Object),
+        expect.any(Function),
+      );
+    });
   });
 
   describe('emitCurrentTimeSync', () => {

@@ -283,8 +283,12 @@ export function usePlayerAudio() {
   };
 
   const formatTimeLeft = (time: number, total: number) => {
-    const timeLeft = total - time;
-    return `-${formatTime(timeLeft)}`;
+    const rawLeft = total - time;
+    if (!Number.isFinite(time) || !Number.isFinite(total) || total <= 0) {
+      return '--:--';
+    }
+    const clampedLeft = Math.max(0, rawLeft);
+    return `-${formatTime(clampedLeft)}`;
   };
 
   return {
