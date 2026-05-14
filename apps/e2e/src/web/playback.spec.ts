@@ -103,7 +103,6 @@ test.describe("Playback Functionality", () => {
       expect(artistId).toBeTruthy();
 
       await page.goto(`/app/library/artists/${artistId}/add-content`);
-      await page.waitForLoadState("networkidle");
 
       await page.getByLabel("Album title").waitFor({ state: "visible" });
       await page.getByLabel("Album title").fill(albumName);
@@ -129,7 +128,6 @@ test.describe("Playback Functionality", () => {
       await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, {
         timeout: 60000,
       });
-      await page.waitForLoadState("networkidle");
     });
 
     await test.step("Add Track", async () => {
@@ -139,7 +137,6 @@ test.describe("Playback Functionality", () => {
       expect(albumId).toBeTruthy();
 
       await page.goto(`/app/library/albums/${albumId}/add-content`);
-      await page.waitForLoadState("networkidle");
       const dummyAudioPath = path.resolve(
         __dirname,
         "../../ui-tests/assets/test-audio.mp3",
@@ -163,7 +160,6 @@ test.describe("Playback Functionality", () => {
       await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, {
         timeout: 30000,
       });
-      await page.waitForLoadState("networkidle");
 
       // Verify track in album with extended timeout to allow for query refetch
       await expect(page.getByText(trackName)).toBeVisible({ timeout: 30000 });

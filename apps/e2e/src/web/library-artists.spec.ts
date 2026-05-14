@@ -70,23 +70,20 @@ test.describe("Library Artist CRUD Workflow", () => {
 
   test("should create a library", async () => {
     await page.goto("/app/library/overview");
-    await page.waitForLoadState("networkidle");
 
-    const successState = page.getByText("Your Private Library");
-    const emptyState = page.getByText("You don't have a private library yet");
+    const libraryCreatedState = page.getByText("Your Private Library");
+    const libraryNotCreatedState = page.getByText("You don't have a private library yet");
 
-    // Wait for either state to load
-    await expect(successState.or(emptyState)).toBeVisible({ timeout: 10000 });
+    await expect(libraryCreatedState.or(libraryNotCreatedState)).toBeVisible();
 
-    if (await emptyState.isVisible()) {
+    if (await libraryNotCreatedState.isVisible()) {
       await page.getByRole("button", { name: "Create Library" }).click();
-      await expect(successState).toBeVisible({ timeout: 15000 });
+      await expect(libraryCreatedState).toBeVisible({ timeout: 30000 });
     }
   });
 
   test("should create a private profile", async () => {
     await page.goto("/app/library/overview/private");
-    await page.waitForLoadState("networkidle");
 
     const lockedState = page.getByText("Private Library Locked");
     const contentState = page.getByText(
@@ -154,7 +151,7 @@ test.describe("Library Artist CRUD Workflow", () => {
   });
 
   test("should upload avatar and banner in edit mode", async () => {
-    test.setTimeout(90_000);
+    test.setTimeout(30_000);
     const name = `E2E Artist ${timestamp}`;
     await artistsPage.gotoArtistsList();
     await artistsPage.clickArtistCard(name);
