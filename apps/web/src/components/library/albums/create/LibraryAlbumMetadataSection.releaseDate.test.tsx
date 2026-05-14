@@ -41,7 +41,7 @@ const baseForm: LibraryAlbumFromFilesFormData = {
   name: 'Test album',
   description: '',
   type: 'album',
-  artistId: 'a1',
+  artistIds: ['a1'],
   genreIds: [],
   /** Null so the trigger shows “Pick a date” (formatted dates change the accessible name). */
   releaseDate: null,
@@ -49,17 +49,12 @@ const baseForm: LibraryAlbumFromFilesFormData = {
 
 describe('LibraryAlbumMetadataSection (release date branch)', () => {
   const onUpdate = vi.fn();
-  const onArtistIdChange = vi.fn();
-  const onClearStagedArtist = vi.fn();
+  const onArtistSelectionChange = vi.fn();
+  const onRemoveArtistId = vi.fn();
   const onManualCoverFile = vi.fn();
   const onRemoveCover = vi.fn();
   const onGenreSelectionChange = vi.fn();
   const onRemoveGenreId = vi.fn();
-
-  const artistOptions = [
-    { value: '__create_new_artist__', label: '+ Create new artist…' },
-    { value: 'a1', label: 'Alpha' },
-  ];
 
   const testGenre = {
     id: 'g1',
@@ -93,13 +88,12 @@ describe('LibraryAlbumMetadataSection (release date branch)', () => {
         <LibraryAlbumMetadataSection
           formData={baseForm}
           artists={[{ id: 'a1', name: 'Alpha' }]}
-          artistSelectOptions={artistOptions}
+          pendingArtists={[]}
           isLoadingArtists={false}
-          isStagedNewArtistSelected={false}
           coverPreviewUrl={null}
           onUpdate={onUpdate}
-          onArtistIdChange={onArtistIdChange}
-          onClearStagedArtist={onClearStagedArtist}
+          onArtistSelectionChange={onArtistSelectionChange}
+          onRemoveArtistId={onRemoveArtistId}
           onManualCoverFile={onManualCoverFile}
           onRemoveCover={onRemoveCover}
           {...genrePropsFor()}

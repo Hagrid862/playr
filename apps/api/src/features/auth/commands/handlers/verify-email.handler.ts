@@ -37,7 +37,7 @@ export class VerifyEmailHandler implements ICommandHandler<VerifyEmailCommand> {
       throw new UnauthorizedException('Invalid or expired OTP code');
     }
 
-    await this.emailAddressRepository.edit(emailObject.id, { status: 'verified' });
+    await this.emailAddressRepository.update(emailObject.id, { status: 'verified' });
 
     const userObject = await this.userRepository.getByEmail(email);
 

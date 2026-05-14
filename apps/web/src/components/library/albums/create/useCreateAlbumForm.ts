@@ -11,7 +11,7 @@ export const useCreateAlbumForm = (
     name: '',
     description: '',
     type: initialType,
-    artistId: artistId,
+    artistIds: artistId ? [artistId] : [],
     releaseDate: null,
   });
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
@@ -46,7 +46,7 @@ export const useCreateAlbumForm = (
       name: true,
       description: true,
       type: true,
-      artistId: true,
+      artistIds: true,
       releaseDate: true,
     });
     const result = CreateLibraryAlbumRequestSchema.safeParse(formData);

@@ -6,6 +6,7 @@ import { useDeleteLibraryAlbumCover } from '@/hooks/api/library-albums/useDelete
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useUpdateLibraryAlbum } from '@/hooks/api/library-albums/useUpdateLibraryAlbum';
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
+import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
 import { useUpdateLibraryTrack } from '@/hooks/api/library-tracks/useUpdateLibraryTrack';
@@ -39,6 +40,7 @@ function EditAlbumComponent() {
   const { mutateAsync: updateTrack } = useUpdateLibraryTrack();
   const { mutateAsync: deleteTrack } = useDeleteLibraryTrack();
   const { mutateAsync: bulkCreateTracks } = useBulkCreateLibraryTracks();
+  const { mutateAsync: createLibraryGenre } = useCreateLibraryGenre();
 
   const album = albumResponse?.data;
 
@@ -48,6 +50,7 @@ function EditAlbumComponent() {
       tracks: EditAlbumTracksSubmitPayload,
       cover?: File,
       shouldDeleteCover?: boolean,
+      extras?: { pendingGenres: { id: string; name: string }[] },
     ) => {
       if (!album) return;
 
@@ -97,6 +100,8 @@ function EditAlbumComponent() {
           await bulkCreateTracks({
             album,
             tracks: newTracksResolved,
+            pendingGenres: extras?.pendingGenres,
+            createLibraryGenre,
           });
         }
 
@@ -113,6 +118,7 @@ function EditAlbumComponent() {
     [
       album,
       bulkCreateTracks,
+      createLibraryGenre,
       createArtist,
       deleteCover,
       deleteTrack,

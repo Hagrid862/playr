@@ -8,6 +8,7 @@ import {
   ArtistUpdateInput,
   ArtistWhereInput,
   Prisma,
+  PrismaClient,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -198,6 +199,23 @@ export class ArtistRepository {
     return !!artist;
   }
 
+  /**
+   * Counts how many of the given artist ids are active and owned by the user (owner access).
+   * @param artistIds Distinct ids to check (callers should dedupe).
+   */
+  async countActiveOwnedByUser(artistIds: string[], userId: string): Promise<number> {
+    if (artistIds.length === 0) {
+      return 0;
+    }
+    return await this.prisma.client.artist.count({
+      where: {
+        id: { in: artistIds },
+        deletedAt: null,
+        access: { some: { userId, role: AccessRole.owner } },
+      },
+    });
+  }
+
   // ─────────────────────────────────────────────────────────────
   // CREATE
   // ─────────────────────────────────────────────────────────────
@@ -386,18 +404,7 @@ export class ArtistRepository {
         data: { artistId: null },
       });
 
-      const albums = await tx.album.findMany({
-        where: { artists: { some: { id } } },
-        select: { id: true },
-      });
-      const albumIds = albums.map((a) => a.id);
-      if (albumIds.length > 0) {
-        await tx.album.deleteMany({ where: { id: { in: albumIds } } });
-      }
-
-      await tx.track.deleteMany({
-        where: { artists: { some: { id } } },
-      });
+      await this.disconnectArtistFromAlbumsAndTracks(tx, id);
 
       return tx.artist.delete({ where: { id } });
     });
@@ -439,37 +446,25 @@ export class ArtistRepository {
         data: { artistId: null },
       });
 
-      const albums = await tx.album.findMany({
-        where: {
-          artists: { some: { id } },
-          deletedAt: null,
-        },
-        select: { id: true },
-      });
-      const albumIds = albums.map((a) => a.id);
-      if (albumIds.length > 0) {
-        await tx.album.updateMany({
-          where: { id: { in: albumIds }, deletedAt: null },
-          data: { deletedAt: now },
-        });
-        await tx.track.updateMany({
-          where: { albumId: { in: albumIds }, deletedAt: null },
-          data: { deletedAt: now },
-        });
-      }
-
-      await tx.track.updateMany({
-        where: {
-          deletedAt: null,
-          artists: { some: { id } },
-        },
-        data: { deletedAt: now },
-      });
+      await this.disconnectArtistFromAlbumsAndTracks(tx, id);
 
       return tx.artist.update({
         where: { id },
         data: { deletedAt: now },
       });
     });
+  }
+
+  /**
+   * Removes implicit many-to-many links from albums/tracks for this artist only,
+   * preserving albums and tracks that remain credited to other artists.
+   * _AlbumArtists: A = album id, B = artist id. _TrackArtists: A = artist id, B = track id.
+   */
+  private async disconnectArtistFromAlbumsAndTracks(
+    tx: Pick<PrismaClient, '$executeRaw'>,
+    artistId: string,
+  ): Promise<void> {
+    await tx.$executeRaw(Prisma.sql`DELETE FROM "_AlbumArtists" WHERE "B" = ${artistId}`);
+    await tx.$executeRaw(Prisma.sql`DELETE FROM "_TrackArtists" WHERE "A" = ${artistId}`);
   }
 }

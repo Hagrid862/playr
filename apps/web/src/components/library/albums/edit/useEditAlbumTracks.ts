@@ -277,6 +277,33 @@ export function useEditAlbumTracks(album: ZodAlbum) {
     });
   }, []);
 
+  const areArtistIdsEqual = (a: string[], b: string[]) => {
+    if (a.length !== b.length) return false;
+    const sa = [...a].sort();
+    const sb = [...b].sort();
+    return sa.every((v, i) => v === sb[i]);
+  };
+
+  const updateAllTracksArtists = useCallback((oldIds: string[], newIds: string[]) => {
+    setDraftById((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      Object.entries(next).forEach(([id, draft]) => {
+        if (areArtistIdsEqual(draft.artistIds, oldIds)) {
+          next[id] = { ...draft, artistIds: [...newIds] };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+
+    setStagedTracks((prev) => {
+      return prev.map((t) =>
+        areArtistIdsEqual(t.artistIds ?? [], oldIds) ? { ...t, artistIds: [...newIds] } : t,
+      );
+    });
+  }, []);
+
   const scheduleTrackDelete = useCallback((trackId: string) => {
     setPendingDeleteIds((prev) => new Set(prev).add(trackId));
   }, []);
@@ -410,6 +437,7 @@ export function useEditAlbumTracks(album: ZodAlbum) {
     removeStagedTrack,
     clearStagedTracks,
     updateAllTracksGenres,
+    updateAllTracksArtists,
     isScanningMetadata,
     defaultArtistIds,
     pendingArtists,

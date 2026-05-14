@@ -48,7 +48,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
         name: '',
         description: '',
         type: 'album',
-        artistId: '',
+        artistIds: [],
         genreIds: [],
         releaseDate: null,
       });
@@ -57,6 +57,14 @@ describe('useLibraryAlbumFromFilesForm', () => {
       expect(result.current.tracksWithCovers).toEqual([]);
       expect(result.current.isFormValid).toBe(false);
       expect(result.current.pendingArtists).toEqual([]);
+    });
+
+    it('seeds artistIds from initialArtistId when provided', () => {
+      const { result } = customRenderHook(() =>
+        useLibraryAlbumFromFilesForm({ initialArtistId: 'pre-seeded-artist' }),
+      );
+
+      expect(result.current.formData.artistIds).toEqual(['pre-seeded-artist']);
     });
   });
 
@@ -434,7 +442,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
 
       act(() => {
         result.current.updateFormData('name', 'My Album');
-        result.current.updateFormData('artistId', 'artist-123');
+        result.current.updateFormData('artistIds', ['artist-123']);
       });
 
       expect(result.current.isFormValid).toBe(true);
@@ -453,6 +461,51 @@ describe('useLibraryAlbumFromFilesForm', () => {
     });
   });
 
+  describe('appendArtistId', () => {
+    it('does not duplicate an id already present', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.appendArtistId('dup');
+        result.current.appendArtistId('dup');
+      });
+
+      expect(result.current.formData.artistIds).toEqual(['dup']);
+    });
+  });
+
+  describe('toggleArtistId', () => {
+    it('adds id when absent and removes when present', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.toggleArtistId('a');
+      });
+      expect(result.current.formData.artistIds).toEqual(['a']);
+
+      act(() => {
+        result.current.toggleArtistId('a');
+      });
+      expect(result.current.formData.artistIds).toEqual([]);
+    });
+  });
+
+  describe('clearArtistSelection', () => {
+    it('clears artistIds', () => {
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+
+      act(() => {
+        result.current.updateFormData('artistIds', ['x', 'y']);
+      });
+      expect(result.current.formData.artistIds).toEqual(['x', 'y']);
+
+      act(() => {
+        result.current.clearArtistSelection();
+      });
+      expect(result.current.formData.artistIds).toEqual([]);
+    });
+  });
+
   describe('clearTracks', () => {
     it('clears tracks and cover state but keeps album form fields', async () => {
       vi.mocked(extractCoverFromAudioFile).mockResolvedValue(new File([], 'i'));
@@ -461,7 +514,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
       act(() => {
         result.current.addFiles(createFileList([createAudioFile('test.mp3')]));
         result.current.updateFormData('name', 'Kept Album');
-        result.current.updateFormData('artistId', 'artist-1');
+        result.current.updateFormData('artistIds', ['artist-1']);
       });
 
       await waitFor(() => {
@@ -476,7 +529,7 @@ describe('useLibraryAlbumFromFilesForm', () => {
       expect(result.current.tracksWithCovers).toHaveLength(0);
       expect(result.current.coverGroups).toHaveLength(0);
       expect(result.current.formData.name).toBe('Kept Album');
-      expect(result.current.formData.artistId).toBe('artist-1');
+      expect(result.current.formData.artistIds).toEqual(['artist-1']);
     });
   });
 
@@ -522,6 +575,26 @@ describe('useLibraryAlbumFromFilesForm', () => {
 
       expect(result.current.tracks).toHaveLength(0);
       expect(result.current.formData.name).toBe('');
+    });
+
+    it('restores initialArtistId in artistIds after clearAll', () => {
+      const { result } = customRenderHook(() =>
+        useLibraryAlbumFromFilesForm({ initialArtistId: 'seed-artist' }),
+      );
+
+      act(() => {
+        result.current.updateFormData('name', 'Named');
+        result.current.appendArtistId('extra-artist');
+      });
+
+      expect(result.current.formData.artistIds).toEqual(['seed-artist', 'extra-artist']);
+
+      act(() => {
+        result.current.clearAll();
+      });
+
+      expect(result.current.formData.name).toBe('');
+      expect(result.current.formData.artistIds).toEqual(['seed-artist']);
     });
   });
 

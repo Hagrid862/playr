@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { MusicNotesIcon, PauseIcon, PlayIcon } from '@phosphor-icons/react';
 
@@ -6,7 +7,7 @@ export function PlayerMobile() {
   const { currentTrack, isPlaying, togglePlay } = usePlayerStore();
 
   const trackTitle = currentTrack?.title || 'No track selected';
-  const trackArtist = currentTrack?.artists?.join(', ') || 'Unknown Artist';
+  const trackArtist = currentTrack?.artists?.join(', ') || UNKNOWN_ARTIST_LABEL;
   const coverUrl = currentTrack?.albumArt;
 
   return (

@@ -30,7 +30,7 @@ describe('useCreateAlbumForm', () => {
       name: '',
       description: '',
       type: 'album',
-      artistId: artistId,
+      artistIds: [artistId],
       releaseDate: null,
     });
     expect(result.current.touched).toEqual({});
@@ -38,6 +38,13 @@ describe('useCreateAlbumForm', () => {
       name: 'Album name is required',
     });
     expect(result.current.isFormValid).toBe(false);
+  });
+
+  it('should initialize artistIds as empty when no initial artist', () => {
+    const { result } = customRenderHook(() => useCreateAlbumForm(''));
+
+    expect(result.current.formData.artistIds).toEqual([]);
+    expect(result.current.errors.artistIds).toBe('At least one artist is required');
   });
 
   it('should handle changes and updating validation', () => {
@@ -96,7 +103,7 @@ describe('useCreateAlbumForm', () => {
       name: true,
       description: true,
       type: true,
-      artistId: true,
+      artistIds: true,
       releaseDate: true,
     });
     expect(result.current.errors.name).toBe('Album name is required');
@@ -118,7 +125,7 @@ describe('useCreateAlbumForm', () => {
       name: 'In Utero',
       description: '',
       type: 'album',
-      artistId: artistId,
+      artistIds: [artistId],
       releaseDate: null,
     });
   });
@@ -167,7 +174,7 @@ describe('useCreateAlbumForm', () => {
       name: '', // Invalid: required
       description: 'Test description',
       type: 'album',
-      artistId: 'artist-123',
+      artistIds: ['artist-123'],
       releaseDate: null,
     };
 

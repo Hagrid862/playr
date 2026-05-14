@@ -9,7 +9,7 @@ export function createLibraryAlbumRequestBuilder(
     name: "Test Album",
     description: "Test album description",
     type: AlbumType.album,
-    artistId: randUuid(),
+    artistIds: [randUuid()],
     releaseDate: null,
     ...overrides,
   };

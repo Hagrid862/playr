@@ -87,7 +87,6 @@ test.describe("Navigation Flow", () => {
 
   test("should persist authentication state on reload", async ({ page }) => {
     await page.goto("/app/library/overview");
-    await page.waitForLoadState("networkidle");
     // Verify we are on Library Overview
     await expect(page).toHaveURL(/\/app\/library\/overview/);
 
@@ -132,7 +131,6 @@ test.describe("Navigation Flow", () => {
     );
 
     await page.reload();
-    await page.waitForLoadState("networkidle");
 
     // Check if we were redirected to login
     let currentUrl = page.url();
@@ -166,7 +164,6 @@ test.describe("Navigation Flow", () => {
       console.log("Redirected to login, attempting recovery...");
       await page.waitForTimeout(2000);
       await page.goto("/app/library/overview");
-      await page.waitForLoadState("networkidle");
       currentUrl = page.url();
     }
 

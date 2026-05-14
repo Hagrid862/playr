@@ -1,5 +1,6 @@
 import { extractCoverFromAudioFile } from '@/lib/audio/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import type { BulkTrackItem, TrackWithCover } from '@/lib/types/library';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { BulkTrackUploadFormProps } from './BulkTrackUploadForm.types';
@@ -71,7 +72,7 @@ export function useBulkTrackUpload({
       if (audioFiles.length === 0) return;
 
       const context = {
-        artists: album.artists?.map((a) => a.name) ?? [],
+        artists: album.artists?.length ? album.artists.map((a) => a.name) : [UNKNOWN_ARTIST_LABEL],
         album: album.name ?? '',
       };
 

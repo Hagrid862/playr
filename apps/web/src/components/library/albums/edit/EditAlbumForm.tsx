@@ -10,14 +10,34 @@ import { EditAlbumTracksSection } from './EditAlbumTracksSection';
 import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import { useEditAlbumTracks } from './useEditAlbumTracks';
 import { useEditAlbumForm } from './useEditAlbumForm';
+import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLibraryArtist';
+import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists';
+import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
-import { useStore } from '@tanstack/react-store';
-import { useMemo, useState, useCallback } from 'react';
+import { useLibraryStore } from '@/stores/library.store';
+import {
+  applyPendingArtistMapToEditPayload,
+  buildPendingArtistLocalToServerMap,
+  collectPendingArtistIdsForAlbumSubmit,
+  mergePendingArtistDrafts,
+} from '@/components/library/albums/resolvePendingArtistsForSubmit';
+import {
+  applyPendingGenreMapToEditPayload,
+  buildPendingGenreLocalToServerMap,
+  collectPendingGenreIdsForAlbumSubmit,
+} from '@/components/library/albums/resolvePendingGenresForSubmit';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   LIBRARY_ALBUM_GENRE_CREATE_VALUE,
   LIBRARY_ALBUM_GENRE_NONE_VALUE,
 } from '../create/libraryAlbumGenreConstants';
+import {
+  LIBRARY_ALBUM_ARTIST_CREATE_VALUE,
+  LIBRARY_ALBUM_ARTIST_NONE_VALUE,
+} from '../create/libraryAlbumArtistConstants';
+import { makeLocalPendingArtistId } from '../create/pendingLibraryArtist';
 import { makeLocalPendingGenreId } from '../create/pendingLibraryGenre';
+import { CreateLibraryArtistNameModal } from '../create/CreateLibraryArtistNameModal';
 import { CreateLibraryGenreNameModal } from '../create/CreateLibraryGenreNameModal';
 
 interface EditAlbumFormProps {
@@ -29,6 +49,7 @@ interface EditAlbumFormProps {
     tracks: EditAlbumTracksSubmitPayload,
     cover?: File,
     shouldDeleteCover?: boolean,
+    extras?: { pendingGenres: { id: string; name: string }[] },
   ) => Promise<void>;
   onCancel: () => void;
   /** @internal When true, cover input is not rendered. Used by tests to cover ref-null branch. */
@@ -52,13 +73,86 @@ export function EditAlbumForm({
     [genresResponse],
   );
 
+  const { isLoading: isLoadingArtists } = useLibraryArtists();
+  const artists = useLibraryStore((state) => state.privateArtists);
+
+  const { mutateAsync: createLibraryGenre } = useCreateLibraryGenre();
+  const { mutateAsync: createLibraryArtist } = useCreateLibraryArtist();
+
   const [createGenreModalOpen, setCreateGenreModalOpen] = useState(false);
+  const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);
   const [pendingGenres, setPendingGenres] = useState<{ id: string; name: string }[]>([]);
+  const [pendingAlbumArtists, setPendingAlbumArtists] = useState<{ id: string; name: string }[]>(
+    [],
+  );
   const [activeGenreCreationCallback, setActiveGenreCreationCallback] = useState<
     ((genreId: string) => void) | null
   >(null);
 
   const tracksState = useEditAlbumTracks(album);
+
+  const onSubmitWithResolvedPending = useCallback(
+    async (
+      values: UpdateLibraryAlbumRequest,
+      tracksPayload: EditAlbumTracksSubmitPayload,
+      cover?: File,
+      shouldDeleteCover?: boolean,
+    ) => {
+      let nextValues = values;
+      let nextTracks = tracksPayload;
+
+      const pendingGenresNeeded = collectPendingGenreIdsForAlbumSubmit(
+        nextValues.genreIds,
+        nextTracks,
+      );
+      if (pendingGenresNeeded.size > 0) {
+        const genreMap = await buildPendingGenreLocalToServerMap(
+          pendingGenresNeeded,
+          pendingGenres,
+          createLibraryGenre,
+        );
+        const appliedGenres = applyPendingGenreMapToEditPayload(nextValues, nextTracks, genreMap);
+        nextValues = appliedGenres.values;
+        nextTracks = appliedGenres.tracks;
+      }
+
+      const visibleAlbumPending = pendingAlbumArtists.filter((p) =>
+        (nextValues.artistIds ?? []).includes(p.id),
+      );
+      const combinedPendingArtists = mergePendingArtistDrafts(
+        visibleAlbumPending,
+        tracksState.pendingArtists,
+      );
+      const pendingArtistsNeeded = collectPendingArtistIdsForAlbumSubmit(
+        nextValues.artistIds,
+        nextTracks,
+      );
+      if (pendingArtistsNeeded.size > 0) {
+        const artistMap = await buildPendingArtistLocalToServerMap(
+          pendingArtistsNeeded,
+          combinedPendingArtists,
+          createLibraryArtist,
+        );
+        const appliedArtists = applyPendingArtistMapToEditPayload(
+          nextValues,
+          nextTracks,
+          artistMap,
+        );
+        nextValues = appliedArtists.values;
+        nextTracks = appliedArtists.tracks;
+      }
+
+      await onSubmit(nextValues, nextTracks, cover, shouldDeleteCover, { pendingGenres });
+    },
+    [
+      createLibraryArtist,
+      createLibraryGenre,
+      onSubmit,
+      pendingAlbumArtists,
+      pendingGenres,
+      tracksState.pendingArtists,
+    ],
+  );
 
   const {
     form,
@@ -73,14 +167,86 @@ export function EditAlbumForm({
     handleCoverSelect,
   } = useEditAlbumForm({
     album,
-    onSubmit,
+    onSubmit: onSubmitWithResolvedPending,
     prepareTracksSubmit: tracksState.prepareTracksSubmit,
   });
 
-  const genreIds = useStore(form.store, (s): string[] => s.values.genreIds);
+  const readGenreIdsSnapshot = () => form.getFieldValue('genreIds');
+  const genreIds = useSyncExternalStore(
+    (onStoreChange) => {
+      const sub = form.store.subscribe(() => {
+        onStoreChange();
+      });
+      return () => sub.unsubscribe();
+    },
+    readGenreIdsSnapshot,
+    readGenreIdsSnapshot,
+  );
   const visiblePendingGenres = useMemo(
     () => pendingGenres.filter((p) => genreIds.includes(p.id)),
     [pendingGenres, genreIds],
+  );
+
+  const readArtistIdsSnapshot = () => form.getFieldValue('artistIds') as string[];
+  const artistIds = useSyncExternalStore(
+    (onStoreChange) => {
+      const sub = form.store.subscribe(() => {
+        onStoreChange();
+      });
+      return () => sub.unsubscribe();
+    },
+    readArtistIdsSnapshot,
+    readArtistIdsSnapshot,
+  );
+  const visiblePendingAlbumArtists = useMemo(
+    () => pendingAlbumArtists.filter((p) => artistIds.includes(p.id)),
+    [pendingAlbumArtists, artistIds],
+  );
+
+  const handleArtistSelectionChange = useCallback(
+    (value: string) => {
+      if (value === LIBRARY_ALBUM_ARTIST_CREATE_VALUE) {
+        setCreateArtistModalOpen(true);
+        return;
+      }
+
+      const currentIds = form.getFieldValue('artistIds') as string[];
+      let nextIds: string[];
+
+      if (value === LIBRARY_ALBUM_ARTIST_NONE_VALUE) {
+        nextIds = [];
+      } else {
+        nextIds = currentIds.includes(value)
+          ? currentIds.filter((id: string) => id !== value)
+          : [...currentIds, value];
+      }
+
+      form.setFieldValue('artistIds', nextIds);
+      tracksState.updateAllTracksArtists(currentIds, nextIds);
+    },
+    [form, tracksState],
+  );
+
+  const handleConfirmNewArtistName = useCallback(
+    (name: string) => {
+      const id = makeLocalPendingArtistId();
+      setPendingAlbumArtists((prev) => [...prev, { id, name }]);
+      const currentIds = form.getFieldValue('artistIds') as string[];
+      const nextIds = [...currentIds, id];
+      form.setFieldValue('artistIds', nextIds);
+      tracksState.updateAllTracksArtists(currentIds, nextIds);
+    },
+    [form, tracksState],
+  );
+
+  const handleRemoveArtistId = useCallback(
+    (id: string) => {
+      const currentIds = form.getFieldValue('artistIds') as string[];
+      const nextIds = currentIds.filter((x) => x !== id);
+      form.setFieldValue('artistIds', nextIds);
+      tracksState.updateAllTracksArtists(currentIds, nextIds);
+    },
+    [form, tracksState],
   );
 
   const handleGenreSelectionChange = useCallback(
@@ -144,6 +310,13 @@ export function EditAlbumForm({
         setIsMultipleFilesModalOpen={setIsMultipleFilesModalOpen}
       />
 
+      <CreateLibraryArtistNameModal
+        open={createArtistModalOpen}
+        onOpenChange={setCreateArtistModalOpen}
+        pendingArtistNames={visiblePendingAlbumArtists.map((p) => p.name)}
+        onConfirm={handleConfirmNewArtistName}
+      />
+
       <CreateLibraryGenreNameModal
         open={createGenreModalOpen}
         onOpenChange={(open) => {
@@ -195,10 +368,15 @@ export function EditAlbumForm({
                 <div className="min-h-0 flex-1 space-y-6 lg:overflow-y-auto lg:pr-1">
                   <EditAlbumMetadata
                     form={form}
+                    artists={artists}
+                    pendingArtists={visiblePendingAlbumArtists}
+                    isLoadingArtists={isLoadingArtists}
                     genres={genres}
                     pendingGenres={visiblePendingGenres}
                     isLoadingGenres={isLoadingGenres}
                     onGenreSelect={handleGenreSelectionChange}
+                    onArtistSelect={handleArtistSelectionChange}
+                    onRemoveArtistId={handleRemoveArtistId}
                   />
                 </div>
               </div>

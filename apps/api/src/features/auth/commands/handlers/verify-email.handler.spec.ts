@@ -80,7 +80,7 @@ describe('VerifyEmailHandler', () => {
         mockPayload.otpCode,
         'emailVerification',
       );
-      expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailObject.id, {
+      expect(emailAddressRepository.update).toHaveBeenCalledWith(mockEmailObject.id, {
         status: 'verified',
       });
       expect(userRepository.getByEmail).toHaveBeenCalledWith(mockPayload.email);

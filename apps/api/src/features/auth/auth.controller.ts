@@ -13,7 +13,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiErrorResponseDto } from '../../common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
@@ -48,7 +47,6 @@ import { RecoverPasswordCommand } from '@/features/auth/commands/impl/recover-pa
 
 @ApiTags('Auth')
 @Controller('auth')
-@Throttle({ default: { limit: 10, ttl: 60000 } })
 @UseInterceptors(RefreshTokenInterceptor)
 export class AuthController {
   constructor(

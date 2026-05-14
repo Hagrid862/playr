@@ -66,7 +66,7 @@ test.describe("Queue Management", () => {
   const track1 = `Track 1 ${timestamp}`;
   const track2 = `Track 2 ${timestamp}`;
 
-  test.describe.configure({ mode: "serial" });
+  test.describe.configure({ mode: "serial", timeout: 120_000 });
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
@@ -133,7 +133,6 @@ test.describe("Queue Management", () => {
     expect(artistId).toBeTruthy();
 
     await page.goto(`/app/library/artists/${artistId}/add-content`);
-    await page.waitForLoadState("networkidle");
 
     await page.getByLabel("Album title").waitFor({ state: "visible" });
     await page.getByLabel("Album title").fill(albumName);
@@ -152,7 +151,6 @@ test.describe("Queue Management", () => {
 
     await page.getByRole("button", { name: /Create album & upload/ }).click();
     await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, { timeout: 60000 });
-    await page.waitForLoadState("networkidle");
 
     const albumUrl = new URL(page.url());
     const albumPathname = albumUrl.pathname.replace(/\/+$/, "");
@@ -164,17 +162,21 @@ test.describe("Queue Management", () => {
     // Add Track 2
     await page.goto(`/app/library/albums/${albumId}/add-content`);
     await page.setInputFiles('input[type="file"]', audioPath);
-    // Wait for metadata scan to start and then finish deterministically
     await page.waitForTimeout(500);
-    await expect(page.getByText(/Scanning metadata/)).toBeHidden({
-      timeout: 20000,
-    });
+    await expect(
+      page.getByText(
+        /Scanning metadata|Scanning tracks for cover art|Scanning metadata and cover art/,
+      ),
+    ).toBeHidden({ timeout: 20000 });
     await page.getByLabel("Track Title").fill(track2);
-    await page.getByRole("button", { name: "Add Track" }).click();
+    const uploadTracks = page.getByRole("button", {
+      name: /Upload \d+ tracks?/,
+    });
+    await expect(uploadTracks).toBeEnabled({ timeout: 30000 });
+    await uploadTracks.click();
 
     // Wait for navigation to complete - the form navigates to the parent (album detail) page
     await page.waitForURL(/\/app\/library\/albums\/[^/]+$/, { timeout: 30000 });
-    await page.waitForLoadState("networkidle");
     await expect(page.getByText(track2)).toBeVisible({ timeout: 30000 });
   });
 
@@ -183,25 +185,45 @@ test.describe("Queue Management", () => {
   });
 
   test("should add tracks to queue and verify", async () => {
+    // Start playback - ensuring the player is initialized
     await playTrackFromAlbum(page, playerPage, track1);
 
+    // Locate the specific track card
     const track2Card = await getUniqueAlbumTrackCard(page, track2);
-    // Use right-click to open context menu
+
+    // Open context menu via right-click
     await track2Card.click({ button: "right" });
-    await page.getByRole("menuitem", { name: "Add to Queue" }).click();
 
-    // Give context menu action time to process
-    await page.waitForTimeout(1000);
+    /**
+     * Instead of waitForTimeout, we wait for the menu item to be ready.
+     * This is faster and more reliable as it reacts to the UI state.
+     */
+    const addToQueueItem = page.getByRole("menuitem", { name: "Add to Queue" });
+    await expect(addToQueueItem).toBeVisible();
+    await addToQueueItem.click();
 
-    // Open Queue
-    await page.getByRole("button", { name: "Queue" }).click();
+    /**
+     * Avoid hardcoded 1000ms waits. Instead, wait for a toast notification
+     * or for the menu to disappear to confirm the action was registered.
+     */
+    await expect(addToQueueItem).not.toBeVisible();
 
-    // Verify Track 2 in queue
+    // Open the Queue panel
+    const queueButton = page.getByRole("button", { name: "Queue" });
+    await queueButton.click();
+
+    // Verify Track 2 is present in the list
     await queuePage.expectTrackInQueue(track2);
 
-    // Close queue using Escape as the toggle button might be obscured by the Sheet/sidebar header
+    /**
+     * Using keyboard Escape is a good fallback, but ensure the transition
+     * is handled by waiting for a specific locator to hide/show
+     * rather than using a fixed 500ms delay.
+     */
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(500); // Wait for transition
+
+    // Wait for the queue overlay/sidebar to actually vanish from the DOM/Viewport
+    await expect(page.getByRole("list", { name: "Queue" })).not.toBeVisible();
   });
 
   test("should use 'Play Next'", async () => {

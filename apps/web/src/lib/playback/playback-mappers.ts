@@ -1,6 +1,8 @@
 import type { PlaybackTrack, QueueItem, ZodTrack } from '@repo/contracts';
 import { v6 as uuidv6 } from 'uuid';
 
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
+
 export function playbackTrackToQueueItem(
   track: PlaybackTrack,
   options?: {
@@ -34,10 +36,11 @@ export function playbackTrackToQueueItem(
 export function zodTrackToPlaybackTrack(track: ZodTrack): PlaybackTrack {
   const albumName = track.album?.name?.trim();
   const albumId = track.albumId?.trim();
+  const artistNames = track.artists?.map((a) => a.name.trim()).filter(Boolean) ?? [];
   return {
     id: track.id,
     title: track.title.trim() || track.id,
-    artists: track.artists?.map((a) => a.name.trim()).filter(Boolean) ?? [],
+    artists: artistNames.length > 0 ? artistNames : [UNKNOWN_ARTIST_LABEL],
     albumArt: track.album?.cover?.url ?? null,
     albumName: albumName && albumName.length > 0 ? albumName : 'Unknown album',
     albumId: albumId && albumId.length > 0 ? albumId : track.id,

@@ -1,4 +1,5 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import {
@@ -22,6 +23,7 @@ describe('UpdateLibraryAlbumHandler', () => {
   let albumRepository: DeepMocked<AlbumRepository>;
   let libraryRepository: DeepMocked<LibraryRepository>;
   let genreRepository: DeepMocked<GenreRepository>;
+  let artistRepository: DeepMocked<ArtistRepository>;
 
   const mockUserId = 'user-123';
   const mockAlbumId = 'album-123';
@@ -37,12 +39,14 @@ describe('UpdateLibraryAlbumHandler', () => {
     albumRepository = createMock<AlbumRepository>();
     libraryRepository = createMock<LibraryRepository>();
     genreRepository = createMock<GenreRepository>();
+    artistRepository = createMock<ArtistRepository>();
 
     libraryRepository.getByUserId.mockResolvedValue({
       id: 'library-123',
       userId: mockUserId,
     } as any);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    artistRepository.countActiveOwnedByUser.mockImplementation(async (ids) => ids.length);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -50,6 +54,7 @@ describe('UpdateLibraryAlbumHandler', () => {
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: LibraryRepository, useValue: libraryRepository },
         { provide: GenreRepository, useValue: genreRepository },
+        { provide: ArtistRepository, useValue: artistRepository },
       ],
     }).compile();
 
@@ -198,6 +203,96 @@ describe('UpdateLibraryAlbumHandler', () => {
         genres: {
           deleteMany: {},
           create: [{ genre: { connect: { id: 'a' } } }, { genre: { connect: { id: 'b' } } }],
+        },
+      }),
+    );
+  });
+
+  it('should allow clearing album artists with empty artistIds', async () => {
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, { artistIds: [] }, mockUserId);
+
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
+    albumRepository.update.mockResolvedValue({ ...mockAlbum });
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: { ...mockAlbum },
+    } as any);
+
+    await handler.execute(command);
+
+    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith([], mockUserId);
+    expect(albumRepository.update).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({
+        artists: { set: [] },
+      }),
+    );
+  });
+  it('should throw BadRequestException when artist ids are not all owned', async () => {
+    const command = new UpdateLibraryAlbumCommand(mockAlbumId, { artistIds: ['a1'] }, mockUserId);
+
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
+    libraryRepository.getByUserId.mockResolvedValue({
+      id: 'library-123',
+      userId: mockUserId,
+    } as any);
+    artistRepository.countActiveOwnedByUser.mockResolvedValue(0);
+
+    await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should pass artists to album update when artistIds are provided', async () => {
+    const command = new UpdateLibraryAlbumCommand(
+      mockAlbumId,
+      { artistIds: ['ar1', 'ar2'] },
+      mockUserId,
+    );
+
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
+    albumRepository.update.mockResolvedValue({ ...mockAlbum });
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: { ...mockAlbum },
+    } as any);
+
+    await handler.execute(command);
+
+    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith(
+      ['ar1', 'ar2'],
+      mockUserId,
+    );
+    expect(albumRepository.update).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({
+        artists: {
+          set: [{ id: 'ar1' }, { id: 'ar2' }],
+        },
+      }),
+    );
+  });
+
+  it('should dedupe artist ids when updating album artists', async () => {
+    const command = new UpdateLibraryAlbumCommand(
+      mockAlbumId,
+      { artistIds: ['x', 'x', 'y'] },
+      mockUserId,
+    );
+
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
+    albumRepository.update.mockResolvedValue({ ...mockAlbum });
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
+      success: true,
+      data: { ...mockAlbum },
+    } as any);
+
+    await handler.execute(command);
+
+    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith(['x', 'y'], mockUserId);
+    expect(albumRepository.update).toHaveBeenCalledWith(
+      mockAlbumId,
+      expect.objectContaining({
+        artists: {
+          set: [{ id: 'x' }, { id: 'y' }],
         },
       }),
     );

@@ -27,6 +27,10 @@ const orphanGenreMergeCache = vi.hoisted(() => ({
   current: null as Record<string, unknown> | null,
 }));
 
+const metaDupPendingArtistMergeCache = vi.hoisted(() => ({
+  current: null as Record<string, unknown> | null,
+}));
+
 vi.mock('./useLibraryAlbumFromFilesForm', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./useLibraryAlbumFromFilesForm')>();
   return {
@@ -249,6 +253,7 @@ describe('LibraryAlbumFromFilesForm', () => {
   afterEach(() => {
     hookMergeRef.current = null;
     orphanGenreMergeCache.current = null;
+    metaDupPendingArtistMergeCache.current = null;
     createAlbumIsPending.current = false;
     uploadCoverIsPending.current = false;
     bulkTracksIsPending.current = false;
@@ -330,7 +335,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     hookMergeRef.current = () => ({
@@ -400,7 +405,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    expect(screen.getByRole('combobox', { name: /artist/i })).toHaveTextContent(/select artist/i);
+    expect(screen.getByLabelText(/^artists$/i)).toHaveTextContent(/no artists/i);
   });
 
   it('does not autofill artist id when the sole name match has a missing id', async () => {
@@ -427,7 +432,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    expect(screen.getByRole('combobox', { name: /artist/i })).toHaveTextContent(/select artist/i);
+    expect(screen.getByLabelText(/^artists$/i)).toHaveTextContent(/no artists/i);
   });
 
   it('skips server artist autofill while the artist list is still loading', async () => {
@@ -451,7 +456,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    expect(screen.getByRole('combobox', { name: /artist/i })).toHaveTextContent(/loading/i);
+    expect(screen.getByLabelText(/^artists$/i)).toHaveTextContent(/loading/i);
     expect(screen.getByRole('button', { name: /create album.*upload/i })).toBeDisabled();
   });
 
@@ -474,14 +479,14 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     await user.click(screen.getByRole('button', { name: /create album.*upload/i }));
 
     await waitFor(() => {
       expect(createAlbumMock).toHaveBeenCalledWith(
-        expect.objectContaining({ artistId: 'artist-1' }),
+        expect.objectContaining({ artistIds: ['artist-1'] }),
       );
     });
   });
@@ -633,6 +638,38 @@ describe('LibraryAlbumFromFilesForm', () => {
     });
   });
 
+  it('clears album artists when choosing No artists from the picker', async () => {
+    const user = userEvent.setup();
+    vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
+      title: 'Song',
+      album: 'From Meta',
+      year: 2024,
+      trackNo: 1,
+      diskNo: 1,
+    });
+
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'song.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
+    });
+
+    await user.click(screen.getByLabelText(/^artists$/i));
+    await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
+
+    expect(screen.getByRole('button', { name: /remove alpha/i })).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByLabelText(/^artists$/i));
+    await user.click(await screen.findByRole('option', { name: /^No artists$/i }));
+
+    expect(screen.queryByRole('button', { name: /remove alpha/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create album.*upload/i })).toBeDisabled();
+  });
+
   it('clears genres when choosing No genres from the picker', async () => {
     const user = userEvent.setup();
     renderForm({ cancelTo: '/back' });
@@ -702,11 +739,12 @@ describe('LibraryAlbumFromFilesForm', () => {
     });
   });
 
-  it('skips adding another pending row when metadata matches an existing pending artist while artist id is unset', async () => {
+  it('does not add another pending artist when metadata matches an existing pending-draft name', async () => {
     const user = userEvent.setup();
+    libraryStoreState.privateArtists = [];
     vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
       title: 'Song',
-      artist: 'Fresh Pending Only',
+      artist: 'MetaDup',
       album: 'Indie',
       year: 2024,
       trackNo: 1,
@@ -722,9 +760,21 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('Indie');
     });
 
+    metaDupPendingArtistMergeCache.current = null;
     hookMergeRef.current = (base) => {
-      const fd = base.formData as Record<string, unknown>;
-      return { formData: { ...fd, artistId: '' } };
+      if (!metaDupPendingArtistMergeCache.current) {
+        const fd = base.formData as Record<string, unknown>;
+        metaDupPendingArtistMergeCache.current = {
+          formData: { ...fd, artistIds: [] },
+          pendingArtists: [
+            {
+              id: 'local:pending:11111111-1111-1111-1111-111111111111',
+              name: 'MetaDup',
+            },
+          ],
+        };
+      }
+      return metaDupPendingArtistMergeCache.current;
     };
 
     view.rerender(
@@ -733,9 +783,36 @@ describe('LibraryAlbumFromFilesForm', () => {
       </TooltipProvider>,
     );
 
-    await waitFor(() =>
-      expect(screen.getByRole('combobox', { name: /artist/i })).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^artists$/i)).toHaveTextContent(/no artists/i);
+    });
+  });
+
+  it('autofills a single pending artist when metadata suggests a new name not in the library', async () => {
+    const user = userEvent.setup();
+    vi.mocked(extractMetadataFromAudioFile).mockResolvedValue({
+      title: 'Song',
+      artist: 'Fresh Pending Only',
+      album: 'Indie',
+      year: 2024,
+      trackNo: 1,
+      diskNo: 1,
+    });
+
+    renderForm({ cancelTo: '/back' });
+
+    const audioInput = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    await user.upload(audioInput, new File(['x'], 'a.mp3', { type: 'audio/mp3' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/album title/i)).toHaveValue('Indie');
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /remove fresh pending only \(new\)/i }),
+      ).toBeInTheDocument();
+    });
   });
 
   it('surfaces missing pending artist name during submit', async () => {
@@ -765,7 +842,9 @@ describe('LibraryAlbumFromFilesForm', () => {
           name: string;
         }[]
       ).map((p) =>
-        (base.formData as { artistId: string }).artistId === p.id ? { ...p, name: '   ' } : p,
+        (base.formData as { artistIds: string[] }).artistIds.includes(p.id)
+          ? { ...p, name: '   ' }
+          : p,
       ),
     });
 
@@ -951,7 +1030,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /create new artist/i }));
 
     expect(await screen.findByRole('heading', { name: /new artist/i })).toBeInTheDocument();
@@ -982,7 +1061,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /create new artist/i }));
 
     expect(await screen.findByRole('heading', { name: /new artist/i })).toBeInTheDocument();
@@ -994,10 +1073,12 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.queryByRole('heading', { name: /new artist/i })).not.toBeInTheDocument();
     });
 
-    await user.click(screen.getByLabelText(/remove draft artist/i));
+    await user.click(screen.getByRole('button', { name: /remove modal artist \(new\)/i }));
 
     await waitFor(() => {
-      expect(screen.queryByLabelText(/remove draft artist/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /remove modal artist \(new\)/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -1092,7 +1173,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     expect(screen.getByRole('button', { name: /create album & upload 1 track$/i })).toBeEnabled();
@@ -1150,7 +1231,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     createAlbumIsPending.current = true;
@@ -1182,7 +1263,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     uploadCoverIsPending.current = true;
@@ -1214,7 +1295,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     bulkTracksIsPending.current = true;
@@ -1276,7 +1357,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     createGenreIsPending.current = true;
@@ -1311,7 +1392,7 @@ describe('LibraryAlbumFromFilesForm', () => {
       expect(screen.getByLabelText(/album title/i)).toHaveValue('From Meta');
     });
 
-    await user.click(screen.getByRole('combobox', { name: /artist/i }));
+    await user.click(screen.getByLabelText(/^artists$/i));
     await user.click(await screen.findByRole('option', { name: /^Alpha$/i }));
 
     bulkTracksIsPending.current = true;

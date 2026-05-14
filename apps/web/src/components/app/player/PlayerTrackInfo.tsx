@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { MusicNotesIcon, SparkleIcon } from '@phosphor-icons/react';
@@ -31,7 +32,7 @@ export function PlayerTrackInfo({
   const isLossless = quality === StreamAudioQuality.lossless && !showMp3StreamBadge;
 
   const trackTitle = currentTrack?.title || 'No track selected';
-  const trackArtist = currentTrack?.artists?.join(', ') || 'Unknown Artist';
+  const trackArtist = currentTrack?.artists?.join(', ') || UNKNOWN_ARTIST_LABEL;
   const coverUrl = currentTrack?.albumArt;
 
   return (

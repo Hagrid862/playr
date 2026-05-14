@@ -29,6 +29,8 @@ export default defineConfig({
     },
   },
   test: {
+    /** Node 25+ enables Web Storage globally; without this, `localStorage` can shadow jsdom and break Vitest. */
+    execArgv: ['--no-experimental-webstorage'],
     globals: true,
     environment: 'jsdom',
     coverage: {

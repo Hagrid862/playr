@@ -57,7 +57,7 @@ describe('EmailAuthService', () => {
         // Arrange
         otpCodeService.generateOTPCode.mockResolvedValue(mockOtpCode);
         mailService.sendOtpVerificationCodeViaEmail.mockResolvedValue(true);
-        emailAddressRepository.edit.mockResolvedValue(mockEmailAddress);
+        emailAddressRepository.update.mockResolvedValue(mockEmailAddress);
 
         // Act
         const result = await service.beginOtpVerificationViaEmail(
@@ -77,7 +77,7 @@ describe('EmailAuthService', () => {
           'emailVerification',
           expect.any(Number),
         );
-        expect(emailAddressRepository.edit).toHaveBeenCalledWith(mockEmailAddress.id, {
+        expect(emailAddressRepository.update).toHaveBeenCalledWith(mockEmailAddress.id, {
           status: 'pending',
         });
       });
@@ -86,7 +86,7 @@ describe('EmailAuthService', () => {
         // Arrange
         otpCodeService.generateOTPCode.mockResolvedValue(mockOtpCode);
         mailService.sendOtpVerificationCodeViaEmail.mockResolvedValue(false);
-        emailAddressRepository.edit.mockResolvedValue(mockEmailAddress);
+        emailAddressRepository.update.mockResolvedValue(mockEmailAddress);
 
         // Act
         const result = await service.beginOtpVerificationViaEmail(
@@ -96,7 +96,7 @@ describe('EmailAuthService', () => {
 
         // Assert
         expect(result).toBe(false);
-        expect(emailAddressRepository.edit).not.toHaveBeenCalled();
+        expect(emailAddressRepository.update).not.toHaveBeenCalled();
       });
     });
 
@@ -124,7 +124,7 @@ describe('EmailAuthService', () => {
           'passwordReset',
           OTP_CODE_TTL,
         );
-        expect(emailAddressRepository.edit).not.toHaveBeenCalled();
+        expect(emailAddressRepository.update).not.toHaveBeenCalled();
       });
 
       it('should return false if email sending fails', async () => {
@@ -140,7 +140,7 @@ describe('EmailAuthService', () => {
 
         // Assert
         expect(result).toBe(false);
-        expect(emailAddressRepository.edit).not.toHaveBeenCalled();
+        expect(emailAddressRepository.update).not.toHaveBeenCalled();
       });
     });
 
@@ -159,7 +159,7 @@ describe('EmailAuthService', () => {
         // Assert
         expect(result).toBe(false);
         expect(mailService.sendOtpVerificationCodeViaEmail).not.toHaveBeenCalled();
-        expect(emailAddressRepository.edit).not.toHaveBeenCalled();
+        expect(emailAddressRepository.update).not.toHaveBeenCalled();
         expect(Logger.prototype.error).toHaveBeenCalledWith(
           'Failed to begin email verification flow',
           expect.stringContaining('OTP generation failed'),
@@ -191,7 +191,7 @@ describe('EmailAuthService', () => {
         const error = new Error('Database update failed');
         otpCodeService.generateOTPCode.mockResolvedValue(mockOtpCode);
         mailService.sendOtpVerificationCodeViaEmail.mockResolvedValue(true);
-        emailAddressRepository.edit.mockRejectedValue(error);
+        emailAddressRepository.update.mockRejectedValue(error);
 
         // Act
         const result = await service.beginOtpVerificationViaEmail(

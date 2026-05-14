@@ -16,6 +16,7 @@ export const useLibraryAlbums = (
   });
 
   useEffect(() => {
+    if (genreId) return;
     if (query.data?.data?.items) {
       // Extract albums from the LibraryAlbum relation
       const albums = query.data.data.items
@@ -24,7 +25,7 @@ export const useLibraryAlbums = (
 
       setPrivateAlbums(albums);
     }
-  }, [query.data, setPrivateAlbums]);
+  }, [genreId, query.data, setPrivateAlbums]);
 
   return query;
 };

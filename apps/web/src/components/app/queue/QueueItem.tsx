@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -39,7 +40,7 @@ export function QueueItemOverlay({ track }: { track: QueueItem }) {
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-white/60 truncate">{track.track?.title}</div>
           <div className="text-xs text-white/40 truncate">
-            {track.track?.artists?.join(', ') || 'Unknown Artist'}
+            {track.track?.artists?.join(', ') || UNKNOWN_ARTIST_LABEL}
           </div>
         </div>
       </div>
@@ -126,7 +127,7 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
           {track.track?.title}
         </div>
         <div className="text-xs text-white/50 truncate">
-          {track.track?.artists?.join(', ') || 'Unknown Artist'}
+          {track.track?.artists?.join(', ') || UNKNOWN_ARTIST_LABEL}
         </div>
       </div>
       <Button

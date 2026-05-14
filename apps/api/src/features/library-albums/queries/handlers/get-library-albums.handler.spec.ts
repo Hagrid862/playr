@@ -61,7 +61,7 @@ describe('GetLibraryAlbumsHandler', () => {
         album: {
           include: {
             cover: true,
-            artists: true,
+            artists: { where: { deletedAt: null } },
             genres: { include: { genre: true } },
           },
         },
@@ -99,7 +99,7 @@ describe('GetLibraryAlbumsHandler', () => {
           album: {
             include: {
               cover: true,
-              artists: true,
+              artists: { where: { deletedAt: null } },
               genres: { include: { genre: true } },
             },
           },

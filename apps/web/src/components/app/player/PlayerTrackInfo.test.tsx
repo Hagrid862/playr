@@ -1,3 +1,4 @@
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { PlaybackTrack, StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -73,7 +74,7 @@ describe('PlayerTrackInfo', () => {
     it('renders default empty state', () => {
       renderTrackInfo();
       expect(screen.getByText('No track selected')).toBeInTheDocument();
-      expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
+      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
       expect(screen.getByText('time:10')).toBeInTheDocument();
     });
   });

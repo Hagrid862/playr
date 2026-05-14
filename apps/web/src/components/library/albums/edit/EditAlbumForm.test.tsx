@@ -1,4 +1,4 @@
-import type { ZodAlbum } from '@repo/contracts';
+import type { UpdateLibraryAlbumRequest, ZodAlbum } from '@repo/contracts';
 import { albumBuilder } from '@repo/testing/builders';
 import { customRender } from '@repo/testing/web';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
@@ -7,12 +7,22 @@ import userEvent from '@testing-library/user-event';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditAlbumForm } from './EditAlbumForm';
-import {
-  type useEditAlbumForm,
-  useEditAlbumForm as useEditAlbumFormMock,
-} from './useEditAlbumForm';
+import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
+import { useEditAlbumForm, useEditAlbumForm as useEditAlbumFormMock } from './useEditAlbumForm';
 
 type UseEditAlbumFormReturn = ReturnType<typeof useEditAlbumForm>;
+
+const createLibraryGenreHoisted = vi.hoisted(() => ({
+  mutateAsync: vi.fn().mockResolvedValue({ data: { id: 'resolved-genre-id' } }),
+}));
+
+const createLibraryArtistHoisted = vi.hoisted(() => ({
+  mutateAsync: vi.fn().mockResolvedValue({ data: { id: 'resolved-artist-id' } }),
+}));
+
+const useEditAlbumTracksState = vi.hoisted(() => ({
+  pendingArtists: [] as { id: string; name: string }[],
+}));
 
 const hoistedMocks = vi.hoisted(() => {
   const emptyTracksPayload = {
@@ -23,17 +33,31 @@ const hoistedMocks = vi.hoisted(() => {
   };
 
   const genreIdsStateRef = { current: [] as string[] };
+  const artistIdsStateRef = { current: [] as string[] };
   const trackGenreCallbackMock = vi.fn();
   const updateAllTracksGenresMock = vi.fn();
+  const updateAllTracksArtistsMock = vi.fn();
 
   const createMockTanStackForm = () => {
     const listeners = new Set<() => void>();
-    let storeState: { values: { genreIds: string[] } } = {
-      values: { genreIds: [...genreIdsStateRef.current] },
+    let storeState: { values: { genreIds: string[]; artistIds: string[] } } = {
+      values: {
+        genreIds: [...genreIdsStateRef.current],
+        artistIds: [...artistIdsStateRef.current],
+      },
     };
 
     const notifyStoreListeners = () => {
       for (const listener of listeners) listener();
+    };
+
+    const syncStoreState = () => {
+      storeState = {
+        values: {
+          genreIds: [...genreIdsStateRef.current],
+          artistIds: [...artistIdsStateRef.current],
+        },
+      };
     };
 
     const store = {
@@ -42,21 +66,29 @@ const hoistedMocks = vi.hoisted(() => {
       },
       subscribe: (listener: () => void) => {
         listeners.add(listener);
-        return () => {
-          listeners.delete(listener);
+        return {
+          unsubscribe: () => {
+            listeners.delete(listener);
+          },
         };
       },
     };
 
     return {
       handleSubmit: vi.fn(),
-      getFieldValue: vi.fn((name: string) =>
-        name === 'genreIds' ? genreIdsStateRef.current : undefined,
-      ),
+      getFieldValue: vi.fn((name: string) => {
+        if (name === 'genreIds') return genreIdsStateRef.current;
+        if (name === 'artistIds') return artistIdsStateRef.current;
+        return undefined;
+      }),
       setFieldValue: vi.fn((name: string, value: unknown) => {
         if (name === 'genreIds') {
           genreIdsStateRef.current = value as string[];
-          storeState = { values: { genreIds: [...genreIdsStateRef.current] } };
+          syncStoreState();
+          notifyStoreListeners();
+        } else if (name === 'artistIds') {
+          artistIdsStateRef.current = value as string[];
+          syncStoreState();
           notifyStoreListeners();
         }
       }),
@@ -74,6 +106,7 @@ const hoistedMocks = vi.hoisted(() => {
   const resetStableMockForm = () => {
     stableForm = null;
     genreIdsStateRef.current = [];
+    artistIdsStateRef.current = [];
   };
 
   const cloneFormReference = () => ({ ...getStableMockForm() });
@@ -102,8 +135,10 @@ const hoistedMocks = vi.hoisted(() => {
     buildDefaultUseEditAlbumFormReturn,
     cloneFormReference,
     genreIdsStateRef,
+    artistIdsStateRef,
     trackGenreCallbackMock,
     updateAllTracksGenresMock,
+    updateAllTracksArtistsMock,
   };
 });
 
@@ -114,13 +149,16 @@ const {
   buildDefaultUseEditAlbumFormReturn,
   cloneFormReference,
   genreIdsStateRef,
+  artistIdsStateRef,
   trackGenreCallbackMock,
   updateAllTracksGenresMock,
+  updateAllTracksArtistsMock,
 } = hoistedMocks;
 
 vi.mock('@phosphor-icons/react', () => ({
   CircleNotchIcon: () => null,
   FloppyDiskIcon: () => null,
+  XIcon: () => null,
 }));
 
 vi.mock('@/components/ui/button', () => ({
@@ -148,6 +186,18 @@ vi.mock('@/hooks/api/library-genres/useLibraryGenres', () => ({
       meta: { timestamp: '', requestId: '', path: '' },
     },
     isLoading: false,
+  })),
+}));
+
+vi.mock('@/hooks/api/library-genres/useCreateLibraryGenre', () => ({
+  useCreateLibraryGenre: vi.fn(() => ({
+    mutateAsync: createLibraryGenreHoisted.mutateAsync,
+  })),
+}));
+
+vi.mock('@/hooks/api/library-artists/useCreateLibraryArtist', () => ({
+  useCreateLibraryArtist: vi.fn(() => ({
+    mutateAsync: createLibraryArtistHoisted.mutateAsync,
   })),
 }));
 
@@ -182,10 +232,42 @@ vi.mock('../create/CreateLibraryGenreNameModal', () => ({
   ),
 }));
 
+vi.mock('../create/CreateLibraryArtistNameModal', () => ({
+  CreateLibraryArtistNameModal: ({
+    open,
+    onOpenChange,
+    onConfirm,
+    pendingArtistNames,
+  }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onConfirm: (name: string) => void;
+    pendingArtistNames: string[];
+  }) => (
+    <>
+      <span data-testid="pending-artist-names">{pendingArtistNames.join('|')}</span>
+      {open ? (
+        <div data-testid="create-artist-modal">
+          <button type="button" onClick={() => onConfirm('Fresh Artist')}>
+            confirm-new-artist-name
+          </button>
+          <button type="button" onClick={() => onOpenChange(false)}>
+            close-artist-modal
+          </button>
+        </div>
+      ) : null}
+    </>
+  ),
+}));
+
 vi.mock('./useEditAlbumTracks', () => ({
   useEditAlbumTracks: vi.fn(() => ({
     prepareTracksSubmit: () => ({ ok: true as const, payload: hoistedMocks.emptyTracksPayload }),
     updateAllTracksGenres: hoistedMocks.updateAllTracksGenresMock,
+    updateAllTracksArtists: hoistedMocks.updateAllTracksArtistsMock,
+    get pendingArtists() {
+      return useEditAlbumTracksState.pendingArtists;
+    },
   })),
 }));
 
@@ -212,7 +294,15 @@ vi.mock('./EditAlbumHero', () => ({
 }));
 
 vi.mock('./EditAlbumMetadata', () => ({
-  EditAlbumMetadata: ({ onGenreSelect }: { onGenreSelect: (value: string) => void }) => (
+  EditAlbumMetadata: ({
+    onGenreSelect,
+    onArtistSelect,
+    onRemoveArtistId,
+  }: {
+    onGenreSelect: (value: string) => void;
+    onArtistSelect: (value: string) => void;
+    onRemoveArtistId: (id: string) => void;
+  }) => (
     <div>
       <div>Metadata Fields</div>
       <button
@@ -235,6 +325,34 @@ vi.mock('./EditAlbumMetadata', () => ({
         aria-label="test-metadata-toggle-existing"
       >
         test-metadata-toggle-existing
+      </button>
+      <button
+        type="button"
+        onClick={() => onArtistSelect('__create_new_artist__')}
+        aria-label="test-metadata-create-artist"
+      >
+        test-metadata-create-artist
+      </button>
+      <button
+        type="button"
+        onClick={() => onArtistSelect('__no_artists__')}
+        aria-label="test-metadata-clear-artists"
+      >
+        test-metadata-clear-artists
+      </button>
+      <button
+        type="button"
+        onClick={() => onArtistSelect('artist-existing')}
+        aria-label="test-metadata-toggle-existing-artist"
+      >
+        test-metadata-toggle-existing-artist
+      </button>
+      <button
+        type="button"
+        onClick={() => onRemoveArtistId('artist-existing')}
+        aria-label="test-metadata-remove-artist-chip"
+      >
+        test-metadata-remove-artist-chip
       </button>
     </div>
   ),
@@ -281,10 +399,16 @@ describe('EditAlbumForm', () => {
   beforeEach(() => {
     resetStableMockForm();
     vi.clearAllMocks();
+    createLibraryGenreHoisted.mutateAsync.mockResolvedValue({ data: { id: 'resolved-genre-id' } });
     vi.mocked(useEditAlbumFormMock).mockImplementation(
       ({ album }: { album: ZodAlbum }) =>
         buildDefaultUseEditAlbumFormReturn(album) as unknown as UseEditAlbumFormReturn,
     );
+  });
+
+  it('hides the cover file input when _testHideCoverInput is enabled', () => {
+    customRender(<EditAlbumForm {...defaultProps} _testHideCoverInput />);
+    expect(document.querySelector('input[accept="image/*"]')).toBeNull();
   });
 
   it('renders correctly', () => {
@@ -437,7 +561,7 @@ describe('EditAlbumForm', () => {
       const user = userEvent.setup();
       genreIdsStateRef.current = ['g-existing'];
       customRender(<EditAlbumForm {...defaultProps} />);
-      await user.click(screen.getByRole('button', { name: /test-metadata-toggle-existing/i }));
+      await user.click(screen.getByRole('button', { name: /^test-metadata-toggle-existing$/i }));
       expect(genreIdsStateRef.current).toEqual([]);
       expect(updateAllTracksGenresMock).toHaveBeenCalledWith(['g-existing'], []);
     });
@@ -446,7 +570,7 @@ describe('EditAlbumForm', () => {
       const user = userEvent.setup();
       genreIdsStateRef.current = [];
       customRender(<EditAlbumForm {...defaultProps} />);
-      await user.click(screen.getByRole('button', { name: /test-metadata-toggle-existing/i }));
+      await user.click(screen.getByRole('button', { name: /^test-metadata-toggle-existing$/i }));
       expect(genreIdsStateRef.current).toEqual(['g-existing']);
       expect(updateAllTracksGenresMock).toHaveBeenCalledWith([], ['g-existing']);
     });
@@ -508,6 +632,107 @@ describe('EditAlbumForm', () => {
       expect(screen.getByTestId('create-genre-modal')).toBeInTheDocument();
     });
 
+    it('does not call createLibraryGenre when submit has no pending local genre ids', async () => {
+      vi.mocked(useEditAlbumFormMock).mockImplementation(
+        (props: Parameters<typeof useEditAlbumFormMock>[0]) => {
+          const base = buildDefaultUseEditAlbumFormReturn(props.album);
+          return {
+            ...base,
+            form: {
+              ...base.form,
+              handleSubmit: vi.fn(async () => {
+                await props.onSubmit(
+                  {
+                    name: props.album.name,
+                    description: props.album.description ?? '',
+                    type: props.album.type,
+                    releaseDate: props.album.releaseDate ?? null,
+                    coverId: props.album.coverId ?? undefined,
+                    genreIds: ['existing-server-genre'],
+                  } as UpdateLibraryAlbumRequest,
+                  hoistedMocks.emptyTracksPayload as unknown as EditAlbumTracksSubmitPayload,
+                  undefined,
+                  false,
+                );
+              }),
+            },
+          } as unknown as UseEditAlbumFormReturn;
+        },
+      );
+
+      const user = userEvent.setup();
+      customRender(<EditAlbumForm {...defaultProps} />);
+
+      createLibraryGenreHoisted.mutateAsync.mockClear();
+      mockOnSubmit.mockClear();
+
+      await user.click(screen.getByRole('button', { name: /Save changes/i }));
+
+      expect(createLibraryGenreHoisted.mutateAsync).not.toHaveBeenCalled();
+      expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+      expect(mockOnSubmit.mock.calls[0]?.[0]).toMatchObject({
+        genreIds: ['existing-server-genre'],
+      });
+    });
+
+    it('resolves pending genres before calling onSubmit', async () => {
+      const uuidSpy = vi
+        .spyOn(crypto, 'randomUUID')
+        .mockReturnValue('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+      const LOCAL = 'local:pending:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+      vi.mocked(useEditAlbumFormMock).mockImplementation(
+        (props: Parameters<typeof useEditAlbumFormMock>[0]) => {
+          const base = buildDefaultUseEditAlbumFormReturn(props.album);
+          return {
+            ...base,
+            form: {
+              ...base.form,
+              handleSubmit: vi.fn(async () => {
+                await props.onSubmit(
+                  {
+                    name: props.album.name,
+                    description: props.album.description ?? '',
+                    type: props.album.type,
+                    releaseDate: props.album.releaseDate ?? null,
+                    coverId: props.album.coverId ?? undefined,
+                    genreIds: [LOCAL],
+                  } as UpdateLibraryAlbumRequest,
+                  hoistedMocks.emptyTracksPayload as unknown as EditAlbumTracksSubmitPayload,
+                  undefined,
+                  false,
+                );
+              }),
+            },
+          } as unknown as UseEditAlbumFormReturn;
+        },
+      );
+
+      const user = userEvent.setup();
+      try {
+        customRender(<EditAlbumForm {...defaultProps} />);
+
+        await user.click(screen.getByRole('button', { name: /test-metadata-create-genre/i }));
+        await user.click(screen.getByRole('button', { name: /confirm-new-genre-name/i }));
+
+        createLibraryGenreHoisted.mutateAsync.mockClear();
+        mockOnSubmit.mockClear();
+
+        await user.click(screen.getByRole('button', { name: /Save changes/i }));
+
+        expect(createLibraryGenreHoisted.mutateAsync).toHaveBeenCalledWith({ name: 'Fresh Genre' });
+        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+        expect(mockOnSubmit.mock.calls[0]?.[0]).toMatchObject({
+          genreIds: ['resolved-genre-id'],
+        });
+        expect(mockOnSubmit.mock.calls[0]?.[4]).toMatchObject({
+          pendingGenres: [{ id: LOCAL, name: 'Fresh Genre' }],
+        });
+      } finally {
+        uuidSpy.mockRestore();
+      }
+    });
+
     it('uses an empty genres list when the hook returns no items payload', () => {
       vi.mocked(useLibraryGenres).mockReturnValueOnce({
         data: {
@@ -526,6 +751,253 @@ describe('EditAlbumForm', () => {
 
       customRender(<EditAlbumForm {...defaultProps} />);
       expect(screen.getByText('Metadata Fields')).toBeInTheDocument();
+    });
+  });
+
+  describe('artist flows', () => {
+    it('opens create-artist modal when metadata selects create', async () => {
+      const user = userEvent.setup();
+      customRender(<EditAlbumForm {...defaultProps} />);
+      await user.click(screen.getByRole('button', { name: /test-metadata-create-artist/i }));
+      expect(screen.getByTestId('create-artist-modal')).toBeInTheDocument();
+    });
+
+    it('confirms a new artist from metadata and syncs track artists', async () => {
+      const user = userEvent.setup();
+      const uuidSpy = vi
+        .spyOn(crypto, 'randomUUID')
+        .mockReturnValue('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+      const LOCAL = 'local:pending:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+      try {
+        customRender(<EditAlbumForm {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: /test-metadata-create-artist/i }));
+        await user.click(screen.getByRole('button', { name: /confirm-new-artist-name/i }));
+
+        expect(artistIdsStateRef.current).toEqual([LOCAL]);
+        expect(updateAllTracksArtistsMock).toHaveBeenCalledWith([], [LOCAL]);
+        expect(screen.getByTestId('pending-artist-names')).toHaveTextContent('Fresh Artist');
+      } finally {
+        uuidSpy.mockRestore();
+      }
+    });
+
+    it('clears artists when metadata selects none', async () => {
+      const user = userEvent.setup();
+      artistIdsStateRef.current = ['artist-x'];
+      customRender(<EditAlbumForm {...defaultProps} />);
+      await user.click(screen.getByRole('button', { name: /test-metadata-clear-artists/i }));
+      expect(artistIdsStateRef.current).toEqual([]);
+      expect(updateAllTracksArtistsMock).toHaveBeenCalledWith(['artist-x'], []);
+    });
+
+    it('toggles off an existing artist id', async () => {
+      const user = userEvent.setup();
+      artistIdsStateRef.current = ['artist-existing'];
+      customRender(<EditAlbumForm {...defaultProps} />);
+      await user.click(
+        screen.getByRole('button', { name: /test-metadata-toggle-existing-artist/i }),
+      );
+      expect(artistIdsStateRef.current).toEqual([]);
+      expect(updateAllTracksArtistsMock).toHaveBeenCalledWith(['artist-existing'], []);
+    });
+
+    it('adds an artist id when not previously selected', async () => {
+      const user = userEvent.setup();
+      artistIdsStateRef.current = [];
+      customRender(<EditAlbumForm {...defaultProps} />);
+      await user.click(
+        screen.getByRole('button', { name: /test-metadata-toggle-existing-artist/i }),
+      );
+      expect(artistIdsStateRef.current).toEqual(['artist-existing']);
+      expect(updateAllTracksArtistsMock).toHaveBeenCalledWith([], ['artist-existing']);
+    });
+
+    it('removes a staged artist via chip handler', async () => {
+      const user = userEvent.setup();
+      artistIdsStateRef.current = ['artist-existing', 'keep-me'];
+      customRender(<EditAlbumForm {...defaultProps} />);
+      await user.click(screen.getByRole('button', { name: /test-metadata-remove-artist-chip/i }));
+      expect(artistIdsStateRef.current).toEqual(['keep-me']);
+      expect(updateAllTracksArtistsMock).toHaveBeenCalledWith(
+        ['artist-existing', 'keep-me'],
+        ['keep-me'],
+      );
+    });
+
+    it('drops pending artist names when artist ids no longer include pending ids', async () => {
+      const user = userEvent.setup();
+      const uuidSpy = vi
+        .spyOn(crypto, 'randomUUID')
+        .mockReturnValue('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+      try {
+        const { rerender } = customRender(<EditAlbumForm {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: /test-metadata-create-artist/i }));
+        await user.click(screen.getByRole('button', { name: /confirm-new-artist-name/i }));
+
+        expect(screen.getByTestId('pending-artist-names')).toHaveTextContent('Fresh Artist');
+
+        await act(async () => {
+          getStableMockForm().setFieldValue('artistIds', []);
+        });
+
+        vi.mocked(useEditAlbumFormMock).mockReturnValue({
+          ...buildDefaultUseEditAlbumFormReturn(defaultProps.album),
+          form: cloneFormReference() as unknown as UseEditAlbumFormReturn['form'],
+        });
+
+        rerender(<EditAlbumForm {...defaultProps} />);
+
+        expect(screen.getByTestId('pending-artist-names')).toHaveTextContent('');
+      } finally {
+        uuidSpy.mockRestore();
+      }
+    });
+
+    it('does not call createLibraryArtist when submit has no pending local artist ids', async () => {
+      vi.mocked(useEditAlbumFormMock).mockImplementation(
+        (props: Parameters<typeof useEditAlbumFormMock>[0]) => {
+          const base = buildDefaultUseEditAlbumFormReturn(props.album);
+          return {
+            ...base,
+            form: {
+              ...base.form,
+              handleSubmit: vi.fn(async () => {
+                await props.onSubmit(
+                  {
+                    name: props.album.name,
+                    description: props.album.description ?? '',
+                    type: props.album.type,
+                    releaseDate: props.album.releaseDate ?? null,
+                    coverId: props.album.coverId ?? undefined,
+                    genreIds: [],
+                    artistIds: ['existing-server-artist'],
+                  } as UpdateLibraryAlbumRequest,
+                  hoistedMocks.emptyTracksPayload as unknown as EditAlbumTracksSubmitPayload,
+                  undefined,
+                  false,
+                );
+              }),
+            },
+          } as unknown as UseEditAlbumFormReturn;
+        },
+      );
+
+      const user = userEvent.setup();
+      customRender(<EditAlbumForm {...defaultProps} />);
+
+      createLibraryArtistHoisted.mutateAsync.mockClear();
+      mockOnSubmit.mockClear();
+
+      await user.click(screen.getByRole('button', { name: /Save changes/i }));
+
+      expect(createLibraryArtistHoisted.mutateAsync).not.toHaveBeenCalled();
+      expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+      expect(mockOnSubmit.mock.calls[0]?.[0]).toMatchObject({
+        artistIds: ['existing-server-artist'],
+      });
+    });
+
+    it('filters visible pending album artists when submit values omit artistIds', async () => {
+      const uuidSpy = vi
+        .spyOn(crypto, 'randomUUID')
+        .mockReturnValue('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+      vi.mocked(useEditAlbumFormMock).mockImplementation(
+        (props: Parameters<typeof useEditAlbumFormMock>[0]) => {
+          const base = buildDefaultUseEditAlbumFormReturn(props.album);
+          return {
+            ...base,
+            form: {
+              ...base.form,
+              handleSubmit: vi.fn(async () => {
+                await props.onSubmit(
+                  {
+                    name: props.album.name,
+                    description: props.album.description ?? '',
+                    type: props.album.type,
+                    releaseDate: props.album.releaseDate ?? null,
+                    coverId: props.album.coverId ?? undefined,
+                    genreIds: [],
+                  } as unknown as UpdateLibraryAlbumRequest,
+                  hoistedMocks.emptyTracksPayload as unknown as EditAlbumTracksSubmitPayload,
+                  undefined,
+                  false,
+                );
+              }),
+            },
+          } as unknown as UseEditAlbumFormReturn;
+        },
+      );
+
+      const user = userEvent.setup();
+      try {
+        customRender(<EditAlbumForm {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: /test-metadata-create-artist/i }));
+        await user.click(screen.getByRole('button', { name: /confirm-new-artist-name/i }));
+
+        mockOnSubmit.mockClear();
+        await user.click(screen.getByRole('button', { name: /Save changes/i }));
+
+        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+      } finally {
+        uuidSpy.mockRestore();
+      }
+    });
+
+    it('resolves pending artists before calling onSubmit', async () => {
+      const uuidSpy = vi
+        .spyOn(crypto, 'randomUUID')
+        .mockReturnValue('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+      vi.mocked(useEditAlbumFormMock).mockImplementation(
+        (props: Parameters<typeof useEditAlbumFormMock>[0]) => {
+          const base = buildDefaultUseEditAlbumFormReturn(props.album);
+          return {
+            ...base,
+            form: {
+              ...base.form,
+              handleSubmit: vi.fn(async () => {
+                await props.onSubmit(
+                  {
+                    name: props.album.name,
+                    description: props.album.description ?? '',
+                    type: props.album.type,
+                    releaseDate: props.album.releaseDate ?? null,
+                    coverId: props.album.coverId ?? undefined,
+                    genreIds: [],
+                    artistIds: [...artistIdsStateRef.current],
+                  } as UpdateLibraryAlbumRequest,
+                  hoistedMocks.emptyTracksPayload as unknown as EditAlbumTracksSubmitPayload,
+                  undefined,
+                  false,
+                );
+              }),
+            },
+          } as unknown as UseEditAlbumFormReturn;
+        },
+      );
+
+      const user = userEvent.setup();
+      try {
+        customRender(<EditAlbumForm {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: /test-metadata-create-artist/i }));
+        await user.click(screen.getByRole('button', { name: /confirm-new-artist-name/i }));
+
+        createLibraryArtistHoisted.mutateAsync.mockClear();
+        mockOnSubmit.mockClear();
+
+        await user.click(screen.getByRole('button', { name: /Save changes/i }));
+
+        expect(createLibraryArtistHoisted.mutateAsync).toHaveBeenCalledWith({
+          name: 'Fresh Artist',
+        });
+        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+        expect(mockOnSubmit.mock.calls[0]?.[0]).toMatchObject({
+          artistIds: ['resolved-artist-id'],
+        });
+      } finally {
+        uuidSpy.mockRestore();
+      }
     });
   });
 });

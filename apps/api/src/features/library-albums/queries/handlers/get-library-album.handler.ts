@@ -8,14 +8,14 @@ import { GetLibraryAlbumQuery } from '../impl/get-library-album.query';
 /** Relations needed for single-album API (tracks ordered, nested shapes for Zod). */
 const GET_LIBRARY_ALBUM_INCLUDE = {
   cover: true,
-  artists: true,
+  artists: { where: { deletedAt: null } },
   genres: { include: { genre: true } },
   tracks: {
     where: { deletedAt: null },
     orderBy: { trackNumber: 'asc' as const },
     include: {
       album: { include: { cover: true } },
-      artists: true,
+      artists: { where: { deletedAt: null } },
       audioFiles: true,
       genres: { include: { genre: true } },
     },

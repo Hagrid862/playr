@@ -1,3 +1,8 @@
+import {
+  applyPendingGenreMapToBulkTracks,
+  buildPendingGenreLocalToServerMap,
+  collectPendingGenreIdsFromBulkTracks,
+} from '@/components/library/albums/resolvePendingGenresForSubmit';
 import { apiClient } from '@/lib/api-client';
 import {
   BulkCreateLibraryTracksResponseSchema,
@@ -5,21 +10,26 @@ import {
   type BulkCreateLibraryTracksRequest,
   type BulkCreateLibraryTracksResponse,
   type BulkUploadTrackAudioResponse,
+  type ZodAlbumInfer,
 } from '@repo/contracts';
 import type { BulkTrackItem } from '@/lib/types/library';
-import type { ZodAlbumInfer } from '@repo/contracts';
 
 export interface BulkCreateLibraryTracksParams {
   album: ZodAlbumInfer;
   tracks: BulkTrackItem[];
   /** When creating a new album, the API response may not include artists. Pass artistIds explicitly. */
   artistIds?: string[];
+  /** Staged `local:pending:…` genre rows; required when any track uses those ids. */
+  pendingGenres?: { id: string; name: string }[];
+  createLibraryGenre?: (input: { name: string }) => Promise<{ data?: { id: string } }>;
 }
 
 export const bulkCreateLibraryTracks = async ({
   album,
   tracks,
   artistIds: explicitArtistIds,
+  pendingGenres,
+  createLibraryGenre,
 }: BulkCreateLibraryTracksParams): Promise<{
   createResponse: BulkCreateLibraryTracksResponse;
   uploadResponse: BulkUploadTrackAudioResponse;
@@ -31,8 +41,24 @@ export const bulkCreateLibraryTracks = async ({
     throw new Error('Album must have at least one artist');
   }
 
+  let tracksToSend = tracks;
+  const pendingNeeded = collectPendingGenreIdsFromBulkTracks(tracks);
+  if (pendingNeeded.size > 0) {
+    if (!pendingGenres?.length || !createLibraryGenre) {
+      throw new Error(
+        'Tracks reference new genres that must be created first; pass pendingGenres and createLibraryGenre.',
+      );
+    }
+    const map = await buildPendingGenreLocalToServerMap(
+      pendingNeeded,
+      pendingGenres,
+      createLibraryGenre,
+    );
+    tracksToSend = applyPendingGenreMapToBulkTracks(tracks, map);
+  }
+
   const bulkCreateRequest: BulkCreateLibraryTracksRequest = {
-    tracks: tracks.map(
+    tracks: tracksToSend.map(
       ({ title, trackNumber, diskNumber, explicit, artistIds: perTrackArtists, genreIds }) => {
         const resolved =
           perTrackArtists && perTrackArtists.length > 0 ? perTrackArtists : defaultArtistIds;
@@ -65,14 +91,14 @@ export const bulkCreateLibraryTracks = async ({
   }
 
   const createdTracks = createResponse.data.tracks;
-  if (createdTracks.length !== tracks.length) {
+  if (createdTracks.length !== tracksToSend.length) {
     throw new Error('Track count mismatch after creation');
   }
 
   const trackIds = createdTracks.map((t) => t.id);
   const formData = new FormData();
   formData.append('trackIds', JSON.stringify(trackIds));
-  tracks.forEach(({ file }) => {
+  tracksToSend.forEach(({ file }) => {
     formData.append('files', file);
   });
 

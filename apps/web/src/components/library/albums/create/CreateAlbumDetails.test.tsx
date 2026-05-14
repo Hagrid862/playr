@@ -79,7 +79,7 @@ describe('CreateAlbumDetails', () => {
     name: '',
     description: '',
     type: AlbumType.album,
-    artistId: '123',
+    artistIds: ['123'],
     releaseDate: null,
   };
 

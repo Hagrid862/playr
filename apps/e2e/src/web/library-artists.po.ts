@@ -81,12 +81,10 @@ export class LibraryArtistsPage {
 
   async gotoArtistsList() {
     await this.page.goto("/app/library/artists");
-    await this.page.waitForLoadState("networkidle");
   }
 
   async gotoCreateArtist() {
     await this.page.goto("/app/library/artists/create");
-    await this.page.waitForLoadState("networkidle");
   }
 
   async clickAddArtist() {

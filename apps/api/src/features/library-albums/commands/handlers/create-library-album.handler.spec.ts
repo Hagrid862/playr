@@ -1,4 +1,5 @@
 import { AlbumRepository } from '@/shared/repositories/album.repository';
+import { ArtistRepository } from '@/shared/repositories/artist.repository';
 import { GenreRepository } from '@/shared/repositories/genre.repository';
 import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
@@ -25,6 +26,7 @@ describe('CreateLibraryAlbumHandler', () => {
   let albumRepository: DeepMocked<AlbumRepository>;
   let libraryAlbumRepository: DeepMocked<LibraryAlbumRepository>;
   let genreRepository: DeepMocked<GenreRepository>;
+  let artistRepository: DeepMocked<ArtistRepository>;
 
   const mockUserId = 'user-123';
   const mockLibraryId = 'library-123';
@@ -36,7 +38,7 @@ describe('CreateLibraryAlbumHandler', () => {
     description: 'Description',
     type: 'album' as const,
     releaseDate: new Date(),
-    artistId: mockArtistId,
+    artistIds: [mockArtistId],
   };
 
   const mockLibrary = libraryBuilder({ id: mockLibraryId, userId: mockUserId });
@@ -58,8 +60,10 @@ describe('CreateLibraryAlbumHandler', () => {
     albumRepository = createMock<AlbumRepository>();
     libraryAlbumRepository = createMock<LibraryAlbumRepository>();
     genreRepository = createMock<GenreRepository>();
+    artistRepository = createMock<ArtistRepository>();
 
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
+    artistRepository.countActiveOwnedByUser.mockImplementation(async (ids) => ids.length);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -69,6 +73,7 @@ describe('CreateLibraryAlbumHandler', () => {
         { provide: AlbumRepository, useValue: albumRepository },
         { provide: LibraryAlbumRepository, useValue: libraryAlbumRepository },
         { provide: GenreRepository, useValue: genreRepository },
+        { provide: ArtistRepository, useValue: artistRepository },
       ],
     }).compile();
 
@@ -93,7 +98,15 @@ describe('CreateLibraryAlbumHandler', () => {
     const result = await handler.execute(command);
 
     expect(result.id).toBe(mockAlbumId);
-    expect(albumRepository.create).toHaveBeenCalled();
+    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith(
+      [mockArtistId],
+      mockUserId,
+    );
+    expect(albumRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        artists: { connect: [{ id: mockArtistId }] },
+      }),
+    );
     expect(libraryAlbumRepository.create).toHaveBeenCalledWith({
       album: { connect: { id: mockAlbumId } },
       library: { connect: { id: mockLibraryId } },
@@ -140,6 +153,15 @@ describe('CreateLibraryAlbumHandler', () => {
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });
 
+  it('should throw BadRequestException when artist ids are not all owned', async () => {
+    const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    artistRepository.countActiveOwnedByUser.mockResolvedValue(0);
+
+    await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+    expect(unitOfWork.runInTransaction).not.toHaveBeenCalled();
+  });
+
   it('should dedupe genre ids when creating album', async () => {
     const command = new CreateLibraryAlbumCommand(
       { ...mockRequest, genreIds: ['g1', 'g1', 'g2'] },
@@ -163,6 +185,29 @@ describe('CreateLibraryAlbumHandler', () => {
         genres: {
           create: [{ genre: { connect: { id: 'g1' } } }, { genre: { connect: { id: 'g2' } } }],
         },
+      }),
+    );
+  });
+
+  it('should dedupe artist ids when creating album', async () => {
+    const a1 = 'artist-1';
+    const a2 = 'artist-2';
+    const command = new CreateLibraryAlbumCommand(
+      { ...mockRequest, artistIds: [a1, a1, a2] },
+      mockUserId,
+    );
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    albumRepository.getByNameForOwner.mockResolvedValue(null);
+    albumRepository.create.mockResolvedValue(mockAlbum);
+    vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
+
+    await handler.execute(command);
+
+    expect(artistRepository.countActiveOwnedByUser).toHaveBeenCalledWith([a1, a2], mockUserId);
+    expect(albumRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        artists: { connect: [{ id: a1 }, { id: a2 }] },
       }),
     );
   });

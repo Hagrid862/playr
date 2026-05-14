@@ -1,4 +1,5 @@
 import { testQueueItem } from '@/test-utils/queue-test-fixtures';
+import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import type { QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
@@ -108,7 +109,7 @@ describe('QueueItem', () => {
       expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
     });
 
-    it('renders "Unknown Artist" when artists is missing', () => {
+    it('renders unknown artist label when artists is missing', () => {
       const noArtistTrack: QueueItem = testQueueItem({
         queueId: '01900000-0000-7000-8000-000000000004',
         track: {
@@ -127,7 +128,7 @@ describe('QueueItem', () => {
       customRender(
         <QueueItemComponent track={noArtistTrack} onPlay={vi.fn()} onRemove={vi.fn()} />,
       );
-      expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
+      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
     });
 
     it('disables hover styles when isDragActive is true', () => {
@@ -268,7 +269,7 @@ describe('QueueItemOverlay', () => {
       expect(screen.getByText('Artist A, Artist B')).toBeInTheDocument();
     });
 
-    it('renders "Unknown Artist" when artists is missing', () => {
+    it('renders unknown artist label when artists is missing', () => {
       const noArtistTrack: QueueItem = testQueueItem({
         queueId: '01900000-0000-7000-8000-0000000000a4',
         track: {
@@ -285,7 +286,7 @@ describe('QueueItemOverlay', () => {
       });
 
       customRender(<QueueItemOverlay track={noArtistTrack} />);
-      expect(screen.getByText('Unknown Artist')).toBeInTheDocument();
+      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
     });
   });
 });

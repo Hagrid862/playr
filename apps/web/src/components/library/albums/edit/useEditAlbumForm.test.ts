@@ -126,6 +126,23 @@ describe('useEditAlbumForm', () => {
     expect(result.current.form.state.values.genreIds).toEqual(['genre-from-album']);
   });
 
+  it('initializes artistIds from album.artists when present', () => {
+    const albumWithArtists = {
+      ...mockAlbum,
+      artists: [{ id: 'artist-a', name: 'A', visibility: 'private' as const }],
+    } as ZodAlbum;
+
+    const { result } = customRenderHook(() =>
+      useEditAlbumForm({
+        album: albumWithArtists,
+        onSubmit: mockOnSubmit,
+        prepareTracksSubmit: mockPrepareTracksSubmit,
+      }),
+    );
+
+    expect(result.current.form.state.values.artistIds).toEqual(['artist-a']);
+  });
+
   describe('handleCoverSelect', () => {
     it('sets selected cover and preview for valid image', () => {
       const { result } = customRenderHook(() =>

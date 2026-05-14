@@ -54,6 +54,7 @@ describe('ArtistRepository', () => {
     libraryPin: {
       updateMany: vi.fn(),
     },
+    $executeRaw: vi.fn(),
     $transaction: vi.fn(),
   });
 
@@ -372,6 +373,30 @@ describe('ArtistRepository', () => {
     });
   });
 
+  describe('countActiveOwnedByUser', () => {
+    it('returns 0 without querying when artistIds is empty', async () => {
+      const result = await repository.countActiveOwnedByUser([], 'user-1');
+
+      expect(result).toBe(0);
+      expect(mockPrismaClient.artist.count).not.toHaveBeenCalled();
+    });
+
+    it('counts active artists owned by the user for the given ids', async () => {
+      mockPrismaClient.artist.count.mockResolvedValue(2);
+
+      const result = await repository.countActiveOwnedByUser(['artist-1', 'artist-2'], 'user-1');
+
+      expect(result).toBe(2);
+      expect(mockPrismaClient.artist.count).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['artist-1', 'artist-2'] },
+          deletedAt: null,
+          access: { some: { userId: 'user-1', role: AccessRole.owner } },
+        },
+      });
+    });
+  });
+
   describe('create', () => {
     it('should create artist without include', async () => {
       const createInput = { name: 'New Artist' } as Prisma.ArtistCreateInput;
@@ -588,15 +613,14 @@ describe('ArtistRepository', () => {
   });
 
   describe('deleteCascade', () => {
-    it('should cascade delete artist with albums and tracks', async () => {
+    it('should disconnect artist from albums/tracks then delete artist', async () => {
       const mockTx = {
         playlist: { deleteMany: vi.fn() },
         report: { updateMany: vi.fn() },
         reportTarget: { deleteMany: vi.fn() },
         artistProfile: { updateMany: vi.fn() },
         communityProfile: { updateMany: vi.fn() },
-        album: { findMany: vi.fn(), deleteMany: vi.fn() },
-        track: { deleteMany: vi.fn() },
+        $executeRaw: vi.fn().mockResolvedValue(0),
         artist: { delete: vi.fn() },
       };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -608,34 +632,24 @@ describe('ArtistRepository', () => {
       mockTx.reportTarget.deleteMany.mockResolvedValue({ count: 0 });
       mockTx.artistProfile.updateMany.mockResolvedValue({ count: 0 });
       mockTx.communityProfile.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.album.findMany.mockResolvedValue([{ id: 'album-1' }]);
-      mockTx.album.deleteMany.mockResolvedValue({ count: 1 });
-      mockTx.track.deleteMany.mockResolvedValue({ count: 0 });
       mockTx.artist.delete.mockResolvedValue(mockArtist);
 
       const result = await repository.deleteCascade('artist-1');
 
       expect(result).toEqual(mockArtist);
       expect(mockTx.playlist.deleteMany).toHaveBeenCalledWith({ where: { artistId: 'artist-1' } });
-      expect(mockTx.album.findMany).toHaveBeenCalledWith({
-        where: { artists: { some: { id: 'artist-1' } } },
-        select: { id: true },
-      });
-      expect(mockTx.album.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['album-1'] } } });
-      expect(mockTx.track.deleteMany).toHaveBeenCalledWith({
-        where: { artists: { some: { id: 'artist-1' } } },
-      });
+      expect(mockTx.$executeRaw).toHaveBeenCalledTimes(2);
+      expect(mockTx.artist.delete).toHaveBeenCalledWith({ where: { id: 'artist-1' } });
     });
 
-    it('should cascade delete artist without albums', async () => {
+    it('should cascade delete artist without album/track join rows', async () => {
       const mockTx = {
         playlist: { deleteMany: vi.fn() },
         report: { updateMany: vi.fn() },
         reportTarget: { deleteMany: vi.fn() },
         artistProfile: { updateMany: vi.fn() },
         communityProfile: { updateMany: vi.fn() },
-        album: { findMany: vi.fn(), deleteMany: vi.fn() },
-        track: { deleteMany: vi.fn() },
+        $executeRaw: vi.fn().mockResolvedValue(0),
         artist: { delete: vi.fn() },
       };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -647,19 +661,17 @@ describe('ArtistRepository', () => {
       mockTx.reportTarget.deleteMany.mockResolvedValue({ count: 0 });
       mockTx.artistProfile.updateMany.mockResolvedValue({ count: 0 });
       mockTx.communityProfile.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.album.findMany.mockResolvedValue([]);
-      mockTx.track.deleteMany.mockResolvedValue({ count: 0 });
       mockTx.artist.delete.mockResolvedValue(mockArtist);
 
       const result = await repository.deleteCascade('artist-1');
 
       expect(result).toEqual(mockArtist);
-      expect(mockTx.album.deleteMany).not.toHaveBeenCalled();
+      expect(mockTx.$executeRaw).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('softDeleteCascade', () => {
-    it('should cascade soft delete artist with albums', async () => {
+    it('should disconnect artist from albums/tracks then soft delete artist', async () => {
       const mockTx = {
         playlist: { updateMany: vi.fn() },
         reportTarget: { updateMany: vi.fn() },
@@ -667,8 +679,7 @@ describe('ArtistRepository', () => {
         libraryPin: { updateMany: vi.fn() },
         artistProfile: { updateMany: vi.fn() },
         communityProfile: { updateMany: vi.fn() },
-        album: { findMany: vi.fn(), updateMany: vi.fn() },
-        track: { updateMany: vi.fn() },
+        $executeRaw: vi.fn().mockResolvedValue(0),
         artist: { update: vi.fn() },
       };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -681,14 +692,12 @@ describe('ArtistRepository', () => {
       mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
       mockTx.artistProfile.updateMany.mockResolvedValue({ count: 0 });
       mockTx.communityProfile.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.album.findMany.mockResolvedValue([{ id: 'album-1' }]);
-      mockTx.album.updateMany.mockResolvedValue({ count: 1 });
-      mockTx.track.updateMany.mockResolvedValue({ count: 0 });
       mockTx.artist.update.mockResolvedValue({ ...mockArtist, deletedAt: new Date() });
 
       const result = await repository.softDeleteCascade('artist-1');
 
       expect(result).toEqual({ ...mockArtist, deletedAt: expect.any(Date) });
+      expect(mockTx.$executeRaw).toHaveBeenCalledTimes(2);
       expect(mockTx.playlist.updateMany).toHaveBeenCalledWith({
         where: { artistId: 'artist-1', deletedAt: null },
         data: { deletedAt: expect.any(Date) },
@@ -700,7 +709,7 @@ describe('ArtistRepository', () => {
       });
     });
 
-    it('should cascade soft delete artist without albums', async () => {
+    it('should soft delete artist when no join rows exist', async () => {
       const mockTx = {
         playlist: { updateMany: vi.fn() },
         reportTarget: { updateMany: vi.fn() },
@@ -708,8 +717,7 @@ describe('ArtistRepository', () => {
         libraryPin: { updateMany: vi.fn() },
         artistProfile: { updateMany: vi.fn() },
         communityProfile: { updateMany: vi.fn() },
-        album: { findMany: vi.fn(), updateMany: vi.fn() },
-        track: { updateMany: vi.fn() },
+        $executeRaw: vi.fn().mockResolvedValue(0),
         artist: { update: vi.fn() },
       };
       mockMainClient.$transaction.mockImplementation(async (cb) => {
@@ -722,14 +730,12 @@ describe('ArtistRepository', () => {
       mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
       mockTx.artistProfile.updateMany.mockResolvedValue({ count: 0 });
       mockTx.communityProfile.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.album.findMany.mockResolvedValue([]);
-      mockTx.track.updateMany.mockResolvedValue({ count: 0 });
       mockTx.artist.update.mockResolvedValue({ ...mockArtist, deletedAt: new Date() });
 
       const result = await repository.softDeleteCascade('artist-1');
 
       expect(result.deletedAt).not.toBeNull();
-      expect(mockTx.album.updateMany).not.toHaveBeenCalled();
+      expect(mockTx.$executeRaw).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -52,6 +52,7 @@ export function useEditAlbumForm({ album, onSubmit, prepareTracksSubmit }: UseEd
       releaseDate: album.releaseDate || null,
       coverId: album.coverId || undefined,
       genreIds: album.genres?.map((g) => g.genreId) ?? [],
+      artistIds: album.artists?.map((a) => a.id) ?? [],
     } satisfies UpdateLibraryAlbumRequest,
     validators: {
       onChange: ({ value }) => validateWithZod(value),

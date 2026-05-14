@@ -22,7 +22,8 @@ export type LibraryAlbumFromFilesFormData = Pick<
   CreateLibraryAlbumRequest,
   'name' | 'description' | 'type' | 'releaseDate'
 > & {
-  artistId: string;
+  /** Selected artist ids (library artists and/or `local:pending:…` drafts). */
+  artistIds: string[];
   /** Selected genre ids (library genres and/or `local:pending:…` drafts). */
   genreIds: string[];
 };
@@ -31,7 +32,7 @@ const initialFormData: LibraryAlbumFromFilesFormData = {
   name: '',
   description: '',
   type: 'album',
-  artistId: '',
+  artistIds: [],
   genreIds: [],
   releaseDate: null,
 };
@@ -70,7 +71,7 @@ export type UseLibraryAlbumFromFilesFormOptions = {
 export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesFormOptions) {
   const [formData, setFormData] = useState<LibraryAlbumFromFilesFormData>(() => ({
     ...initialFormData,
-    artistId: options?.initialArtistId ?? '',
+    artistIds: options?.initialArtistId ? [options.initialArtistId] : [],
   }));
   const [tracks, setTracks] = useState<BulkTrackItem[]>([]);
   const [tracksWithCovers, setTracksWithCovers] = useState<TrackWithCover[]>([]);
@@ -82,7 +83,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
   const [manualAlbumCoverPreviewUrl, setManualAlbumCoverPreviewUrl] = useState<string | null>(null);
   /** Client-side staged artists until album submit (mirrors album-scoped pending state in the form UI). */
   const [pendingArtists, setPendingArtists] = useState<{ id: string; name: string }[]>([]);
-  /** Single consistent non-empty artist across tracks (normalized); drives autofill when `artistId` is empty. */
+  /** Single consistent non-empty artist across tracks (normalized); drives autofill when `artistIds` is empty. */
   const [metadataSuggestedArtistName, setMetadataSuggestedArtistName] = useState<string | null>(
     null,
   );
@@ -346,7 +347,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     clearTracks();
     setFormData({
       ...initialFormData,
-      artistId: options?.initialArtistId ?? '',
+      artistIds: options?.initialArtistId ? [options.initialArtistId] : [],
       genreIds: [],
     });
     setManualAlbumCover(null);
@@ -399,6 +400,27 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     });
   }, []);
 
+  const toggleArtistId = useCallback((artistId: string) => {
+    setFormData((prev) => {
+      const oldIds = prev.artistIds;
+      const nextIds = oldIds.includes(artistId)
+        ? oldIds.filter((x) => x !== artistId)
+        : [...oldIds, artistId];
+      return { ...prev, artistIds: nextIds };
+    });
+  }, []);
+
+  const clearArtistSelection = useCallback(() => {
+    setFormData((prev) => ({ ...prev, artistIds: [] }));
+  }, []);
+
+  const appendArtistId = useCallback((artistId: string) => {
+    setFormData((prev) => {
+      if (prev.artistIds.includes(artistId)) return prev;
+      return { ...prev, artistIds: [...prev.artistIds, artistId] };
+    });
+  }, []);
+
   const selectedCoverFile = useMemo(
     () =>
       selectedCoverTrackId != null
@@ -417,7 +439,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
   );
 
   const isFormValid =
-    formData.name.trim().length > 0 && formData.artistId.length > 0 && !hasInvalidTracks;
+    formData.name.trim().length > 0 && formData.artistIds.length > 0 && !hasInvalidTracks;
 
   return {
     formData,
@@ -444,6 +466,9 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     toggleGenreId,
     clearGenreSelection,
     appendGenreId,
+    toggleArtistId,
+    clearArtistSelection,
+    appendArtistId,
     isFormValid,
     pendingArtists,
     setPendingArtists,
