@@ -5,6 +5,7 @@ export class SetCurrentTimeStateCommand implements ICommand {
   constructor(
     public readonly userId: string,
     public readonly sessionId: string,
+    public readonly playbackDeviceId: string,
     public readonly request: SetCurrentTimeStateRequest,
   ) {}
 }

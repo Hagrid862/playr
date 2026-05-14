@@ -6,11 +6,50 @@ import type {
   ListPlaybackDevicesResponse,
   PlaybackState,
   SetActiveDeviceRequest,
+  SetCurrentTimeStateRequest,
   SetPlaybackStateRequest,
 } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
+
+function isVersionConflict(errorMessage: string, code?: string): boolean {
+  return code === 'CONFLICT' || errorMessage.includes('version mismatch');
+}
+
+function clampCurrentTime(currentTime: number, duration: number): number {
+  return Math.min(Math.max(0, Math.floor(currentTime)), duration);
+}
+
+/** Active audio client: keep local `currentTime` from the element; still advance `playbackVersion` from server. */
+function isLocalActiveAudioSource(state: {
+  activeDeviceId: string;
+  localPlaybackDeviceId: string;
+}): boolean {
+  return (
+    Boolean(state.activeDeviceId) &&
+    Boolean(state.localPlaybackDeviceId) &&
+    state.activeDeviceId === state.localPlaybackDeviceId
+  );
+}
+
+/**
+ * Apply a time-only server update (broadcast or set-current-time ack).
+ * Ignores stale `version`; does not overwrite `currentTime` on the device that is playing audio.
+ */
+function applyCurrentTimeServerUpdate(payload: { currentTime: number; version: number }) {
+  const s = usePlayerStore.getState();
+  if (payload.version < s.playbackVersion) return;
+
+  if (isLocalActiveAudioSource(s)) {
+    usePlayerStore.setState({ playbackVersion: payload.version });
+  } else {
+    usePlayerStore.setState({
+      playbackVersion: payload.version,
+      currentTime: payload.currentTime,
+    });
+  }
+}
 
 function buildSetStateBody(
   trackData: ReturnType<typeof zodTrackToPlaybackTrack>,
@@ -67,6 +106,10 @@ export function connectPlaybackSync(accessToken: string) {
 
   socket.on('event:playback-state-updated', (state: PlaybackState) => {
     applyStateFromServer(state);
+  });
+
+  socket.on('event:current-time-updated', (payload: { currentTime: number; version: number }) => {
+    applyCurrentTimeServerUpdate(payload);
   });
 
   socket.on('connect_error', (err: Error) => {
@@ -145,6 +188,45 @@ export function listPlaybackDevices(): Promise<void> {
       usePlayerStore.getState().setPlaybackDevices(result.devices);
       resolve();
     });
+  });
+}
+
+export function emitCurrentTimeSync(currentTime: number): Promise<void> {
+  if (!isPlaybackSocketConnected()) return Promise.resolve();
+
+  const { currentTrack, playbackVersion } = usePlayerStore.getState();
+  if (!currentTrack || playbackVersion === 0) return Promise.resolve();
+
+  const payload: SetCurrentTimeStateRequest = {
+    currentTime: clampCurrentTime(currentTime, currentTrack.duration),
+    expectedVersion: playbackVersion,
+  };
+
+  return new Promise((resolve) => {
+    socket!.emit(
+      'command:set-current-time-state',
+      payload,
+      (result: PlaybackState | { error?: string; code?: string }) => {
+        if (result && typeof result === 'object' && 'error' in result && result.error) {
+          if (isVersionConflict(result.error, result.code)) {
+            socket!.emit('query:get-state', {}, (state: PlaybackState | null) => {
+              if (state) applyStateFromServer(state);
+            });
+          }
+          resolve();
+          return;
+        }
+
+        if (result) {
+          const state = result as PlaybackState;
+          applyCurrentTimeServerUpdate({
+            currentTime: state.currentTime,
+            version: state.version,
+          });
+        }
+        resolve();
+      },
+    );
   });
 }
 

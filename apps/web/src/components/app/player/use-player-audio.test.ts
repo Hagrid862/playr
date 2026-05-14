@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/auth.store';
+import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
@@ -14,6 +15,11 @@ vi.mock('@/stores/player.store', () => ({
 
 vi.mock('@/stores/auth.store', () => ({
   useAuthStore: vi.fn(),
+}));
+
+vi.mock('@/lib/playback-sync', () => ({
+  emitCurrentTimeSync: vi.fn(),
+  isPlaybackSyncConnected: vi.fn(),
 }));
 
 const originalFetch = globalThis.fetch;
@@ -38,6 +44,9 @@ describe('usePlayerAudio', () => {
     isPlaying: false,
     volume: 0.5,
     currentTime: 0,
+    playbackVersion: 0,
+    activeDeviceId: '',
+    localPlaybackDeviceId: '',
     quality: 'auto',
     setCurrentTime,
     setDuration,
@@ -52,6 +61,7 @@ describe('usePlayerAudio', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isPlaybackSyncConnected).mockReturnValue(false);
     vi.mocked(usePlayerStore).mockReturnValue(defaultStore as PlayerState);
     (usePlayerStore.subscribe as ReturnType<typeof vi.fn>).mockReturnValue(vi.fn());
     vi.mocked(useAuthStore).mockReturnValue(defaultAuthStore as ReturnType<typeof useAuthStore>);
@@ -274,6 +284,58 @@ describe('usePlayerAudio', () => {
       (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
       result.current.handleTimeUpdate();
       expect(setCurrentTime).toHaveBeenCalledWith(42);
+    });
+
+    it('throttles current time sync updates from active device', () => {
+      vi.mocked(isPlaybackSyncConnected).mockReturnValue(true);
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: { id: 'track-1', duration: 120 } as unknown,
+        isPlaying: true,
+        playbackVersion: 2,
+        activeDeviceId: 'device-1',
+        localPlaybackDeviceId: 'device-1',
+      } as PlayerState);
+
+      const { result } = customRenderHook(() => usePlayerAudio());
+      const audioEl = { currentTime: 12.2 } as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+      const nowSpy = vi.spyOn(Date, 'now');
+
+      nowSpy.mockReturnValue(1000);
+      result.current.handleTimeUpdate();
+
+      audioEl.currentTime = 13.4;
+      nowSpy.mockReturnValue(1500);
+      result.current.handleTimeUpdate();
+
+      audioEl.currentTime = 12.9;
+      nowSpy.mockReturnValue(2600);
+      result.current.handleTimeUpdate();
+
+      expect(emitCurrentTimeSync).toHaveBeenCalledTimes(1);
+      nowSpy.mockRestore();
+    });
+
+    it('does not emit time sync when local client is not active device', () => {
+      vi.mocked(isPlaybackSyncConnected).mockReturnValue(true);
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...defaultStore,
+        currentTrack: { id: 'track-1', duration: 120 } as unknown,
+        isPlaying: true,
+        playbackVersion: 2,
+        activeDeviceId: 'device-1',
+        localPlaybackDeviceId: 'device-2',
+      } as PlayerState);
+
+      const { result } = customRenderHook(() => usePlayerAudio());
+      const audioEl = { currentTime: 22.5 } as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+
+      result.current.handleTimeUpdate();
+
+      expect(setCurrentTime).not.toHaveBeenCalled();
+      expect(emitCurrentTimeSync).not.toHaveBeenCalled();
     });
 
     it('syncs currentTime to audio element if diff > 1', () => {

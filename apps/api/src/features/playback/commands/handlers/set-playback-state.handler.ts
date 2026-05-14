@@ -48,10 +48,10 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
           : current.activeDeviceId,
         deviceName: command.request.claimActiveDevice
           ? command.playbackDeviceName
-          : serialized.data.deviceName,
+          : current.deviceName,
         deviceIcon: command.request.claimActiveDevice
           ? command.playbackDeviceIcon
-          : serialized.data.deviceIcon,
+          : current.deviceIcon,
       }));
     }
   }
