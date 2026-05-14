@@ -65,6 +65,9 @@ export function LibraryAlbumFromFilesForm({
   const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);
   const [createGenreModalOpen, setCreateGenreModalOpen] = useState(false);
   const [pendingGenres, setPendingGenres] = useState<{ id: string; name: string }[]>([]);
+  const [activeGenreCreationCallback, setActiveGenreCreationCallback] = useState<
+    ((genreId: string) => void) | null
+  >(null);
 
   const {
     formData,
@@ -194,13 +197,23 @@ export function LibraryAlbumFromFilesForm({
     [clearGenreSelection, toggleGenreId],
   );
 
+  const handleRequestCreateGenre = useCallback((onCreated: (genreId: string) => void) => {
+    setActiveGenreCreationCallback(() => onCreated);
+    setCreateGenreModalOpen(true);
+  }, []);
+
   const handleConfirmNewGenreName = useCallback(
     (name: string) => {
       const id = makeLocalPendingGenreId();
       setPendingGenres((prev) => [...prev, { id, name }]);
-      appendGenreId(id);
+      if (activeGenreCreationCallback) {
+        activeGenreCreationCallback(id);
+        setActiveGenreCreationCallback(null);
+      } else {
+        appendGenreId(id);
+      }
     },
-    [appendGenreId],
+    [activeGenreCreationCallback, appendGenreId],
   );
 
   const handleRemoveGenreId = useCallback(
@@ -425,6 +438,9 @@ export function LibraryAlbumFromFilesForm({
 
                   <LibraryAlbumFromFilesTracksSection
                     tracks={tracks}
+                    genres={genres}
+                    pendingGenres={pendingGenres}
+                    isLoadingGenres={isLoadingGenres}
                     submitError={submitError}
                     isFormValid={isFormValid}
                     isSubmitting={isSubmitting}
@@ -435,6 +451,7 @@ export function LibraryAlbumFromFilesForm({
                     onUpdateTrack={updateTrack}
                     onRemoveTrack={removeTrack}
                     onClearTracks={clearTracks}
+                    onRequestCreateGenre={handleRequestCreateGenre}
                   />
                 </>
               )}

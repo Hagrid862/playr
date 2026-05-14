@@ -42,6 +42,10 @@ describe('BulkTrackList', () => {
       const { container } = customRender(
         <BulkTrackList
           tracks={[]}
+          genres={[]}
+          pendingGenres={[]}
+          isLoadingGenres={false}
+          onRequestCreateGenre={vi.fn()}
           onUpdateTrack={mockOnUpdateTrack}
           onRemoveTrack={mockOnRemoveTrack}
           onClearAll={mockOnClearAll}
@@ -59,6 +63,10 @@ describe('BulkTrackList', () => {
           tracks={[
             { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
           ]}
+          genres={[]}
+          pendingGenres={[]}
+          isLoadingGenres={false}
+          onRequestCreateGenre={vi.fn()}
           onUpdateTrack={mockOnUpdateTrack}
           onRemoveTrack={mockOnRemoveTrack}
           onClearAll={mockOnClearAll}
@@ -76,6 +84,10 @@ describe('BulkTrackList', () => {
             { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
             { ...trackBuilder(), file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }) },
           ]}
+          genres={[]}
+          pendingGenres={[]}
+          isLoadingGenres={false}
+          onRequestCreateGenre={vi.fn()}
           onUpdateTrack={mockOnUpdateTrack}
           onRemoveTrack={mockOnRemoveTrack}
           onClearAll={mockOnClearAll}
@@ -94,6 +106,10 @@ describe('BulkTrackList', () => {
           tracks={[
             { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
           ]}
+          genres={[]}
+          pendingGenres={[]}
+          isLoadingGenres={false}
+          onRequestCreateGenre={vi.fn()}
           onUpdateTrack={mockOnUpdateTrack}
           onRemoveTrack={mockOnRemoveTrack}
           onClearAll={mockOnClearAll}
@@ -114,6 +130,10 @@ describe('BulkTrackList', () => {
       customRender(
         <BulkTrackList
           tracks={[track]}
+          genres={[]}
+          pendingGenres={[]}
+          isLoadingGenres={false}
+          onRequestCreateGenre={vi.fn()}
           onUpdateTrack={mockOnUpdateTrack}
           onRemoveTrack={mockOnRemoveTrack}
           onClearAll={mockOnClearAll}
@@ -134,6 +154,10 @@ describe('BulkTrackList', () => {
       customRender(
         <BulkTrackList
           tracks={[track]}
+          genres={[]}
+          pendingGenres={[]}
+          isLoadingGenres={false}
+          onRequestCreateGenre={vi.fn()}
           onUpdateTrack={mockOnUpdateTrack}
           onRemoveTrack={mockOnRemoveTrack}
           onClearAll={mockOnClearAll}

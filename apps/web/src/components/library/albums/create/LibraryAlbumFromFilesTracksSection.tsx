@@ -5,8 +5,15 @@ import { CircleNotchIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import { BulkTrackCard } from '../../tracks/bulk/BulkTrackCard';
 
+import { LIBRARY_ALBUM_GENRE_CREATE_VALUE } from './libraryAlbumGenreConstants';
+
+import type { ZodGenreInfer } from '@repo/contracts';
+
 interface LibraryAlbumFromFilesTracksSectionProps {
   tracks: BulkTrackItem[];
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
   submitError: string | null;
   isFormValid: boolean;
   isSubmitting: boolean;
@@ -18,10 +25,14 @@ interface LibraryAlbumFromFilesTracksSectionProps {
   onUpdateTrack: (id: string, updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => void;
   onRemoveTrack: (id: string) => void;
   onClearTracks: () => void;
+  onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
 }
 
 export function LibraryAlbumFromFilesTracksSection({
   tracks,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
   submitError,
   isFormValid,
   isSubmitting,
@@ -32,6 +43,7 @@ export function LibraryAlbumFromFilesTracksSection({
   onUpdateTrack,
   onRemoveTrack,
   onClearTracks,
+  onRequestCreateGenre,
 }: LibraryAlbumFromFilesTracksSectionProps) {
   return (
     <>
@@ -49,7 +61,26 @@ export function LibraryAlbumFromFilesTracksSection({
             <BulkTrackCard
               key={track.id}
               track={track}
-              onUpdate={(updates) => onUpdateTrack(track.id, updates)}
+              genres={genres}
+              pendingGenres={pendingGenres}
+              isLoadingGenres={isLoadingGenres}
+              onRequestCreateGenre={onRequestCreateGenre}
+              onUpdate={(updates) => {
+                if (updates.genreIds?.includes(LIBRARY_ALBUM_GENRE_CREATE_VALUE)) {
+                  onRequestCreateGenre((gid) => {
+                    onUpdateTrack(track.id, {
+                      genreIds: [
+                        ...(track.genreIds ?? []).filter(
+                          (x) => x !== LIBRARY_ALBUM_GENRE_CREATE_VALUE,
+                        ),
+                        gid,
+                      ],
+                    });
+                  });
+                  return;
+                }
+                onUpdateTrack(track.id, updates);
+              }}
               onRemove={() => onRemoveTrack(track.id)}
             />
           ))}

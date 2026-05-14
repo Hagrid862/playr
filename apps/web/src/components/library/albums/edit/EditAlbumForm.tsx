@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { GlobalDropzone } from '@/components/ui/GlobalDropzone';
 import { Separator } from '@/components/ui/separator';
 import { CircleNotchIcon, FloppyDiskIcon } from '@phosphor-icons/react';
-import type { UpdateLibraryAlbumRequest, ZodAlbum } from '@repo/contracts';
+import type { UpdateLibraryAlbumRequest, ZodAlbum, ZodGenreInfer } from '@repo/contracts';
 import { EditAlbumHero } from './EditAlbumHero';
 import { EditAlbumMetadata } from './EditAlbumMetadata';
 import { EditAlbumModals } from './EditAlbumModals';
@@ -10,6 +10,15 @@ import { EditAlbumTracksSection } from './EditAlbumTracksSection';
 import type { EditAlbumTracksSubmitPayload } from './useEditAlbumTracks';
 import { useEditAlbumTracks } from './useEditAlbumTracks';
 import { useEditAlbumForm } from './useEditAlbumForm';
+import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
+import { useStore } from '@tanstack/react-store';
+import { useMemo, useState, useCallback } from 'react';
+import {
+  LIBRARY_ALBUM_GENRE_CREATE_VALUE,
+  LIBRARY_ALBUM_GENRE_NONE_VALUE,
+} from '../create/libraryAlbumGenreConstants';
+import { makeLocalPendingGenreId } from '../create/pendingLibraryGenre';
+import { CreateLibraryGenreNameModal } from '../create/CreateLibraryGenreNameModal';
 
 interface EditAlbumFormProps {
   album: ZodAlbum;
@@ -34,6 +43,21 @@ export function EditAlbumForm({
   onCancel,
   _testHideCoverInput = false,
 }: EditAlbumFormProps) {
+  const { data: genresResponse, isLoading: isLoadingGenres } = useLibraryGenres({
+    page: 1,
+    limit: 100,
+  });
+  const genres = useMemo<ZodGenreInfer[]>(
+    () => genresResponse?.data?.items ?? [],
+    [genresResponse],
+  );
+
+  const [createGenreModalOpen, setCreateGenreModalOpen] = useState(false);
+  const [pendingGenres, setPendingGenres] = useState<{ id: string; name: string }[]>([]);
+  const [activeGenreCreationCallback, setActiveGenreCreationCallback] = useState<
+    ((genreId: string) => void) | null
+  >(null);
+
   const tracksState = useEditAlbumTracks(album);
 
   const {
@@ -53,6 +77,59 @@ export function EditAlbumForm({
     prepareTracksSubmit: tracksState.prepareTracksSubmit,
   });
 
+  const genreIds = useStore(form.store, (s): string[] => s.values.genreIds);
+  const visiblePendingGenres = useMemo(
+    () => pendingGenres.filter((p) => genreIds.includes(p.id)),
+    [pendingGenres, genreIds],
+  );
+
+  const handleGenreSelectionChange = useCallback(
+    (value: string) => {
+      if (value === LIBRARY_ALBUM_GENRE_CREATE_VALUE) {
+        setCreateGenreModalOpen(true);
+        return;
+      }
+
+      const currentIds = form.getFieldValue('genreIds');
+      let nextIds: string[];
+
+      if (value === LIBRARY_ALBUM_GENRE_NONE_VALUE) {
+        nextIds = [];
+      } else {
+        nextIds = currentIds.includes(value)
+          ? currentIds.filter((id: string) => id !== value)
+          : [...currentIds, value];
+      }
+
+      form.setFieldValue('genreIds', nextIds);
+      tracksState.updateAllTracksGenres(currentIds, nextIds);
+    },
+    [form, tracksState],
+  );
+
+  const handleConfirmNewGenreName = useCallback(
+    (name: string) => {
+      const id = makeLocalPendingGenreId();
+      setPendingGenres((prev) => [...prev, { id, name }]);
+
+      if (activeGenreCreationCallback) {
+        activeGenreCreationCallback(id);
+        setActiveGenreCreationCallback(null);
+      } else {
+        const currentIds = form.getFieldValue('genreIds');
+        const nextIds = [...currentIds, id];
+        form.setFieldValue('genreIds', nextIds);
+        tracksState.updateAllTracksGenres(currentIds, nextIds);
+      }
+    },
+    [activeGenreCreationCallback, form, tracksState],
+  );
+
+  const handleRequestCreateGenre = useCallback((onCreated: (genreId: string) => void) => {
+    setActiveGenreCreationCallback(() => onCreated);
+    setCreateGenreModalOpen(true);
+  }, []);
+
   return (
     <GlobalDropzone
       onDrop={handleFiles}
@@ -65,6 +142,17 @@ export function EditAlbumForm({
         setIsFormatModalOpen={setIsFormatModalOpen}
         isMultipleFilesModalOpen={isMultipleFilesModalOpen}
         setIsMultipleFilesModalOpen={setIsMultipleFilesModalOpen}
+      />
+
+      <CreateLibraryGenreNameModal
+        open={createGenreModalOpen}
+        onOpenChange={(open) => {
+          setCreateGenreModalOpen(open);
+          if (!open) setActiveGenreCreationCallback(null);
+        }}
+        onConfirm={handleConfirmNewGenreName}
+        pendingGenreNames={visiblePendingGenres.map((p) => p.name)}
+        existingGenres={genres}
       />
 
       <div className="relative flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-col overflow-visible">
@@ -105,7 +193,13 @@ export function EditAlbumForm({
                 </div>
 
                 <div className="min-h-0 flex-1 space-y-6 lg:overflow-y-auto lg:pr-1">
-                  <EditAlbumMetadata form={form} />
+                  <EditAlbumMetadata
+                    form={form}
+                    genres={genres}
+                    pendingGenres={visiblePendingGenres}
+                    isLoadingGenres={isLoadingGenres}
+                    onGenreSelect={handleGenreSelectionChange}
+                  />
                 </div>
               </div>
             </aside>
@@ -113,7 +207,13 @@ export function EditAlbumForm({
             <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:min-h-0 lg:border-l lg:border-border/60 lg:pl-8 xl:pl-12 2xl:pl-16">
               <div className="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2 xl:pr-3">
                 <Separator className="lg:hidden" />
-                <EditAlbumTracksSection tracks={tracksState} />
+                <EditAlbumTracksSection
+                  tracks={tracksState}
+                  genres={genres}
+                  pendingGenres={visiblePendingGenres}
+                  isLoadingGenres={isLoadingGenres}
+                  onRequestCreateGenre={handleRequestCreateGenre}
+                />
               </div>
             </div>
           </div>

@@ -178,6 +178,7 @@ export function useEditAlbumTracks(album: ZodAlbum) {
       lastScannedStagedIds.current = '';
 
       const seedArtistIds = defaultArtistIds.length ? [...defaultArtistIds] : [];
+      const seedGenreIds = album.genres?.map((g) => g.genreId) ?? [];
 
       const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
         id: `${Date.now()}-${i}-${file.name}`,
@@ -189,6 +190,7 @@ export function useEditAlbumTracks(album: ZodAlbum) {
         diskNumber: 1,
         explicit: false,
         artistIds: seedArtistIds,
+        genreIds: seedGenreIds,
       }));
 
       setStagedTracks((prev) => {
@@ -201,12 +203,13 @@ export function useEditAlbumTracks(album: ZodAlbum) {
           ...t,
           trackNumber: albumCount + i + 1,
           artistIds: t.artistIds?.length ? t.artistIds : seedArtistIds,
+          genreIds: t.genreIds?.length ? t.genreIds : seedGenreIds,
         }));
         /* v8 ignore stop */
         return nextStaged;
       });
     },
-    [album.name, album.tracks?.length, defaultArtistIds],
+    [album.genres, album.name, album.tracks?.length, defaultArtistIds],
   );
 
   const updateStagedTrack = useCallback(
@@ -244,6 +247,33 @@ export function useEditAlbumTracks(album: ZodAlbum) {
       const cur = prev[trackId];
       if (!cur) return prev;
       return { ...prev, [trackId]: { ...cur, ...patch } };
+    });
+  }, []);
+
+  const areGenreIdsEqual = (a: string[], b: string[]) => {
+    if (a.length !== b.length) return false;
+    const sa = [...a].sort();
+    const sb = [...b].sort();
+    return sa.every((v, i) => v === sb[i]);
+  };
+
+  const updateAllTracksGenres = useCallback((oldIds: string[], newIds: string[]) => {
+    setDraftById((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      Object.entries(next).forEach(([id, draft]) => {
+        if (areGenreIdsEqual(draft.genreIds, oldIds)) {
+          next[id] = { ...draft, genreIds: [...newIds] };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+
+    setStagedTracks((prev) => {
+      return prev.map((t) =>
+        areGenreIdsEqual(t.genreIds ?? [], oldIds) ? { ...t, genreIds: [...newIds] } : t,
+      );
     });
   }, []);
 
@@ -335,6 +365,7 @@ export function useEditAlbumTracks(album: ZodAlbum) {
             diskNumber: draft.diskNumber,
             explicit: draft.explicit,
             artistIds: draft.artistIds,
+            genreIds: draft.genreIds,
           },
         });
       }
@@ -378,6 +409,7 @@ export function useEditAlbumTracks(album: ZodAlbum) {
     updateStagedTrack,
     removeStagedTrack,
     clearStagedTracks,
+    updateAllTracksGenres,
     isScanningMetadata,
     defaultArtistIds,
     pendingArtists,

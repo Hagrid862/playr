@@ -101,6 +101,31 @@ describe('useEditAlbumForm', () => {
     expect(result.current.form.state.values.releaseDate).toBeNull();
   });
 
+  it('initializes genreIds from album.genres when present', () => {
+    const albumWithGenres = {
+      ...mockAlbum,
+      genres: [
+        {
+          id: 'album-genre-row',
+          albumId: mockAlbum.id,
+          genreId: 'genre-from-album',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    } as ZodAlbum;
+
+    const { result } = customRenderHook(() =>
+      useEditAlbumForm({
+        album: albumWithGenres,
+        onSubmit: mockOnSubmit,
+        prepareTracksSubmit: mockPrepareTracksSubmit,
+      }),
+    );
+
+    expect(result.current.form.state.values.genreIds).toEqual(['genre-from-album']);
+  });
+
   describe('handleCoverSelect', () => {
     it('sets selected cover and preview for valid image', () => {
       const { result } = customRenderHook(() =>

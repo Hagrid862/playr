@@ -33,16 +33,20 @@ export const bulkCreateLibraryTracks = async ({
 
   const bulkCreateRequest: BulkCreateLibraryTracksRequest = {
     tracks: tracks.map(
-      ({ title, trackNumber, diskNumber, explicit, artistIds: perTrackArtists }) => {
+      ({ title, trackNumber, diskNumber, explicit, artistIds: perTrackArtists, genreIds }) => {
         const resolved =
           perTrackArtists && perTrackArtists.length > 0 ? perTrackArtists : defaultArtistIds;
-        return {
+        const item: BulkCreateLibraryTracksRequest['tracks'][number] = {
           title,
           trackNumber,
           diskNumber,
           explicit,
           artistIds: resolved,
         };
+        if (genreIds && genreIds.length > 0) {
+          item.genreIds = genreIds;
+        }
+        return item;
       },
     ),
   };

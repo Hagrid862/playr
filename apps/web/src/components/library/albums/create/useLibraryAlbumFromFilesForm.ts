@@ -7,7 +7,15 @@ import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
 import { sha256HexFromBlob } from '@/lib/crypto/sha256HexFromBlob';
 import type { BulkTrackItem, CoverArtGroup, TrackWithCover } from '@/lib/types/library';
 import type { CreateLibraryAlbumRequest } from '@repo/contracts';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { deriveConsistentMetadataArtistName } from './deriveConsistentMetadataArtistName';
 
 export type LibraryAlbumFromFilesFormData = Pick<
@@ -27,6 +35,27 @@ const initialFormData: LibraryAlbumFromFilesFormData = {
   genreIds: [],
   releaseDate: null,
 };
+
+function areGenreIdsEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort();
+  const sb = [...b].sort();
+  return sa.every((v, i) => v === sb[i]);
+}
+
+function applyAlbumGenreSnapshotToBulkTracks(
+  setTracks: Dispatch<SetStateAction<BulkTrackItem[]>>,
+  oldAlbumGenreIds: string[],
+  nextAlbumGenreIds: string[],
+) {
+  setTracks((tracks) =>
+    tracks.map((track) =>
+      areGenreIdsEqual(track.genreIds ?? [], oldAlbumGenreIds)
+        ? { ...track, genreIds: [...nextAlbumGenreIds] }
+        : track,
+    ),
+  );
+}
 
 export type LibraryAlbumFromFilesUploadStep =
   | 'idle'
@@ -248,28 +277,32 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
     setManualAlbumCoverFile(null);
   }, []);
 
-  const addFiles = useCallback((files: FileList | null) => {
-    if (!files?.length) return;
+  const addFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files?.length) return;
 
-    const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'));
-    if (audioFiles.length === 0) return;
+      const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'));
+      if (audioFiles.length === 0) return;
 
-    const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
-      id: `${Date.now()}-${i}-${file.name}`,
-      file,
-      title: cleanFilenameToTitle(file.name, { artists: [], album: '' }),
-      trackNumber: 0,
-      diskNumber: 1,
-      explicit: false,
-    }));
+      const newTracks: BulkTrackItem[] = audioFiles.map((file, i) => ({
+        id: `${Date.now()}-${i}-${file.name}`,
+        file,
+        title: cleanFilenameToTitle(file.name, { artists: [], album: '' }),
+        trackNumber: 0,
+        diskNumber: 1,
+        explicit: false,
+        genreIds: [...formData.genreIds],
+      }));
 
-    setTracks((prev) => {
-      const combined = [...prev, ...newTracks].sort((a, b) =>
-        a.file.name.localeCompare(b.file.name, undefined, { numeric: true }),
-      );
-      return combined.map((t, i) => ({ ...t, trackNumber: i + 1 }));
-    });
-  }, []);
+      setTracks((prev) => {
+        const combined = [...prev, ...newTracks].sort((a, b) =>
+          a.file.name.localeCompare(b.file.name, undefined, { numeric: true }),
+        );
+        return combined.map((t, i) => ({ ...t, trackNumber: i + 1 }));
+      });
+    },
+    [formData.genreIds],
+  );
 
   const updateTrack = useCallback(
     (id: string, updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => {
@@ -331,22 +364,39 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
 
   const toggleGenreId = useCallback((genreId: string) => {
     setFormData((prev) => {
-      const cur = prev.genreIds;
-      if (cur.includes(genreId)) {
-        return { ...prev, genreIds: cur.filter((x) => x !== genreId) };
-      }
-      return { ...prev, genreIds: [...cur, genreId] };
+      const oldIds = prev.genreIds;
+      const nextIds = oldIds.includes(genreId)
+        ? oldIds.filter((x) => x !== genreId)
+        : [...oldIds, genreId];
+
+      applyAlbumGenreSnapshotToBulkTracks(setTracks, oldIds, nextIds);
+
+      return { ...prev, genreIds: nextIds };
     });
   }, []);
 
   const clearGenreSelection = useCallback(() => {
-    setFormData((prev) => ({ ...prev, genreIds: [] }));
+    setFormData((prev) => {
+      const oldIds = prev.genreIds;
+      const nextIds: string[] = [];
+
+      applyAlbumGenreSnapshotToBulkTracks(setTracks, oldIds, nextIds);
+
+      return { ...prev, genreIds: nextIds };
+    });
   }, []);
 
   const appendGenreId = useCallback((genreId: string) => {
-    setFormData((prev) =>
-      prev.genreIds.includes(genreId) ? prev : { ...prev, genreIds: [...prev.genreIds, genreId] },
-    );
+    setFormData((prev) => {
+      if (prev.genreIds.includes(genreId)) return prev;
+
+      const oldIds = prev.genreIds;
+      const nextIds = [...oldIds, genreId];
+
+      applyAlbumGenreSnapshotToBulkTracks(setTracks, oldIds, nextIds);
+
+      return { ...prev, genreIds: nextIds };
+    });
   }, []);
 
   const selectedCoverFile = useMemo(

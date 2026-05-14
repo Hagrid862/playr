@@ -5,5 +5,6 @@ export class GetLibraryAlbumsQuery implements IQuery {
     public readonly userId: string,
     public readonly page: number,
     public readonly limit: number,
+    public readonly genreId?: string,
   ) {}
 }

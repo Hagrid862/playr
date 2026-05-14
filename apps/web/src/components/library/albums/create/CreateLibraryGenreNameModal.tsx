@@ -54,7 +54,9 @@ export function CreateLibraryGenreNameModal({
 
   const handleConfirm = useCallback(() => {
     const trimmed = name.trim();
+    /* v8 ignore start -- Add genre is disabled when !trimmed; guard for non-UI callers */
     if (!trimmed) return;
+    /* v8 ignore stop */
 
     setError(null);
 

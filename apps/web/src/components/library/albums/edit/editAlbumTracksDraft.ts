@@ -6,6 +6,7 @@ export type EditAlbumTrackDraft = {
   diskNumber: number;
   explicit: boolean;
   artistIds: string[];
+  genreIds: string[];
 };
 
 export function trackToDraft(track: ZodTrack): EditAlbumTrackDraft {
@@ -15,6 +16,7 @@ export function trackToDraft(track: ZodTrack): EditAlbumTrackDraft {
     diskNumber: track.diskNumber,
     explicit: track.explicit,
     artistIds: track.artists?.map((a) => a.id) ?? [],
+    genreIds: track.genres?.map((g) => g.genreId) ?? [],
   };
 }
 
@@ -23,14 +25,19 @@ function sortIds(ids: string[]) {
 }
 
 export function draftsEqualForTrack(track: ZodTrack, draft: EditAlbumTrackDraft) {
-  const a = sortIds(track.artists?.map((x) => x.id) ?? []).join('\0');
-  const b = sortIds(draft.artistIds).join('\0');
+  const aArtists = sortIds(track.artists?.map((x) => x.id) ?? []).join('\0');
+  const bArtists = sortIds(draft.artistIds).join('\0');
+
+  const aGenres = sortIds(track.genres?.map((x) => x.genreId) ?? []).join('\0');
+  const bGenres = sortIds(draft.genreIds).join('\0');
+
   return (
     track.title === draft.title &&
     track.trackNumber === draft.trackNumber &&
     track.diskNumber === draft.diskNumber &&
     track.explicit === draft.explicit &&
-    a === b
+    aArtists === bArtists &&
+    aGenres === bGenres
   );
 }
 

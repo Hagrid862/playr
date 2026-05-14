@@ -71,7 +71,9 @@ export class AlbumsController {
     type: ApiErrorResponseDto,
   })
   getAlbums(@CurrentUser('id') userId: string, @Query() query: GetLibraryAlbumsRequestDto) {
-    return this.queryBus.execute(new GetLibraryAlbumsQuery(userId, query.page, query.limit));
+    return this.queryBus.execute(
+      new GetLibraryAlbumsQuery(userId, query.page, query.limit, query.genreId),
+    );
   }
 
   @Post()

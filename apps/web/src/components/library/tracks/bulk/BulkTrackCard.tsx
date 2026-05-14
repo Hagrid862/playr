@@ -1,4 +1,9 @@
 import { TextField } from '@/components/form';
+import { LibraryAlbumGenrePicker } from '@/components/library/albums/create/LibraryAlbumGenrePicker';
+import {
+  LIBRARY_ALBUM_GENRE_CREATE_VALUE,
+  LIBRARY_ALBUM_GENRE_NONE_VALUE,
+} from '@/components/library/albums/create/libraryAlbumGenreConstants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -6,7 +11,15 @@ import { Label } from '@/components/ui/label';
 import { TrashIcon } from '@phosphor-icons/react';
 import type { BulkTrackCardProps } from './BulkTrackUploadForm.types';
 
-export function BulkTrackCard({ track, onUpdate, onRemove }: BulkTrackCardProps) {
+export function BulkTrackCard({
+  track,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
+  onUpdate,
+  onRemove,
+  onRequestCreateGenre,
+}: BulkTrackCardProps) {
   return (
     <Card className="m-px">
       <CardHeader className="flex flex-row items-start justify-between gap-2 border-b pb-3">
@@ -62,6 +75,27 @@ export function BulkTrackCard({ track, onUpdate, onRemove }: BulkTrackCardProps)
           />
           <Label htmlFor={`explicit-${track.id}`}>Explicit Content</Label>
         </div>
+        <LibraryAlbumGenrePicker
+          label="Track Genres"
+          selectedGenreIds={track.genreIds ?? []}
+          genres={genres}
+          pendingGenres={pendingGenres}
+          isLoading={isLoadingGenres}
+          onSelect={(value) => {
+            const current = track.genreIds ?? [];
+            if (value === LIBRARY_ALBUM_GENRE_CREATE_VALUE) {
+              onRequestCreateGenre((gid) => {
+                onUpdate({ genreIds: [...current, gid] });
+              });
+            } else if (value === LIBRARY_ALBUM_GENRE_NONE_VALUE) {
+              onUpdate({ genreIds: [] });
+            } else if (current.includes(value)) {
+              onUpdate({ genreIds: current.filter((x) => x !== value) });
+            } else {
+              onUpdate({ genreIds: [...current, value] });
+            }
+          }}
+        />
       </CardContent>
     </Card>
   );

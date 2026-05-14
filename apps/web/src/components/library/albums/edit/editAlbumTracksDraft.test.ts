@@ -43,6 +43,32 @@ describe('trackToDraft', () => {
     const track = { ...baseTrack(), artists: [] } as ZodTrack;
     expect(trackToDraft(track).artistIds).toEqual([]);
   });
+
+  it('maps genres to genre ids', () => {
+    const track = {
+      ...baseTrack(),
+      genres: [
+        {
+          id: 'tg1',
+          trackId: 't1',
+          genreId: 'genre-rock',
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-02'),
+        },
+      ],
+    } as ZodTrack;
+    expect(trackToDraft(track).genreIds).toEqual(['genre-rock']);
+  });
+
+  it('uses empty genre ids when genres is missing', () => {
+    const track = { ...baseTrack(), genres: undefined } as ZodTrack;
+    expect(trackToDraft(track).genreIds).toEqual([]);
+  });
+
+  it('maps an empty genres array to empty genre ids', () => {
+    const track = { ...baseTrack(), genres: [] } as ZodTrack;
+    expect(trackToDraft(track).genreIds).toEqual([]);
+  });
 });
 
 describe('draftsEqualForTrack', () => {
@@ -52,6 +78,7 @@ describe('draftsEqualForTrack', () => {
     diskNumber: 1,
     explicit: false,
     artistIds: ['a1'],
+    genreIds: [],
   });
 
   it('returns true when server track matches draft on all fields', () => {
@@ -91,9 +118,35 @@ describe('draftsEqualForTrack', () => {
     expect(draftsEqualForTrack(baseTrack(), { ...draftBase(), artistIds: ['other'] })).toBe(false);
   });
 
-  it('treats missing server artists as empty when comparing to empty draft artist ids', () => {
-    const track = { ...baseTrack(), artists: undefined } as ZodTrack;
+  it('treats missing server genres as empty when comparing to empty draft genre ids', () => {
+    const track = { ...baseTrack(), genres: undefined } as ZodTrack;
+    expect(draftsEqualForTrack(track, draftBase())).toBe(true);
+  });
+
+  it('treats null artists on the server track like an empty artist list', () => {
+    const track = { ...baseTrack(), artists: null as unknown as [] } as ZodTrack;
     expect(draftsEqualForTrack(track, { ...draftBase(), artistIds: [] })).toBe(true);
+  });
+
+  it('treats null genres on the server track like an empty genre list', () => {
+    const track = { ...baseTrack(), genres: null as unknown as [] } as ZodTrack;
+    expect(draftsEqualForTrack(track, draftBase())).toBe(true);
+  });
+
+  it('compares genre ids when the server track includes genre rows', () => {
+    const track = {
+      ...baseTrack(),
+      genres: [
+        {
+          id: 'tg',
+          trackId: 't1',
+          genreId: 'g-x',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    } as ZodTrack;
+    expect(draftsEqualForTrack(track, { ...draftBase(), genreIds: ['g-x'] })).toBe(true);
   });
 });
 

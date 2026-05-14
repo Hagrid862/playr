@@ -1,10 +1,14 @@
 import type { BulkTrackItem, CoverArtGroup, TrackWithCover } from '@/lib/types/library';
-import type { ZodAlbumInfer } from '@repo/contracts';
+import type { ZodAlbumInfer, ZodGenreInfer } from '@repo/contracts';
 
 export interface BulkTrackUploadFormProps {
   album: ZodAlbumInfer;
   onSubmit: (tracks: BulkTrackItem[], selectedCover: File | null) => void | Promise<void>;
   isLoading?: boolean;
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
+  onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
 }
 
 export type CoverSelectionBannerVariant = 'default' | 'prominent';
@@ -22,6 +26,10 @@ export interface CoverSelectionBannerProps {
 
 export interface BulkTrackCardProps {
   track: BulkTrackItem;
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
   onUpdate: (updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => void;
   onRemove: () => void;
+  onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
 }

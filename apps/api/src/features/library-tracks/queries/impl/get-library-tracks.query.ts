@@ -6,5 +6,6 @@ export class GetLibraryTracksQuery implements IQuery {
     public readonly page: number,
     public readonly limit: number,
     public readonly albumId?: string,
+    public readonly genreId?: string,
   ) {}
 }

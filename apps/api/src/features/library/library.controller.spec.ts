@@ -4,7 +4,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
 import { LibraryController } from './library.controller';
-import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
 import { GetLibraryQuery } from './queries/impl/get-library.query';
 
 describe('LibraryController', () => {
@@ -49,22 +48,6 @@ describe('LibraryController', () => {
       const result = await controller.getLibrary(userId);
 
       expect(queryBus.execute).toHaveBeenCalledWith(new GetLibraryQuery(userId));
-      expect(result).toBe(expectedResult);
-    });
-  });
-
-  describe('getAlbums', () => {
-    it('should execute GetLibraryAlbumsQuery with user id and pagination params', async () => {
-      const userId = 'user-123';
-      const query = { page: 1, limit: 10 };
-      const expectedResult = { items: [], total: 0, page: 1, limit: 10 };
-      queryBus.execute.mockResolvedValue(expectedResult);
-
-      const result = await controller.getAlbums(userId, query);
-
-      expect(queryBus.execute).toHaveBeenCalledWith(
-        new GetLibraryAlbumsQuery(userId, query.page, query.limit),
-      );
       expect(result).toBe(expectedResult);
     });
   });

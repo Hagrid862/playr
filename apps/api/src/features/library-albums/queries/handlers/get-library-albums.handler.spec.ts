@@ -54,6 +54,59 @@ describe('GetLibraryAlbumsHandler', () => {
     expect(result.total).toBe(mockTotal);
     expect(result.page).toBe(1);
     expect(result.limit).toBe(10);
+
+    const baseWhere = { libraryId: mockLibraryId };
+    expect(libraryAlbumRepository.getPaginated).toHaveBeenCalledWith(1, 10, baseWhere, undefined, {
+      include: {
+        album: {
+          include: {
+            cover: true,
+            artists: true,
+            genres: { include: { genre: true } },
+          },
+        },
+      },
+    });
+    expect(libraryAlbumRepository.count).toHaveBeenCalledWith(baseWhere);
+  });
+
+  it('should filter albums by genreId when provided', async () => {
+    const genreId = 'genre-789';
+    const query = new GetLibraryAlbumsQuery(mockUserId, 1, 10, genreId);
+
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    libraryAlbumRepository.getPaginated.mockResolvedValue(mockItems as any);
+    libraryAlbumRepository.count.mockResolvedValue(mockTotal);
+
+    await handler.execute(query);
+
+    const expectedWhere = {
+      libraryId: mockLibraryId,
+      album: {
+        genres: {
+          some: { genreId },
+        },
+      },
+    };
+
+    expect(libraryAlbumRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      expectedWhere,
+      undefined,
+      {
+        include: {
+          album: {
+            include: {
+              cover: true,
+              artists: true,
+              genres: { include: { genre: true } },
+            },
+          },
+        },
+      },
+    );
+    expect(libraryAlbumRepository.count).toHaveBeenCalledWith(expectedWhere);
   });
 
   it('should throw PreconditionFailedException if user library not found', async () => {

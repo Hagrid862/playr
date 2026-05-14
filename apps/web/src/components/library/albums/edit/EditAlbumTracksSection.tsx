@@ -13,28 +13,36 @@ import type { BulkTrackItem } from '@/lib/types/library';
 import type { ZodTrack } from '@repo/contracts';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { AlbumTrackArtistsPicker, type AlbumArtistOption } from './AlbumTrackArtistsPicker';
-import type { EditAlbumTracksController } from './useEditAlbumTracks';
+import type { EditAlbumTracksController, EditAlbumTrackDraft } from './useEditAlbumTracks';
+import { LibraryAlbumGenrePicker } from '../create/LibraryAlbumGenrePicker';
+import type { ZodGenreInfer } from '@repo/contracts';
+import {
+  LIBRARY_ALBUM_GENRE_CREATE_VALUE,
+  LIBRARY_ALBUM_GENRE_NONE_VALUE,
+} from '../create/libraryAlbumGenreConstants';
 
 function ExistingTrackEditCard({
   track,
   draft,
   artistOptions,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
   onUpdate,
   onScheduleDelete,
   onRequestCreateArtist,
+  onRequestCreateGenre,
 }: {
   track: ZodTrack;
-  draft: {
-    title: string;
-    trackNumber: number;
-    diskNumber: number;
-    explicit: boolean;
-    artistIds: string[];
-  };
+  draft: EditAlbumTrackDraft;
   artistOptions: AlbumArtistOption[];
-  onUpdate: (patch: Partial<typeof draft>) => void;
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
+  onUpdate: (patch: Partial<EditAlbumTrackDraft>) => void;
   onScheduleDelete: () => void;
   onRequestCreateArtist: () => void;
+  onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
 }) {
   return (
     <Card className="m-px">
@@ -98,6 +106,29 @@ function ExistingTrackEditCard({
           allowCreateNew
           onRequestCreateNew={onRequestCreateArtist}
         />
+        <LibraryAlbumGenrePicker
+          label="Track Genres"
+          selectedGenreIds={draft.genreIds}
+          genres={genres}
+          pendingGenres={pendingGenres}
+          isLoading={isLoadingGenres}
+          onSelect={(value) => {
+            if (value === LIBRARY_ALBUM_GENRE_CREATE_VALUE) {
+              onRequestCreateGenre((gid) => {
+                onUpdate({ genreIds: [...draft.genreIds, gid] });
+              });
+              return;
+            }
+            if (value === LIBRARY_ALBUM_GENRE_NONE_VALUE) {
+              onUpdate({ genreIds: [] });
+              return;
+            }
+            const nextIds = draft.genreIds.includes(value)
+              ? draft.genreIds.filter((id) => id !== value)
+              : [...draft.genreIds, value];
+            onUpdate({ genreIds: nextIds });
+          }}
+        />
       </CardContent>
     </Card>
   );
@@ -107,18 +138,26 @@ function StagedTrackCard({
   track,
   fileName,
   artistOptions,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
   isBusy,
   onUpdate,
   onRemove,
   onRequestCreateArtist,
+  onRequestCreateGenre,
 }: {
   track: BulkTrackItem;
   fileName: string;
   artistOptions: AlbumArtistOption[];
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
   isBusy: boolean;
   onUpdate: (updates: Partial<Omit<BulkTrackItem, 'id' | 'file'>>) => void;
   onRemove: () => void;
   onRequestCreateArtist: () => void;
+  onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
 }) {
   return (
     <Card className="m-px">
@@ -185,6 +224,30 @@ function StagedTrackCard({
           allowCreateNew
           onRequestCreateNew={onRequestCreateArtist}
         />
+        <LibraryAlbumGenrePicker
+          label="Track Genres"
+          selectedGenreIds={track.genreIds ?? []}
+          genres={genres}
+          pendingGenres={pendingGenres}
+          isLoading={isLoadingGenres}
+          onSelect={(value) => {
+            if (value === LIBRARY_ALBUM_GENRE_CREATE_VALUE) {
+              onRequestCreateGenre((gid) => {
+                onUpdate({ genreIds: [...(track.genreIds ?? []), gid] });
+              });
+              return;
+            }
+            if (value === LIBRARY_ALBUM_GENRE_NONE_VALUE) {
+              onUpdate({ genreIds: [] });
+              return;
+            }
+            const current = track.genreIds ?? [];
+            const nextIds = current.includes(value)
+              ? current.filter((id) => id !== value)
+              : [...current, value];
+            onUpdate({ genreIds: nextIds });
+          }}
+        />
       </CardContent>
     </Card>
   );
@@ -192,10 +255,20 @@ function StagedTrackCard({
 
 interface EditAlbumTracksSectionProps {
   tracks: EditAlbumTracksController;
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
+  onRequestCreateGenre: (onCreated: (genreId: string) => void) => void;
 }
 
-export function EditAlbumTracksSection({ tracks }: EditAlbumTracksSectionProps) {
-  useLibraryArtists(1, 200);
+export function EditAlbumTracksSection({
+  tracks,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
+  onRequestCreateGenre,
+}: EditAlbumTracksSectionProps) {
+  useLibraryArtists(1, 100);
   const privateArtists = useLibraryStore((s) => s.privateArtists);
 
   const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);
@@ -313,6 +386,9 @@ export function EditAlbumTracksSection({ tracks }: EditAlbumTracksSectionProps) 
                   track={t}
                   fileName={t.file.name}
                   artistOptions={artistOptions}
+                  genres={genres}
+                  pendingGenres={pendingGenres}
+                  isLoadingGenres={isLoadingGenres}
                   isBusy={isScanningMetadata}
                   onUpdate={(u) => updateStagedTrack(t.id, u)}
                   onRemove={() => removeStagedTrack(t.id)}
@@ -323,6 +399,7 @@ export function EditAlbumTracksSection({ tracks }: EditAlbumTracksSectionProps) 
                       }),
                     )
                   }
+                  onRequestCreateGenre={onRequestCreateGenre}
                 />
               ))}
             </div>
@@ -373,6 +450,9 @@ export function EditAlbumTracksSection({ tracks }: EditAlbumTracksSectionProps) 
                   track={t}
                   draft={draft}
                   artistOptions={artistOptions}
+                  genres={genres}
+                  pendingGenres={pendingGenres}
+                  isLoadingGenres={isLoadingGenres}
                   onUpdate={(patch) => updateDraft(t.id, patch)}
                   onScheduleDelete={() => scheduleTrackDelete(t.id)}
                   onRequestCreateArtist={() =>
@@ -380,6 +460,7 @@ export function EditAlbumTracksSection({ tracks }: EditAlbumTracksSectionProps) 
                       updateDraft(t.id, { artistIds: [...draft.artistIds, lid] }),
                     )
                   }
+                  onRequestCreateGenre={onRequestCreateGenre}
                 />
               );
             })}

@@ -24,7 +24,7 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
   ) {}
 
   async execute(query: GetLibraryTracksQuery): Promise<GetLibraryTracksResponse['data']> {
-    const { userId, page, limit, albumId } = query;
+    const { userId, page, limit, albumId, genreId } = query;
 
     const library = await this.libraryRepository.getByUserId(userId);
 
@@ -32,21 +32,23 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
+    const where: Prisma.LibraryTrackWhereInput = {
+      libraryId: library.id,
+      track: {
+        ...(albumId ? { albumId } : {}),
+        ...(genreId ? { genres: { some: { genreId } } } : {}),
+      },
+    };
+
     const [items, total] = await Promise.all([
       this.libraryTrackRepository.getPaginated(
         page,
         limit,
-        {
-          libraryId: library.id,
-          track: albumId ? { albumId } : undefined,
-        },
+        where,
         { track: { trackNumber: 'asc' } },
         { include: LIBRARY_TRACK_WITH_TRACK_INCLUDE },
       ),
-      this.libraryTrackRepository.count({
-        libraryId: library.id,
-        track: albumId ? { albumId } : undefined,
-      }),
+      this.libraryTrackRepository.count(where),
     ]);
 
     return {

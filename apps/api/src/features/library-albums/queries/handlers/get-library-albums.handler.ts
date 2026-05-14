@@ -24,7 +24,7 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
   ) {}
 
   async execute(query: GetLibraryAlbumsQuery): Promise<GetLibraryAlbumsResponse['data']> {
-    const { userId, page, limit } = query;
+    const { userId, page, limit, genreId } = query;
 
     const library = await this.libraryRepository.getByUserId(userId);
 
@@ -32,11 +32,20 @@ export class GetLibraryAlbumsHandler implements IQueryHandler<GetLibraryAlbumsQu
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
+    const where: Prisma.LibraryAlbumWhereInput = { libraryId: library.id };
+    if (genreId) {
+      where.album = {
+        genres: {
+          some: { genreId },
+        },
+      };
+    }
+
     const [items, total] = await Promise.all([
-      this.libraryAlbumRepository.getPaginated(page, limit, { libraryId: library.id }, undefined, {
+      this.libraryAlbumRepository.getPaginated(page, limit, where, undefined, {
         include: LIBRARY_ALBUM_LIST_INCLUDE,
       }),
-      this.libraryAlbumRepository.count({ libraryId: library.id }),
+      this.libraryAlbumRepository.count(where),
     ]);
 
     return {

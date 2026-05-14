@@ -77,7 +77,16 @@ describe('BulkTrackUploadForm', () => {
   });
 
   it('renders empty state when no tracks', () => {
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText('Drop audio files anywhere to start uploading')).toBeInTheDocument();
   });
@@ -88,7 +97,16 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText('1 track ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeInTheDocument();
@@ -109,14 +127,32 @@ describe('BulkTrackUploadForm', () => {
       ],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText('2 tracks ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Upload 2 tracks/i })).toBeInTheDocument();
   });
 
   it('calls addFiles when files are dropped on window', () => {
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
     const fileList = Object.assign([file], {
@@ -136,7 +172,16 @@ describe('BulkTrackUploadForm', () => {
       isScanningCovers: true,
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText('Scanning tracks for cover art...')).toBeInTheDocument();
   });
@@ -156,7 +201,16 @@ describe('BulkTrackUploadForm', () => {
       ],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText('CoverSelectionBanner')).toBeInTheDocument();
   });
@@ -168,7 +222,16 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: 'Clear all' }));
 
@@ -182,7 +245,16 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: 'Update' }));
 
@@ -196,7 +268,16 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: 'Remove' }));
 
@@ -217,7 +298,16 @@ describe('BulkTrackUploadForm', () => {
       ],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('button', { name: /Upload 1 track/i })).toBeDisabled();
   });
@@ -228,7 +318,17 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} isLoading />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        isLoading
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('button', { name: /Uploading/i })).toBeDisabled();
   });
@@ -240,7 +340,16 @@ describe('BulkTrackUploadForm', () => {
       tracks: [{ ...mockTrack, file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) }],
     });
 
-    customRender(<BulkTrackUploadForm album={mockAlbum} onSubmit={mockOnSubmit} />);
+    customRender(
+      <BulkTrackUploadForm
+        album={mockAlbum}
+        onSubmit={mockOnSubmit}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onRequestCreateGenre={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: /Upload 1 track/i }));
 

@@ -61,12 +61,19 @@ describe('EditAlbumMetadata', () => {
       name,
     }: {
       children: (field: {
-        state: { value: string | null };
+        state: { value: string | string[] | null };
         handleChange: (v: string | Date | null) => void;
         handleBlur: () => void;
       }) => React.ReactNode;
       name: string;
     }) => {
+      if (name === 'genreIds') {
+        return children({
+          state: { value: [] },
+          handleChange: vi.fn(),
+          handleBlur: vi.fn(),
+        });
+      }
       const value = name === 'type' ? AlbumType.album : null;
       return children({
         state: { value },
@@ -77,7 +84,15 @@ describe('EditAlbumMetadata', () => {
   };
 
   it('renders correctly', () => {
-    customRender(<EditAlbumMetadata form={mockForm} />);
+    customRender(
+      <EditAlbumMetadata
+        form={mockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
     expect(screen.getByLabelText(/Album Type/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Release Date/i)).toBeInTheDocument();
   });
@@ -91,12 +106,19 @@ describe('EditAlbumMetadata', () => {
         name,
       }: {
         children: (field: {
-          state: { value: string | null };
+          state: { value: string | string[] | null };
           handleChange: (v: string | Date | null) => void;
           handleBlur: () => void;
         }) => React.ReactNode;
         name: string;
       }) => {
+        if (name === 'genreIds') {
+          return children({
+            state: { value: [] },
+            handleChange: vi.fn(),
+            handleBlur: vi.fn(),
+          });
+        }
         if (name === 'type') {
           return children({
             state: { value: AlbumType.album },
@@ -108,7 +130,15 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    customRender(<EditAlbumMetadata form={localMockForm} />);
+    customRender(
+      <EditAlbumMetadata
+        form={localMockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
     const select = screen.getByLabelText(/Album Type/i);
     await user.selectOptions(select, AlbumType.single);
     expect(handleChange).toHaveBeenCalledWith(AlbumType.single);
@@ -122,12 +152,19 @@ describe('EditAlbumMetadata', () => {
         name,
       }: {
         children: (field: {
-          state: { value: string | null };
+          state: { value: string | string[] | null };
           handleChange: (v: string | Date | null) => void;
           handleBlur: () => void;
         }) => React.ReactNode;
         name: string;
       }) => {
+        if (name === 'genreIds') {
+          return children({
+            state: { value: [] },
+            handleChange: vi.fn(),
+            handleBlur: vi.fn(),
+          });
+        }
         if (name === 'type') {
           return children({
             state: { value: AlbumType.album },
@@ -139,7 +176,15 @@ describe('EditAlbumMetadata', () => {
       },
     };
 
-    customRender(<EditAlbumMetadata form={localMockForm} />);
+    customRender(
+      <EditAlbumMetadata
+        form={localMockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
     const select = screen.getByLabelText(/Album Type/i) as HTMLSelectElement;
 
     // Force a change event with invalid value directly since user.selectOptions only works with existing options
@@ -157,12 +202,19 @@ describe('EditAlbumMetadata', () => {
         name,
       }: {
         children: (field: {
-          state: { value: string | null };
+          state: { value: string | string[] | null };
           handleChange: (v: string | Date | null) => void;
           handleBlur: () => void;
         }) => React.ReactNode;
         name: string;
       }) => {
+        if (name === 'genreIds') {
+          return children({
+            state: { value: [] },
+            handleChange: vi.fn(),
+            handleBlur: vi.fn(),
+          });
+        }
         if (name === 'releaseDate') {
           return children({
             state: { value: new Date().toISOString() },
@@ -170,18 +222,27 @@ describe('EditAlbumMetadata', () => {
             handleBlur: vi.fn(),
           });
         }
+        if (name === 'type') {
+          return children({
+            state: { value: AlbumType.album },
+            handleChange: vi.fn(),
+            handleBlur: vi.fn(),
+          });
+        }
         return children({ state: { value: null }, handleChange: vi.fn(), handleBlur: vi.fn() });
       },
     };
 
-    customRender(<EditAlbumMetadata form={localMockForm} />);
-    const mockClearButton = screen.queryByText('Clear Date');
-    if (mockClearButton) {
-      await user.click(mockClearButton);
-    } else {
-      // If clear button not present in mock, we simulate onChange(null) directly since mock is simplistic
-      // Just trigger the onChange of DatePickerField. In our mock, DatePickerField does not have a clear button.
-      // I will add a clear button to the DatePickerField mock.
-    }
+    customRender(
+      <EditAlbumMetadata
+        form={localMockForm}
+        genres={[]}
+        pendingGenres={[]}
+        isLoadingGenres={false}
+        onGenreSelect={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByText('Clear Date'));
+    expect(handleChange).toHaveBeenCalledWith(null);
   });
 });

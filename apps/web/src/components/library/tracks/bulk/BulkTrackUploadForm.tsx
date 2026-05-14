@@ -11,6 +11,10 @@ export function BulkTrackUploadForm({
   album,
   onSubmit,
   isLoading = false,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
+  onRequestCreateGenre,
 }: BulkTrackUploadFormProps) {
   const {
     tracks,
@@ -57,6 +61,10 @@ export function BulkTrackUploadForm({
 
             <BulkTrackList
               tracks={tracks}
+              genres={genres}
+              pendingGenres={pendingGenres}
+              isLoadingGenres={isLoadingGenres}
+              onRequestCreateGenre={onRequestCreateGenre}
               onUpdateTrack={updateTrack}
               onRemoveTrack={removeTrack}
               onClearAll={clearAll}
