@@ -11,23 +11,13 @@ export class DeleteLibraryAlbumHandler implements ICommandHandler<DeleteLibraryA
   async execute(command: DeleteLibraryAlbumCommand): Promise<ZodAlbum> {
     const { id, userId } = command;
 
-    const album = await this.albumRepository.findOne({
-      id,
-      access: {
-        some: {
-          userId,
-          role: 'owner',
-        },
-      },
-    });
+    const album = await this.albumRepository.getByIdForAlbumOwner(id, userId);
 
     if (!album) {
       throw new NotFoundException('Album not found or you do not have permission to delete it');
     }
 
-    const deletedAlbum = await this.albumRepository.update(id, {
-      deletedAt: new Date(),
-    });
+    const deletedAlbum = await this.albumRepository.softDelete(id);
 
     const parsed = AlbumSchema.safeParse(deletedAlbum);
 

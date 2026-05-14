@@ -43,7 +43,7 @@ describe('GetLibraryArtistAlbumsHandler', () => {
     const query = new GetLibraryArtistAlbumsQuery(userId, artistId, 1, 10, 'album');
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    libraryAlbumRepository.findMany.mockResolvedValue(mockAlbums);
+    libraryAlbumRepository.getPaginated.mockResolvedValue(mockAlbums);
     libraryAlbumRepository.count.mockResolvedValue(mockTotal);
 
     const result = await handler.execute(query);
@@ -55,19 +55,20 @@ describe('GetLibraryArtistAlbumsHandler', () => {
       limit: 10,
     });
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryAlbumRepository.findMany).toHaveBeenCalledWith({
-      where: {
+    expect(libraryAlbumRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      {
         libraryId: mockLibrary.id,
         album: { artists: { some: { id: artistId } }, type: 'album' },
       },
-      take: 10,
-      skip: 0,
-      orderBy: {
+      {
         album: {
           releaseDate: 'desc',
         },
       },
-    });
+      { include: expect.any(Object) },
+    );
     expect(libraryAlbumRepository.count).toHaveBeenCalledWith({
       libraryId: mockLibrary.id,
       album: { artists: { some: { id: artistId } }, type: 'album' },
@@ -81,6 +82,6 @@ describe('GetLibraryArtistAlbumsHandler', () => {
 
     await expect(handler.execute(query)).rejects.toThrow(PreconditionFailedException);
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(libraryAlbumRepository.findMany).not.toHaveBeenCalled();
+    expect(libraryAlbumRepository.getPaginated).not.toHaveBeenCalled();
   });
 });

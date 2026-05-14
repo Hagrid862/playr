@@ -49,7 +49,7 @@ export class TokenService {
       ]);
 
       if (oldRefreshToken) {
-        await this.refreshTokenRepository.revoke(oldRefreshToken);
+        await this.refreshTokenRepository.revokeByToken(oldRefreshToken);
       }
 
       await this.refreshTokenRepository.create({

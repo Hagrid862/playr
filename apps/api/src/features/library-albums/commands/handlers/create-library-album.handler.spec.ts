@@ -86,7 +86,7 @@ describe('CreateLibraryAlbumHandler', () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getByNameForOwner.mockResolvedValue(null);
     albumRepository.create.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);
 
@@ -111,7 +111,7 @@ describe('CreateLibraryAlbumHandler', () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(albumBuilder({ id: 'existing-id' }));
+    albumRepository.getByNameForOwner.mockResolvedValue(albumBuilder({ id: 'existing-id' }));
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -120,7 +120,7 @@ describe('CreateLibraryAlbumHandler', () => {
     const command = new CreateLibraryAlbumCommand(mockRequest, mockUserId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getByNameForOwner.mockResolvedValue(null);
     albumRepository.create.mockResolvedValue({ invalid: 'data' } as any);
 
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
@@ -147,7 +147,7 @@ describe('CreateLibraryAlbumHandler', () => {
     );
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getByNameForOwner.mockResolvedValue(null);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
     albumRepository.create.mockResolvedValue(mockAlbum);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({ success: true, data: mockAlbum } as any);

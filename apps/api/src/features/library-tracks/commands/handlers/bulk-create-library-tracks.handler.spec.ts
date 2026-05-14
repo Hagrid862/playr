@@ -125,7 +125,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValueOnce(mockTrack1).mockResolvedValueOnce(mockTrack2);
 
     const result = await handler.execute(command);
@@ -135,7 +135,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     expect(result.tracks[1]).toEqual(mockTrack2);
 
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
-    expect(albumRepository.findOne).toHaveBeenCalledWith({ id: albumId });
+    expect(albumRepository.getById).toHaveBeenCalledWith(albumId);
     expect(unitOfWork.runInTransaction).toHaveBeenCalled();
 
     expect(trackRepository.create).toHaveBeenCalledTimes(2);
@@ -188,7 +188,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, singleTrackBody, userId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack1);
 
     const result = await handler.execute(command);
@@ -206,14 +206,14 @@ describe('BulkCreateLibraryTracksHandler', () => {
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
     await expect(handler.execute(command)).rejects.toThrow('User library not found');
 
-    expect(albumRepository.findOne).not.toHaveBeenCalled();
+    expect(albumRepository.getById).not.toHaveBeenCalled();
     expect(trackRepository.create).not.toHaveBeenCalled();
   });
 
   it('should throw PreconditionFailedException if album not found', async () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getById.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
     await expect(handler.execute(command)).rejects.toThrow('Album not found');
@@ -225,9 +225,8 @@ describe('BulkCreateLibraryTracksHandler', () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
-    // @ts-expect-error - we are testing the validation failure
-    trackRepository.create.mockResolvedValue({ ...mockTrack1, title: 123 });
+    albumRepository.getById.mockResolvedValue(mockAlbum);
+    trackRepository.create.mockResolvedValue({ ...mockTrack1, title: 123 } as unknown as Track);
 
     vi.spyOn(TrackSchema, 'safeParse').mockReturnValue({
       success: false,
@@ -242,7 +241,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, body, userId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValueOnce(mockTrack1).mockResolvedValueOnce(mockTrack2);
 
     await handler.execute(command);
@@ -262,7 +261,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     );
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
@@ -279,7 +278,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     );
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack1);
 
     await handler.execute(command);
@@ -305,7 +304,7 @@ describe('BulkCreateLibraryTracksHandler', () => {
     const command = new BulkCreateLibraryTracksCommand(albumId, multiArtistBody, userId);
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getById.mockResolvedValue(mockAlbum);
     trackRepository.create.mockResolvedValue(mockTrack1);
 
     await handler.execute(command);

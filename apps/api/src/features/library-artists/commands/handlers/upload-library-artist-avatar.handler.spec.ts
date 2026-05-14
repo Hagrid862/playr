@@ -94,7 +94,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
     );
 
     const mockArtist = artistBuilder({ id: 'artist-123', avatarId: 'img-old' });
-    artistRepository.findOne.mockResolvedValue(mockArtist);
+    artistRepository.getByIdForOwner.mockResolvedValue(mockArtist);
     vi.mocked((prismaService as any).client.image.findUnique).mockResolvedValue({
       id: 'img-old',
       bucket: FileBucket.public,
@@ -127,7 +127,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
       'user-123',
     );
 
-    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    artistRepository.getByIdForOwner.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
     storageService.uploadFile.mockImplementation(async (_buf, _bucket, key) => ({
@@ -153,7 +153,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
       'user-123',
     );
 
-    artistRepository.findOne.mockResolvedValue(null);
+    artistRepository.getByIdForOwner.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -166,7 +166,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
       'user-123',
     );
 
-    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    artistRepository.getByIdForOwner.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
     imageService.validateImage.mockResolvedValue(false);
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
@@ -180,7 +180,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
       'user-123',
     );
 
-    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    artistRepository.getByIdForOwner.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -204,7 +204,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
       'user-123',
     );
 
-    artistRepository.findOne.mockResolvedValue(
+    artistRepository.getByIdForOwner.mockResolvedValue(
       artistBuilder({ id: 'artist-123', avatarId: 'img-old' }),
     );
     vi.mocked((prismaService as any).client.image.findUnique).mockResolvedValue({
@@ -235,7 +235,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
       'user-123',
     );
 
-    artistRepository.findOne.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
+    artistRepository.getByIdForOwner.mockResolvedValue(artistBuilder({ id: 'artist-123' }));
     imageService.validateImage.mockResolvedValue(true);
     imageService.resizeToMaxDimension.mockResolvedValue(Buffer.from('processed'));
     storageService.uploadFile.mockResolvedValue({ url: 'new-url', key: 'new-key' });
@@ -263,7 +263,7 @@ describe('UploadLibraryArtistAvatarHandler', () => {
       'user-123',
     );
 
-    artistRepository.findOne.mockResolvedValue(
+    artistRepository.getByIdForOwner.mockResolvedValue(
       artistBuilder({ id: 'artist-123', avatarId: 'img-old' }),
     );
     vi.mocked((prismaService as any).client.image.findUnique).mockResolvedValue(null);

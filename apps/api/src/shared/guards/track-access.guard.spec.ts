@@ -88,10 +88,10 @@ describe('TrackAccessGuard', () => {
       user: { user: { id: 'userId' } },
     });
     vi.mocked(trackRepository.checkAccess).mockResolvedValue(false);
-    vi.mocked(trackRepository.findOne).mockResolvedValue(null);
+    vi.mocked(trackRepository.getById).mockResolvedValue(null);
 
     await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(NotFoundException);
-    expect(trackRepository.findOne).toHaveBeenCalledWith({ id: '123' });
+    expect(trackRepository.getById).toHaveBeenCalledWith('123');
   });
 
   it('should throw ForbiddenException if access denied and track exists', async () => {
@@ -116,7 +116,7 @@ describe('TrackAccessGuard', () => {
       deletedAt: null,
     });
 
-    vi.mocked(trackRepository.findOne).mockResolvedValue(mockTrack);
+    vi.mocked(trackRepository.getById).mockResolvedValue(mockTrack);
 
     await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(ForbiddenException);
   });

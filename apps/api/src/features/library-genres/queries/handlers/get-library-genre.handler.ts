@@ -26,11 +26,7 @@ export class GetLibraryGenreHandler implements IQueryHandler<GetLibraryGenreQuer
       throw new PreconditionFailedException('User library not found');
     }
 
-    const genre = await this.genreRepository.findOne({
-      id: genreId,
-      deletedAt: null,
-      OR: [{ libraryId: null }, { libraryId: library.id }],
-    });
+    const genre = await this.genreRepository.getGenreForLibrary(genreId, library.id);
 
     if (!genre) {
       throw new NotFoundException('Genre not found');

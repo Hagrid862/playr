@@ -25,10 +25,7 @@ export class DeleteLibraryAlbumCoverHandler implements ICommandHandler<
   async execute(command: DeleteLibraryAlbumCoverCommand): Promise<ZodAlbum> {
     const { albumId, userId } = command;
 
-    const album = await this.albumRepository.findOne({
-      id: albumId,
-      access: { some: { userId, role: 'owner' } },
-    });
+    const album = await this.albumRepository.getByIdForAlbumOwner(albumId, userId);
 
     if (!album) {
       throw new NotFoundException('Album not found or permission denied');
@@ -40,7 +37,7 @@ export class DeleteLibraryAlbumCoverHandler implements ICommandHandler<
 
     const coverId = album.coverId;
 
-    const image = await this.imageRepository.findOne({ id: coverId });
+    const image = await this.imageRepository.getById(coverId);
 
     await this.unitOfWork.runInTransaction(async () => {
       await this.albumRepository.update(albumId, { cover: { disconnect: true } });

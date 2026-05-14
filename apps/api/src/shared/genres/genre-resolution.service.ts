@@ -47,12 +47,10 @@ export class GenreResolutionService {
       throw new BadRequestException('Genre name must contain at least one letter or number');
     }
 
-    const existingCustom = await this.genreRepository.findOne({
+    const existingCustom = await this.genreRepository.getCustomGenreBySlugForLibrary(
       libraryId,
-      slug: baseSlug,
-      kind: 'custom',
-      deletedAt: null,
-    });
+      baseSlug,
+    );
     if (existingCustom) {
       return existingCustom;
     }
@@ -70,12 +68,7 @@ export class GenreResolutionService {
       if (!isPrismaUniqueViolation(e)) {
         throw e;
       }
-      const recovered = await this.genreRepository.findOne({
-        libraryId,
-        slug,
-        kind: 'custom',
-        deletedAt: null,
-      });
+      const recovered = await this.genreRepository.getCustomGenreBySlugForLibrary(libraryId, slug);
       if (recovered) {
         return recovered;
       }
@@ -121,22 +114,15 @@ export class GenreResolutionService {
     matchKey: string,
     displayForCreate: string,
   ): Promise<Genre> {
-    const system = await this.genreRepository.findOne({
-      libraryId: null,
-      slug: matchKey,
-      kind: 'system',
-      deletedAt: null,
-    });
+    const system = await this.genreRepository.getSystemGenreBySlug(matchKey);
     if (system) {
       return system;
     }
 
-    const existingCustom = await this.genreRepository.findOne({
+    const existingCustom = await this.genreRepository.getCustomGenreBySlugForLibrary(
       libraryId,
-      slug: matchKey,
-      kind: 'custom',
-      deletedAt: null,
-    });
+      matchKey,
+    );
     if (existingCustom) {
       return existingCustom;
     }
@@ -154,12 +140,7 @@ export class GenreResolutionService {
       if (!isPrismaUniqueViolation(e)) {
         throw e;
       }
-      const recovered = await this.genreRepository.findOne({
-        libraryId,
-        slug,
-        kind: 'custom',
-        deletedAt: null,
-      });
+      const recovered = await this.genreRepository.getCustomGenreBySlugForLibrary(libraryId, slug);
       if (recovered) {
         return recovered;
       }
@@ -180,10 +161,7 @@ export class GenreResolutionService {
       throw new PreconditionFailedException('User library not found');
     }
 
-    const existing = await this.genreRepository.findOne({
-      id: genreId,
-      deletedAt: null,
-    });
+    const existing = await this.genreRepository.getById(genreId);
     if (!existing) {
       throw new NotFoundException('Genre not found');
     }
@@ -226,17 +204,8 @@ export class GenreResolutionService {
     let suffix = 0;
 
     while (
-      await this.genreRepository.findOne({
-        libraryId,
-        slug,
-        deletedAt: null,
-        ...(options.ignoreGenreId
-          ? {
-              NOT: {
-                id: options.ignoreGenreId,
-              },
-            }
-          : {}),
+      await this.genreRepository.getGenreBySlugForLibrary(libraryId, slug, {
+        excludeGenreId: options.ignoreGenreId,
       })
     ) {
       suffix += 1;

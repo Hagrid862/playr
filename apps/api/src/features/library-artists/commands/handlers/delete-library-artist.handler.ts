@@ -11,10 +11,7 @@ export class DeleteLibraryArtistHandler implements ICommandHandler<DeleteLibrary
   async execute(command: DeleteLibraryArtistCommand): Promise<ZodArtist> {
     const { artistId, userId } = command;
 
-    const artist = await this.artistRepository.findOne({
-      id: artistId,
-      access: { some: { userId, role: 'owner' } },
-    });
+    const artist = await this.artistRepository.getByIdForOwner(artistId, userId);
 
     if (!artist) {
       throw new NotFoundException('Artist not found or you do not have permission to delete it');

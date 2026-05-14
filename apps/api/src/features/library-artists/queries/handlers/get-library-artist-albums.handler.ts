@@ -1,9 +1,20 @@
+import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetLibraryArtistAlbumsResponseDto } from '@repo/contracts';
+import { Prisma } from '@repo/db';
 import { GetLibraryArtistAlbumsQuery } from '../impl/get-library-artist-albums.query';
-import { LibraryAlbumRepository } from '@/shared/repositories/library-album.repository';
+
+const LIBRARY_ALBUM_LIST_INCLUDE = {
+  album: {
+    include: {
+      cover: true,
+      artists: true,
+      genres: { include: { genre: true } },
+    },
+  },
+} satisfies Prisma.LibraryAlbumInclude;
 
 @QueryHandler(GetLibraryArtistAlbumsQuery)
 export class GetLibraryArtistAlbumsHandler implements IQueryHandler<GetLibraryArtistAlbumsQuery> {
@@ -24,19 +35,20 @@ export class GetLibraryArtistAlbumsHandler implements IQueryHandler<GetLibraryAr
     }
 
     const [items, total] = await Promise.all([
-      this.libraryAlbumRepository.findMany({
-        where: {
+      this.libraryAlbumRepository.getPaginated(
+        page,
+        limit,
+        {
           libraryId: library.id,
           album: { artists: { some: { id: artistId } }, type: type },
         },
-        take: limit,
-        skip: (page - 1) * limit,
-        orderBy: {
+        {
           album: {
             releaseDate: 'desc',
           },
         },
-      }),
+        { include: LIBRARY_ALBUM_LIST_INCLUDE },
+      ),
       this.libraryAlbumRepository.count({
         libraryId: library.id,
         album: { artists: { some: { id: artistId } }, type: type },

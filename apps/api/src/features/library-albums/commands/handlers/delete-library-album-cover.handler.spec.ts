@@ -82,34 +82,31 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
   describe('execute', () => {
     it('should throw NotFoundException when album not found', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(null);
+      albumRepository.getByIdForAlbumOwner.mockResolvedValue(null);
 
       await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
       await expect(handler.execute(command)).rejects.toThrow(
         'Album not found or permission denied',
       );
-      expect(albumRepository.findOne).toHaveBeenCalledWith({
-        id: mockAlbumId,
-        access: { some: { userId: mockUserId, role: 'owner' } },
-      });
+      expect(albumRepository.getByIdForAlbumOwner).toHaveBeenCalledWith(mockAlbumId, mockUserId);
     });
 
     it('should return album as-is when album has no cover', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbumWithoutCover);
+      albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbumWithoutCover);
 
       const result = await handler.execute(command);
 
       expect(result).toEqual(mockAlbumWithoutCover);
       expect(unitOfWork.runInTransaction).not.toHaveBeenCalled();
-      expect(imageRepository.findOne).not.toHaveBeenCalled();
+      expect(imageRepository.getById).not.toHaveBeenCalled();
       expect(storageService.deleteFile).not.toHaveBeenCalled();
     });
 
     it('should delete cover successfully and return updated album', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum);
-      imageRepository.findOne.mockResolvedValue(mockImage);
+      albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
+      imageRepository.getById.mockResolvedValue(mockImage);
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };
       vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
@@ -125,14 +122,14 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
         cover: { disconnect: true },
       });
       expect(imageRepository.delete).toHaveBeenCalledWith(mockCoverId);
-      expect(imageRepository.findOne).toHaveBeenCalledWith({ id: mockCoverId });
+      expect(imageRepository.getById).toHaveBeenCalledWith(mockCoverId);
       expect(storageService.deleteFile).toHaveBeenCalledWith(FileBucket.private, mockImage.key);
     });
 
     it('should not call storageService.deleteFile when image record not found', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum);
-      imageRepository.findOne.mockResolvedValue(null);
+      albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
+      imageRepository.getById.mockResolvedValue(null);
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };
       vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
@@ -153,8 +150,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should throw Error when AlbumSchema.safeParse fails', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum);
-      imageRepository.findOne.mockResolvedValue(mockImage);
+      albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
+      imageRepository.getById.mockResolvedValue(mockImage);
 
       vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
         success: false,
@@ -166,8 +163,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should run album update and image delete within transaction', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum);
-      imageRepository.findOne.mockResolvedValue(mockImage);
+      albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
+      imageRepository.getById.mockResolvedValue(mockImage);
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };
       vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
@@ -193,8 +190,8 @@ describe('DeleteLibraryAlbumCoverHandler', () => {
 
     it('should log error when storage delete fails but still return album', async () => {
       const command = new DeleteLibraryAlbumCoverCommand(mockAlbumId, mockUserId);
-      albumRepository.findOne.mockResolvedValue(mockAlbum);
-      imageRepository.findOne.mockResolvedValue(mockImage);
+      albumRepository.getByIdForAlbumOwner.mockResolvedValue(mockAlbum);
+      imageRepository.getById.mockResolvedValue(mockImage);
       storageService.deleteFile.mockRejectedValue(new Error('S3 delete failed'));
 
       const expectedAlbum = { ...mockAlbum, coverId: null, cover: null };

@@ -48,13 +48,7 @@ export class CreateLibraryAlbumHandler implements ICommandHandler<CreateLibraryA
     }
 
     const album = await this.unitOfWork.runInTransaction(async () => {
-      const existingAlbum = await this.albumRepository.findOne({
-        name: request.name,
-        OR: [
-          { access: { some: { userId, role: 'owner' } } },
-          { artists: { some: { access: { some: { userId, role: 'owner' } } } } },
-        ],
-      });
+      const existingAlbum = await this.albumRepository.getByNameForOwner(request.name, userId);
 
       if (existingAlbum) {
         throw new ConflictException('This album name is already taken');

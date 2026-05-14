@@ -45,7 +45,7 @@ describe('DeleteLibraryGenreHandler', () => {
       kind: GenreKind.custom,
       libraryId: 'lib-1',
     } as any);
-    genreRepository.delete.mockResolvedValue({
+    genreRepository.softDelete.mockResolvedValue({
       id: 'genre-1',
       name: 'G',
       slug: 'g',
@@ -55,7 +55,7 @@ describe('DeleteLibraryGenreHandler', () => {
     const result = await handler.execute(command);
 
     expect(result).toEqual({ id: 'genre-1' });
-    expect(genreRepository.delete).toHaveBeenCalledWith('genre-1');
+    expect(genreRepository.softDelete).toHaveBeenCalledWith('genre-1');
   });
 
   it('should propagate PreconditionFailedException from assert', async () => {
@@ -84,7 +84,7 @@ describe('DeleteLibraryGenreHandler', () => {
   it('should throw InternalServerErrorException when DeletedGenreSchema parse fails', async () => {
     const command = new DeleteLibraryGenreCommand('genre-1', 'user-1');
     genreResolution.assertEditableCustomGenreForUser.mockResolvedValue({} as any);
-    genreRepository.delete.mockResolvedValue({ id: 'genre-1' } as any);
+    genreRepository.softDelete.mockResolvedValue({ id: 'genre-1' } as any);
     const safeParseSpy = vi.spyOn(DeletedGenreSchema, 'safeParse').mockReturnValue({
       success: false,
       error: { format: () => '' },

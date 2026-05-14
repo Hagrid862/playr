@@ -238,17 +238,9 @@ describe('LibraryArtistsController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const updatedArtist: ArtistWithRelations = { ...mockArtist, name: 'Updated Name' };
 
-      // Reset mocks specific to this test to ensure clean state
-      prismaMock.client.artist.findFirst.mockReset();
-      prismaMock.client.artist.findUnique.mockReset();
-
-      // If findUnique is used for retrieval
-      prismaMock.client.artist.findUnique.mockResolvedValue(mockArtist);
-
-      // If findFirst is used (first for retrieval, second for conflict check)
-      prismaMock.client.artist.findFirst
-        .mockResolvedValueOnce(mockArtist) // 1. Retrieve artist (if findFirst used)
-        .mockResolvedValueOnce(null); // 2. Check conflict (must return null)
+      // First call: retrieve artist via getByIdForOwner; second: name collision check via getByNameForOwner
+      prismaMock.client.artist.findFirst.mockResolvedValueOnce(mockArtist);
+      prismaMock.client.artist.findFirst.mockResolvedValueOnce(null); // Check conflict
 
       prismaMock.client.artist.update.mockResolvedValue(updatedArtist);
 
@@ -264,7 +256,6 @@ describe('LibraryArtistsController (Integration)', () => {
     it('should return 404 if artist to update not found', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.artist.findUnique.mockResolvedValue(null);
       prismaMock.client.artist.findFirst.mockResolvedValue(null);
 
       await request(app.getHttpServer())
@@ -327,9 +318,6 @@ describe('LibraryArtistsController (Integration)', () => {
       };
 
       prismaMock.client.libraryArtist.findFirst.mockResolvedValue(
-        mockLibraryArtist as LibraryArtist,
-      );
-      prismaMock.client.libraryArtist.findUnique.mockResolvedValue(
         mockLibraryArtist as LibraryArtist,
       );
       prismaMock.client.libraryAlbum.findMany.mockResolvedValue([

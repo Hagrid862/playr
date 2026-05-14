@@ -40,8 +40,8 @@ describe('GetLibraryGenresHandler', () => {
     const items = [{ id: 'g1' }] as any[];
     const query = new GetLibraryGenresQuery(userId, 2, 10, 'rock', GenreKind.custom);
     libraryRepository.getByUserId.mockResolvedValue(library);
-    genreRepository.findForLibraryList.mockResolvedValue(items);
-    genreRepository.countForLibraryList.mockResolvedValue(25);
+    genreRepository.getGenresPaginatedForLibrary.mockResolvedValue(items);
+    genreRepository.countGenresForLibrary.mockResolvedValue(25);
 
     const result = await handler.execute(query);
 
@@ -51,14 +51,14 @@ describe('GetLibraryGenresHandler', () => {
       page: 2,
       limit: 10,
     });
-    expect(genreRepository.findForLibraryList).toHaveBeenCalledWith({
+    expect(genreRepository.getGenresPaginatedForLibrary).toHaveBeenCalledWith({
       libraryId: library.id,
       q: 'rock',
       kind: GenreKind.custom,
-      skip: 10,
-      take: 10,
+      page: 2,
+      limit: 10,
     });
-    expect(genreRepository.countForLibraryList).toHaveBeenCalledWith({
+    expect(genreRepository.countGenresForLibrary).toHaveBeenCalledWith({
       libraryId: library.id,
       q: 'rock',
       kind: GenreKind.custom,

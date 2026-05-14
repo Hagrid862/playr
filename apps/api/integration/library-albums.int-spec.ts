@@ -257,9 +257,6 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
-      // Access guard check
-      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
-      // Handler check
       prismaMock.client.album.findUnique.mockResolvedValue(mockAlbum);
 
       const response = await request(app.getHttpServer())
@@ -273,7 +270,6 @@ describe('LibraryAlbumsController (Integration)', () => {
     it('should return 404 if album not found', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.album.findFirst.mockResolvedValue(null);
       prismaMock.client.album.findUnique.mockResolvedValue(null);
       // Mock count for AlbumAccessGuard.exists() check
       prismaMock.client.album.count.mockResolvedValue(0);
@@ -290,12 +286,7 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const updatedAlbum: AlbumWithRelations = { ...mockAlbum, name: 'Updated Name' };
 
-      // Access guard check
-      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
-
-      // Handler checks
-      prismaMock.client.album.findUnique.mockResolvedValue(mockAlbum);
-      // Conflict check (simulate no conflict)
+      // getByIdForOwner, then getByNameForOwner (no name collision)
       prismaMock.client.album.findFirst
         .mockResolvedValueOnce(mockAlbum)
         .mockResolvedValueOnce(null);
@@ -334,11 +325,8 @@ describe('LibraryAlbumsController (Integration)', () => {
     it('should delete an album successfully (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      // Access guard
-      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
-
       // Handler
-      prismaMock.client.album.findUnique.mockResolvedValue(mockAlbum);
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
       // Soft delete via update
       prismaMock.client.album.update.mockResolvedValue({
         ...mockAlbum,
@@ -357,8 +345,8 @@ describe('LibraryAlbumsController (Integration)', () => {
     it('should return 404 if album to delete not found', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.album.findFirst.mockResolvedValue(null);
       prismaMock.client.album.findUnique.mockResolvedValue(null);
+      prismaMock.client.album.findFirst.mockResolvedValue(null);
 
       await request(app.getHttpServer())
         .delete('/library/albums/non-existent')
@@ -535,9 +523,8 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
-      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
 
-      prismaMock.client.track.findFirst
+      prismaMock.client.track.findUnique
         .mockResolvedValueOnce(mockTrackWithAccess)
         .mockResolvedValueOnce(mockTrackWithAccess);
 
@@ -634,7 +621,7 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
-      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
+      prismaMock.client.album.findUnique.mockResolvedValue(mockAlbum);
 
       const mockLibraryTrackList: LibraryTrackWithRelations[] = [
         {
@@ -672,7 +659,7 @@ describe('LibraryAlbumsController (Integration)', () => {
     it('should return 404 if album not found', async () => {
       const authHeader = await getAuthHeader();
 
-      prismaMock.client.album.findFirst.mockResolvedValue(null);
+      prismaMock.client.album.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
         .get('/library/albums/non-existent/tracks')

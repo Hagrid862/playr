@@ -42,7 +42,7 @@ describe('GetTrackStreamHandler', () => {
     const mockTrackId = 'track-1';
 
     it('should throw NotFoundException if no processed audio files exist', async () => {
-      audioFileRepository.findMany.mockResolvedValue([]);
+      audioFileRepository.listByTrackId.mockResolvedValue([]);
       const query = new GetTrackStreamQuery(mockTrackId, StreamAudioQuality.standard, '');
       await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
     });
@@ -76,7 +76,7 @@ describe('GetTrackStreamHandler', () => {
       ];
 
       beforeEach(() => {
-        audioFileRepository.findMany.mockResolvedValue(mockFiles);
+        audioFileRepository.listByTrackId.mockResolvedValue(mockFiles);
         storageService.getFileStream.mockResolvedValue({
           stream: {} as any,
           size: 100,
@@ -95,7 +95,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should return exact match for high quality mp3 when only mp3 is available', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,
@@ -115,7 +115,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should prefer high quality opus over high quality mp3 when both are available', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.opus,
@@ -143,7 +143,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should score standard opus specially', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.opus,
@@ -157,7 +157,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should score standard other format normally', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,
@@ -171,7 +171,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should return 0 for unhandled formats in high/standard qualities', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.aac,
@@ -196,7 +196,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should test default fallback quality score', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,
@@ -210,7 +210,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should return exact match for low quality mp3 when only mp3 is available', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,
@@ -230,7 +230,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should prefer low quality opus over low quality mp3 when both are available', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.opus,
@@ -258,7 +258,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should prefer low quality mp3 over opus when format=mp3', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.opus,
@@ -291,7 +291,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should prefer standard mp3 over standard opus when format=mp3', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.opus,
@@ -324,7 +324,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should prefer standard opus when format=opus (explicit default)', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.opus,
@@ -364,7 +364,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should fallback to higher quality if lower is missing AND lower check yields nothing', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.flac,
@@ -378,7 +378,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should sort fallback lower qualities by score', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,
@@ -398,7 +398,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should sort fallback higher qualities by score', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.flac,
@@ -418,7 +418,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should fallback to first file if all else fails', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.aac,
@@ -432,7 +432,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should return 0 for low quality when format is not opus or mp3 and use final fallback', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.aac,
@@ -452,7 +452,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should select wav for lossless when wav is available', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.wav,
@@ -477,7 +477,7 @@ describe('GetTrackStreamHandler', () => {
       const mockBucket = FileBucket.private;
 
       beforeEach(() => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: mockKey,
             format: AudioFormat.mp3,
@@ -584,7 +584,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should fallback mp3 mimetype properly', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,
@@ -599,7 +599,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should fallback to audio/mpeg when mimeType is missing and format is mp3', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,
@@ -614,7 +614,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should fallback to audio/unknown when mimeType is missing and format is not mp3', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.opus,
@@ -638,7 +638,7 @@ describe('GetTrackStreamHandler', () => {
       });
 
       it('should set isPartial when range is provided', async () => {
-        audioFileRepository.findMany.mockResolvedValue([
+        audioFileRepository.listByTrackId.mockResolvedValue([
           audioFileBuilder({
             id: 'audio-file-1',
             format: AudioFormat.mp3,

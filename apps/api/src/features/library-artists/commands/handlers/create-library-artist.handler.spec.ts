@@ -75,7 +75,7 @@ describe('CreateLibraryArtistHandler', () => {
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
-    artistRepository.findOne.mockResolvedValue(null);
+    artistRepository.getByNameForOwner.mockResolvedValue(null);
     artistRepository.create.mockResolvedValue(mockArtist);
 
     const result = await handler.execute(command);
@@ -102,7 +102,7 @@ describe('CreateLibraryArtistHandler', () => {
 
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     genreRepository.areGenreIdsAssignableToLibrary.mockResolvedValue(true);
-    artistRepository.findOne.mockResolvedValue(null);
+    artistRepository.getByNameForOwner.mockResolvedValue(null);
     artistRepository.create.mockResolvedValue(mockArtist);
 
     await handler.execute(command);
@@ -145,7 +145,7 @@ describe('CreateLibraryArtistHandler', () => {
   it('should throw ConflictException if artist name is already taken', async () => {
     const command = new CreateLibraryArtistCommand({ name: 'Taken' }, mockUserId);
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    artistRepository.findOne.mockResolvedValue({ id: 'existing' } as any);
+    artistRepository.getByNameForOwner.mockResolvedValue({ id: 'existing' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -153,7 +153,7 @@ describe('CreateLibraryArtistHandler', () => {
   it('should throw InternalServerErrorException if parsing fails', async () => {
     const command = new CreateLibraryArtistCommand({ name: 'Test' }, mockUserId);
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
-    artistRepository.findOne.mockResolvedValue(null);
+    artistRepository.getByNameForOwner.mockResolvedValue(null);
     artistRepository.create.mockResolvedValue({ invalid: 'data' } as any);
 
     await expect(handler.execute(command)).rejects.toThrow(InternalServerErrorException);

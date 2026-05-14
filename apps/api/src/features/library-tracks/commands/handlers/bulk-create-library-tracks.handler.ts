@@ -34,7 +34,7 @@ export class BulkCreateLibraryTracksHandler implements ICommandHandler<BulkCreat
       throw new PreconditionFailedException('User library not found');
     }
 
-    const album = await this.albumRepository.findOne({ id: albumId });
+    const album = await this.albumRepository.getById(albumId);
     if (!album) {
       throw new PreconditionFailedException('Album not found');
     }

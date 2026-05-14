@@ -65,8 +65,8 @@ describe('UpdateLibraryAlbumHandler', () => {
     const request = { name: 'New Name' };
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
 
-    albumRepository.findOne.mockResolvedValueOnce(mockAlbum); // Finding existing album
-    albumRepository.findOne.mockResolvedValueOnce(null); // Checking for name collision
+    albumRepository.getByIdForOwner.mockResolvedValueOnce(mockAlbum); // Finding existing album
+    albumRepository.getByNameForOwner.mockResolvedValueOnce(null); // Checking for name collision
     albumRepository.update.mockResolvedValue({ ...mockAlbum, ...request });
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
       success: true,
@@ -84,7 +84,7 @@ describe('UpdateLibraryAlbumHandler', () => {
 
   it('should throw NotFoundException if album not found', async () => {
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, {}, mockUserId);
-    albumRepository.findOne.mockResolvedValue(null);
+    albumRepository.getByIdForOwner.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -93,8 +93,8 @@ describe('UpdateLibraryAlbumHandler', () => {
     const request = { name: 'Taken Name' };
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
 
-    albumRepository.findOne.mockResolvedValueOnce(mockAlbum); // Existing
-    albumRepository.findOne.mockResolvedValueOnce(albumBuilder({ id: 'other' })); // Collision
+    albumRepository.getByIdForOwner.mockResolvedValueOnce(mockAlbum); // Existing
+    albumRepository.getByNameForOwner.mockResolvedValueOnce(albumBuilder({ id: 'other' })); // Collision
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
   });
@@ -103,7 +103,7 @@ describe('UpdateLibraryAlbumHandler', () => {
     const request = { coverId: null };
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
     albumRepository.update.mockResolvedValue({ ...mockAlbum, coverId: null });
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
       success: true,
@@ -124,7 +124,7 @@ describe('UpdateLibraryAlbumHandler', () => {
     const request = { coverId: 'new-cover' };
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, request, mockUserId);
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
     albumRepository.update.mockResolvedValue({ ...mockAlbum, coverId: 'new-cover' });
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
       success: true,
@@ -144,7 +144,7 @@ describe('UpdateLibraryAlbumHandler', () => {
   it('should throw InternalServerErrorException if result parsing fails', async () => {
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, {}, mockUserId);
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
     albumRepository.update.mockResolvedValue({ invalid: 'data' } as any);
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
       success: false,
@@ -157,7 +157,7 @@ describe('UpdateLibraryAlbumHandler', () => {
   it('should throw PreconditionFailedException when library is missing and genreIds are set', async () => {
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, { genreIds: ['g1'] }, mockUserId);
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
     libraryRepository.getByUserId.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(PreconditionFailedException);
@@ -166,7 +166,7 @@ describe('UpdateLibraryAlbumHandler', () => {
   it('should throw BadRequestException when genres are not assignable', async () => {
     const command = new UpdateLibraryAlbumCommand(mockAlbumId, { genreIds: ['g1'] }, mockUserId);
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
     libraryRepository.getByUserId.mockResolvedValue({
       id: 'library-123',
       userId: mockUserId,
@@ -183,7 +183,7 @@ describe('UpdateLibraryAlbumHandler', () => {
       mockUserId,
     );
 
-    albumRepository.findOne.mockResolvedValue(mockAlbum);
+    albumRepository.getByIdForOwner.mockResolvedValue(mockAlbum);
     albumRepository.update.mockResolvedValue({ ...mockAlbum });
     vi.spyOn(AlbumSchema, 'safeParse').mockReturnValue({
       success: true,

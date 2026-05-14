@@ -1,199 +1,574 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClient } from '@repo/db';
-import { libraryArtistBuilder } from '@repo/testing/builders';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PrismaService } from '../services/prisma.service';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LibraryArtistRepository } from './library-artist.repository';
+import { PrismaService } from '../services/prisma.service';
+import { LibraryArtist, Prisma } from '@repo/db';
 
 describe('LibraryArtistRepository', () => {
   let repository: LibraryArtistRepository;
-  let mockTx: DeepMocked<PrismaClient>;
+  let prismaService: PrismaService;
+  let mockPrismaClient: ReturnType<typeof createMockPrismaClient>;
+  let mockMainClient: ReturnType<typeof createMockPrismaClient>;
 
-  const mockLibraryArtist = libraryArtistBuilder({
-    id: 'la-123',
-    libraryId: 'lib-123',
-    artistId: 'artist-123',
+  const createMockPrismaClient = () => ({
+    libraryArtist: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      createManyAndReturn: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+      count: vi.fn(),
+    },
+    $transaction: vi.fn(),
+  });
+
+  beforeEach(() => {
+    mockPrismaClient = createMockPrismaClient();
+    mockMainClient = createMockPrismaClient();
+
+    const mockPrismaService = {
+      get client() {
+        return mockPrismaClient;
+      },
+      get mainClient() {
+        return mockMainClient;
+      },
+    } as unknown as PrismaService;
+
+    prismaService = mockPrismaService;
+    repository = new LibraryArtistRepository(prismaService);
+  });
+
+  const mockLibraryArtist: LibraryArtist = {
+    id: 'library-artist-1',
+    libraryId: 'library-1',
+    artistId: 'artist-1',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
     deletedAt: null,
-  });
+  };
 
-  beforeEach(async () => {
-    mockTx = createMock<PrismaClient>();
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        LibraryArtistRepository,
-        {
-          provide: PrismaService,
-          useValue: {
-            client: mockTx,
-          },
-        },
-      ],
-    }).compile();
+  describe('getById', () => {
+    it('should return library artist by id without include', async () => {
+      mockPrismaClient.libraryArtist.findUnique.mockResolvedValue(mockLibraryArtist);
 
-    repository = module.get<LibraryArtistRepository>(LibraryArtistRepository);
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe('findOne', () => {
-    it('should return library artist matching criteria with deletedAt: null filter', async () => {
-      mockTx.libraryArtist.findFirst.mockResolvedValue(mockLibraryArtist);
-
-      const result = await repository.findOne({ libraryId: 'lib-123', artistId: 'artist-123' });
+      const result = await repository.getById('library-artist-1');
 
       expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.findFirst).toHaveBeenCalledWith({
+      expect(mockPrismaClient.libraryArtist.findUnique).toHaveBeenCalledWith({
+        where: { id: 'library-artist-1' },
+      });
+    });
+
+    it('should return library artist by id with include', async () => {
+      const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
+      mockPrismaClient.libraryArtist.findUnique.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
+
+      const result = await repository.getById('library-artist-1', { include: { artist: true } });
+
+      expect(result).toEqual(libraryArtistWithInclude);
+      expect(mockPrismaClient.libraryArtist.findUnique).toHaveBeenCalledWith({
+        where: { id: 'library-artist-1' },
+        include: { artist: true },
+      });
+    });
+
+    it('should return null if library artist not found', async () => {
+      mockPrismaClient.libraryArtist.findUnique.mockResolvedValue(null);
+
+      const result = await repository.getById('non-existent');
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null if library artist is soft-deleted', async () => {
+      mockPrismaClient.libraryArtist.findUnique.mockResolvedValue({
+        ...mockLibraryArtist,
+        deletedAt: new Date('2024-01-02'),
+      });
+
+      const result = await repository.getById('library-artist-1');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getByLibraryAndArtist', () => {
+    it('should return library artist by library and artist ids without include', async () => {
+      mockPrismaClient.libraryArtist.findFirst.mockResolvedValue(mockLibraryArtist);
+
+      const result = await repository.getByLibraryAndArtist('library-1', 'artist-1');
+
+      expect(result).toEqual(mockLibraryArtist);
+      expect(mockPrismaClient.libraryArtist.findFirst).toHaveBeenCalledWith({
         where: {
-          libraryId: 'lib-123',
-          artistId: 'artist-123',
-          artist: {
-            deletedAt: null,
-          },
+          libraryId: 'library-1',
+          artistId: 'artist-1',
+          artist: { deletedAt: null },
         },
-        include: {
-          artist: {
-            include: {
-              avatar: true,
-              banner: true,
-              genres: { include: { genre: true } },
-            },
-          },
+      });
+    });
+
+    it('should return library artist by library and artist with include', async () => {
+      const libraryArtistWithInclude = {
+        ...mockLibraryArtist,
+        artist: { id: 'artist-1', name: 'Test Artist' },
+      };
+      mockPrismaClient.libraryArtist.findFirst.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
+
+      const result = await repository.getByLibraryAndArtist('library-1', 'artist-1', {
+        include: { artist: true },
+      });
+
+      expect(result).toEqual(libraryArtistWithInclude);
+      expect(mockPrismaClient.libraryArtist.findFirst).toHaveBeenCalledWith({
+        where: {
+          libraryId: 'library-1',
+          artistId: 'artist-1',
+          artist: { deletedAt: null },
+        },
+        include: { artist: true },
+      });
+    });
+
+    it('should merge artist filter with deletedAt constraint', async () => {
+      mockPrismaClient.libraryArtist.findFirst.mockResolvedValue(mockLibraryArtist);
+
+      await repository.getByLibraryAndArtist('library-1', 'artist-1');
+
+      expect(mockPrismaClient.libraryArtist.findFirst).toHaveBeenCalledWith({
+        where: {
+          libraryId: 'library-1',
+          artistId: 'artist-1',
+          artist: { deletedAt: null },
         },
       });
     });
   });
 
-  describe('findMany', () => {
-    it('should return library artists matching criteria with deletedAt: null filter', async () => {
-      mockTx.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
+  describe('getPaginated', () => {
+    it('should return paginated library artists without filter or orderBy', async () => {
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
 
-      const result = await repository.findMany({ where: { libraryId: 'lib-123' }, take: 10 });
+      const result = await repository.getPaginated(1, 10);
 
       expect(result).toEqual([mockLibraryArtist]);
-      expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
         take: 10,
-        skip: undefined,
+        skip: 0,
         where: {
-          libraryId: 'lib-123',
-          artist: {
-            deletedAt: null,
-          },
-        },
-        include: {
-          artist: {
-            include: {
-              avatar: true,
-              banner: true,
-              genres: { include: { genre: true } },
-            },
-          },
+          deletedAt: null,
+          artist: { deletedAt: null },
         },
         orderBy: undefined,
       });
     });
 
-    it('should handle undefined where in findMany', async () => {
-      mockTx.libraryArtist.findMany.mockResolvedValue([]);
-      await repository.findMany({});
-      expect(mockTx.libraryArtist.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            artist: {
-              deletedAt: null,
-            },
-          },
-        }),
-      );
+    it('should return paginated library artists with filter and orderBy', async () => {
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
+      const filter = { libraryId: 'library-1' } as Prisma.LibraryArtistWhereInput;
+      const orderBy = { createdAt: 'desc' } as Prisma.LibraryArtistOrderByWithRelationInput;
+
+      const result = await repository.getPaginated(2, 5, filter, orderBy);
+
+      expect(result).toEqual([mockLibraryArtist]);
+      expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
+        take: 5,
+        skip: 5,
+        where: {
+          libraryId: 'library-1',
+          deletedAt: null,
+          artist: { deletedAt: null },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return paginated library artists with deletedAt filter', async () => {
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
+      const filter = { deletedAt: new Date('2024-01-02') };
+
+      await repository.getPaginated(1, 10, filter);
+
+      expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
+        take: 10,
+        skip: 0,
+        where: {
+          deletedAt: new Date('2024-01-02'),
+          artist: { deletedAt: null },
+        },
+        orderBy: undefined,
+      });
+    });
+
+    it('should return paginated library artists with artist filter', async () => {
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
+      const filter = { artist: { name: 'Test' } } as Prisma.LibraryArtistWhereInput;
+
+      await repository.getPaginated(1, 10, filter);
+
+      expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
+        take: 10,
+        skip: 0,
+        where: {
+          deletedAt: null,
+          artist: { name: 'Test', deletedAt: null },
+        },
+        orderBy: undefined,
+      });
+    });
+
+    it('should return paginated library artists with include', async () => {
+      const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([
+        libraryArtistWithInclude,
+      ] as unknown as LibraryArtist[]);
+
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { artist: true } });
+
+      expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
+        take: 10,
+        skip: 0,
+        where: {
+          deletedAt: null,
+          artist: { deletedAt: null },
+        },
+        orderBy: undefined,
+        include: { artist: true },
+      });
     });
   });
 
   describe('exists', () => {
     it('should return true if library artist exists', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(1);
-      const result = await repository.exists({ libraryId: 'lib-123', artistId: 'artist-123' });
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(1);
+
+      const result = await repository.exists('library-artist-1');
+
       expect(result).toBe(true);
-      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
-        where: { libraryId: 'lib-123', artistId: 'artist-123' },
+      expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
+        where: { id: 'library-artist-1', deletedAt: null },
       });
     });
 
     it('should return false if library artist does not exist', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(0);
-      const result = await repository.exists({ libraryId: 'lib-123', artistId: 'artist-123' });
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(0);
+
+      const result = await repository.exists('library-artist-1');
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('existsForLibraryAndArtist', () => {
+    it('should return true if library artist exists for library and artist', async () => {
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(1);
+
+      const result = await repository.existsForLibraryAndArtist('library-1', 'artist-1');
+
+      expect(result).toBe(true);
+      expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
+        where: {
+          libraryId: 'library-1',
+          artistId: 'artist-1',
+          artist: { deletedAt: null },
+        },
+      });
+    });
+
+    it('should return false if library artist does not exist', async () => {
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(0);
+
+      const result = await repository.existsForLibraryAndArtist('library-1', 'artist-1');
+
       expect(result).toBe(false);
     });
   });
 
   describe('count', () => {
-    it('should count library artists with deletedAt: null filter', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(1);
-      const result = await repository.count({ libraryId: 'lib-123' });
-      expect(result).toBe(1);
-      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
+    it('should count library artists without filter', async () => {
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(5);
+
+      const result = await repository.count();
+
+      expect(result).toBe(5);
+      expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
         where: {
-          libraryId: 'lib-123',
-          artist: {
-            deletedAt: null,
-          },
+          deletedAt: null,
+          artist: { deletedAt: null },
         },
       });
     });
 
-    it('should handle undefined where in count', async () => {
-      mockTx.libraryArtist.count.mockResolvedValue(0);
-      await repository.count();
-      expect(mockTx.libraryArtist.count).toHaveBeenCalledWith({
+    it('should count library artists with filter', async () => {
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(3);
+      const filter = { libraryId: 'library-1' } as Prisma.LibraryArtistWhereInput;
+
+      const result = await repository.count(filter);
+
+      expect(result).toBe(3);
+      expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
         where: {
-          artist: {
-            deletedAt: null,
-          },
+          libraryId: 'library-1',
+          deletedAt: null,
+          artist: { deletedAt: null },
+        },
+      });
+    });
+
+    it('should count library artists with deletedAt filter', async () => {
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(1);
+      const filter = { deletedAt: new Date('2024-01-02') };
+
+      await repository.count(filter);
+
+      expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
+        where: {
+          deletedAt: new Date('2024-01-02'),
+          artist: { deletedAt: null },
+        },
+      });
+    });
+
+    it('should count library artists with artist filter', async () => {
+      mockPrismaClient.libraryArtist.count.mockResolvedValue(2);
+      const filter = { artist: { name: 'Test' } } as Prisma.LibraryArtistWhereInput;
+
+      await repository.count(filter);
+
+      expect(mockPrismaClient.libraryArtist.count).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          artist: { name: 'Test', deletedAt: null },
         },
       });
     });
   });
 
   describe('create', () => {
-    it('should create a library artist', async () => {
-      mockTx.libraryArtist.create.mockResolvedValue(mockLibraryArtist);
-      const data = {
-        library: { connect: { id: 'lib-123' } },
-        artist: { connect: { id: 'artist-123' } },
-      };
+    it('should create library artist without include', async () => {
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        artist: { connect: { id: 'artist-1' } },
+      } as Prisma.LibraryArtistCreateInput;
+      mockPrismaClient.libraryArtist.create.mockResolvedValue(mockLibraryArtist);
 
-      const result = await repository.create(data as any);
+      const result = await repository.create(createInput);
+
       expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.create).toHaveBeenCalledWith({ data });
+      expect(mockPrismaClient.libraryArtist.create).toHaveBeenCalledWith({
+        data: createInput,
+      });
+    });
+
+    it('should create library artist with include', async () => {
+      const createInput = {
+        library: { connect: { id: 'library-1' } },
+        artist: { connect: { id: 'artist-1' } },
+      } as Prisma.LibraryArtistCreateInput;
+      const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
+      mockPrismaClient.libraryArtist.create.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
+
+      const result = await repository.create(createInput, { include: { artist: true } });
+
+      expect(result).toEqual(libraryArtistWithInclude);
+      expect(mockPrismaClient.libraryArtist.create).toHaveBeenCalledWith({
+        data: createInput,
+        include: { artist: true },
+      });
+    });
+  });
+
+  describe('createMany', () => {
+    it('should create many library artists without include', async () => {
+      const createInputs = [
+        { libraryId: 'library-1', artistId: 'artist-1' },
+        { libraryId: 'library-1', artistId: 'artist-2' },
+      ] as Prisma.LibraryArtistCreateManyInput[];
+      mockPrismaClient.libraryArtist.createManyAndReturn.mockResolvedValue([mockLibraryArtist]);
+
+      const result = await repository.createMany(createInputs);
+
+      expect(result).toEqual([mockLibraryArtist]);
+      expect(mockPrismaClient.libraryArtist.createManyAndReturn).toHaveBeenCalledWith({
+        data: createInputs,
+      });
+    });
+
+    it('should create many library artists with include', async () => {
+      const createInputs = [
+        { libraryId: 'library-1', artistId: 'artist-1' },
+      ] as Prisma.LibraryArtistCreateManyInput[];
+      const libraryArtistsWithInclude = [{ ...mockLibraryArtist, artist: { id: 'artist-1' } }];
+      mockPrismaClient.libraryArtist.createManyAndReturn.mockResolvedValue(
+        libraryArtistsWithInclude as unknown as LibraryArtist[],
+      );
+
+      await repository.createMany(createInputs, { include: { artist: true } });
+
+      expect(mockPrismaClient.libraryArtist.createManyAndReturn).toHaveBeenCalledWith({
+        data: createInputs,
+        include: { artist: true },
+      });
     });
   });
 
   describe('update', () => {
-    it('should update a library artist', async () => {
-      mockTx.libraryArtist.update.mockResolvedValue(mockLibraryArtist);
-      const data = { updatedAt: new Date() };
-      const result = await repository.update('la-123', data);
+    it('should update library artist without include', async () => {
+      const updateInput = {} as Prisma.LibraryArtistUpdateInput;
+      mockPrismaClient.libraryArtist.update.mockResolvedValue(mockLibraryArtist);
+
+      const result = await repository.update('library-artist-1', updateInput);
+
       expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.update).toHaveBeenCalledWith({ data, where: { id: 'la-123' } });
+      expect(mockPrismaClient.libraryArtist.update).toHaveBeenCalledWith({
+        data: updateInput,
+        where: { id: 'library-artist-1' },
+      });
+    });
+
+    it('should update library artist with include', async () => {
+      const updateInput = {} as Prisma.LibraryArtistUpdateInput;
+      const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
+      mockPrismaClient.libraryArtist.update.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
+
+      await repository.update('library-artist-1', updateInput, { include: { artist: true } });
+
+      expect(mockPrismaClient.libraryArtist.update).toHaveBeenCalledWith({
+        data: updateInput,
+        where: { id: 'library-artist-1' },
+        include: { artist: true },
+      });
+    });
+  });
+
+  describe('updateMany', () => {
+    it('should update many library artists without include', async () => {
+      const updates = [
+        { id: 'library-artist-1', data: {} as Prisma.LibraryArtistUpdateInput },
+        { id: 'library-artist-2', data: {} as Prisma.LibraryArtistUpdateInput },
+      ];
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        if (typeof cb === 'function') {
+          return await cb(mockMainClient);
+        }
+        return await Promise.all(cb);
+      });
+      mockPrismaClient.libraryArtist.update.mockResolvedValue(mockLibraryArtist);
+
+      const result = await repository.updateMany(updates);
+
+      expect(mockMainClient.$transaction).toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+    });
+
+    it('should update many library artists with include', async () => {
+      const updates = [{ id: 'library-artist-1', data: {} as Prisma.LibraryArtistUpdateInput }];
+      const libraryArtistWithInclude = { ...mockLibraryArtist, artist: { id: 'artist-1' } };
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        if (typeof cb === 'function') {
+          return await cb(mockMainClient);
+        }
+        return await Promise.all(cb);
+      });
+      mockPrismaClient.libraryArtist.update.mockResolvedValue(
+        libraryArtistWithInclude as unknown as LibraryArtist,
+      );
+
+      await repository.updateMany(updates, { include: { artist: true } });
+
+      expect(mockMainClient.$transaction).toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
-    it('should delete a library artist', async () => {
-      mockTx.libraryArtist.delete.mockResolvedValue(mockLibraryArtist);
-      const result = await repository.delete('la-123');
+    it('should hard delete library artist', async () => {
+      mockPrismaClient.libraryArtist.delete.mockResolvedValue(mockLibraryArtist);
+
+      const result = await repository.delete('library-artist-1');
+
       expect(result).toEqual(mockLibraryArtist);
-      expect(mockTx.libraryArtist.delete).toHaveBeenCalledWith({ where: { id: 'la-123' } });
+      expect(mockPrismaClient.libraryArtist.delete).toHaveBeenCalledWith({
+        where: { id: 'library-artist-1' },
+      });
+    });
+  });
+
+  describe('softDelete', () => {
+    it('should soft delete library artist', async () => {
+      const deletedLibraryArtist = { ...mockLibraryArtist, deletedAt: new Date() };
+      mockPrismaClient.libraryArtist.update.mockResolvedValue(deletedLibraryArtist);
+
+      const result = await repository.softDelete('library-artist-1');
+
+      expect(result).toEqual(deletedLibraryArtist);
+      expect(mockPrismaClient.libraryArtist.update).toHaveBeenCalledWith({
+        where: { id: 'library-artist-1' },
+        data: { deletedAt: expect.any(Date) },
+      });
     });
   });
 
   describe('deleteMany', () => {
-    it('should delete many library artists', async () => {
-      mockTx.libraryArtist.deleteMany.mockResolvedValue({ count: 5 });
-      await repository.deleteMany({ libraryId: 'lib-123' });
-      expect(mockTx.libraryArtist.deleteMany).toHaveBeenCalledWith({
-        where: { libraryId: 'lib-123' },
+    it('should return empty array when ids is empty', async () => {
+      const result = await repository.deleteMany([]);
+
+      expect(result).toEqual([]);
+      expect(mockPrismaClient.libraryArtist.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should hard delete many library artists', async () => {
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue([mockLibraryArtist]);
+      mockPrismaClient.libraryArtist.deleteMany.mockResolvedValue({ count: 1 });
+
+      const result = await repository.deleteMany(['library-artist-1', 'library-artist-2']);
+
+      expect(result).toEqual([mockLibraryArtist]);
+      expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['library-artist-1', 'library-artist-2'] } },
+      });
+      expect(mockPrismaClient.libraryArtist.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['library-artist-1', 'library-artist-2'] } },
+      });
+    });
+  });
+
+  describe('softDeleteMany', () => {
+    it('should return empty array when ids is empty', async () => {
+      const result = await repository.softDeleteMany([]);
+
+      expect(result).toEqual([]);
+      expect(mockPrismaClient.libraryArtist.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should soft delete many library artists', async () => {
+      const libraryArtistsToDelete = [
+        { ...mockLibraryArtist, id: 'library-artist-1' },
+        { ...mockLibraryArtist, id: 'library-artist-2' },
+      ];
+      mockPrismaClient.libraryArtist.findMany.mockResolvedValue(libraryArtistsToDelete);
+      mockPrismaClient.libraryArtist.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await repository.softDeleteMany(['library-artist-1', 'library-artist-2']);
+
+      expect(result).toEqual(libraryArtistsToDelete);
+      expect(mockPrismaClient.libraryArtist.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['library-artist-1', 'library-artist-2'] }, deletedAt: null },
+      });
+      expect(mockPrismaClient.libraryArtist.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['library-artist-1', 'library-artist-2'] }, deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
       });
     });
   });

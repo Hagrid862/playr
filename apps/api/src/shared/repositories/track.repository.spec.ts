@@ -1,198 +1,719 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClient, Visibility } from '@repo/db';
-import { trackBuilder } from '@repo/testing/builders';
-import { createMock, DeepMocked } from '@repo/testing/nestjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TrackRepository } from './track.repository';
 import { PrismaService } from '../services/prisma.service';
-import { DEFAULT_TRACK_INCLUDE, TrackRepository } from './track.repository';
+import { AccessRole, Prisma, Track, Visibility } from '@repo/db';
 
 describe('TrackRepository', () => {
   let repository: TrackRepository;
-  let mockTx: DeepMocked<PrismaClient>;
+  let prismaService: PrismaService;
+  let mockPrismaClient: ReturnType<typeof createMockPrismaClient>;
+  let mockMainClient: ReturnType<typeof createMockPrismaClient>;
 
-  const mockTrack = trackBuilder({
-    id: 'track-123',
+  const createMockPrismaClient = () => ({
+    track: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      createManyAndReturn: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+      count: vi.fn(),
+    },
+    $transaction: vi.fn(),
+  });
+
+  beforeEach(() => {
+    mockPrismaClient = createMockPrismaClient();
+    mockMainClient = createMockPrismaClient();
+
+    const mockPrismaService = {
+      get client() {
+        return mockPrismaClient;
+      },
+      get mainClient() {
+        return mockMainClient;
+      },
+    } as unknown as PrismaService;
+
+    prismaService = mockPrismaService;
+    repository = new TrackRepository(prismaService);
+  });
+
+  const mockTrack: Track = {
+    id: 'track-1',
     title: 'Test Track',
+    albumId: 'album-1',
     duration: 180,
-    trackNumber: 1,
     diskNumber: 1,
+    trackNumber: 1,
     listenedCount: 0,
     explicit: false,
     lyrics: null,
-    albumId: 'album-123',
-    visibility: Visibility.private,
+    visibility: Visibility.public,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
     deletedAt: null,
-  });
+  };
 
-  beforeEach(async () => {
-    mockTx = createMock<PrismaClient>();
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TrackRepository,
-        {
-          provide: PrismaService,
-          useValue: {
-            client: mockTx,
-            mainClient: mockTx,
-          },
-        },
-      ],
-    }).compile();
+  describe('getById', () => {
+    it('should return track by id without include', async () => {
+      mockPrismaClient.track.findUnique.mockResolvedValue(mockTrack);
 
-    repository = module.get<TrackRepository>(TrackRepository);
-  });
+      const result = await repository.getById('track-1');
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe('findOne', () => {
-    it('should return track matching where clause', async () => {
-      mockTx.track.findFirst.mockResolvedValue(mockTrack);
-      const result = await repository.findOne({ id: 'track-123' });
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.findFirst).toHaveBeenCalledWith({
-        where: { id: 'track-123', deletedAt: null },
-        include: undefined,
+      expect(mockPrismaClient.track.findUnique).toHaveBeenCalledWith({
+        where: { id: 'track-1' },
       });
     });
 
-    it('should include relations when requested', async () => {
-      mockTx.track.findFirst.mockResolvedValue(mockTrack);
-      const result = await repository.findOne({ id: 'track-123' }, true);
+    it('should return track by id with include', async () => {
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.findUnique.mockResolvedValue(trackWithInclude as unknown as Track);
+
+      const result = await repository.getById('track-1', { include: { artists: true } });
+
+      expect(result).toEqual(trackWithInclude);
+      expect(mockPrismaClient.track.findUnique).toHaveBeenCalledWith({
+        where: { id: 'track-1' },
+        include: { artists: true },
+      });
+    });
+
+    it('should return null if track not found', async () => {
+      mockPrismaClient.track.findUnique.mockResolvedValue(null);
+
+      const result = await repository.getById('non-existent');
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null if track is soft-deleted', async () => {
+      mockPrismaClient.track.findUnique.mockResolvedValue({
+        ...mockTrack,
+        deletedAt: new Date('2024-01-02'),
+      });
+
+      const result = await repository.getById('track-1');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getByIdForOwner', () => {
+    it('should return track for owner without include', async () => {
+      mockPrismaClient.track.findFirst.mockResolvedValue(mockTrack);
+
+      const result = await repository.getByIdForOwner('track-1', 'user-1');
+
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.findFirst).toHaveBeenCalledWith({
-        where: { id: 'track-123', deletedAt: null },
-        include: {
-          artists: true,
-          album: true,
-          access: true,
-          genres: { include: { genre: true } },
+      expect(mockPrismaClient.track.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'track-1',
+          deletedAt: null,
+          access: { some: { userId: 'user-1', role: AccessRole.owner } },
         },
+      });
+    });
+
+    it('should return track for owner with include', async () => {
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.findFirst.mockResolvedValue(trackWithInclude as unknown as Track);
+
+      const result = await repository.getByIdForOwner('track-1', 'user-1', {
+        include: { artists: true },
+      });
+
+      expect(result).toEqual(trackWithInclude);
+      expect(mockPrismaClient.track.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'track-1',
+          deletedAt: null,
+          access: { some: { userId: 'user-1', role: AccessRole.owner } },
+        },
+        include: { artists: true },
       });
     });
   });
 
-  describe('findMany', () => {
-    it('should return multiple tracks matching options', async () => {
-      mockTx.track.findMany.mockResolvedValue([mockTrack]);
-      const result = await repository.findMany({ take: 5 });
+  describe('listByAlbumId', () => {
+    it('should return tracks by album id without include', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+
+      const result = await repository.listByAlbumId('album-1');
+
       expect(result).toEqual([mockTrack]);
-      expect(mockTx.track.findMany).toHaveBeenCalledWith({
-        where: { deletedAt: null },
-        take: 5,
-        skip: undefined,
-        orderBy: { createdAt: 'desc' },
-        include: DEFAULT_TRACK_INCLUDE,
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: { albumId: 'album-1', deletedAt: null },
+        orderBy: [{ diskNumber: 'asc' }, { trackNumber: 'asc' }],
       });
     });
 
-    it('should omit include when includeRelations is false', async () => {
-      mockTx.track.findMany.mockResolvedValue([mockTrack]);
-      await repository.findMany({ take: 5, includeRelations: false });
-      expect(mockTx.track.findMany).toHaveBeenCalledWith({
-        where: { deletedAt: null },
-        take: 5,
-        skip: undefined,
+    it('should return tracks by album id with include', async () => {
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.findMany.mockResolvedValue([trackWithInclude] as unknown as Track[]);
+
+      await repository.listByAlbumId('album-1', { include: { artists: true } });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: { albumId: 'album-1', deletedAt: null },
+        orderBy: [{ diskNumber: 'asc' }, { trackNumber: 'asc' }],
+        include: { artists: true },
+      });
+    });
+  });
+
+  describe('listByArtistId', () => {
+    it('should return tracks by artist id without options', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+
+      const result = await repository.listByArtistId('artist-1');
+
+      expect(result).toEqual([mockTrack]);
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          artists: { some: { id: 'artist-1' } },
+        },
         orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return tracks by artist id with pagination', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+
+      await repository.listByArtistId('artist-1', { take: 10, skip: 5 });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          artists: { some: { id: 'artist-1' } },
+        },
+        take: 10,
+        skip: 5,
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return tracks by artist id with custom orderBy', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+      const orderBy = { name: 'asc' } as Prisma.TrackOrderByWithRelationInput;
+
+      await repository.listByArtistId('artist-1', { orderBy });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          artists: { some: { id: 'artist-1' } },
+        },
+        orderBy: { name: 'asc' },
+      });
+    });
+
+    it('should return tracks by artist id with include', async () => {
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.findMany.mockResolvedValue([trackWithInclude] as unknown as Track[]);
+
+      await repository.listByArtistId('artist-1', { include: { artists: true } });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          artists: { some: { id: 'artist-1' } },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: { artists: true },
+      });
+    });
+  });
+
+  describe('listAccessibleForPrincipal', () => {
+    it('should return accessible tracks for guest without options', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+
+      const result = await repository.listAccessibleForPrincipal(undefined);
+
+      expect(result).toEqual([mockTrack]);
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          OR: [
+            { visibility: Visibility.public },
+            { access: { some: { userId: 'GUEST' } } },
+            { album: { access: { some: { userId: 'GUEST' } } } },
+            { artists: { some: { access: { some: { userId: 'GUEST' } } } } },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return accessible tracks for user', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+
+      await repository.listAccessibleForPrincipal('user-1');
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          OR: [
+            { visibility: Visibility.public },
+            { access: { some: { userId: 'user-1' } } },
+            { album: { access: { some: { userId: 'user-1' } } } },
+            { artists: { some: { access: { some: { userId: 'user-1' } } } } },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return accessible tracks with pagination', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+
+      await repository.listAccessibleForPrincipal('user-1', { take: 10, skip: 5 });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          OR: [
+            { visibility: Visibility.public },
+            { access: { some: { userId: 'user-1' } } },
+            { album: { access: { some: { userId: 'user-1' } } } },
+            { artists: { some: { access: { some: { userId: 'user-1' } } } } },
+          ],
+        },
+        take: 10,
+        skip: 5,
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return accessible tracks with custom orderBy', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+      const orderBy = { name: 'asc' } as Prisma.TrackOrderByWithRelationInput;
+
+      await repository.listAccessibleForPrincipal('user-1', { orderBy });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          OR: [
+            { visibility: Visibility.public },
+            { access: { some: { userId: 'user-1' } } },
+            { album: { access: { some: { userId: 'user-1' } } } },
+            { artists: { some: { access: { some: { userId: 'user-1' } } } } },
+          ],
+        },
+        orderBy: { name: 'asc' },
+      });
+    });
+
+    it('should return accessible tracks with include', async () => {
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.findMany.mockResolvedValue([trackWithInclude] as unknown as Track[]);
+
+      await repository.listAccessibleForPrincipal('user-1', { include: { artists: true } });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          OR: [
+            { visibility: Visibility.public },
+            { access: { some: { userId: 'user-1' } } },
+            { album: { access: { some: { userId: 'user-1' } } } },
+            { artists: { some: { access: { some: { userId: 'user-1' } } } } },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+        include: { artists: true },
+      });
+    });
+  });
+
+  describe('getPaginated', () => {
+    it('should return paginated tracks without filter or orderBy', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+
+      const result = await repository.getPaginated(1, 10);
+
+      expect(result).toEqual([mockTrack]);
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        take: 10,
+        skip: 0,
+        where: { deletedAt: null },
+        orderBy: undefined,
+      });
+    });
+
+    it('should return paginated tracks with filter and orderBy', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+      const filter = { title: 'Test' } as Prisma.TrackWhereInput;
+      const orderBy = { title: 'asc' } as Prisma.TrackOrderByWithRelationInput;
+
+      const result = await repository.getPaginated(2, 5, filter, orderBy);
+
+      expect(result).toEqual([mockTrack]);
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        take: 5,
+        skip: 5,
+        where: { title: 'Test', deletedAt: null },
+        orderBy: { title: 'asc' },
+      });
+    });
+
+    it('should return paginated tracks with include', async () => {
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.findMany.mockResolvedValue([trackWithInclude] as unknown as Track[]);
+
+      await repository.getPaginated(1, 10, undefined, undefined, { include: { artists: true } });
+
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        take: 10,
+        skip: 0,
+        where: { deletedAt: null },
+        orderBy: undefined,
+        include: { artists: true },
+      });
+    });
+  });
+
+  describe('exists', () => {
+    it('should return true if track exists', async () => {
+      mockPrismaClient.track.count.mockResolvedValue(1);
+
+      const result = await repository.exists('track-1');
+
+      expect(result).toBe(true);
+      expect(mockPrismaClient.track.count).toHaveBeenCalledWith({
+        where: { id: 'track-1', deletedAt: null },
+      });
+    });
+
+    it('should return false if track does not exist', async () => {
+      mockPrismaClient.track.count.mockResolvedValue(0);
+
+      const result = await repository.exists('track-1');
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('count', () => {
+    it('should count tracks without filter', async () => {
+      mockPrismaClient.track.count.mockResolvedValue(5);
+
+      const result = await repository.count();
+
+      expect(result).toBe(5);
+      expect(mockPrismaClient.track.count).toHaveBeenCalledWith({
+        where: { deletedAt: null },
+      });
+    });
+
+    it('should count tracks with filter', async () => {
+      mockPrismaClient.track.count.mockResolvedValue(3);
+      const filter = { title: 'Test' } as Prisma.TrackWhereInput;
+
+      const result = await repository.count(filter);
+
+      expect(result).toBe(3);
+      expect(mockPrismaClient.track.count).toHaveBeenCalledWith({
+        where: { title: 'Test', deletedAt: null },
       });
     });
   });
 
   describe('checkAccess', () => {
-    it('should return true if track matches access conditions (Public)', async () => {
-      mockTx.track.findFirst.mockResolvedValue({ id: 'track-123' } as any);
-      const result = await repository.checkAccess('track-123');
+    it('should return true if track is accessible by guest', async () => {
+      mockPrismaClient.track.findFirst.mockResolvedValue({ id: 'track-1' } as Track);
+
+      const result = await repository.checkAccess('track-1');
+
       expect(result).toBe(true);
-      expect(mockTx.track.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            OR: expect.arrayContaining([
-              { visibility: 'public' },
-              expect.objectContaining({ access: { some: { userId: 'GUEST' } } }),
-              expect.objectContaining({ album: { access: { some: { userId: 'GUEST' } } } }),
-              expect.objectContaining({
-                artists: { some: { access: { some: { userId: 'GUEST' } } } },
-              }),
-            ]),
-          }),
-        }),
-      );
+      expect(mockPrismaClient.track.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'track-1',
+          deletedAt: null,
+          OR: [
+            { visibility: Visibility.public },
+            { access: { some: { userId: 'GUEST' } } },
+            { album: { access: { some: { userId: 'GUEST' } } } },
+            { artists: { some: { access: { some: { userId: 'GUEST' } } } } },
+          ],
+        },
+        select: { id: true },
+      });
     });
 
-    it('should return true if user has access', async () => {
-      mockTx.track.findFirst.mockResolvedValue({ id: 'track-123' } as any);
-      const result = await repository.checkAccess('track-123', 'user-123');
+    it('should return true if track is accessible by user', async () => {
+      mockPrismaClient.track.findFirst.mockResolvedValue({ id: 'track-1' } as Track);
+
+      const result = await repository.checkAccess('track-1', 'user-1');
+
       expect(result).toBe(true);
+      expect(mockPrismaClient.track.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'track-1',
+          deletedAt: null,
+          OR: [
+            { visibility: Visibility.public },
+            { access: { some: { userId: 'user-1' } } },
+            { album: { access: { some: { userId: 'user-1' } } } },
+            { artists: { some: { access: { some: { userId: 'user-1' } } } } },
+          ],
+        },
+        select: { id: true },
+      });
     });
 
-    it('should return false if no access', async () => {
-      mockTx.track.findFirst.mockResolvedValue(null);
-      const result = await repository.checkAccess('track-123', 'user-123');
+    it('should return false if track is not accessible', async () => {
+      mockPrismaClient.track.findFirst.mockResolvedValue(null);
+
+      const result = await repository.checkAccess('track-1', 'user-1');
+
       expect(result).toBe(false);
     });
   });
 
   describe('create', () => {
-    it('should create a track', async () => {
-      mockTx.track.create.mockResolvedValue(mockTrack);
-      const data = { title: 'New Track' } as any;
-      const result = await repository.create(data);
+    it('should create track without include', async () => {
+      const createInput = {
+        title: 'New Track',
+        album: { connect: { id: 'album-1' } },
+      } as Prisma.TrackCreateInput;
+      mockPrismaClient.track.create.mockResolvedValue(mockTrack);
+
+      const result = await repository.create(createInput);
+
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.create).toHaveBeenCalledWith({
-        data,
-        include: {
-          artists: true,
-          album: true,
-          access: true,
-          genres: { include: { genre: true } },
-        },
+      expect(mockPrismaClient.track.create).toHaveBeenCalledWith({
+        data: createInput,
       });
     });
 
-    it('should omit include when includeRelations is false', async () => {
-      mockTx.track.create.mockResolvedValue(mockTrack);
-      const data = { title: 'New Track' } as any;
-      await repository.create(data, { includeRelations: false });
-      expect(mockTx.track.create).toHaveBeenCalledWith({ data });
+    it('should create track with include', async () => {
+      const createInput = {
+        title: 'New Track',
+        album: { connect: { id: 'album-1' } },
+      } as Prisma.TrackCreateInput;
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.create.mockResolvedValue(trackWithInclude as unknown as Track);
+
+      const result = await repository.create(createInput, { include: { artists: true } });
+
+      expect(result).toEqual(trackWithInclude);
+      expect(mockPrismaClient.track.create).toHaveBeenCalledWith({
+        data: createInput,
+        include: { artists: true },
+      });
+    });
+  });
+
+  describe('createMany', () => {
+    it('should create many tracks without include', async () => {
+      const createInputs = [
+        {
+          title: 'Track 1',
+          albumId: 'album-1',
+          duration: 180,
+          trackNumber: 1,
+          diskNumber: 1,
+          explicit: false,
+          visibility: Visibility.public,
+        },
+        {
+          title: 'Track 2',
+          albumId: 'album-1',
+          duration: 190,
+          trackNumber: 2,
+          diskNumber: 1,
+          explicit: false,
+          visibility: Visibility.public,
+        },
+      ] as Prisma.TrackCreateManyInput[];
+      mockPrismaClient.track.createManyAndReturn.mockResolvedValue([mockTrack]);
+
+      const result = await repository.createMany(createInputs);
+
+      expect(result).toEqual([mockTrack]);
+      expect(mockPrismaClient.track.createManyAndReturn).toHaveBeenCalledWith({
+        data: createInputs,
+      });
+    });
+
+    it('should create many tracks with include', async () => {
+      const createInputs = [
+        {
+          title: 'Track 1',
+          albumId: 'album-1',
+          duration: 180,
+          trackNumber: 1,
+          diskNumber: 1,
+          explicit: false,
+          visibility: Visibility.public,
+        },
+      ] as Prisma.TrackCreateManyInput[];
+      const tracksWithInclude = [{ ...mockTrack, artists: [] }];
+      mockPrismaClient.track.createManyAndReturn.mockResolvedValue(
+        tracksWithInclude as unknown as Track[],
+      );
+
+      await repository.createMany(createInputs, { include: { artists: true } });
+
+      expect(mockPrismaClient.track.createManyAndReturn).toHaveBeenCalledWith({
+        data: createInputs,
+        include: { artists: true },
+      });
     });
   });
 
   describe('update', () => {
-    it('should update a track', async () => {
-      mockTx.track.update.mockResolvedValue(mockTrack);
-      const data = { title: 'Updated' };
-      const result = await repository.update('track-123', data);
+    it('should update track without include', async () => {
+      const updateInput = { title: 'Updated Track' } as Prisma.TrackUpdateInput;
+      mockPrismaClient.track.update.mockResolvedValue(mockTrack);
+
+      const result = await repository.update('track-1', updateInput);
+
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.update).toHaveBeenCalledWith({
-        where: { id: 'track-123' },
-        data,
-        include: {
-          artists: true,
-          album: true,
-          access: true,
-          genres: { include: { genre: true } },
-        },
+      expect(mockPrismaClient.track.update).toHaveBeenCalledWith({
+        where: { id: 'track-1' },
+        data: updateInput,
       });
     });
 
-    it('should omit include when includeRelations is false', async () => {
-      mockTx.track.update.mockResolvedValue(mockTrack);
-      const data = { title: 'Updated' };
-      await repository.update('track-123', data, { includeRelations: false });
-      expect(mockTx.track.update).toHaveBeenCalledWith({
-        where: { id: 'track-123' },
-        data,
+    it('should update track with include', async () => {
+      const updateInput = { title: 'Updated Track' } as Prisma.TrackUpdateInput;
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockPrismaClient.track.update.mockResolvedValue(trackWithInclude as unknown as Track);
+
+      await repository.update('track-1', updateInput, { include: { artists: true } });
+
+      expect(mockPrismaClient.track.update).toHaveBeenCalledWith({
+        where: { id: 'track-1' },
+        data: updateInput,
+        include: { artists: true },
       });
     });
   });
 
+  describe('updateMany', () => {
+    it('should update many tracks without include', async () => {
+      const updates = [
+        { id: 'track-1', data: { title: 'Updated 1' } as Prisma.TrackUpdateInput },
+        { id: 'track-2', data: { title: 'Updated 2' } as Prisma.TrackUpdateInput },
+      ];
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        if (typeof cb === 'function') {
+          return await cb(mockMainClient);
+        }
+        return await Promise.all(cb);
+      });
+      mockPrismaClient.track.update.mockResolvedValue(mockTrack);
+
+      const result = await repository.updateMany(updates);
+
+      expect(mockMainClient.$transaction).toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+    });
+
+    it('should update many tracks with include', async () => {
+      const updates = [{ id: 'track-1', data: { title: 'Updated 1' } as Prisma.TrackUpdateInput }];
+      const trackWithInclude = { ...mockTrack, artists: [] };
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        if (typeof cb === 'function') {
+          return await cb(mockMainClient);
+        }
+        return await Promise.all(cb);
+      });
+      mockPrismaClient.track.update.mockResolvedValue(trackWithInclude as unknown as Track);
+
+      await repository.updateMany(updates, { include: { artists: true } });
+
+      expect(mockMainClient.$transaction).toHaveBeenCalled();
+    });
+  });
+
   describe('delete', () => {
-    it('should delete a track', async () => {
-      mockTx.track.delete.mockResolvedValue(mockTrack);
-      const result = await repository.delete('track-123');
+    it('should hard delete track', async () => {
+      mockPrismaClient.track.delete.mockResolvedValue(mockTrack);
+
+      const result = await repository.delete('track-1');
+
       expect(result).toEqual(mockTrack);
-      expect(mockTx.track.delete).toHaveBeenCalledWith({ where: { id: 'track-123' } });
+      expect(mockPrismaClient.track.delete).toHaveBeenCalledWith({
+        where: { id: 'track-1' },
+      });
+    });
+  });
+
+  describe('softDelete', () => {
+    it('should soft delete track', async () => {
+      const deletedTrack = { ...mockTrack, deletedAt: new Date() };
+      mockPrismaClient.track.update.mockResolvedValue(deletedTrack);
+
+      const result = await repository.softDelete('track-1');
+
+      expect(result).toEqual(deletedTrack);
+      expect(mockPrismaClient.track.update).toHaveBeenCalledWith({
+        where: { id: 'track-1' },
+        data: { deletedAt: expect.any(Date) },
+      });
+    });
+  });
+
+  describe('deleteMany', () => {
+    it('should return empty array when ids is empty', async () => {
+      const result = await repository.deleteMany([]);
+
+      expect(result).toEqual([]);
+      expect(mockPrismaClient.track.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should hard delete many tracks', async () => {
+      mockPrismaClient.track.findMany.mockResolvedValue([mockTrack]);
+      mockPrismaClient.track.deleteMany.mockResolvedValue({ count: 1 });
+
+      const result = await repository.deleteMany(['track-1', 'track-2']);
+
+      expect(result).toEqual([mockTrack]);
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['track-1', 'track-2'] } },
+      });
+      expect(mockPrismaClient.track.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['track-1', 'track-2'] } },
+      });
+    });
+  });
+
+  describe('softDeleteMany', () => {
+    it('should return empty array when ids is empty', async () => {
+      const result = await repository.softDeleteMany([]);
+
+      expect(result).toEqual([]);
+      expect(mockPrismaClient.track.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should soft delete many tracks', async () => {
+      const tracksToDelete = [
+        { ...mockTrack, id: 'track-1' },
+        { ...mockTrack, id: 'track-2' },
+      ];
+      mockPrismaClient.track.findMany.mockResolvedValue(tracksToDelete);
+      mockPrismaClient.track.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await repository.softDeleteMany(['track-1', 'track-2']);
+
+      expect(result).toEqual(tracksToDelete);
+      expect(mockPrismaClient.track.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['track-1', 'track-2'] }, deletedAt: null },
+      });
+      expect(mockPrismaClient.track.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['track-1', 'track-2'] }, deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
+      });
     });
   });
 });

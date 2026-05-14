@@ -3,7 +3,18 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetLibraryArtistsResponseDto } from '@repo/contracts';
+import { Prisma } from '@repo/db';
 import { GetLibraryArtistsQuery } from '../impl/get-library-artists.query';
+
+const LIBRARY_ARTIST_LIST_INCLUDE = {
+  artist: {
+    include: {
+      avatar: true,
+      banner: true,
+      genres: { include: { genre: true } },
+    },
+  },
+} satisfies Prisma.LibraryArtistInclude;
 
 @QueryHandler(GetLibraryArtistsQuery)
 export class GetLibraryArtistsHandler implements IQueryHandler<GetLibraryArtistsQuery> {
@@ -22,10 +33,8 @@ export class GetLibraryArtistsHandler implements IQueryHandler<GetLibraryArtists
     }
 
     const [items, total] = await Promise.all([
-      this.libraryArtistRepository.findMany({
-        where: { libraryId: library.id },
-        take: limit,
-        skip: (page - 1) * limit,
+      this.libraryArtistRepository.getPaginated(page, limit, { libraryId: library.id }, undefined, {
+        include: LIBRARY_ARTIST_LIST_INCLUDE,
       }),
       this.libraryArtistRepository.count({ libraryId: library.id }),
     ]);

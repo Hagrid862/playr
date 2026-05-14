@@ -48,10 +48,7 @@ export class CreateLibraryArtistHandler implements ICommandHandler<CreateLibrary
     }
 
     const artist = await this.unitOfWork.runInTransaction(async () => {
-      const existingArtist = await this.artistRepository.findOne({
-        name: request.name,
-        access: { some: { userId, role: 'owner' } },
-      });
+      const existingArtist = await this.artistRepository.getByNameForOwner(request.name, userId);
 
       if (existingArtist) {
         throw new ConflictException('This artist name is already taken');
