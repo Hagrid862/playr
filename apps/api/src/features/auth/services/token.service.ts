@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from '@/common/types/auth.types';
+import { JwtPayload } from '@/common/types/jwt.types';
+import { UserRepository } from '@/shared/repositories/user.repository';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshTokenRepository } from '../../../shared/repositories/refresh-token.repository';
@@ -12,6 +15,7 @@ export class TokenService {
     private readonly config: ConfigService,
     private readonly sessionRepository: SessionRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly userRepository: UserRepository,
     private readonly unitOfWork: UnitOfWorkService,
   ) {}
 
@@ -59,16 +63,16 @@ export class TokenService {
 
   async verifyRefreshToken(
     token: string,
-  ): Promise<{ userId: string; sessionId: string; isRevoked: boolean } | null> {
+  ): Promise<{ userId: string; sessionId: string; isRevoked: boolean }> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
 
       const refreshTokenRecord = await this.refreshTokenRepository.getByToken(token);
 
       if (!refreshTokenRecord || refreshTokenRecord.deletedAt) {
-        return null;
+        throw new UnauthorizedException('Invalid token');
       }
 
       if (refreshTokenRecord.revokedAt) {
@@ -81,8 +85,8 @@ export class TokenService {
 
       const session = await this.sessionRepository.getById(payload.sessionId);
 
-      if (!session || session.deletedAt) {
-        return null;
+      if (!session || session.deletedAt || session.userId !== payload.sub) {
+        throw new UnauthorizedException('Invalid token');
       }
 
       if (session.revokedAt) {
@@ -98,8 +102,48 @@ export class TokenService {
         sessionId: payload.sessionId,
         isRevoked: false,
       };
-    } catch {
-      return null;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid token');
     }
+  }
+
+  async verifyAccessToken(token: string): Promise<JwtPayload> {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+      });
+
+      if (!payload.sub || !payload.sessionId) {
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      return payload;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  async toAuthenticatedUser(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const session = await this.sessionRepository.getById(payload.sessionId);
+    if (!session || session.deletedAt || session.revokedAt || session.userId !== payload.sub) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    const user = await this.userRepository.getById(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException('Invalid token');
+    }
+    return { user, sessionId: payload.sessionId };
+  }
+
+  async authenticateWithAccessToken(token: string): Promise<AuthenticatedUser> {
+    const payload = await this.verifyAccessToken(token);
+    return this.toAuthenticatedUser(payload);
   }
 }

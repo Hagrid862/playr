@@ -6,6 +6,7 @@ import { LoginHandler } from './commands/handlers/login.handler';
 import { LogoutHandler } from './commands/handlers/logout.handler';
 import { RefreshTokensHandler } from './commands/handlers/refresh-tokens.handler';
 import { RegisterHandler } from './commands/handlers/register.handler';
+import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { ValidateUserHandler } from './queries/handlers/validate-user.handler';
 import { TokenService } from './services/token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -35,7 +36,8 @@ import { RecoverPasswordHandler } from '@/features/auth/commands/handlers/recove
     ResendEmailVerificationCodeHandler,
     ForgotPasswordHandler,
     RecoverPasswordHandler,
+    WsJwtGuard,
   ],
-  exports: [TokenService],
+  exports: [TokenService, WsJwtGuard],
 })
 export class AuthModule {}

@@ -1,0 +1,42 @@
+import { UseGuards } from '@nestjs/common';
+import {
+  ConnectedSocket,
+  OnGatewayConnection,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+  WsException,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { getCorsOrigin } from '../../common/config/cors-config';
+import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
+
+@WebSocketGateway({
+  namespace: 'playback',
+  cors: {
+    origin: getCorsOrigin(),
+    credentials: true,
+  },
+})
+export class PlaybackGateway implements OnGatewayConnection {
+  @WebSocketServer()
+  server!: Server;
+
+  async handleConnection(client: Socket) {
+    if (!client.data.user) {
+      client.disconnect(true);
+      return;
+    }
+    await client.join(`user:${client.data.user.user.id}`);
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('command:play')
+  handlePlay(@ConnectedSocket() client: Socket) {
+    if (!client.data.user) {
+      throw new WsException('Unauthorized: Invalid token');
+    }
+
+    return { ok: true, userId: client.data.user.user.id };
+  }
+}

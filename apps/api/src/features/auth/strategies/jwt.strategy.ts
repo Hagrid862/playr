@@ -1,18 +1,11 @@
 import { AuthenticatedUser } from '@/common/types/auth.types';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import type { JwtPayload } from '@/common/types/jwt.types';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { UserRepository } from '../../../shared/repositories/user.repository';
 import { Request } from 'express';
-
-interface JwtPayload {
-  sub: string;
-  username: string;
-  sessionId: string;
-  iat: number;
-  exp: number;
-}
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { TokenService } from '../services/token.service';
 
 export const extractTokenFromQuery = (req: Request): string | null => {
   return typeof req?.query?.token === 'string' ? req.query.token : null;
@@ -22,7 +15,7 @@ export const extractTokenFromQuery = (req: Request): string | null => {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     config: ConfigService,
-    private readonly userRepository: UserRepository,
+    private readonly tokenService: TokenService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -30,16 +23,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         extractTokenFromQuery,
       ]),
       ignoreExpiration: false,
-      secretOrKey: config.get<string>('JWT_ACCESS_SECRET')!,
+      secretOrKey: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
     });
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    const user = await this.userRepository.getById(payload.sub);
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-    // We can also extract sessionId from the token if we include it in the payload during generation
-    return { user, sessionId: payload.sessionId };
+    return await this.tokenService.toAuthenticatedUser(payload);
   }
 }
