@@ -1,7 +1,7 @@
 import { playbackTrackToQueueItem } from '@/lib/playback-mappers';
 import { emitQueueCommand, isPlaybackSyncConnected } from '@/lib/playback-queue-sync';
-import { afterLocalPlaybackMutation } from '@/lib/playback-sync';
-import type { QueueItem } from '@repo/contracts';
+import { afterLocalPlaybackMutation, afterLocalPlaybackMutationWithClaim } from '@/lib/playback-sync';
+import type { PlaybackDevice, QueueItem } from '@repo/contracts';
 import {
   PlaybackTrack,
   StreamAudioQuality,
@@ -30,8 +30,13 @@ export interface PlayerState {
   playbackVersion: number;
   playbackFavorited: 'favorited' | 'disliked' | 'not-set';
   playbackInLibrary: boolean;
+  activeDeviceId: string;
+  localPlaybackDeviceId: string;
+  playbackDevices: PlaybackDevice[];
 
   applyPlaybackStateFromServer: (state: PlaybackState) => void;
+  setLocalPlaybackDeviceId: (deviceId: string) => void;
+  setPlaybackDevices: (devices: PlaybackDevice[]) => void;
 
   // Actions
   playTrack: (track: PlaybackTrack, queue?: PlaybackTrack[]) => void;
@@ -91,6 +96,9 @@ export const usePlayerStore = create<PlayerState>()(
       playbackVersion: 0,
       playbackFavorited: 'not-set',
       playbackInLibrary: false,
+      activeDeviceId: '',
+      localPlaybackDeviceId: '',
+      playbackDevices: [],
 
       applyPlaybackStateFromServer: (state) => {
         const item = {
@@ -108,6 +116,7 @@ export const usePlayerStore = create<PlayerState>()(
           playbackVersion: state.version,
           playbackFavorited: state.favorited,
           playbackInLibrary: state.inLibrary,
+          activeDeviceId: state.activeDeviceId,
           currentTrack: item,
           isPlaying: state.isPlaying,
           currentTime: state.currentTime,
@@ -119,6 +128,8 @@ export const usePlayerStore = create<PlayerState>()(
           queue: [...state.queue].sort((a, b) => a.position - b.position),
         }));
       },
+      setLocalPlaybackDeviceId: (localPlaybackDeviceId) => set({ localPlaybackDeviceId }),
+      setPlaybackDevices: (playbackDevices) => set({ playbackDevices }),
 
       addToHistory: (track) => {
         set((state) => {
@@ -184,10 +195,11 @@ export const usePlayerStore = create<PlayerState>()(
               inLibrary: state.playbackInLibrary,
             },
             expectedVersion: playbackVersion,
+            claimActiveDevice: true,
           };
           emitQueueCommand('command:set-state', payload);
         } else {
-          afterLocalPlaybackMutation();
+          afterLocalPlaybackMutationWithClaim(true);
         }
       },
 
@@ -197,10 +209,17 @@ export const usePlayerStore = create<PlayerState>()(
       },
       resume: () => {
         set({ isPlaying: get().currentTrack !== null });
-        afterLocalPlaybackMutation();
+        if (get().currentTrack) {
+          afterLocalPlaybackMutationWithClaim(true);
+        }
       },
       togglePlay: () => {
-        set((state) => ({ isPlaying: !state.isPlaying && !!state.currentTrack }));
+        const nextIsPlaying = !get().isPlaying && !!get().currentTrack;
+        set({ isPlaying: nextIsPlaying });
+        if (nextIsPlaying) {
+          afterLocalPlaybackMutationWithClaim(true);
+          return;
+        }
         afterLocalPlaybackMutation();
       },
 
@@ -362,7 +381,7 @@ export const usePlayerStore = create<PlayerState>()(
             originalQueue: isShuffled ? [newItem] : [],
             isPlaying: true,
           });
-          afterLocalPlaybackMutation();
+          afterLocalPlaybackMutationWithClaim(true);
           return;
         }
 
@@ -405,13 +424,13 @@ export const usePlayerStore = create<PlayerState>()(
           addToHistory(toQueueItem(currentTrack));
           const next = queue[currentIndex + 1];
           set({ currentTrack: next.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutation();
+          afterLocalPlaybackMutationWithClaim(true);
         } else if (repeatMode === 'all') {
           // Loop back to the start
           addToHistory(toQueueItem(currentTrack));
           const next = queue[0];
           set({ currentTrack: next.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutation();
+          afterLocalPlaybackMutationWithClaim(true);
         }
       },
 
@@ -430,13 +449,13 @@ export const usePlayerStore = create<PlayerState>()(
           addToHistory(toQueueItem(currentTrack));
           const prev = queue[currentIndex - 1];
           set({ currentTrack: prev.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutation();
+          afterLocalPlaybackMutationWithClaim(true);
         } else if (repeatMode === 'all') {
           // Loop back to the end
           addToHistory(toQueueItem(currentTrack));
           const prev = queue[queue.length - 1];
           set({ currentTrack: prev.track, currentTime: 0, isPlaying: true });
-          afterLocalPlaybackMutation();
+          afterLocalPlaybackMutationWithClaim(true);
         }
       },
     }),

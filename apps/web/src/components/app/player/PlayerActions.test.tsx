@@ -6,9 +6,14 @@ import { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerActions } from './PlayerActions';
+import * as playbackSync from '@/lib/playback-sync';
 
 vi.mock('@/stores/player.store', () => ({
   usePlayerStore: vi.fn(),
+}));
+vi.mock('@/lib/playback-sync', () => ({
+  listPlaybackDevices: vi.fn(),
+  setActivePlaybackDevice: vi.fn(),
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => ({
@@ -72,6 +77,8 @@ describe('PlayerActions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(playbackSync.listPlaybackDevices).mockResolvedValue();
+    vi.mocked(playbackSync.setActivePlaybackDevice).mockResolvedValue();
     vi.mocked(usePlayerStore).mockReturnValue(buildState());
   });
 
@@ -129,6 +136,40 @@ describe('PlayerActions', () => {
       const slider = screen.getByTestId('mock-slider');
       fireEvent.click(slider);
       expect(setVolume).toHaveBeenCalledWith(0.75);
+    });
+
+    it('loads devices and selects active device from popover', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          activeDeviceId: 'device-2',
+          playbackDevices: [
+            {
+              deviceId: 'device-1',
+              deviceName: 'Web Player',
+              deviceIcon: 'desktop',
+              isActive: false,
+              isCurrentDevice: false,
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              deviceId: 'device-2',
+              deviceName: 'MacBook',
+              deviceIcon: 'desktop',
+              isActive: true,
+              isCurrentDevice: true,
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      );
+
+      customRender(<PlayerActions />);
+      const volumeBtn = screen.getByRole('button', { name: /volume/i });
+      fireEvent.click(volumeBtn);
+
+      expect(playbackSync.listPlaybackDevices).toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: /Web Player/i }));
+      expect(playbackSync.setActivePlaybackDevice).toHaveBeenCalledWith('device-1');
     });
   });
 

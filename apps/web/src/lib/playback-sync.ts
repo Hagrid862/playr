@@ -1,7 +1,13 @@
+import { getLocalPlaybackDeviceMetadata } from '@/lib/playback-device';
 import { zodTrackToPlaybackTrack } from '@/lib/playback-mappers';
 import { createPlaybackSocket } from '@/lib/playback-socket';
 import { usePlayerStore } from '@/stores/player.store';
-import type { PlaybackState, SetPlaybackStateRequest } from '@repo/contracts';
+import type {
+  ListPlaybackDevicesResponse,
+  PlaybackState,
+  SetActiveDeviceRequest,
+  SetPlaybackStateRequest,
+} from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
@@ -44,11 +50,19 @@ function hydrate() {
 
 export function connectPlaybackSync(accessToken: string) {
   disconnectPlaybackSync();
+  const localDevice = getLocalPlaybackDeviceMetadata();
+  usePlayerStore.getState().setLocalPlaybackDeviceId(localDevice.playbackDeviceId);
 
-  socket = createPlaybackSocket(accessToken);
+  socket = createPlaybackSocket({
+    accessToken,
+    playbackDeviceId: localDevice.playbackDeviceId,
+    deviceName: localDevice.deviceName,
+    deviceIcon: localDevice.deviceIcon,
+  });
 
   socket.on('connect', () => {
     hydrate();
+    void listPlaybackDevices();
   });
 
   socket.on('event:playback-state-updated', (state: PlaybackState) => {
@@ -90,11 +104,69 @@ export function afterLocalPlaybackMutation() {
 
   socket!.emit(
     'command:set-state',
-    { state, expectedVersion: playbackVersion } satisfies SetPlaybackStateRequest,
+    {
+      state,
+      expectedVersion: playbackVersion,
+      claimActiveDevice: false,
+    } satisfies SetPlaybackStateRequest,
     (result: PlaybackState) => {
       applyStateFromServer(result);
     },
   );
+}
+
+export function afterLocalPlaybackMutationWithClaim(claimActiveDevice: boolean) {
+  if (!isPlaybackSocketConnected()) return;
+
+  const { currentTrack, playbackVersion } = usePlayerStore.getState();
+  if (!currentTrack) return;
+
+  const trackData = currentTrack;
+  const state = buildSetStateBody(trackData);
+
+  socket!.emit(
+    'command:set-state',
+    {
+      state,
+      expectedVersion: playbackVersion,
+      claimActiveDevice,
+    } satisfies SetPlaybackStateRequest,
+    (result: PlaybackState) => {
+      applyStateFromServer(result);
+    },
+  );
+}
+
+export function listPlaybackDevices(): Promise<void> {
+  if (!isPlaybackSocketConnected()) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    socket!.emit('query:list-devices', {}, (result: ListPlaybackDevicesResponse) => {
+      usePlayerStore.getState().setPlaybackDevices(result.devices);
+      resolve();
+    });
+  });
+}
+
+export function setActivePlaybackDevice(deviceId: string): Promise<void> {
+  if (!isPlaybackSocketConnected()) return Promise.resolve();
+  const { playbackVersion } = usePlayerStore.getState();
+  if (!playbackVersion) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    socket!.emit(
+      'command:set-active-device',
+      {
+        deviceId,
+        expectedVersion: playbackVersion,
+      } satisfies SetActiveDeviceRequest,
+      (result: PlaybackState) => {
+        applyStateFromServer(result);
+        void listPlaybackDevices();
+        resolve();
+      },
+    );
+  });
 }
 
 export function isPlaybackSyncConnected(): boolean {

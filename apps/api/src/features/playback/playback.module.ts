@@ -8,6 +8,7 @@ import { MoveQueueItemHandler } from './commands/handlers/move-queue-item.handle
 import { RemoveQueueItemHandler } from './commands/handlers/remove-queue-item.handler';
 import { ReorderQueueItemsHandler } from './commands/handlers/reorder-queue-items.handler';
 import { SetCurrentTimeStateHandler } from './commands/handlers/set-current-time-state.handler';
+import { SetActiveDeviceHandler } from './commands/handlers/set-active-device.handler';
 import { SetFavoriteStateHandler } from './commands/handlers/set-favorite-state.handler';
 import { SetLibraryStateHandler } from './commands/handlers/set-library-state.handler';
 import { SetPlaybackStateHandler } from './commands/handlers/set-playback-state.handler';
@@ -21,6 +22,7 @@ import { ShuffleQueueHandler } from './commands/handlers/shuffle-queue.handler';
 import { PlaybackGateway } from './playback.gateway';
 import { GetPlaybackStateHandler } from './queries/handlers/get-playback-state.handler';
 import { GetQueueStateHandler } from './queries/handlers/get-queue-state.handler';
+import { PlaybackDeviceRegistryService } from './services/playback-device-registry.service';
 import { PlaybackStatePersistenceService } from './services/playback-state-persistence.service';
 import { PLAYBACK_REDIS } from './utils/playback-redis.constants';
 import { RedisProvider } from './utils/redis.provider';
@@ -28,6 +30,7 @@ import { RedisProvider } from './utils/redis.provider';
 export const QueryHandlers = [GetPlaybackStateHandler, GetQueueStateHandler];
 export const CommandHandlers = [
   SetPlaybackStateHandler,
+  SetActiveDeviceHandler,
   SetPlayingStateHandler,
   SetShuffleStateHandler,
   SetRepeatStateHandler,
@@ -52,6 +55,7 @@ export const CommandHandlers = [
   providers: [
     ...QueryHandlers,
     ...CommandHandlers,
+    PlaybackDeviceRegistryService,
     PlaybackStatePersistenceService,
     PlaybackGateway,
     {
