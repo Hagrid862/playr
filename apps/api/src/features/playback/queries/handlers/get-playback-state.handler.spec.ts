@@ -1,6 +1,8 @@
+import type { Env } from '@/common/config/env.schema';
 import { InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PlaybackState } from '@repo/contracts';
-import { createMock } from '@repo/testing/nestjs';
+import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import Redis from 'ioredis';
 import { describe, expect, it } from 'vitest';
 import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
@@ -30,21 +32,38 @@ describe('GetPlaybackStateHandler', () => {
     isPlaying: true,
   });
 
+  const staleAfterMs = 30 * 24 * 60 * 60 * 1000;
+
+  function createHandler(redis: DeepMocked<Redis>) {
+    const config = createMock<ConfigService<Env, true>>();
+    config.get.mockImplementation((key: string) => {
+      if (key === 'PLAYBACK_STATE_STALE_AFTER_MS') return staleAfterMs;
+      return undefined as never;
+    });
+    return new GetPlaybackStateHandler(redis, config);
+  }
+
   it('returns playback state when it exists', async () => {
     const redis = createMock<Redis>();
-    const handler = new GetPlaybackStateHandler(redis);
+    const handler = createHandler(redis);
     const query = new GetPlaybackStateQuery(userId);
 
-    redis.get.mockResolvedValue(JSON.stringify(state));
+    redis.get.mockResolvedValue(
+      JSON.stringify({
+        ...state,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
 
     const result = await handler.execute(query);
-    expect(result).toEqual(state);
+    expect(result).not.toBeNull();
+    expect(result?.userId).toBe(userId);
     expect(redis.get).toHaveBeenCalledWith(`state:${userId}`);
   });
 
   it('returns null when state does not exist', async () => {
     const redis = createMock<Redis>();
-    const handler = new GetPlaybackStateHandler(redis);
+    const handler = createHandler(redis);
     const query = new GetPlaybackStateQuery(userId);
 
     redis.get.mockResolvedValue(null);
@@ -53,9 +72,22 @@ describe('GetPlaybackStateHandler', () => {
     expect(result).toBeNull();
   });
 
+  it('returns null and deletes key when updatedAt is older than stale threshold', async () => {
+    const redis = createMock<Redis>();
+    const handler = createHandler(redis);
+    const query = new GetPlaybackStateQuery(userId);
+
+    const old = new Date(Date.now() - staleAfterMs - 60_000).toISOString();
+    redis.get.mockResolvedValue(JSON.stringify({ ...state, updatedAt: old }));
+
+    const result = await handler.execute(query);
+    expect(result).toBeNull();
+    expect(redis.del).toHaveBeenCalledWith(`state:${userId}`);
+  });
+
   it('throws InternalServerErrorException on invalid JSON', async () => {
     const redis = createMock<Redis>();
-    const handler = new GetPlaybackStateHandler(redis);
+    const handler = createHandler(redis);
     const query = new GetPlaybackStateQuery(userId);
 
     redis.get.mockResolvedValue('invalid-json');
@@ -65,7 +97,7 @@ describe('GetPlaybackStateHandler', () => {
 
   it('throws InternalServerErrorException on Zod validation failure', async () => {
     const redis = createMock<Redis>();
-    const handler = new GetPlaybackStateHandler(redis);
+    const handler = createHandler(redis);
     const query = new GetPlaybackStateQuery(userId);
 
     redis.get.mockResolvedValue(JSON.stringify({ ...state, trackData: null }));
