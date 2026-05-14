@@ -1,5 +1,6 @@
 // Requests
 export * from "./request/get-playback-state.request";
+export * from "./request/presence-touch.request";
 export * from "./request/set-active-device.request";
 export * from "./request/set-current-time-state.request";
 export * from "./request/set-favorite-state.request";
@@ -16,6 +17,7 @@ export * from "./request/queue";
 
 // Responses
 export * from "./response/get-playback-state.response";
+export * from "./response/presence-touch.response";
 export * from "./response/get-queue-state.response";
 export * from "./response/list-playback-devices.response";
 export * from "./response/set-playback-state.response";
