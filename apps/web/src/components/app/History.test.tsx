@@ -37,12 +37,26 @@ describe('History', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
           history: [
-            { uniqueId: '1', title: 'Track 1', artists: [{ name: 'Artist 1' }] } as QueueItem,
+            {
+              uniqueId: '1',
+              id: 'track-1',
+              title: 'Track 1',
+              artists: ['Artist 1'],
+              albumArt: '',
+              albumName: '',
+              albumId: '',
+              duration: 0,
+            } as QueueItem,
             {
               uniqueId: '2',
+              id: 'track-2',
               title: 'Track 2',
-              artists: [{ name: 'Artist 2' }],
+              artists: ['Artist 2'],
+              albumArt: 'cover.jpg',
               album: { cover: { url: 'cover.jpg' } },
+              albumName: '',
+              albumId: '',
+              duration: 0,
             } as QueueItem,
           ],
           playTrack: mockPlayTrack,
@@ -60,8 +74,13 @@ describe('History', () => {
     it('calls playTrack when a track is clicked', () => {
       const track = {
         uniqueId: '1',
+        id: 'track-1',
         title: 'Track 1',
-        artists: [{ name: 'Artist 1' }],
+        artists: ['Artist 1'],
+        albumArt: '',
+        albumName: '',
+        albumId: '',
+        duration: 0,
       } as QueueItem;
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
@@ -79,8 +98,13 @@ describe('History', () => {
     it('handles load more functionality', () => {
       const history = Array.from({ length: 25 }).map((_, i) => ({
         uniqueId: String(i),
+        id: `track-${i}`,
         title: `Track ${i}`,
-        artists: [{ name: 'Artist' }],
+        artists: ['Artist'],
+        albumArt: '',
+        albumName: '',
+        albumId: '',
+        duration: 0,
       })) as QueueItem[];
 
       vi.mocked(usePlayerStore).mockReturnValue(

@@ -1,12 +1,12 @@
-import React from 'react';
-import { usePlayerStore, type QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { cn } from '@/lib/utils';
-import { History as QueueHistory } from './History';
+import { usePlayerStore, type QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import React from 'react';
+import { History as QueueHistory } from './History';
 import { QueueHeader } from './queue/QueueHeader';
-import { QueueNowPlaying } from './queue/QueueNowPlaying';
 import { QueueNextUp } from './queue/QueueNextUp';
+import { QueueNowPlaying } from './queue/QueueNowPlaying';
 
 export function Queue() {
   const {
@@ -36,9 +36,7 @@ export function Queue() {
     playTrack(track);
   };
 
-  const currentIndex = currentTrack
-    ? queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId)
-    : -1;
+  const currentIndex = currentTrack ? queue.findIndex((t) => t.id === currentTrack.id) : -1;
 
   const nextUp = queue.slice(currentIndex + 1);
 
@@ -70,7 +68,7 @@ export function Queue() {
         <QueueHeader onShowHistory={() => setView('history')} onToggleQueue={toggleQueue} />
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <QueueNowPlaying currentTrack={currentTrack} />
+          <QueueNowPlaying currentTrack={currentTrack as PlayrQueueItem} />
           <QueueNextUp
             nextUp={nextUp}
             isShuffled={isShuffled}

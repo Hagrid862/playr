@@ -1,12 +1,13 @@
-import { StreamAudioQuality, ZodTrack } from '@repo/contracts';
+import { afterLocalPlaybackMutation } from '@/lib/playback-sync';
+import { PlaybackTrack, StreamAudioQuality, type PlaybackState } from '@repo/contracts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { idbStorage } from './idb-storage';
 
-export type QueueItem = ZodTrack & { uniqueId: string };
+export type QueueItem = PlaybackTrack & { uniqueId: string };
 
 export interface PlayerState {
-  currentTrack: QueueItem | null;
+  currentTrack: PlaybackTrack | null;
   isPlaying: boolean;
   volume: number;
   currentTime: number;
@@ -19,8 +20,15 @@ export interface PlayerState {
   repeatMode: 'off' | 'all' | 'one';
   isShuffled: boolean;
 
+  /** Last server `PlaybackState.version`; `0` means no document yet (client-only until first push). */
+  playbackVersion: number;
+  playbackFavorited: 'favorited' | 'disliked' | 'not-set';
+  playbackInLibrary: boolean;
+
+  applyPlaybackStateFromServer: (state: PlaybackState) => void;
+
   // Actions
-  playTrack: (track: ZodTrack, queue?: ZodTrack[]) => void;
+  playTrack: (track: PlaybackTrack, queue?: PlaybackTrack[]) => void;
   pause: () => void;
   resume: () => void;
   togglePlay: () => void;
@@ -29,13 +37,13 @@ export interface PlayerState {
   setDuration: (duration: number) => void;
   setQuality: (quality: StreamAudioQuality | 'auto') => void;
   setAvailableQualities: (qualities: (StreamAudioQuality | 'auto')[]) => void;
-  setQueue: (queue: ZodTrack[]) => void;
+  setQueue: (queue: PlaybackTrack[]) => void;
   nextTrack: () => void;
   previousTrack: () => void;
   toggleRepeatMode: () => void;
   toggleShuffle: () => void;
-  addToQueue: (track: ZodTrack) => void;
-  playNext: (track: ZodTrack) => void;
+  addToQueue: (track: PlaybackTrack) => void;
+  playNext: (track: PlaybackTrack) => void;
   removeFromQueue: (uniqueId: string) => void;
   reorderQueue: (newQueue: QueueItem[]) => void;
   addToHistory: (track: QueueItem) => void;
@@ -49,9 +57,10 @@ export interface PlayerState {
 
 const generateUniqueId = () => Math.random().toString(36).substring(2, 9);
 
-const toQueueItem = (track: ZodTrack): QueueItem => ({
-  ...track,
+const toQueueItem = (track: PlaybackTrack): QueueItem => ({
   uniqueId: generateUniqueId(),
+  ...track,
+  artists: track.artists ?? [],
 });
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -79,6 +88,36 @@ export const usePlayerStore = create<PlayerState>()(
       repeatMode: 'off',
       isShuffled: false,
 
+      playbackVersion: 0,
+      playbackFavorited: 'not-set',
+      playbackInLibrary: false,
+
+      applyPlaybackStateFromServer: (state) => {
+        const item = {
+          id: state.trackData.id,
+          title: state.trackData.title,
+          artists: state.trackData.artists ?? [],
+          albumArt: state.trackData.albumArt,
+          albumName: state.trackData.albumName,
+          albumId: state.trackData.albumId,
+          duration: state.trackData.duration,
+        };
+        set({
+          playbackVersion: state.version,
+          playbackFavorited: state.favorited,
+          playbackInLibrary: state.inLibrary,
+          currentTrack: item,
+          isPlaying: state.isPlaying,
+          currentTime: state.currentTime,
+          volume: state.volume,
+          repeatMode: state.repeatMode,
+          isShuffled: state.shuffle,
+          duration: state.trackData.duration,
+          queue: [toQueueItem(item)],
+          originalQueue: [],
+        });
+      },
+
       addToHistory: (track) => {
         set((state) => {
           const newHistory = [track, ...state.history].slice(0, 1024);
@@ -89,7 +128,7 @@ export const usePlayerStore = create<PlayerState>()(
       playTrack: (track, queue) => {
         const { currentTrack, addToHistory } = get();
         if (currentTrack) {
-          addToHistory(currentTrack);
+          addToHistory(toQueueItem(currentTrack));
         }
 
         const currentQueueItem = toQueueItem(track);
@@ -124,11 +163,21 @@ export const usePlayerStore = create<PlayerState>()(
           isShuffled: false,
           currentTime: 0,
         });
+        afterLocalPlaybackMutation();
       },
 
-      pause: () => set({ isPlaying: false }),
-      resume: () => set({ isPlaying: get().currentTrack !== null }),
-      togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying && !!state.currentTrack })),
+      pause: () => {
+        set({ isPlaying: false });
+        afterLocalPlaybackMutation();
+      },
+      resume: () => {
+        set({ isPlaying: get().currentTrack !== null });
+        afterLocalPlaybackMutation();
+      },
+      togglePlay: () => {
+        set((state) => ({ isPlaying: !state.isPlaying && !!state.currentTrack }));
+        afterLocalPlaybackMutation();
+      },
 
       isQueueOpen: false,
       sidebarView: 'queue',
@@ -136,7 +185,10 @@ export const usePlayerStore = create<PlayerState>()(
       setQueueOpen: (isOpen) => set({ isQueueOpen: isOpen }),
       setSidebarView: (view) => set({ sidebarView: view }),
 
-      setVolume: (volume) => set({ volume }),
+      setVolume: (volume) => {
+        set({ volume });
+        afterLocalPlaybackMutation();
+      },
       setCurrentTime: (currentTime) => set({ currentTime }),
       setDuration: (duration) => set({ duration }),
       setQuality: (quality) => set({ quality }),
@@ -147,41 +199,41 @@ export const usePlayerStore = create<PlayerState>()(
           originalQueue: [],
           isShuffled: false,
         }),
-      toggleRepeatMode: () =>
+      toggleRepeatMode: () => {
         set((state) => {
           const modes: Array<'off' | 'all' | 'one'> = ['off', 'all', 'one'];
           const currentIndex = modes.indexOf(state.repeatMode);
           return { repeatMode: modes[(currentIndex + 1) % modes.length] };
-        }),
+        });
+        afterLocalPlaybackMutation();
+      },
 
-      toggleShuffle: () =>
+      toggleShuffle: () => {
         set((state) => {
           if (state.isShuffled) {
-            // Turn off shuffle: restore original queue
             return {
               isShuffled: false,
               queue: state.originalQueue,
               originalQueue: [],
             };
-          } else {
-            // Turn on shuffle
-            const newQueue = shuffleArray(state.queue);
-            // If there's a current track, ensure it's first
-            if (state.currentTrack) {
-              const currentId = state.currentTrack.uniqueId;
-              const trackIndex = newQueue.findIndex((t) => t.uniqueId === currentId);
-              if (trackIndex > -1) {
-                const [track] = newQueue.splice(trackIndex, 1);
-                newQueue.unshift(track);
-              }
-            }
-            return {
-              isShuffled: true,
-              originalQueue: state.queue,
-              queue: newQueue,
-            };
           }
-        }),
+          const newQueue = shuffleArray(state.queue);
+          if (state.currentTrack) {
+            const currentId = state.currentTrack.id;
+            const trackIndex = newQueue.findIndex((t) => t.id === currentId);
+            if (trackIndex > -1) {
+              const [track] = newQueue.splice(trackIndex, 1);
+              newQueue.unshift(track);
+            }
+          }
+          return {
+            isShuffled: true,
+            originalQueue: state.queue,
+            queue: newQueue,
+          };
+        });
+        afterLocalPlaybackMutation();
+      },
 
       addToQueue: (track) =>
         set((state) => {
@@ -219,10 +271,11 @@ export const usePlayerStore = create<PlayerState>()(
             originalQueue: isShuffled ? [newItem] : [],
             isPlaying: true,
           });
+          afterLocalPlaybackMutation();
           return;
         }
 
-        const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+        const currentIndex = queue.findIndex((t) => t.id === currentTrack.id);
 
         if (currentIndex === -1) {
           set((state) => ({
@@ -231,13 +284,14 @@ export const usePlayerStore = create<PlayerState>()(
               ? [...state.originalQueue, newItem]
               : state.originalQueue,
           }));
+          afterLocalPlaybackMutation();
         } else {
           const newQueue = [...queue];
           newQueue.splice(currentIndex + 1, 0, newItem);
 
           let newOriginalQueue = originalQueue;
           if (isShuffled) {
-            const origIndex = originalQueue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+            const origIndex = originalQueue.findIndex((t) => t.id === currentTrack.id);
             if (origIndex > -1) {
               newOriginalQueue = [...originalQueue];
               newOriginalQueue.splice(origIndex + 1, 0, newItem);
@@ -247,6 +301,7 @@ export const usePlayerStore = create<PlayerState>()(
           }
 
           set({ queue: newQueue, originalQueue: newOriginalQueue });
+          afterLocalPlaybackMutation();
         }
       },
 
@@ -254,16 +309,18 @@ export const usePlayerStore = create<PlayerState>()(
         const { queue, currentTrack, addToHistory, repeatMode } = get();
         if (!currentTrack || queue.length === 0) return;
 
-        const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+        const currentIndex = queue.findIndex((t) => t.id === currentTrack.id);
         if (currentIndex > -1 && currentIndex < queue.length - 1) {
-          addToHistory(currentTrack);
+          addToHistory(toQueueItem(currentTrack));
           const next = queue[currentIndex + 1];
           set({ currentTrack: next, currentTime: 0, isPlaying: true });
+          afterLocalPlaybackMutation();
         } else if (repeatMode === 'all') {
           // Loop back to the start
-          addToHistory(currentTrack);
+          addToHistory(toQueueItem(currentTrack));
           const next = queue[0];
           set({ currentTrack: next, currentTime: 0, isPlaying: true });
+          afterLocalPlaybackMutation();
         }
       },
 
@@ -277,16 +334,18 @@ export const usePlayerStore = create<PlayerState>()(
           return;
         }
 
-        const currentIndex = queue.findIndex((t) => t.uniqueId === currentTrack.uniqueId);
+        const currentIndex = queue.findIndex((t) => t.id === currentTrack.id);
         if (currentIndex > 0) {
-          addToHistory(currentTrack);
+          addToHistory(toQueueItem(currentTrack));
           const prev = queue[currentIndex - 1];
           set({ currentTrack: prev, currentTime: 0, isPlaying: true });
+          afterLocalPlaybackMutation();
         } else if (repeatMode === 'all') {
           // Loop back to the end
-          addToHistory(currentTrack);
+          addToHistory(toQueueItem(currentTrack));
           const prev = queue[queue.length - 1];
           set({ currentTrack: prev, currentTime: 0, isPlaying: true });
+          afterLocalPlaybackMutation();
         }
       },
     }),

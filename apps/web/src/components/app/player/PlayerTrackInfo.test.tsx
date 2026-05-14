@@ -1,6 +1,6 @@
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
-import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
+import { albumBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -70,7 +70,7 @@ describe('PlayerTrackInfo', () => {
           currentTrack: {
             uniqueId: '1',
             ...trackBuilder({ title: 'Test Song' }),
-            artists: [artistBuilder({ name: 'Artist A' })],
+            artists: ['Artist A'],
             album: {
               ...albumBuilder({ name: 'Album A' }),
               cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
@@ -102,7 +102,7 @@ describe('PlayerTrackInfo', () => {
           currentTrack: {
             uniqueId: '1',
             ...trackBuilder({ title: 'Lossless Song' }),
-            artists: [artistBuilder({ name: 'Artist A' })],
+            artists: ['Artist A'],
             album: {
               ...albumBuilder({ name: 'Album A' }),
               cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
@@ -123,7 +123,7 @@ describe('PlayerTrackInfo', () => {
           currentTrack: {
             uniqueId: '2',
             ...trackBuilder({ title: 'Zero Duration Song' }),
-            artists: [artistBuilder({ name: 'Artist A' })],
+            artists: ['Artist A'],
             album: {
               ...albumBuilder({ name: 'Album A' }),
               cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),

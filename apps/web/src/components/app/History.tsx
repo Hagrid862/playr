@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { usePlayerStore, type QueueItem } from '@/stores/player.store';
 import { cn } from '@/lib/utils';
+import { usePlayerStore, type QueueItem } from '@/stores/player.store';
 import { ArrowLeftIcon, MusicNotesIcon, PlayIcon, XIcon } from '@phosphor-icons/react';
 import React from 'react';
 
@@ -68,9 +68,9 @@ export function History({ isVisible, onBack }: HistoryProps) {
                 onClick={() => handlePlayTrack(track)}
               >
                 <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
-                  {track.album?.cover?.url ? (
+                  {track.albumArt ? (
                     <img
-                      src={track.album.cover.url}
+                      src={track.albumArt}
                       alt={track.title}
                       className="h-full w-full object-cover group-hover:opacity-40 transition-opacity"
                     />
@@ -87,9 +87,7 @@ export function History({ isVisible, onBack }: HistoryProps) {
                   <div className="text-sm font-medium text-white/90 truncate group-hover:text-white">
                     {track.title}
                   </div>
-                  <div className="text-xs text-white/50 truncate">
-                    {track.artists?.map((a: { name: string }) => a.name).join(', ')}
-                  </div>
+                  <div className="text-xs text-white/50 truncate">{track.artists?.join(', ')}</div>
                 </div>
                 <div className="text-xs text-white/30 tabular-nums">
                   {/* Could show played time here if we tracked it, but keeping simple for now */}

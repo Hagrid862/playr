@@ -1,5 +1,5 @@
 import type { QueueItem } from '@/stores/player.store';
-import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
+import { albumBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
 import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -15,7 +15,6 @@ describe('QueueNowPlaying', () => {
 
   describe('with track', () => {
     it('renders track details when currentTrack is provided', () => {
-      const artistA = artistBuilder({ name: 'Artist A' });
       const album = {
         ...albumBuilder({ name: 'Album A' }),
         cover: imageBuilder({ url: 'http://example.com/cover.jpg' }),
@@ -23,7 +22,8 @@ describe('QueueNowPlaying', () => {
       const track: QueueItem = {
         uniqueId: '1',
         ...trackBuilder({ title: 'Test Song' }),
-        artists: [artistA],
+        artists: ['Artist A'],
+        albumArt: 'http://example.com/cover.jpg',
         album,
       };
 
@@ -41,7 +41,8 @@ describe('QueueNowPlaying', () => {
       const track: QueueItem = {
         uniqueId: '2',
         ...trackBuilder({ title: 'Test Song 2' }),
-        artists: [artistBuilder({ name: 'Artist B' })],
+        artists: ['Artist B'],
+        albumArt: '',
         album: { ...albumBuilder({ name: 'Album B' }), cover: null },
       };
 
