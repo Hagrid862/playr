@@ -18,7 +18,7 @@ export class SearchService {
 
   async liveSearch(query: string, userId?: string): Promise<LiveSearchResults> {
     if (!userId) {
-      throw new UnauthorizedException('User ID is currently required public and community visibility are not implemented yet');
+      throw new UnauthorizedException('User ID is required. Public and community visibilities are not implemented yet');
     }
 
     if (!query || query.trim().length < 4) {

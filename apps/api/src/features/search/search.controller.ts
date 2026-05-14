@@ -20,7 +20,7 @@ export class SearchController {
   @ApiOperation({ summary: 'Perform a fuzzy live search' })
   @ApiResponse({ status: 200, description: 'Fuzzy search results returned successfully', type: LiveSearchResultsResponseDto })
   @ApiResponse({ status: 400, description: 'Query is too short or invalid', type: ApiErrorResponseDto })
-  @ApiResponse({ status: 401, description: 'User ID is currently required public and community visibility are not implemented yet', type: ApiErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'User ID is required. Public and community visibilities are not implemented yet', type: ApiErrorResponseDto })
   async search(
     @Query() query: SearchQueryRequestDto,
     @CurrentUser() user: User | null,
