@@ -4,7 +4,7 @@ import { BadRequestException } from '@nestjs/common';
 import { AlbumRepository } from '@/shared/repositories/album.repository';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlbumsController } from './library-albums.controller';
 import { GetLibraryAlbumsQuery } from './queries/impl/get-library-albums.query';
 import { CreateLibraryAlbumCommand } from './commands/impl/create-library-album.command';
@@ -75,8 +75,10 @@ describe('AlbumsController', () => {
   });
 
   it('deleteAlbum should execute DeleteLibraryAlbumCommand', async () => {
-    await controller.deleteAlbum(mockAlbumId, mockUserId);
+    await controller.deleteAlbum(mockAlbumId, { keepTracks: false } as any, mockUserId);
     expect(commandBus.execute).toHaveBeenCalledWith(expect.any(DeleteLibraryAlbumCommand));
+    const cmd = vi.mocked(commandBus.execute).mock.calls[0][0] as DeleteLibraryAlbumCommand;
+    expect(cmd.keepTracks).toBe(false);
   });
 
   it('getAlbumTracks should execute GetLibraryAlbumTracksQuery', async () => {

@@ -22,7 +22,7 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodAlbum, ZodImage } from '@repo/contracts';
 import { BulkCreateLibraryTracksCommand } from '../library-tracks/commands/impl/bulk-create-library-tracks.command';
 import { BulkUploadTrackAudioCommand } from '../library-tracks/commands/impl/bulk-upload-track-audio.command';
@@ -33,6 +33,7 @@ import { UpdateLibraryAlbumCommand } from './commands/impl/update-library-album.
 import { UploadLibraryAlbumCoverCommand } from './commands/impl/upload-library-album-cover.command';
 import { BulkCreateLibraryTracksRequestDto } from './dto/request/bulk-create-library-tracks.request.dto';
 import { CreateLibraryAlbumRequestDto } from './dto/request/create-library-album.request.dto';
+import { DeleteLibraryAlbumQueryDto } from './dto/request/delete-library-album.query.dto';
 import { GetLibraryAlbumsRequestDto } from './dto/request/get-library-albums.request.dto';
 import { UpdateLibraryAlbumRequestDto } from './dto/request/update-library-album.request.dto';
 import { BulkCreateLibraryTracksResponseDto } from './dto/response/bulk-create-library-tracks.response.dto';
@@ -359,8 +360,19 @@ export class AlbumsController {
     description: 'Album not found',
     type: ApiErrorResponseDto,
   })
-  async deleteAlbum(@Param('id') id: string, @CurrentUser('id') userId: string): Promise<ZodAlbum> {
-    const command = new DeleteLibraryAlbumCommand(id, userId);
+  @ApiQuery({
+    name: 'keepTracks',
+    required: false,
+    description:
+      'When true, moves tracks to the library "Unknown album" before deleting the album. When false (default), soft-deletes the album and its tracks.',
+    type: Boolean,
+  })
+  async deleteAlbum(
+    @Param('id') id: string,
+    @Query() query: DeleteLibraryAlbumQueryDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ZodAlbum> {
+    const command = new DeleteLibraryAlbumCommand(id, userId, query.keepTracks);
     return this.commandBus.execute(command);
   }
 

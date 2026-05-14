@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlbumSchema } from '@repo/contracts';
-import { AlbumType } from '@repo/db';
+import { AlbumSystemKind, AlbumType } from '@repo/db';
 import { albumBuilder } from '@repo/testing/builders';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -92,6 +92,19 @@ describe('UpdateLibraryAlbumHandler', () => {
     albumRepository.getByIdForOwner.mockResolvedValue(null);
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw BadRequestException when album is a system bucket', async () => {
+    const systemAlbum = albumBuilder({
+      id: mockAlbumId,
+      systemKind: AlbumSystemKind.unknown_bucket,
+    });
+    albumRepository.getByIdForOwner.mockResolvedValue(systemAlbum);
+
+    await expect(
+      handler.execute(new UpdateLibraryAlbumCommand(mockAlbumId, { name: 'X' }, mockUserId)),
+    ).rejects.toThrow(BadRequestException);
+    expect(albumRepository.update).not.toHaveBeenCalled();
   });
 
   it('should throw ConflictException if new name is taken', async () => {
