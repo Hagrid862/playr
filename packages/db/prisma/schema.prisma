@@ -369,6 +369,7 @@ model Album {
   name          String
   description   String?    @db.Text
   type          AlbumType  @default(album)
+  systemKind    AlbumSystemKind @default(none)
   totalTracks   Int        @default(0)
   totalDuration Int        @default(0)
   releaseDate   DateTime?
@@ -399,6 +400,7 @@ model Album {
   @@index([deletedAt])
   @@index([name])
   @@index([type])
+  @@index([systemKind])
   @@map("albums")
 }
 
