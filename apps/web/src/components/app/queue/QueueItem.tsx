@@ -1,22 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { QueueItem as PlayrQueueItem } from '@/stores/player.store';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DotsSixVerticalIcon, MusicNotesIcon, PlayIcon, TrashIcon } from '@phosphor-icons/react';
+import type { QueueItem } from '@repo/contracts';
 import { motion } from 'framer-motion';
 import React from 'react';
 
 export interface QueueItemProps {
-  track: PlayrQueueItem;
-  onPlay: (track: PlayrQueueItem) => void;
+  track: QueueItem;
+  onPlay: (track: QueueItem) => void;
   onRemove: (uniqueId: string, event: React.MouseEvent) => void;
   /** When true, disables hover effects (e.g. when another item is being dragged) */
   isDragActive?: boolean;
 }
 
 /** Renders the overlay preview for drag - no useSortable (rendered outside SortableContext) */
-export function QueueItemOverlay({ track }: { track: PlayrQueueItem }) {
+export function QueueItemOverlay({ track }: { track: QueueItem }) {
   return (
     <div>
       <div
@@ -24,10 +24,10 @@ export function QueueItemOverlay({ track }: { track: PlayrQueueItem }) {
         style={{ transform: 'scale(0.85)', transformOrigin: 'center center' }}
       >
         <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
-          {track.albumArt ? (
+          {track.track?.albumArt ? (
             <img
-              src={track.albumArt}
-              alt={track.title}
+              src={track.track?.albumArt}
+              alt={track.track?.title}
               className="h-full w-full object-cover opacity-80"
             />
           ) : (
@@ -37,9 +37,9 @@ export function QueueItemOverlay({ track }: { track: PlayrQueueItem }) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white/60 truncate">{track.title}</div>
+          <div className="text-sm font-medium text-white/60 truncate">{track.track?.title}</div>
           <div className="text-xs text-white/40 truncate">
-            {track.artists?.join(', ') || 'Unknown Artist'}
+            {track.track?.artists?.join(', ') || 'Unknown Artist'}
           </div>
         </div>
       </div>
@@ -49,7 +49,7 @@ export function QueueItemOverlay({ track }: { track: PlayrQueueItem }) {
 
 export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: QueueItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: track.uniqueId,
+    id: track.queueId,
   });
 
   const style = {
@@ -88,10 +88,10 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
       </div>
 
       <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
-        {track.albumArt ? (
+        {track.track?.albumArt ? (
           <img
-            src={track.albumArt}
-            alt={track.title}
+            src={track.track?.albumArt}
+            alt={track.track?.title}
             className={cn(
               'h-full w-full object-cover transition-opacity',
               !hoverDisabled && 'group-hover:opacity-40',
@@ -123,10 +123,10 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
             !hoverDisabled && 'group-hover:text-white',
           )}
         >
-          {track.title}
+          {track.track?.title}
         </div>
         <div className="text-xs text-white/50 truncate">
-          {track.artists?.join(', ') || 'Unknown Artist'}
+          {track.track?.artists?.join(', ') || 'Unknown Artist'}
         </div>
       </div>
       <Button
@@ -136,7 +136,7 @@ export function QueueItem({ track, onPlay, onRemove, isDragActive = false }: Que
           'h-8 w-8 text-white/20 transition-all opacity-0',
           !hoverDisabled && 'group-hover:opacity-100 hover:text-red-400 hover:bg-red-400/10',
         )}
-        onClick={(e) => onRemove(track.uniqueId, e)}
+        onClick={(e) => onRemove(track.queueId, e)}
       >
         <TrashIcon />
       </Button>

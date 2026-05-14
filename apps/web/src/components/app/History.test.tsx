@@ -1,4 +1,5 @@
-import { PlayerState, QueueItem, usePlayerStore } from '@/stores/player.store';
+import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import type { PlaybackTrack, QueueItem } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,27 +39,36 @@ describe('History', () => {
         createPlayerStateMock({
           history: [
             {
-              uniqueId: '1',
-              id: 'track-1',
-              title: 'Track 1',
-              artists: ['Artist 1'],
-              albumArt: '',
-              albumName: '',
-              albumId: '',
-              duration: 0,
-            } as QueueItem,
+              queueId: '1',
+              track: {
+                id: '1',
+                title: 'Track 1',
+                trackId: '1',
+                artists: ['Artist 1'],
+                albumName: 'Album 1',
+                albumId: '1',
+                albumArt: 'cover.jpg',
+                duration: 100,
+                explicit: false,
+              },
+              position: 0,
+            },
             {
-              uniqueId: '2',
-              id: 'track-2',
-              title: 'Track 2',
-              artists: ['Artist 2'],
-              albumArt: 'cover.jpg',
-              album: { cover: { url: 'cover.jpg' } },
-              albumName: '',
-              albumId: '',
-              duration: 0,
-            } as QueueItem,
-          ],
+              queueId: '2',
+              track: {
+                id: '2',
+                title: 'Track 2',
+                trackId: '2',
+                artists: ['Artist 2'],
+                albumName: 'Album 2',
+                albumId: '2',
+                albumArt: 'cover.jpg',
+                duration: 100,
+                explicit: false,
+              },
+              position: 1,
+            },
+          ] as QueueItem[],
           playTrack: mockPlayTrack,
           toggleQueue: mockToggleQueue,
         }),
@@ -73,14 +83,19 @@ describe('History', () => {
 
     it('calls playTrack when a track is clicked', () => {
       const track = {
-        uniqueId: '1',
-        id: 'track-1',
-        title: 'Track 1',
-        artists: ['Artist 1'],
-        albumArt: '',
-        albumName: '',
-        albumId: '',
-        duration: 0,
+        queueId: '1',
+        track: {
+          id: '1',
+          title: 'Track 1',
+          trackId: '1',
+          artists: ['Artist 1'],
+          albumName: 'Album 1',
+          albumId: '1',
+          albumArt: 'cover.jpg',
+          duration: 100,
+          explicit: false,
+        } as PlaybackTrack,
+        position: 0,
       } as QueueItem;
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
@@ -97,14 +112,18 @@ describe('History', () => {
 
     it('handles load more functionality', () => {
       const history = Array.from({ length: 25 }).map((_, i) => ({
-        uniqueId: String(i),
-        id: `track-${i}`,
-        title: `Track ${i}`,
-        artists: ['Artist'],
-        albumArt: '',
-        albumName: '',
-        albumId: '',
-        duration: 0,
+        queueId: String(i),
+        track: {
+          id: `track-${i}`,
+          title: `Track ${i}`,
+          trackId: `track-${i}`,
+          artists: ['Artist'],
+          albumName: `Album ${i}`,
+          albumId: `album-${i}`,
+          albumArt: `cover-${i}.jpg`,
+          duration: 100,
+          explicit: false,
+        },
       })) as QueueItem[];
 
       vi.mocked(usePlayerStore).mockReturnValue(

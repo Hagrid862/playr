@@ -1,14 +1,5 @@
 import { z } from "zod";
-
-export const PlaybackTrackSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  artists: z.array(z.string()),
-  albumArt: z.string(),
-  albumName: z.string(),
-  albumId: z.string(),
-  duration: z.number().min(0).int(),
-});
+import { PlaybackTrackSchema, QueueItemSchema } from "./playback-track.schema";
 
 export const PlaybackStateSchema = z.object({
   sessionId: z.string().nonempty(),
@@ -25,6 +16,7 @@ export const PlaybackStateSchema = z.object({
   ]),
   isPlaying: z.boolean(),
   trackData: PlaybackTrackSchema,
+  queue: z.array(QueueItemSchema),
   currentTime: z.number().min(0).int(),
   volume: z.number().min(0).max(1),
   repeatMode: z.enum(["off", "all", "one"]),
@@ -40,6 +32,5 @@ export const PlaybackStatePayloadSchema = PlaybackStateSchema.omit({
   updatedAt: true,
 }).strict();
 
-export type PlaybackTrack = z.infer<typeof PlaybackTrackSchema>;
 export type PlaybackState = z.infer<typeof PlaybackStateSchema>;
 export type PlaybackStatePayload = z.infer<typeof PlaybackStatePayloadSchema>;

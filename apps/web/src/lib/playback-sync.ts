@@ -19,13 +19,19 @@ function buildSetStateBody(
     volume: Math.min(1, Math.max(0, s.volume)),
     repeatMode: s.repeatMode,
     shuffle: s.isShuffled,
+    // Send current queue with normalized positions
+    queue: s.queue.map((item, index) => ({ ...item, position: index })),
     favorited: s.playbackFavorited,
     inLibrary: s.playbackInLibrary,
   };
 }
 
-function applyStateFromServer(state: PlaybackState) {
+export function applyStateFromServer(state: PlaybackState) {
   usePlayerStore.getState().applyPlaybackStateFromServer(state);
+}
+
+export function getPlaybackSocket(): Socket | null {
+  return socket;
 }
 
 function hydrate() {

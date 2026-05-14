@@ -23,7 +23,6 @@ export * from "./moderator-account.schema";
 export * from "./notification.schema";
 export * from "./playlist-track.schema";
 export * from "./playlist.schema";
-export * from "./playback.schema";
 export * from "./refresh-token.schema";
 export * from "./report-target.schema";
 export * from "./report.schema";
@@ -33,3 +32,4 @@ export * from "./track-credit.schema";
 export * from "./track-genre.schema";
 export * from "./track.schema";
 export * from "./user.schema";
+

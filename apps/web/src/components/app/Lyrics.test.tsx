@@ -1,4 +1,5 @@
-import { QueueItem, usePlayerStore } from '@/stores/player.store';
+import { usePlayerStore } from '@/stores/player.store';
+import type { PlaybackTrack } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,7 +33,16 @@ describe('Lyrics', () => {
     it('renders track title and not available message when track is playing', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
-          currentTrack: { title: 'Test Song' } as QueueItem,
+          currentTrack: {
+            title: 'Test Song',
+            trackId: '1',
+            artists: ['Artist 1'],
+            albumName: 'Album 1',
+            albumId: '1',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
           toggleQueue: mockToggleQueue,
         }),
       );
