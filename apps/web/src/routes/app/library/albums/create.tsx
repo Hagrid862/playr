@@ -24,10 +24,11 @@ function RouteComponent() {
       <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-[1920px] flex-col gap-6 overflow-visible lg:flex-1 lg:min-h-0">
         <div className="flex shrink-0 flex-col gap-2">
           <Alert className="border-primary/20 bg-primary/5">
-            <AlertTitle className="text-primary">Create album with tracks</AlertTitle>
+            <AlertTitle className="text-primary">Create album</AlertTitle>
             <AlertDescription className="text-muted-foreground">
-              Fill in album details, then add audio files. Metadata and embedded artwork are read
-              automatically; you can edit everything before publishing.
+              Fill in album details and create whenever you are ready, or add audio files to import
+              tracks first. Metadata and embedded artwork are read automatically from files you add;
+              you can edit everything before publishing.
             </AlertDescription>
           </Alert>
 

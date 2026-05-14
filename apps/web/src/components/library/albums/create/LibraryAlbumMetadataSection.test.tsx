@@ -36,6 +36,7 @@ const baseForm: LibraryAlbumFromFilesFormData = {
   description: '',
   type: 'album',
   artistId: 'a1',
+  genreIds: [],
   releaseDate: null,
 };
 
@@ -45,6 +46,36 @@ describe('LibraryAlbumMetadataSection', () => {
   const onClearStagedArtist = vi.fn();
   const onManualCoverFile = vi.fn();
   const onRemoveCover = vi.fn();
+
+  const onGenreSelectionChange = vi.fn();
+  const onRemoveGenreId = vi.fn();
+
+  const testGenre = {
+    id: 'g1',
+    name: 'Rock',
+    slug: 'rock',
+    description: null,
+    kind: 'system' as const,
+    libraryId: null,
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+    deletedAt: null,
+  };
+
+  const genrePropsFor = (
+    overrides?: Partial<{
+      genres: (typeof testGenre)[];
+      pendingGenres: { id: string; name: string }[];
+      isLoadingGenres: boolean;
+    }>,
+  ) => ({
+    genres: [testGenre],
+    pendingGenres: [] as { id: string; name: string }[],
+    isLoadingGenres: false,
+    onGenreSelectionChange,
+    onRemoveGenreId,
+    ...overrides,
+  });
 
   const artistOptions = [
     { value: '__create_new_artist__', label: '+ Create new artist…' },
@@ -69,6 +100,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -93,11 +125,76 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
     expect(screen.getByLabelText(/album title/i)).toHaveValue('Test album');
     expect(screen.getByText(/album details/i)).toBeInTheDocument();
+  });
+
+  it('opens genre picker, filters by search, and selects a genre', async () => {
+    const user = userEvent.setup();
+    const customGenre = {
+      id: 'g2',
+      name: 'Ambient',
+      slug: 'ambient',
+      description: null,
+      kind: 'custom' as const,
+      libraryId: 'lib-1',
+      createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+      deletedAt: null,
+    };
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={baseForm}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        artistSelectOptions={artistOptions}
+        isLoadingArtists={false}
+        isStagedNewArtistSelected={false}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistIdChange={onArtistIdChange}
+        onClearStagedArtist={onClearStagedArtist}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
+        genres={[testGenre, customGenre]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /genres \(optional\)/i }));
+    expect(await screen.findByRole('option', { name: /create new genre/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /^no genres$/i })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/search genres/i), 'ambi');
+    expect(screen.queryByRole('option', { name: /^rock$/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: /^ambient$/i }));
+    expect(onGenreSelectionChange).toHaveBeenCalledWith('g2');
+  });
+
+  it('removes a selected genre via chip', async () => {
+    const user = userEvent.setup();
+    renderWithTooltip(
+      <LibraryAlbumMetadataSection
+        formData={{ ...baseForm, genreIds: ['g1'] }}
+        artists={[{ id: 'a1', name: 'Alpha' }]}
+        artistSelectOptions={artistOptions}
+        isLoadingArtists={false}
+        isStagedNewArtistSelected={false}
+        coverPreviewUrl={null}
+        onUpdate={onUpdate}
+        onArtistIdChange={onArtistIdChange}
+        onClearStagedArtist={onClearStagedArtist}
+        onManualCoverFile={onManualCoverFile}
+        onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
+      />,
+    );
+
+    await user.click(screen.getByLabelText(/remove rock/i));
+    expect(onRemoveGenreId).toHaveBeenCalledWith('g1');
   });
 
   it('shows staged-artist readonly row with clear action', async () => {
@@ -115,6 +212,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -138,6 +236,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -159,6 +258,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -188,6 +288,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -218,6 +319,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -249,6 +351,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -272,6 +375,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -304,6 +408,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -327,6 +432,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -356,6 +462,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -376,6 +483,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -397,6 +505,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -417,6 +526,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -437,6 +547,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -460,6 +571,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -481,6 +593,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -502,6 +615,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -527,6 +641,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -551,6 +666,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -574,6 +690,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -599,6 +716,7 @@ describe('LibraryAlbumMetadataSection', () => {
           onClearStagedArtist={onClearStagedArtist}
           onManualCoverFile={onManualCoverFile}
           onRemoveCover={onRemoveCover}
+          {...genrePropsFor()}
         />
       </TooltipProvider>,
     );
@@ -630,6 +748,7 @@ describe('LibraryAlbumMetadataSection', () => {
           onClearStagedArtist={onClearStagedArtist}
           onManualCoverFile={onManualCoverFile}
           onRemoveCover={onRemoveCover}
+          {...genrePropsFor()}
         />
       </TooltipProvider>,
     );
@@ -651,6 +770,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -683,6 +803,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -707,6 +828,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 
@@ -728,6 +850,7 @@ describe('LibraryAlbumMetadataSection', () => {
         onClearStagedArtist={onClearStagedArtist}
         onManualCoverFile={onManualCoverFile}
         onRemoveCover={onRemoveCover}
+        {...genrePropsFor()}
       />,
     );
 

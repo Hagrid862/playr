@@ -73,6 +73,9 @@
     "prisma:migrate": {
       "cache": false
     },
+    "prisma:reset": {
+      "cache": false
+    },
     "prisma:push": {
       "cache": false
     },

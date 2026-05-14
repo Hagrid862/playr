@@ -4,15 +4,19 @@ import { useCreateLibraryAlbum } from '@/hooks/api/library-albums/useCreateLibra
 import { useUploadLibraryAlbumCover } from '@/hooks/api/library-albums/useUploadLibraryAlbumCover';
 import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLibraryArtist';
 import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists';
+import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
+import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { useLibraryStore } from '@/stores/library.store';
-import { CircleNotchIcon, UploadSimpleIcon } from '@phosphor-icons/react';
+import type { ZodGenreInfer } from '@repo/contracts';
+import { CircleNotchIcon, PlusCircleIcon, UploadSimpleIcon } from '@phosphor-icons/react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CoverSelectionBanner } from '../../tracks/bulk/CoverSelectionBanner';
 import { AlbumAudioDropCard } from './AlbumAudioDropCard';
 import { CreateLibraryArtistNameModal } from './CreateLibraryArtistNameModal';
+import { CreateLibraryGenreNameModal } from './CreateLibraryGenreNameModal';
 import { LibraryAlbumFromFilesProcessingOverlay } from './LibraryAlbumFromFilesProcessingOverlay';
 import { LibraryAlbumFromFilesTracksSection } from './LibraryAlbumFromFilesTracksSection';
 import { LibraryAlbumMetadataSection } from './LibraryAlbumMetadataSection';
@@ -21,7 +25,12 @@ import {
   isLocalPendingArtistId,
   normalizeLibraryArtistNameForMatch,
 } from './pendingLibraryArtist';
+import { isLocalPendingGenreId, makeLocalPendingGenreId } from './pendingLibraryGenre';
 import { useLibraryAlbumFromFilesForm } from './useLibraryAlbumFromFilesForm';
+import {
+  LIBRARY_ALBUM_GENRE_CREATE_VALUE,
+  LIBRARY_ALBUM_GENRE_NONE_VALUE,
+} from './libraryAlbumGenreConstants';
 
 /** Select sentinel: opens the “new artist” modal instead of setting `artistId`. */
 const CREATE_NEW_ARTIST_SELECT_VALUE = '__create_new_artist__';
@@ -39,6 +48,10 @@ export function LibraryAlbumFromFilesForm({
   const { libraryId } = useLibraryStore();
   const { isLoading: isLoadingArtists } = useLibraryArtists();
   const artists = useLibraryStore((state) => state.privateArtists);
+  const { data: genresResponse, isLoading: isLoadingGenres } = useLibraryGenres({
+    page: 1,
+    limit: 100,
+  });
 
   const { mutateAsync: createAlbum, isPending: isCreatingAlbum } = useCreateLibraryAlbum();
   const { mutateAsync: uploadCover, isPending: isUploadingCover } = useUploadLibraryAlbumCover();
@@ -46,9 +59,12 @@ export function LibraryAlbumFromFilesForm({
     useBulkCreateLibraryTracks();
   const { mutateAsync: createLibraryArtist, isPending: isCreatingArtist } =
     useCreateLibraryArtist();
+  const { mutateAsync: createLibraryGenre, isPending: isCreatingGenre } = useCreateLibraryGenre();
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createArtistModalOpen, setCreateArtistModalOpen] = useState(false);
+  const [createGenreModalOpen, setCreateGenreModalOpen] = useState(false);
+  const [pendingGenres, setPendingGenres] = useState<{ id: string; name: string }[]>([]);
 
   const {
     formData,
@@ -70,10 +86,17 @@ export function LibraryAlbumFromFilesForm({
     removeTrack,
     clearTracks,
     updateFormData,
+    toggleGenreId,
+    clearGenreSelection,
+    appendGenreId,
     isFormValid,
     pendingArtists,
     setPendingArtists,
   } = useLibraryAlbumFromFilesForm({ initialArtistId });
+
+  useEffect(() => {
+    setPendingGenres((prev) => prev.filter((p) => formData.genreIds.includes(p.id)));
+  }, [formData.genreIds]);
 
   useEffect(() => {
     if (isLoadingArtists) return;
@@ -111,6 +134,11 @@ export function LibraryAlbumFromFilesForm({
   }, [selectedCoverTrackId, tracksWithCovers]);
 
   const coverPreviewUrl = manualAlbumCoverPreviewUrl ?? embeddedCoverPreviewUrl;
+
+  const genres = useMemo<ZodGenreInfer[]>(
+    () => genresResponse?.data?.items ?? [],
+    [genresResponse],
+  );
 
   const artistSelectOptions = useMemo(() => {
     const createOption = { value: CREATE_NEW_ARTIST_SELECT_VALUE, label: '+ Create new artist…' };
@@ -151,6 +179,37 @@ export function LibraryAlbumFromFilesForm({
     updateFormData('artistId', '');
   }, [formData.artistId, setPendingArtists, updateFormData]);
 
+  const handleGenreSelectionChange = useCallback(
+    (value: string) => {
+      if (value === LIBRARY_ALBUM_GENRE_CREATE_VALUE) {
+        setCreateGenreModalOpen(true);
+        return;
+      }
+      if (value === LIBRARY_ALBUM_GENRE_NONE_VALUE) {
+        clearGenreSelection();
+        return;
+      }
+      toggleGenreId(value);
+    },
+    [clearGenreSelection, toggleGenreId],
+  );
+
+  const handleConfirmNewGenreName = useCallback(
+    (name: string) => {
+      const id = makeLocalPendingGenreId();
+      setPendingGenres((prev) => [...prev, { id, name }]);
+      appendGenreId(id);
+    },
+    [appendGenreId],
+  );
+
+  const handleRemoveGenreId = useCallback(
+    (id: string) => {
+      toggleGenreId(id);
+    },
+    [toggleGenreId],
+  );
+
   const handleSelectCover = useCallback(
     (trackId: string | null) => {
       setSelectedCoverTrackId(trackId);
@@ -171,13 +230,15 @@ export function LibraryAlbumFromFilesForm({
 
   const progressStep = isCreatingArtist
     ? 'Creating artist...'
-    : isCreatingAlbum
-      ? 'Creating album...'
-      : isUploadingCover
-        ? 'Uploading cover...'
-        : isUploadingTracks
-          ? `Uploading ${tracks.length} track${tracks.length !== 1 ? 's' : ''}...`
-          : null;
+    : isCreatingGenre
+      ? 'Creating genre...'
+      : isCreatingAlbum
+        ? 'Creating album...'
+        : isUploadingCover
+          ? 'Uploading cover...'
+          : isUploadingTracks
+            ? `Uploading ${tracks.length} track${tracks.length !== 1 ? 's' : ''}...`
+            : null;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -200,12 +261,30 @@ export function LibraryAlbumFromFilesForm({
           artistId = createdArtist.data.id;
         }
 
+        const resolvedGenreIds: string[] = [];
+        for (const gid of formData.genreIds) {
+          if (isLocalPendingGenreId(gid)) {
+            const pendingGenre = pendingGenres.find((p) => p.id === gid);
+            if (!pendingGenre?.name.trim()) {
+              throw new Error('Genre name is missing');
+            }
+            const createdGenre = await createLibraryGenre({ name: pendingGenre.name.trim() });
+            if (!createdGenre.data) {
+              throw new Error('Failed to create genre');
+            }
+            resolvedGenreIds.push(createdGenre.data.id);
+          } else {
+            resolvedGenreIds.push(gid);
+          }
+        }
+
         const album = await createAlbum({
           name: formData.name,
           description: formData.description,
           type: formData.type,
           artistId,
           releaseDate: formData.releaseDate,
+          genreIds: resolvedGenreIds.length > 0 ? resolvedGenreIds : undefined,
         });
 
         if (!album.data) throw new Error('Failed to create album');
@@ -214,16 +293,21 @@ export function LibraryAlbumFromFilesForm({
           await uploadCover({ id: album.data.id, file: coverFileForUpload });
         }
 
-        await bulkCreateTracks({
-          album: album.data,
-          tracks,
-          artistIds: [artistId],
-        });
+        if (tracks.length > 0) {
+          await bulkCreateTracks({
+            album: album.data,
+            tracks,
+            artistIds: [artistId],
+          });
+        }
 
         toast.success(
-          `Successfully created album and uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`,
+          tracks.length === 0
+            ? 'Successfully created album'
+            : `Successfully created album and uploaded ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`,
         );
         setPendingArtists([]);
+        setPendingGenres([]);
         navigate({ to: '/app/library/albums/$id', params: { id: album.data.id } });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to create album';
@@ -239,7 +323,9 @@ export function LibraryAlbumFromFilesForm({
       tracks,
       pendingArtists,
       setPendingArtists,
+      pendingGenres,
       createLibraryArtist,
+      createLibraryGenre,
       createAlbum,
       uploadCover,
       bulkCreateTracks,
@@ -247,7 +333,8 @@ export function LibraryAlbumFromFilesForm({
     ],
   );
 
-  const isSubmitting = isCreatingArtist || isCreatingAlbum || isUploadingCover || isUploadingTracks;
+  const isSubmitting =
+    isCreatingArtist || isCreatingGenre || isCreatingAlbum || isUploadingCover || isUploadingTracks;
   const isProcessing = isScanningMetadata || isScanningCovers;
   const processingMessage =
     isScanningMetadata && isScanningCovers
@@ -258,7 +345,7 @@ export function LibraryAlbumFromFilesForm({
 
   const submitLabel =
     tracks.length === 0
-      ? 'Add audio files to continue'
+      ? 'Create album'
       : `Create album & upload ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`;
 
   return (
@@ -268,6 +355,13 @@ export function LibraryAlbumFromFilesForm({
         onOpenChange={setCreateArtistModalOpen}
         pendingArtistNames={pendingArtists.map((p) => p.name)}
         onConfirm={handleConfirmNewArtistName}
+      />
+      <CreateLibraryGenreNameModal
+        open={createGenreModalOpen}
+        onOpenChange={setCreateGenreModalOpen}
+        pendingGenreNames={pendingGenres.map((p) => p.name)}
+        existingGenres={genres.map((g) => ({ id: g.id, name: g.name, slug: g.slug }))}
+        onConfirm={handleConfirmNewGenreName}
       />
       {isProcessing && <LibraryAlbumFromFilesProcessingOverlay message={processingMessage} />}
 
@@ -289,6 +383,11 @@ export function LibraryAlbumFromFilesForm({
               onClearStagedArtist={handleClearStagedArtist}
               onManualCoverFile={setManualAlbumCover}
               onRemoveCover={handleRemoveCover}
+              genres={genres}
+              pendingGenres={pendingGenres}
+              isLoadingGenres={isLoadingGenres}
+              onGenreSelectionChange={handleGenreSelectionChange}
+              onRemoveGenreId={handleRemoveGenreId}
             />
           </aside>
 
@@ -351,7 +450,7 @@ export function LibraryAlbumFromFilesForm({
           </Button>
           <Button
             type="submit"
-            disabled={!isFormValid || isSubmitting || isLoadingArtists}
+            disabled={!isFormValid || isSubmitting || isLoadingArtists || isLoadingGenres}
             className="min-w-32 sm:min-w-36"
           >
             {isSubmitting ? (
@@ -361,7 +460,11 @@ export function LibraryAlbumFromFilesForm({
               </>
             ) : (
               <>
-                <UploadSimpleIcon className="mr-2 h-4 w-4" />
+                {tracks.length === 0 ? (
+                  <PlusCircleIcon className="mr-2 h-4 w-4" />
+                ) : (
+                  <UploadSimpleIcon className="mr-2 h-4 w-4" />
+                )}
                 {submitLabel}
               </>
             )}

@@ -20,10 +20,13 @@ import {
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import type { ZodGenreInfer } from '@repo/contracts';
 import { AlbumType } from '@repo/db';
 import { Link } from '@tanstack/react-router';
 import { CameraIcon, MusicNotesIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { LibraryAlbumGenrePicker } from './LibraryAlbumGenrePicker';
+import { isLocalPendingGenreId } from './pendingLibraryGenre';
 import type { LibraryAlbumFromFilesFormData } from './useLibraryAlbumFromFilesForm';
 
 const albumTypeOptions = Object.entries(AlbumType).map(([key, value]) => ({
@@ -53,6 +56,12 @@ interface LibraryAlbumMetadataSectionProps {
   onManualCoverFile: (file: File | null) => void;
   /** Clears manual file if set, otherwise clears embedded cover selection */
   onRemoveCover: () => void;
+  /** Genres from the library (system + custom), for empty-state copy and picker. */
+  genres: ZodGenreInfer[];
+  pendingGenres: { id: string; name: string }[];
+  isLoadingGenres: boolean;
+  onGenreSelectionChange: (value: string) => void;
+  onRemoveGenreId: (genreId: string) => void;
 }
 
 export function LibraryAlbumMetadataSection({
@@ -67,6 +76,11 @@ export function LibraryAlbumMetadataSection({
   onClearStagedArtist,
   onManualCoverFile,
   onRemoveCover,
+  genres,
+  pendingGenres,
+  isLoadingGenres,
+  onGenreSelectionChange,
+  onRemoveGenreId,
 }: LibraryAlbumMetadataSectionProps) {
   const artistFieldId = useId();
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +141,17 @@ export function LibraryAlbumMetadataSection({
     e.preventDefault();
     e.stopPropagation();
   }, []);
+
+  const genreIdsForChips = useMemo(
+    () =>
+      [...formData.genreIds].sort((a, b) => {
+        const aNew = isLocalPendingGenreId(a);
+        const bNew = isLocalPendingGenreId(b);
+        if (aNew === bNew) return 0;
+        return aNew ? -1 : 1;
+      }),
+    [formData.genreIds],
+  );
 
   return (
     <div className="flex flex-col gap-6 overflow-visible lg:max-h-full lg:min-h-0 lg:flex-1">
@@ -358,6 +383,46 @@ export function LibraryAlbumMetadataSection({
               .
             </p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <LibraryAlbumGenrePicker
+            selectedGenreIds={formData.genreIds}
+            genres={genres}
+            pendingGenres={pendingGenres}
+            isLoading={isLoadingGenres}
+            disabled={isLoadingGenres}
+            nonePlaceholder={genres.length === 0 ? 'No genres or create new' : 'No genres'}
+            onSelect={onGenreSelectionChange}
+          />
+          {formData.genreIds.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {genreIdsForChips.map((gid) => {
+                const pending = pendingGenres.find((p) => p.id === gid);
+                const g = genres.find((x) => x.id === gid);
+                const label = pending ? `${pending.name} (new)` : (g?.name ?? gid);
+                const isNewGenre = isLocalPendingGenreId(gid);
+                return (
+                  <Button
+                    key={gid}
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className={cn(
+                      'h-7 gap-1 pr-1 pl-2 text-xs font-normal',
+                      isNewGenre &&
+                        'border border-emerald-600/45 bg-emerald-500/15 text-emerald-950 hover:bg-emerald-500/25 dark:border-emerald-500/40 dark:bg-emerald-950/55 dark:text-emerald-100 dark:hover:bg-emerald-900/45',
+                    )}
+                    onClick={() => onRemoveGenreId(gid)}
+                    aria-label={`Remove ${label}`}
+                  >
+                    <span className="max-w-[10rem] truncate">{label}</span>
+                    <XIcon className="size-3.5 shrink-0 opacity-70" />
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

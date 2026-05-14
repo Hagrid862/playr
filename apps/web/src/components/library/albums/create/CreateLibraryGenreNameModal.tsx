@@ -8,27 +8,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { checkLibraryArtistNameAvailability } from '@/hooks/api/library-artists/requests/checkLibraryArtistNameAvailability';
+import { genreMatchKey } from '@/lib/genres/genreMatchKey';
 import { useCallback, useState } from 'react';
 
-type CreateLibraryArtistNameModalProps = {
+type CreateLibraryGenreNameModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Names of artists already staged as pending in this session (exact match vs trimmed input). */
-  pendingArtistNames: string[];
-  /** Called with trimmed name when availability passes. */
+  /** Names of genres already staged as pending in this session (exact match vs trimmed input). */
+  pendingGenreNames: string[];
+  /** Genres loaded for the library (system + custom) — used to block duplicates in the dropdown set. */
+  existingGenres: { id: string; name: string; slug: string }[];
+  /** Called with trimmed name when validation passes. */
   onConfirm: (name: string) => void;
 };
 
-export function CreateLibraryArtistNameModal({
+export function CreateLibraryGenreNameModal({
   open,
   onOpenChange,
-  pendingArtistNames,
+  pendingGenreNames,
+  existingGenres,
   onConfirm,
-}: CreateLibraryArtistNameModalProps) {
+}: CreateLibraryGenreNameModalProps) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
@@ -36,7 +38,6 @@ export function CreateLibraryArtistNameModal({
     if (!open) {
       setName('');
       setError(null);
-      setIsChecking(false);
     }
   }
 
@@ -45,53 +46,52 @@ export function CreateLibraryArtistNameModal({
       if (!nextOpen) {
         setName('');
         setError(null);
-        setIsChecking(false);
       }
       onOpenChange(nextOpen);
     },
     [onOpenChange],
   );
 
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed) return;
 
     setError(null);
 
-    if (pendingArtistNames.some((n) => n === trimmed)) {
-      setError('You already added an artist with this name for this album.');
+    if (pendingGenreNames.some((n) => n === trimmed)) {
+      setError('You already added a genre with this name for this album.');
       return;
     }
 
-    setIsChecking(true);
-    try {
-      const result = await checkLibraryArtistNameAvailability(trimmed);
-      if (!result.data.available) {
-        setError('An artist with this name already exists in your library.');
-        return;
-      }
-      onConfirm(trimmed);
-      handleOpenChange(false);
-    } catch {
-      setError('Could not verify name. Try again.');
-    } finally {
-      setIsChecking(false);
+    const key = genreMatchKey(trimmed);
+    if (!key) {
+      setError('Genre name must contain at least one letter or number.');
+      return;
     }
-  }, [name, onConfirm, handleOpenChange, pendingArtistNames]);
+
+    const collides = existingGenres.some((g) => genreMatchKey(g.name) === key);
+    if (collides) {
+      setError('A genre like this already exists — pick it from the list instead.');
+      return;
+    }
+
+    onConfirm(trimmed);
+    handleOpenChange(false);
+  }, [name, onConfirm, handleOpenChange, pendingGenreNames, existingGenres]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New artist</DialogTitle>
+          <DialogTitle>New genre</DialogTitle>
           <DialogDescription>
-            This artist will be saved when you create the album. You can add more details later from
-            the library.
+            Draft genres are created when you submit the album. Add several if you like, select them
+            in the list, and manage custom genres later from the library.
           </DialogDescription>
         </DialogHeader>
         <TextField
-          label="Artist name"
-          placeholder="e.g. The Band"
+          label="Genre name"
+          placeholder="e.g. Shoegaze"
           value={name}
           onChange={(v) => {
             setName(v);
@@ -104,12 +104,8 @@ export function CreateLibraryArtistNameModal({
           <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={() => void handleConfirm()}
-            disabled={!name.trim() || isChecking}
-          >
-            {isChecking ? 'Checking…' : 'Add artist'}
+          <Button type="button" onClick={() => void handleConfirm()} disabled={!name.trim()}>
+            Add genre
           </Button>
         </DialogFooter>
       </DialogContent>
