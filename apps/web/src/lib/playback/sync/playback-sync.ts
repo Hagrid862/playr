@@ -2,6 +2,7 @@ export {
   afterLocalPlaybackMutation,
   afterLocalPlaybackMutationWithClaim,
   emitCurrentTimeSync,
+  emitPresenceTouch,
   listPlaybackDevices,
   setActivePlaybackDevice,
   syncPlayingStateToServer,
@@ -11,6 +12,7 @@ export {
   disconnectPlaybackSync,
   getPlaybackSocket,
   isPlaybackSyncConnected,
+  PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS,
 } from './playback-sync.connection';
 export {
   PLAYBACK_SOCKET_ACK_TIMEOUT_MS,

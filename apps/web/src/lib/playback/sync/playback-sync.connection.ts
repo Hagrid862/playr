@@ -3,7 +3,7 @@ import { createPlaybackSocket } from '@/lib/playback/playback-socket';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import type { PlaybackState } from '@repo/contracts';
 import type { Socket } from 'socket.io-client';
-import { listPlaybackDevices } from './playback-sync.commands';
+import { emitPresenceTouch, listPlaybackDevices } from './playback-sync.commands';
 import { firePlaybackCommand } from './playback-sync.fire-and-forget';
 import {
   getSocket,
@@ -12,6 +12,18 @@ import {
   setSocket,
 } from './playback-sync.state';
 import { applyCurrentTimeServerUpdate, applyStateFromServer } from './playback-sync.store-bridge';
+
+/** Must stay below the API `playback_devices` Redis key TTL (90s). */
+export const PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS = 45_000;
+
+let presenceTouchInterval: ReturnType<typeof setInterval> | null = null;
+
+function clearPresenceTouchInterval() {
+  if (presenceTouchInterval !== null) {
+    clearInterval(presenceTouchInterval);
+    presenceTouchInterval = null;
+  }
+}
 
 export function getPlaybackSocket(): Socket | null {
   return getSocket();
@@ -26,7 +38,11 @@ function hydrate() {
   if (!sock?.connected) return;
 
   sock.emit('query:get-state', {}, (payload: PlaybackState | null) => {
-    if (payload) applyStateFromServer(payload);
+    if (payload) {
+      applyStateFromServer(payload);
+    } else {
+      usePlayerStore.getState().clearSessionPlayback();
+    }
   });
 }
 
@@ -49,10 +65,23 @@ export function connectPlaybackSync(accessToken: string) {
   sock.on('connect', () => {
     hydrate();
     firePlaybackCommand(listPlaybackDevices(), 'listPlaybackDevices');
+    void emitPresenceTouch().catch(() => {
+      /* presence is best-effort; next interval will retry */
+    });
+    clearPresenceTouchInterval();
+    presenceTouchInterval = setInterval(() => {
+      void emitPresenceTouch().catch(() => {
+        /* best-effort */
+      });
+    }, PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS);
   });
 
   sock.on('event:playback-state-updated', (state: PlaybackState) => {
     applyStateFromServer(state);
+  });
+
+  sock.on('event:playback-session-ended', () => {
+    usePlayerStore.getState().clearSessionPlayback();
   });
 
   sock.on('event:current-time-updated', (payload: { currentTime: number; version: number }) => {
@@ -69,6 +98,7 @@ export function connectPlaybackSync(accessToken: string) {
 }
 
 export function disconnectPlaybackSync() {
+  clearPresenceTouchInterval();
   const sock = getSocket();
   if (!sock) return;
   sock.removeAllListeners();

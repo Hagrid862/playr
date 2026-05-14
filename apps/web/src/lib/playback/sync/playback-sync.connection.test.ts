@@ -47,6 +47,14 @@ vi.mock('@/stores/player-store/player.store', () => ({
   },
 }));
 
+vi.mock('./playback-sync.commands', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./playback-sync.commands')>();
+  return {
+    ...actual,
+    emitPresenceTouch: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
 describe('playback-sync connection', () => {
   let mockSocket: PlaybackSocketMock;
 
@@ -73,6 +81,10 @@ describe('playback-sync connection', () => {
       );
       expect(mockSocket.on).toHaveBeenCalledWith(
         'event:current-time-updated',
+        expect.any(Function),
+      );
+      expect(mockSocket.on).toHaveBeenCalledWith(
+        'event:playback-session-ended',
         expect.any(Function),
       );
       expect(mockSocket.on).toHaveBeenCalledWith('connect_error', expect.any(Function));
@@ -124,6 +136,13 @@ describe('playback-sync connection', () => {
       updateHandler(newState);
 
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalledWith(newState);
+    });
+
+    it('clears session when playback-session-ended fires', () => {
+      connectPlaybackSync('token');
+      const endedHandler = findOnHandler(mockSocket.on.mock.calls, 'event:playback-session-ended');
+      endedHandler();
+      expect(usePlayerStore.getState().clearSessionPlayback).toHaveBeenCalled();
     });
 
     it('applies current time update from server', () => {
@@ -210,6 +229,7 @@ describe('playback-sync connection', () => {
       );
       connectHandler();
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).not.toHaveBeenCalled();
+      expect(usePlayerStore.getState().clearSessionPlayback).toHaveBeenCalled();
     });
 
     it('returns early if disconnected', () => {

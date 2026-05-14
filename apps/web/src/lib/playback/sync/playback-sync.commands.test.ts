@@ -9,6 +9,7 @@ import {
   connectPlaybackSync,
   disconnectPlaybackSync,
   emitCurrentTimeSync,
+  emitPresenceTouch,
   listPlaybackDevices,
   setActivePlaybackDevice,
   syncPlayingStateToServer,
@@ -242,6 +243,26 @@ describe('playback-sync commands', () => {
     });
   });
 
+  describe('emitPresenceTouch', () => {
+    it('emits command:presence-touch and resolves ack', async () => {
+      connectPlaybackSync('token');
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback: (r: unknown) => void) => {
+          if (event === 'command:presence-touch') {
+            callback({ ok: true, serverTime: new Date().toISOString() });
+          }
+        },
+      );
+
+      await emitPresenceTouch();
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'command:presence-touch',
+        {},
+        expect.any(Function),
+      );
+    });
+  });
+
   describe('emitCurrentTimeSync', () => {
     it('emits current time and handles response', async () => {
       connectPlaybackSync('token');
@@ -357,6 +378,7 @@ describe('playback-sync commands', () => {
         );
       await emitCurrentTimeSync(10);
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).not.toHaveBeenCalled();
+      expect(usePlayerStore.getState().clearSessionPlayback).toHaveBeenCalled();
 
       mockSocket.emit.mockImplementationOnce(
         (_e: string, _d: unknown, callback: (r: EmitCallbackPayload) => void) => {
@@ -500,7 +522,7 @@ describe('playback-sync commands', () => {
       );
     });
 
-    it('on conflict when get-state returns null, does not apply server state', async () => {
+    it('on conflict when get-state returns null, clears session playback', async () => {
       const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
       const callsBefore = apply.mock.calls.length;
 
@@ -519,6 +541,7 @@ describe('playback-sync commands', () => {
 
       expect(mockSocket.emit).toHaveBeenCalledWith('query:get-state', {}, expect.any(Function));
       expect(apply.mock.calls.length).toBe(callsBefore);
+      expect(usePlayerStore.getState().clearSessionPlayback).toHaveBeenCalled();
     });
 
     it('on conflict when getSocket is null after hydrate, skips set-active-device retry', async () => {
