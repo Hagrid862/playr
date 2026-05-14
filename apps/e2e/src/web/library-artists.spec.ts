@@ -72,7 +72,9 @@ test.describe("Library Artist CRUD Workflow", () => {
     await page.goto("/app/library/overview");
 
     const libraryCreatedState = page.getByText("Your Private Library");
-    const libraryNotCreatedState = page.getByText("You don't have a private library yet");
+    const libraryNotCreatedState = page.getByText(
+      "You don't have a private library yet",
+    );
 
     await expect(libraryCreatedState.or(libraryNotCreatedState)).toBeVisible();
 
