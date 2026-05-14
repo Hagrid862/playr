@@ -1,8 +1,9 @@
 import { MediaCard } from '@/components/library/MediaCard';
 import { Spinner } from '@/components/ui/spinner';
 import { useLibraryAlbums } from '@/hooks/api/library-albums/useLibraryAlbums';
-import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
+import { UNKNOWN_ALBUM_LABEL, UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { useLibraryStore } from '@/stores/library.store';
+import { AlbumSystemKind } from '@repo/db';
 import { DiscIcon } from '@phosphor-icons/react';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -13,6 +14,12 @@ export const Route = createFileRoute('/app/library/albums/')({
 function RouteComponent() {
   const { isLoading } = useLibraryAlbums();
   const albums = useLibraryStore((state) => state.privateAlbums);
+
+  const sortedAlbums = [...albums].sort(
+    (a, b) =>
+      (a.systemKind === AlbumSystemKind.unknown_bucket ? 1 : 0) -
+      (b.systemKind === AlbumSystemKind.unknown_bucket ? 1 : 0),
+  );
 
   if (isLoading) {
     return (
@@ -41,11 +48,13 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-        {albums.map((album) => (
+        {sortedAlbums.map((album) => (
           <MediaCard
             key={album.id}
             id={album.id}
-            title={album.name}
+            title={
+              album.systemKind === AlbumSystemKind.unknown_bucket ? UNKNOWN_ALBUM_LABEL : album.name
+            }
             subtitle={
               (album.artists?.length
                 ? album.artists.map((artist) => artist.name).join(', ')

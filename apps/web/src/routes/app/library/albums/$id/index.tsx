@@ -1,5 +1,7 @@
 import { SongCard } from '@/components/library/SongCard';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -15,13 +17,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
-import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
+import { UNKNOWN_ALBUM_LABEL, UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import {
   albumTypeDisplayName,
   buildGenreMiddleSegment,
@@ -30,6 +33,7 @@ import {
 } from '@/lib/library/albumDetailMeta';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
+import { AlbumSystemKind } from '@repo/db';
 import {
   DiscIcon,
   DotsThreeIcon,
@@ -52,6 +56,7 @@ function RouteComponent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [keepTracksOnDelete, setKeepTracksOnDelete] = useState(false);
   const [trackToDelete, setTrackToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const { data: albumResponse, isLoading } = useLibraryAlbum(id);
@@ -64,8 +69,9 @@ function RouteComponent() {
 
   const handleDelete = async () => {
     try {
-      await deleteAlbum(id);
+      await deleteAlbum({ id, keepTracks: keepTracksOnDelete });
       setIsDeleteDialogOpen(false);
+      setKeepTracksOnDelete(false);
       navigate({ to: '/app/library/albums' });
       toast.success('Album deleted successfully');
     } catch (error) {
@@ -268,11 +274,13 @@ function RouteComponent() {
                   <ShareIcon size={18} /> Share
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <Link to="/app/library/albums/$id/edit" params={{ id: album.id }}>
-                  <DropdownMenuItem className="gap-2">
-                    <PencilIcon size={18} /> Edit
-                  </DropdownMenuItem>
-                </Link>
+                {album.systemKind === AlbumSystemKind.none ? (
+                  <Link to="/app/library/albums/$id/edit" params={{ id: album.id }}>
+                    <DropdownMenuItem className="gap-2">
+                      <PencilIcon size={18} /> Edit
+                    </DropdownMenuItem>
+                  </Link>
+                ) : null}
                 <DropdownMenuItem
                   onClick={() => setIsDeleteDialogOpen(true)}
                   className="gap-2 text-destructive focus:text-destructive"
@@ -378,7 +386,13 @@ function RouteComponent() {
         </div>
       </div>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <Dialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setKeepTracksOnDelete(false);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Album</DialogTitle>
@@ -388,6 +402,33 @@ function RouteComponent() {
               cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="keep-tracks"
+                checked={keepTracksOnDelete}
+                onCheckedChange={(v) => setKeepTracksOnDelete(v === true)}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="keep-tracks" className="cursor-pointer font-medium">
+                  Keep tracks
+                </Label>
+                <p className="text-muted-foreground text-sm">
+                  When checked, songs stay in your library and move to{' '}
+                  <span className="font-medium text-foreground">{UNKNOWN_ALBUM_LABEL}</span>. When
+                  unchecked, the album and its songs are removed.
+                </p>
+              </div>
+            </div>
+            {keepTracksOnDelete ? (
+              <Alert>
+                <AlertDescription className="text-sm">
+                  Tracks will be unlinked from this album and grouped under{' '}
+                  <span className="font-medium">{UNKNOWN_ALBUM_LABEL}</span> in your library.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+          </div>
           <DialogFooter>
             <Button
               variant="outline"

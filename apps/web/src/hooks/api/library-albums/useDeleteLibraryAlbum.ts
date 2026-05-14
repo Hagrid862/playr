@@ -9,8 +9,8 @@ export const useDeleteLibraryAlbum = () => {
   const setPrivateAlbums = useLibraryStore((state) => state.setPrivateAlbums);
   const privateAlbums = useLibraryStore((state) => state.privateAlbums);
 
-  return useMutation<DeleteLibraryAlbumResponse, ApiError, string>({
-    mutationFn: deleteLibraryAlbum,
+  return useMutation<DeleteLibraryAlbumResponse, ApiError, { id: string; keepTracks?: boolean }>({
+    mutationFn: ({ id, keepTracks }) => deleteLibraryAlbum(id, { keepTracks }),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['library', 'albums'] });
 
