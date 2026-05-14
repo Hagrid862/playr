@@ -84,14 +84,33 @@ export class SearchService {
       LIMIT 8
     `;
 
-    return {
-      results: results.map((r: RawSearchResult) => ({
+    const artists = results.filter((r: RawSearchResult) => r.type === 'artist')
+      .map((r: RawSearchResult) => ({
         id: r.id,
         name: r.name,
         type: r.type,
-        ...(r.type === 'artist' ? { verified: !!r.verified } : {}),
-        ...(r.type === 'album' && r.albumType ? { albumType: r.albumType } : {}),
-      })),
+        verified: !!r.verified,
+    }));
+    
+    const albums = results.filter((r: RawSearchResult) => r.type === 'album')
+      .map((r: RawSearchResult) => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        albumType: r.albumType,
+    }));
+    
+    const tracks = results.filter((r: RawSearchResult) => r.type === 'track')
+      .map((r: RawSearchResult) => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+    }));
+
+    return {
+      artists,
+      albums,
+      tracks,
     };
   }
 }
