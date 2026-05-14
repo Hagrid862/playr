@@ -69,8 +69,14 @@ describe('BulkAlbumTracksSection', () => {
         <BulkAlbumTracksSection
           {...defaultProps}
           tracks={[
-            { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
-            { ...trackBuilder(), file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }) },
+            {
+              ...trackBuilder({ title: 'Track 1' }),
+              file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+            },
+            {
+              ...trackBuilder({ title: 'Track 2' }),
+              file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }),
+            },
           ]}
         />,
       );
@@ -80,11 +86,11 @@ describe('BulkAlbumTracksSection', () => {
     it('renders BulkTrackCard for each track', () => {
       const tracks = [
         {
-          ...trackBuilder(),
+          ...trackBuilder({ title: 'Track 1' }),
           file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
         },
         {
-          ...trackBuilder(),
+          ...trackBuilder({ title: 'Track 2' }),
           file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }),
         },
       ];
@@ -146,8 +152,14 @@ describe('BulkAlbumTracksSection', () => {
         <BulkAlbumTracksSection
           {...defaultProps}
           tracks={[
-            { ...trackBuilder(), file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }) },
-            { ...trackBuilder(), file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }) },
+            {
+              ...trackBuilder({ title: 'Track 1' }),
+              file: new File(['a'], 'track1.mp3', { type: 'audio/mpeg' }),
+            },
+            {
+              ...trackBuilder({ title: 'Track 2' }),
+              file: new File(['b'], 'track2.mp3', { type: 'audio/mpeg' }),
+            },
           ]}
         />,
       );

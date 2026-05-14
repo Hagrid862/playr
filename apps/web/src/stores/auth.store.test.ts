@@ -5,7 +5,7 @@ import { useAuthStore } from './auth.store';
 
 vi.mock('./idb-storage', () => ({
   idbStorage: {
-    getItem: vi.fn().mockRejectedValue(new Error('rehydration failed')),
+    getItem: vi.fn().mockResolvedValue(null),
     setItem: vi.fn().mockResolvedValue(undefined),
     removeItem: vi.fn().mockResolvedValue(undefined),
   },

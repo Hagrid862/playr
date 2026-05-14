@@ -39,10 +39,7 @@ export class ReorderQueueItemsHandler implements ICommandHandler<ReorderQueueIte
 
       const byQueueId = new Map(currentOrdered.map((item) => [item.queueId, item]));
       const queue: PlaybackState['queue'] = received.map((ref, index) => {
-        const item = byQueueId.get(ref.queueId);
-        if (!item) {
-          throw new BadRequestException('Queue item not found.');
-        }
+        const item = byQueueId.get(ref.queueId)!;
         return { ...item, position: index };
       });
 

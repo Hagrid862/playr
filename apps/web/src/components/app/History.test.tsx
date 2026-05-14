@@ -107,7 +107,38 @@ describe('History', () => {
 
       customRender(<History isVisible={true} onBack={mockOnBack} />);
       fireEvent.click(screen.getByText('Track 1'));
-      expect(mockPlayTrack).toHaveBeenCalledWith(track);
+      expect(mockPlayTrack).toHaveBeenCalledWith(track.track);
+    });
+
+    it('renders placeholder when albumArt is missing', () => {
+      const track: QueueItem = {
+        queueId: '1',
+        track: {
+          id: '1',
+          title: 'No Art Track',
+          trackId: '1',
+          artists: ['Artist'],
+          albumName: 'Album',
+          albumId: 'album-1',
+          albumArt: null,
+          duration: 100,
+          explicit: false,
+        },
+        position: 0,
+      };
+      vi.mocked(usePlayerStore).mockReturnValue(
+        createPlayerStateMock({
+          history: [track],
+          playTrack: mockPlayTrack,
+          toggleQueue: mockToggleQueue,
+        }),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+      expect(screen.getByText('No Art Track')).toBeInTheDocument();
+      // Should find the placeholder icon container
+      const icon = document.querySelector('svg');
+      expect(icon).toBeInTheDocument();
     });
 
     it('handles load more functionality', () => {

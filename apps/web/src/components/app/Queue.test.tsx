@@ -31,8 +31,8 @@ vi.mock('./queue/QueueHeader', () => ({
 }));
 
 vi.mock('./queue/QueueNowPlaying', () => ({
-  QueueNowPlaying: ({ currentTrack }: { currentTrack?: { title: string } }) => (
-    <div data-testid="queue-now-playing">{currentTrack?.title}</div>
+  QueueNowPlaying: ({ currentTrack }: { currentTrack?: QueueItem }) => (
+    <div data-testid="queue-now-playing">{currentTrack?.track?.title}</div>
   ),
 }));
 
@@ -52,7 +52,17 @@ vi.mock('./queue/QueueNextUp', () => ({
         onClick={() =>
           onPlayTrack({
             queueId: '2',
-            track: { id: '2', title: 'Track 2' } as PlaybackTrack,
+            track: {
+              id: '2',
+              title: 'Track 2',
+              trackId: '2',
+              artists: ['Artist 2'],
+              albumName: 'Album 2',
+              albumId: '2',
+              albumArt: 'cover.jpg',
+              duration: 100,
+              explicit: false,
+            } as PlaybackTrack,
             position: 0,
           } as unknown as QueueItem)
         }
@@ -105,6 +115,38 @@ vi.mock('./History', () => ({
     </div>
   ),
 }));
+
+function queueItemStub(queueId: string, trackId: string): QueueItem {
+  return {
+    queueId,
+    position: 0,
+    track: {
+      id: trackId,
+      title: `Track ${trackId}`,
+      trackId,
+      artists: [],
+      albumName: 'Album',
+      albumId: 'album-1',
+      albumArt: null,
+      duration: 0,
+      explicit: false,
+    },
+  };
+}
+
+function playbackTrackOuter(): PlaybackTrack {
+  return {
+    id: 'track-outer',
+    title: 'Outer Track',
+    trackId: 'track-outer',
+    artists: [],
+    albumName: 'Album',
+    albumId: 'album-1',
+    albumArt: null,
+    duration: 0,
+    explicit: false,
+  };
+}
 
 describe('Queue', () => {
   const mockPlayTrack = vi.fn();
@@ -197,50 +239,26 @@ describe('Queue', () => {
     it('calculates nextUp correctly when currentTrack is null', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({
-          queue: [
-            {
-              queueId: '1',
-              track: {
-                id: '1',
-                title: 'Track 1',
-                trackId: '1',
-                artists: ['Artist 1'],
-                albumName: 'Album 1',
-                albumId: '1',
-                albumArt: 'cover.jpg',
-                duration: 100,
-                explicit: false,
-              } as PlaybackTrack,
-              position: 0,
-            } as QueueItem,
-            {
-              queueId: '2',
-              track: {
-                id: '2',
-                title: 'Track 2',
-                trackId: '2',
-                artists: ['Artist 2'],
-                albumName: 'Album 2',
-                albumId: '2',
-                albumArt: 'cover.jpg',
-                duration: 100,
-                explicit: false,
-              } as PlaybackTrack,
-              position: 0,
-            } as QueueItem,
-          ],
+          queue: [queueItemStub('1', '1')],
           currentTrack: null,
-          playTrack: mockPlayTrack,
-          removeFromQueue: mockRemoveFromQueue,
-          toggleQueue: mockToggleQueue,
-          reorderQueue: mockReorderQueue,
-          isQueueOpen: true,
-          isShuffled: false,
         }),
       );
 
       customRender(<Queue />);
       expect(screen.getByTestId('queue-header')).toBeInTheDocument();
+    });
+
+    it('handles currentTrack not in queue', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        createPlayerStateMock({
+          queue: [queueItemStub('1', '1')],
+          currentTrack: playbackTrackOuter(),
+          isQueueOpen: true,
+        }),
+      );
+
+      customRender(<Queue />);
+      expect(screen.getByTestId('queue-now-playing')).toHaveTextContent('Outer Track');
     });
   });
 
@@ -289,7 +307,17 @@ describe('Queue', () => {
     it('handles play track', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Play Next'));
-      expect(mockPlayTrack).toHaveBeenCalledWith({ uniqueId: '2' });
+      expect(mockPlayTrack).toHaveBeenCalledWith({
+        id: '2',
+        title: 'Track 2',
+        trackId: '2',
+        artists: ['Artist 2'],
+        albumName: 'Album 2',
+        albumId: '2',
+        albumArt: 'cover.jpg',
+        duration: 100,
+        explicit: false,
+      });
     });
 
     it('handles toggle queue', () => {
@@ -304,11 +332,55 @@ describe('Queue', () => {
       customRender(<Queue />);
       fireEvent.click(screen.getByText('Drag End'));
 
-      expect(mockReorderQueue).toHaveBeenCalledWith([
-        { uniqueId: '1', title: 'Track 1' },
-        { uniqueId: '3', title: 'Track 3' },
-        { uniqueId: '2', title: 'Track 2' },
-      ]);
+      const expectedQueue: QueueItem[] = [
+        {
+          queueId: '1',
+          track: {
+            id: '1',
+            title: 'Track 1',
+            trackId: '1',
+            artists: ['Artist 1'],
+            albumName: 'Album 1',
+            albumId: '1',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+        {
+          queueId: '3',
+          track: {
+            id: '3',
+            title: 'Track 3',
+            trackId: '3',
+            artists: ['Artist 3'],
+            albumName: 'Album 3',
+            albumId: '3',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+        {
+          queueId: '2',
+          track: {
+            id: '2',
+            title: 'Track 2',
+            trackId: '2',
+            artists: ['Artist 2'],
+            albumName: 'Album 2',
+            albumId: '2',
+            albumArt: 'cover.jpg',
+            duration: 100,
+            explicit: false,
+          } as PlaybackTrack,
+          position: 0,
+        } as QueueItem,
+      ];
+
+      expect(mockReorderQueue).toHaveBeenCalledWith(expectedQueue);
     });
 
     it('does not reorder if active and over are the same', () => {

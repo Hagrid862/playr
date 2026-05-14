@@ -1,6 +1,7 @@
-import { useAuthStore } from '@/stores/auth.store';
 import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback-sync';
+import { useAuthStore } from '@/stores/auth.store';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
+import type { PlaybackTrack } from '@repo/contracts';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRenderHook } from '@repo/testing/web';
 import { waitFor } from '@testing-library/react';
@@ -23,6 +24,20 @@ vi.mock('@/lib/playback-sync', () => ({
 }));
 
 const originalFetch = globalThis.fetch;
+
+function playbackTrackStub(id: string): PlaybackTrack {
+  return {
+    id,
+    title: 'T',
+    trackId: id,
+    artists: [],
+    albumName: 'A',
+    albumId: 'aid',
+    albumArt: null,
+    duration: 100,
+    explicit: false,
+  };
+}
 
 function fetchJsonOk<T>(data: T) {
   return { ok: true, json: async () => data };
@@ -404,6 +419,40 @@ describe('usePlayerAudio', () => {
       } as PlayerState);
       rerender();
 
+      expect(pauseMock).toHaveBeenCalled();
+    });
+
+    it('pauses audio if another device becomes active', async () => {
+      vi.mocked(isPlaybackSyncConnected).mockReturnValue(true);
+      const storeState = {
+        ...defaultStore,
+        isPlaying: true,
+        currentTrack: playbackTrackStub('track-1'),
+        activeDeviceId: 'this-device',
+        localPlaybackDeviceId: 'this-device',
+      };
+      vi.mocked(usePlayerStore).mockReturnValue(storeState as PlayerState);
+
+      const { result, rerender } = customRenderHook(() => usePlayerAudio());
+      const pauseMock = vi.fn();
+      const audioEl = {
+        pause: pauseMock,
+        src: 'test',
+        readyState: 1,
+        play: vi.fn().mockResolvedValue(undefined),
+      } as unknown as HTMLAudioElement;
+      (result.current.audioRef as { current: HTMLAudioElement | null }).current = audioEl;
+
+      // First trigger play
+      rerender();
+
+      // Now switch device
+      vi.mocked(usePlayerStore).mockReturnValue({
+        ...storeState,
+        activeDeviceId: 'other-device',
+      } as PlayerState);
+
+      rerender();
       expect(pauseMock).toHaveBeenCalled();
     });
 

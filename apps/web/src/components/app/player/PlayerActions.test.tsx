@@ -1,3 +1,4 @@
+import * as playbackSync from '@/lib/playback-sync';
 import { PlayerState, usePlayerStore } from '@/stores/player.store';
 import { StreamAudioQuality } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -6,7 +7,44 @@ import { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerActions } from './PlayerActions';
-import * as playbackSync from '@/lib/playback-sync';
+
+const { findPopoverTriggerChild, findPopoverContentChild } = vi.hoisted(() => {
+  // Vitest hoists this before ESM imports; use require so React is available to the mock factory.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- hoisted block runs pre-import
+  const R = require('react') as typeof import('react');
+  function componentDisplayName(type: unknown): string | undefined {
+    if (typeof type === 'string' || typeof type === 'number') return undefined;
+    if (typeof type === 'function' && 'displayName' in type) {
+      return (type as { displayName?: string }).displayName;
+    }
+    if (type && typeof type === 'object' && 'displayName' in type) {
+      return (type as { displayName?: string }).displayName;
+    }
+    return undefined;
+  }
+  function findPopoverTriggerChildInner(
+    children: import('react').ReactNode,
+  ): import('react').ReactNode {
+    return R.Children.toArray(children).find((c) => {
+      if (!R.isValidElement<{ asChild?: boolean }>(c)) return false;
+      const name = componentDisplayName(c.type);
+      return name === 'PopoverTrigger' || Boolean(c.props.asChild);
+    });
+  }
+  function findPopoverContentChildInner(
+    children: import('react').ReactNode,
+  ): import('react').ReactNode {
+    return R.Children.toArray(children).find((c) => {
+      if (!R.isValidElement<{ asChild?: boolean }>(c)) return false;
+      const name = componentDisplayName(c.type);
+      return name === 'PopoverContent' || !c.props.asChild;
+    });
+  }
+  return {
+    findPopoverTriggerChild: findPopoverTriggerChildInner,
+    findPopoverContentChild: findPopoverContentChildInner,
+  };
+});
 
 vi.mock('@/stores/player.store', () => ({
   usePlayerStore: vi.fn(),
@@ -47,6 +85,30 @@ vi.mock('@/components/ui/slider', () => ({
       Slider
     </button>
   ),
+}));
+
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({
+    children,
+    onOpenChange,
+  }: PropsWithChildren<{ open?: boolean; onOpenChange?: (v: boolean) => void }>) => {
+    const trigger = findPopoverTriggerChild(children);
+    const content = findPopoverContentChild(children);
+    return (
+      <div data-testid="mock-popover">
+        <div onClick={() => onOpenChange?.(true)}>{trigger}</div>
+        <div onClick={() => onOpenChange?.(false)}>{content}</div>
+        <button type="button" onClick={() => onOpenChange?.(true)}>
+          Open Popover
+        </button>
+        <button type="button" onClick={() => onOpenChange?.(false)}>
+          Close Popover
+        </button>
+      </div>
+    );
+  },
+  PopoverTrigger: ({ children }: PropsWithChildren) => <>{children}</>,
+  PopoverContent: ({ children }: PropsWithChildren) => <div>{children}</div>,
 }));
 
 describe('PlayerActions', () => {
@@ -145,7 +207,7 @@ describe('PlayerActions', () => {
           playbackDevices: [
             {
               deviceId: 'device-1',
-              deviceName: 'Web Player',
+              deviceName: 'Chrome',
               deviceIcon: 'desktop',
               isActive: false,
               isCurrentDevice: false,
@@ -153,7 +215,7 @@ describe('PlayerActions', () => {
             },
             {
               deviceId: 'device-2',
-              deviceName: 'MacBook',
+              deviceName: 'Firefox',
               deviceIcon: 'desktop',
               isActive: true,
               isCurrentDevice: true,
@@ -168,8 +230,28 @@ describe('PlayerActions', () => {
       fireEvent.click(volumeBtn);
 
       expect(playbackSync.listPlaybackDevices).toHaveBeenCalled();
-      fireEvent.click(screen.getByRole('button', { name: /Web Player/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Chrome/i }));
       expect(playbackSync.setActivePlaybackDevice).toHaveBeenCalledWith('device-1');
+    });
+
+    it('does not list devices when popover closes', () => {
+      customRender(<PlayerActions />);
+      const openBtn = screen.getByText('Open Popover');
+      const closeBtn = screen.getByText('Close Popover');
+
+      // Open
+      fireEvent.click(openBtn);
+      expect(playbackSync.listPlaybackDevices).toHaveBeenCalledTimes(1);
+
+      // Close
+      fireEvent.click(closeBtn);
+      expect(playbackSync.listPlaybackDevices).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders empty devices state', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ playbackDevices: [] }));
+      customRender(<PlayerActions />);
+      expect(screen.getByText('No devices connected')).toBeInTheDocument();
     });
   });
 
