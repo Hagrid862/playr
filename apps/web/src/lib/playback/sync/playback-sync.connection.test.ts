@@ -124,6 +124,8 @@ describe('playback-sync connection', () => {
       connectHandler();
       await flushMicrotasks();
 
+      expect(emitPresenceTouchMock).toHaveBeenCalledTimes(1);
+
       emitPresenceTouchMock.mockReset();
       emitPresenceTouchMock.mockResolvedValue(undefined);
     });
