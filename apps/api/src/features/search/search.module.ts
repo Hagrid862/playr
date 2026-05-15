@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { SearchController } from './search.controller';
 import { SearchService } from './services/search.service';
-import { LiveSearchHandler } from './queries/handlers/live-search.handler';
+import { SearchSuggestionsHandler } from './queries/handlers/search-suggestions.handler';
+import { LibrarySearchSuggestionsHandler } from './queries/handlers/library-search-suggestions.handler';
 
-const QueryHandlers = [LiveSearchHandler];
+const QueryHandlers = [SearchSuggestionsHandler, LibrarySearchSuggestionsHandler];
 
 @Module({
   imports: [CqrsModule],

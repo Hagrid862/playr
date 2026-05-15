@@ -1,12 +1,16 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { SearchQueryRequestDto } from './dto/search-query.request.dto';
-import { LiveSearchResultsResponseDto } from './dto/live-search-results.response.dto';
-import { LiveSearchQuery } from './queries/impl/live-search.query';
+import { SearchSuggestionsQueryRequestDto } from './dto/search-suggestions-query.request.dto';
+import { SearchSuggestionsResultsResponseDto } from './dto/search-suggestions-results.response.dto';
+import { LibrarySearchSuggestionsQueryRequestDto } from './dto/library-search-suggestions-query.request.dto';
+import { LibrarySearchSuggestionsResultsResponseDto } from './dto/library-search-suggestions-results.response.dto';
+import { SearchSuggestionsQuery } from './queries/impl/search-suggestions.query';
+import { LibrarySearchSuggestionsQuery } from './queries/impl/library-search-suggestions.query';
 import { JwtAuthGuardForSearch } from '@/shared/guards/jwt-auth-for-search.guard';
+import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { User } from '@repo/db';
+import type { User } from '@repo/db';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 
 @ApiTags('Search')
@@ -17,11 +21,11 @@ export class SearchController {
   @Get('suggestions')
   @UseGuards(JwtAuthGuardForSearch)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Perform a fuzzy live search' })
+  @ApiOperation({ summary: 'Perform a fuzzy search suggestions' })
   @ApiResponse({
     status: 200,
     description: 'Fuzzy search results returned successfully',
-    type: LiveSearchResultsResponseDto,
+    type: SearchSuggestionsResultsResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -34,10 +38,33 @@ export class SearchController {
       'User token is required. Public and community visibilities are not implemented yet',
     type: ApiErrorResponseDto,
   })
-  async search(
-    @Query() query: SearchQueryRequestDto,
+  async searchSuggestions(
+    @Query() query: SearchSuggestionsQueryRequestDto,
     @CurrentUser() user: User | null,
-  ): Promise<LiveSearchResultsResponseDto> {
-    return this.queryBus.execute(new LiveSearchQuery(query.query, user?.id));
+  ): Promise<SearchSuggestionsResultsResponseDto> {
+    return this.queryBus.execute(new SearchSuggestionsQuery(query.query, user?.id));
+  }
+
+  @Get('library-suggestions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Perform a fuzzy search suggestions within the user library' })
+  @ApiResponse({
+    status: 200,
+    description: 'Library search results returned successfully',
+    type: LibrarySearchSuggestionsResultsResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Query is too short or invalid',
+    type: ApiErrorResponseDto,
+  })
+  async searchLibrarySuggestions(
+    @Query() query: LibrarySearchSuggestionsQueryRequestDto,
+    @CurrentUser() user: User,
+  ): Promise<LibrarySearchSuggestionsResultsResponseDto> {
+    return this.queryBus.execute(
+      new LibrarySearchSuggestionsQuery(user.id, query.query, query.categories),
+    );
   }
 }
