@@ -1,6 +1,6 @@
 import { IQuery } from '@nestjs/cqrs';
 
-export class LiveSearchQuery implements IQuery {
+export class SearchSuggestionsQuery implements IQuery {
   constructor(
     public readonly query: string,
     public readonly userId?: string,
