@@ -1,15 +1,14 @@
-import {BadRequestException, Injectable, UnauthorizedException} from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { LiveSearchResults } from '@repo/contracts';
-import { AlbumType } from '@repo/db';
+import { AlbumType, Visibility } from '@repo/db';
 
 interface RawSearchResult {
   id: string;
   name: string;
   type: 'artist' | 'album' | 'track';
-  verified: boolean | null;
+  visibility: Visibility;
   albumType: AlbumType | null;
-  score: number;
 }
 
 @Injectable()
@@ -18,7 +17,9 @@ export class SearchService {
 
   async liveSearch(query: string, userId?: string): Promise<LiveSearchResults> {
     if (!userId) {
-      throw new UnauthorizedException('User ID is required. Public and community visibilities are not implemented yet');
+      throw new UnauthorizedException(
+        'User ID is required. Public and community visibilities are not implemented yet',
+      );
     }
 
     if (!query || query.trim().length < 4) {
@@ -27,7 +28,6 @@ export class SearchService {
 
     const trimmedQuery = query.trim();
     const searchPattern = `%${trimmedQuery}%`;
-
 
     /**
      * We use a raw query to perform a unified fuzzy search across Artists, Albums, and Tracks.
@@ -38,7 +38,7 @@ export class SearchService {
      */
     const results = await this.prisma.extended.$queryRaw<RawSearchResult[]>`
       WITH unified_search AS (
-        SELECT id, name, 'artist' as type, verified, NULL as "albumType", similarity(name, ${trimmedQuery}) as score
+        SELECT id, name, 'artist' as type, visibility, NULL as "albumType", similarity(name, ${trimmedQuery}) as score
         FROM "artists"
         WHERE (similarity(name, ${trimmedQuery}) > 0.15 OR name ILIKE ${searchPattern})
         AND "deletedAt" IS NULL
@@ -52,7 +52,7 @@ export class SearchService {
         
         UNION ALL
         
-        SELECT id, name, 'album' as type, NULL as verified, type as "albumType", similarity(name, ${trimmedQuery}) as score
+        SELECT id, name, 'album' as type, visibility, type as "albumType", similarity(name, ${trimmedQuery}) as score
         FROM "albums"
         WHERE (similarity(name, ${trimmedQuery}) > 0.15 OR name ILIKE ${searchPattern})
         AND "deletedAt" IS NULL
@@ -66,7 +66,7 @@ export class SearchService {
         
         UNION ALL
         
-        SELECT id, title as name, 'track' as type, NULL as verified, NULL as "albumType", similarity(title, ${trimmedQuery}) as score
+        SELECT id, title as name, 'track' as type, visibility, NULL as "albumType", similarity(title, ${trimmedQuery}) as score
         FROM "tracks"
         WHERE (similarity(title, ${trimmedQuery}) > 0.15 OR title ILIKE ${searchPattern})
         AND "deletedAt" IS NULL
@@ -78,34 +78,39 @@ export class SearchService {
           ))
         )
       )
-      SELECT id, name, type, verified, "albumType", score
+      SELECT id, name, type, visibility, "albumType", score
       FROM unified_search
       ORDER BY score DESC
       LIMIT 8
     `;
 
-    const artists = results.filter((r: RawSearchResult) => r.type === 'artist')
+    const artists = results
+      .filter((r: RawSearchResult) => r.type === 'artist')
       .map((r: RawSearchResult) => ({
         id: r.id,
         name: r.name,
         type: r.type,
-        verified: !!r.verified,
-    }));
-    
-    const albums = results.filter((r: RawSearchResult) => r.type === 'album')
+        visibility: r.visibility,
+      }));
+
+    const albums = results
+      .filter((r: RawSearchResult) => r.type === 'album')
       .map((r: RawSearchResult) => ({
         id: r.id,
         name: r.name,
         type: r.type,
+        visibility: r.visibility,
         albumType: r.albumType,
-    }));
-    
-    const tracks = results.filter((r: RawSearchResult) => r.type === 'track')
+      }));
+
+    const tracks = results
+      .filter((r: RawSearchResult) => r.type === 'track')
       .map((r: RawSearchResult) => ({
         id: r.id,
         name: r.name,
         type: r.type,
-    }));
+        visibility: r.visibility,
+      }));
 
     return {
       artists,
