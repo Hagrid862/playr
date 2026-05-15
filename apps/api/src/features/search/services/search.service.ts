@@ -18,7 +18,7 @@ export class SearchService {
   async liveSearch(query: string, userId?: string): Promise<LiveSearchResults> {
     if (!userId) {
       throw new UnauthorizedException(
-        'User ID is required. Public and community visibilities are not implemented yet',
+        'User token is required. Public and community visibilities are not implemented yet',
       );
     }
 
@@ -84,38 +84,12 @@ export class SearchService {
       LIMIT 8
     `;
 
-    const artists = results
-      .filter((r: RawSearchResult) => r.type === 'artist')
-      .map((r: RawSearchResult) => ({
-        id: r.id,
-        name: r.name,
-        type: r.type,
-        visibility: r.visibility,
-      }));
-
-    const albums = results
-      .filter((r: RawSearchResult) => r.type === 'album')
-      .map((r: RawSearchResult) => ({
-        id: r.id,
-        name: r.name,
-        type: r.type,
-        visibility: r.visibility,
-        albumType: r.albumType,
-      }));
-
-    const tracks = results
-      .filter((r: RawSearchResult) => r.type === 'track')
-      .map((r: RawSearchResult) => ({
-        id: r.id,
-        name: r.name,
-        type: r.type,
-        visibility: r.visibility,
-      }));
-
-    return {
-      artists,
-      albums,
-      tracks,
-    };
+    return results.map((r: RawSearchResult) => ({
+      id: r.id,
+      name: r.name,
+      type: r.type,
+      visibility: r.visibility,
+      ...(r.albumType ? { albumType: r.albumType } : {}),
+    }));
   }
 }

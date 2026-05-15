@@ -14,7 +14,7 @@ import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 export class SearchController {
   constructor(private readonly queryBus: QueryBus) {}
 
-  @Get()
+  @Get('suggestions')
   @UseGuards(JwtAuthGuardForSearch)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Perform a fuzzy live search' })
@@ -30,7 +30,8 @@ export class SearchController {
   })
   @ApiResponse({
     status: 401,
-    description: 'User ID is required. Public and community visibilities are not implemented yet',
+    description:
+      'User token is required. Public and community visibilities are not implemented yet',
     type: ApiErrorResponseDto,
   })
   async search(
