@@ -1,2 +1,2 @@
-export * from "./request/search-query.request";
-export * from "./response/search-results.response";
+export * from "./request/live-search-query.request";
+export * from "./response/live-search-results.response";

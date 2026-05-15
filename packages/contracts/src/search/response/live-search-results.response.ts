@@ -1,21 +1,32 @@
 import { z } from "zod";
-import { AlbumType } from "@repo/db";
+import { AlbumType, Visibility } from "@repo/db";
+
+enum SearchResultType {
+  Artist = "artist",
+  Album = "album",
+  Track = "track",
+}
 
 export const ArtistSearchResultSchema = z.object({
   id: z.string(),
   name: z.string(),
-  verified: z.boolean(),
+  type: z.enum(SearchResultType),
+  visibility: z.enum(Visibility),
 });
 
 export const AlbumSearchResultSchema = z.object({
   id: z.string(),
   name: z.string(),
-  albumType: z.enum(AlbumType).optional(),
+  type: z.enum(SearchResultType),
+  visibility: z.enum(Visibility),
+  albumType: z.enum(AlbumType),
 });
 
 export const TrackSearchResultSchema = z.object({
   id: z.string(),
   name: z.string(),
+  type: z.enum(SearchResultType),
+  visibility: z.enum(Visibility),
 });
 
 export const LiveSearchResultsSchema = z.object({
