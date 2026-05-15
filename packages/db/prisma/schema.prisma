@@ -121,6 +121,7 @@ model Library {
 
   artists           LibraryArtist[] @relation("LibraryArtistLibrary")
   albums            LibraryAlbum[]  @relation("LibraryAlbumLibrary")
+  albumSystemAlbums Album[]         @relation("AlbumLibrarySystemAlbum")
   tracks            LibraryTrack[]  @relation("LibraryTrackLibrary")
   genres            Genre[]         @relation("LibraryGenres")
   playlists         Playlist[]      @relation("LibraryPlaylistLibrary")
@@ -372,6 +373,11 @@ model Album {
   totalDuration Int        @default(0)
   releaseDate   DateTime?
   visibility    Visibility @default(public)
+
+  systemKind AlbumSystemKind @default(none)
+
+  libraryId String?
+  library   Library? @relation("AlbumLibrarySystemAlbum", fields: [libraryId], references: [id], onDelete: SetNull)
 
   coverId String? @unique
   cover   Image?  @relation("AlbumCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
@@ -976,6 +982,11 @@ enum AlbumType {
   single
   ep
   compilation
+}
+
+enum AlbumSystemKind {
+  none
+  unknown_bucket
 }
 
 enum SessionType {
