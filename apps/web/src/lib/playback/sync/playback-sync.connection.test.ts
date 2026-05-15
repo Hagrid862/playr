@@ -77,6 +77,7 @@ describe('playback-sync connection', () => {
 
       expect(createPlaybackSocket).toHaveBeenCalled();
       expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function));
+      expect(mockSocket.on).toHaveBeenCalledWith('disconnect', expect.any(Function));
       expect(mockSocket.on).toHaveBeenCalledWith(
         'event:playback-state-updated',
         expect.any(Function),
@@ -148,6 +149,35 @@ describe('playback-sync connection', () => {
         await flushMicrotasks();
 
         expect(emitPresenceTouchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+      } finally {
+        vi.useRealTimers();
+        vi.mocked(emitPresenceTouch).mockReset();
+        vi.mocked(emitPresenceTouch).mockResolvedValue(undefined);
+      }
+    });
+
+    it('clears presence heartbeat interval on socket disconnect', async () => {
+      vi.useFakeTimers();
+      try {
+        mockSocket.emit.mockImplementation(
+          (event: string, _data: unknown, cb?: (r: unknown) => void) => {
+            if (event === 'query:get-state' && cb) cb(null);
+            if (event === 'query:list-devices' && cb) cb({ devices: [] });
+          },
+        );
+        const emitPresenceTouchMock = vi.mocked(emitPresenceTouch);
+        emitPresenceTouchMock.mockResolvedValue(undefined);
+
+        connectPlaybackSync('token');
+        const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
+        const disconnectHandler = findOnHandler(mockSocket.on.mock.calls, 'disconnect');
+        connectHandler();
+        await flushMicrotasks();
+        disconnectHandler();
+        await vi.advanceTimersByTimeAsync(PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS);
+        await flushMicrotasks();
+
+        expect(emitPresenceTouchMock).toHaveBeenCalledTimes(1);
       } finally {
         vi.useRealTimers();
         vi.mocked(emitPresenceTouch).mockReset();

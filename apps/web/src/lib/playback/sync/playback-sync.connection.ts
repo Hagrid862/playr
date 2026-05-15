@@ -76,6 +76,10 @@ export function connectPlaybackSync(accessToken: string) {
     }, PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS);
   });
 
+  sock.on('disconnect', () => {
+    clearPresenceTouchInterval();
+  });
+
   sock.on('event:playback-state-updated', (state: PlaybackState) => {
     applyStateFromServer(state);
   });

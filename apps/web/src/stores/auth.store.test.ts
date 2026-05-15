@@ -34,8 +34,8 @@ const mockUser = (() => {
 
 describe('auth.store', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     useAuthStore.getState().logout();
+    vi.clearAllMocks();
   });
 
   it('initializes with null state', () => {
@@ -71,7 +71,7 @@ describe('auth.store', () => {
     expect(state.accessToken).toBeNull();
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
-    expect(mockClearLibrary).toHaveBeenCalled();
-    expect(mockResetForLogout).toHaveBeenCalled();
+    expect(mockClearLibrary).toHaveBeenCalledTimes(1);
+    expect(mockResetForLogout).toHaveBeenCalledTimes(1);
   });
 });
