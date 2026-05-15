@@ -1,5 +1,10 @@
 import { forwardRef, Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { createPrismaClient, createExtendedPrismaClient, type PrismaClient, ExtendedPrismaClient } from '@repo/db';
+import {
+  createPrismaClient,
+  createExtendedPrismaClient,
+  type PrismaClient,
+  ExtendedPrismaClient,
+} from '@repo/db';
 import {
   TRANSACTION_CONTEXT,
   type ITransactionContext,
@@ -37,6 +42,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   }
 
   get extended() {
+    // NOTE: The extendedPrisma client uses a separate database connection pool
+    // and does not participate in transactions managed by transactionContext.
+    // If a transactional client exists (via transactionContext.getTransactionalClient()),
+    // callers that need transactional behavior should use the `client` getter instead.
+    // The extended client provides additional helper methods not available on the
+    // transactional Prisma.TransactionClient.
+    // a way to extend the transactional client from transactionContext.getTransactionalClient()
+    // rather than always returning this.extendedPrisma.
     return this.extendedPrisma;
   }
 

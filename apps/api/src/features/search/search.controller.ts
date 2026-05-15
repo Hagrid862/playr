@@ -20,7 +20,6 @@ export class SearchController {
 
   @Get('suggestions')
   @UseGuards(JwtAuthGuardForSearch)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Perform a fuzzy search suggestions' })
   @ApiResponse({
     status: 200,

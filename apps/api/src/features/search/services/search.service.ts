@@ -76,16 +76,15 @@ export class SearchService {
         UNION ALL
 
         SELECT p.id, p.name, 'playlist' as type,
-          CASE WHEN p."artistId" IS NOT NULL THEN 'public' ELSE 'private' END as visibility,
+          CASE WHEN p."isPublic" = true THEN 'public' ELSE 'private' END as visibility,
           NULL as "albumType", similarity(p.name, ${trimmedQuery}) as score
         FROM "playlists" p
         WHERE (p.name % ${trimmedQuery} OR p.name ILIKE ${searchPattern})
         AND p."deletedAt" IS NULL
         AND (
           p."isPublic" = true
-          OR (${userId}::text IS NOT NULL AND (
-            p."isCollaborative" = true
-            OR EXISTS (SELECT 1 FROM "playlist_access pa WHERE pa."playlistId" = p.id AND pa."userId" = ${userId})
+          OR (${userId}::text IS NOT NULL AND EXISTS (
+            SELECT 1 FROM "libraries" l WHERE l.id = p."libraryId" AND l."userId" = ${userId}
           ))
         )
       )
@@ -126,6 +125,7 @@ export class SearchService {
         JOIN "artists" a ON la."artistId" = a.id
         WHERE la."libraryId" = (SELECT id FROM user_library)
         AND (a.name % ${trimmedQuery} OR a.name ILIKE ${searchPattern})
+        AND a."deletedAt" IS NULL
       `);
       needsUnionAll = true;
     }
@@ -140,6 +140,7 @@ export class SearchService {
         JOIN "albums" al ON lb."albumId" = al.id
         WHERE lb."libraryId" = (SELECT id FROM user_library)
         AND (al.name % ${trimmedQuery} OR al.name ILIKE ${searchPattern})
+        AND al."deletedAt" IS NULL
       `);
       needsUnionAll = true;
     }
@@ -154,6 +155,7 @@ export class SearchService {
         JOIN "tracks" t ON lt."trackId" = t.id
         WHERE lt."libraryId" = (SELECT id FROM user_library)
         AND (t.title % ${trimmedQuery} OR t.title ILIKE ${searchPattern})
+        AND t."deletedAt" IS NULL
       `);
       needsUnionAll = true;
     }
