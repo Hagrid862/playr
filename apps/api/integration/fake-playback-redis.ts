@@ -8,7 +8,9 @@ function prefixedKey(key: string): string {
   return `${KEY_PREFIX}${key}`;
 }
 
-type PendingSet = { key: string; value: string };
+type PendingOp =
+  | { kind: 'set'; key: string; value: string }
+  | { kind: 'del'; key: string };
 
 class FakePlaybackRedisDup {
   private readonly watchedKeys = new Set<string>();
@@ -36,20 +38,25 @@ class FakePlaybackRedisDup {
 
   multi(): {
     set: (key: string, value: string) => { exec: () => Promise<[null, string][] | null> };
+    del: (key: string) => { exec: () => Promise<[null, string][] | null> };
   } {
-    // Capture a stable reference so `exec()` always runs against the queued mutations.
-    const pendingSets: PendingSet[] = [];
     return {
       set: (key: string, value: string) => {
-        pendingSets.push({ key: prefixedKey(key), value });
+        const ops: PendingOp[] = [{ kind: 'set', key: prefixedKey(key), value }];
         return {
-          exec: () => this.execMulti(pendingSets),
+          exec: () => this.execMulti(ops),
+        };
+      },
+      del: (key: string) => {
+        const ops: PendingOp[] = [{ kind: 'del', key: prefixedKey(key) }];
+        return {
+          exec: () => this.execMulti(ops),
         };
       },
     };
   }
 
-  private async execMulti(sets: PendingSet[]): Promise<[null, string][] | null> {
+  private async execMulti(ops: PendingOp[]): Promise<[null, string][] | null> {
     for (const p of this.watchedKeys) {
       const current = this.root.getStringRaw(p);
       const snap = this.watchSnapshots.get(p);
@@ -59,8 +66,12 @@ class FakePlaybackRedisDup {
       }
     }
 
-    for (const { key, value } of sets) {
-      this.root.setStringRaw(key, value);
+    for (const op of ops) {
+      if (op.kind === 'set') {
+        this.root.setStringRaw(op.key, op.value);
+      } else {
+        this.root.deleteStringRaw(op.key);
+      }
     }
 
     this.watchedKeys.clear();
@@ -90,6 +101,18 @@ export class FakePlaybackRedis {
 
   setStringRaw(prefixed: string, value: string): void {
     this.strings.set(prefixed, value);
+  }
+
+  /** Remove a string key by already-prefixed key (used by duplicate connection `MULTI`). */
+  deleteStringRaw(prefixed: string): void {
+    this.strings.delete(prefixed);
+  }
+
+  async del(key: string): Promise<number> {
+    const p = prefixedKey(key);
+    const existed = this.strings.has(p);
+    this.strings.delete(p);
+    return existed ? 1 : 0;
   }
 
   async get(key: string): Promise<string | null> {
