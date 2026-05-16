@@ -34,6 +34,7 @@ export class SearchController {
   @ApiResponse({
     status: 401,
     description:
+      // TODO: Remove this when public and community visibilities are implemented
       'User token is required. Public and community visibilities are not implemented yet',
     type: ApiErrorResponseDto,
   })
