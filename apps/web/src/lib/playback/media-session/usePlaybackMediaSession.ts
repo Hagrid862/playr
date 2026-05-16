@@ -65,8 +65,7 @@ export function resolvePlaybackArtworkUrl(albumArt: string | null | undefined): 
 }
 
 function buildMediaMetadata(track: PlaybackTrack): MediaMetadata {
-  const artist =
-    track.artists.length > 0 ? track.artists.join(', ') : UNKNOWN_ARTIST_LABEL;
+  const artist = track.artists.length > 0 ? track.artists.join(', ') : UNKNOWN_ARTIST_LABEL;
   const artworkUrl = resolvePlaybackArtworkUrl(track.albumArt);
   const artwork: MediaImage[] = artworkUrl ? [{ src: artworkUrl }] : [];
   return new MediaMetadata({

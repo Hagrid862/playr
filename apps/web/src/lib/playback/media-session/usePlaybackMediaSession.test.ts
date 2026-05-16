@@ -1,8 +1,5 @@
 import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
-import {
-  firePlaybackCommand,
-  isPlaybackSyncConnected,
-} from '@/lib/playback/sync/playback-sync';
+import { firePlaybackCommand, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
 import type { PlayerState } from '@/stores/player-store/player.store';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import type { PlaybackTrack } from '@repo/contracts';
@@ -112,7 +109,10 @@ function installNavigatorMediaSession(opts?: {
       ...(opts?.omitSetPositionState ? {} : { setPositionState }),
     },
   });
-  return { setActionHandler, setPositionState: opts?.omitSetPositionState ? null : setPositionState };
+  return {
+    setActionHandler,
+    setPositionState: opts?.omitSetPositionState ? null : setPositionState,
+  };
 }
 
 function handlerFor(setActionHandler: ReturnType<typeof vi.fn>, action: string) {
@@ -205,9 +205,7 @@ describe('usePlaybackMediaSession', () => {
     const audioRef = { current: document.createElement('audio') };
     customRenderHook(() => usePlaybackMediaSession(audioRef));
 
-    const md = navigator.mediaSession.metadata as InstanceType<
-      typeof MediaMetadata
-    > | null;
+    const md = navigator.mediaSession.metadata as InstanceType<typeof MediaMetadata> | null;
     expect(md?.title).toBe('Song');
     expect(md?.artist).toBe('Artist A');
     expect(md?.album).toBe('Album');
@@ -283,10 +281,7 @@ describe('usePlaybackMediaSession', () => {
     getState.mockImplementation(() => state);
     customRenderHook(() => usePlaybackMediaSession({ current: document.createElement('audio') }));
 
-    expect(errSpy).toHaveBeenCalledWith(
-      '[MediaSession] failed to set metadata',
-      expect.any(Error),
-    );
+    expect(errSpy).toHaveBeenCalledWith('[MediaSession] failed to set metadata', expect.any(Error));
     errSpy.mockRestore();
   });
 
@@ -338,7 +333,9 @@ describe('usePlaybackMediaSession', () => {
     act(() =>
       handlerFor(setActionHandler, 'seekforward')?.({ seekOffset: 5 } as MediaSessionActionDetails),
     );
-    act(() => handlerFor(setActionHandler, 'seekto')?.({ seekTime: 12 } as MediaSessionActionDetails));
+    act(() =>
+      handlerFor(setActionHandler, 'seekto')?.({ seekTime: 12 } as MediaSessionActionDetails),
+    );
 
     expect(state.resume).not.toHaveBeenCalled();
     expect(state.pause).not.toHaveBeenCalled();
@@ -357,7 +354,10 @@ describe('usePlaybackMediaSession', () => {
     customRenderHook(() => usePlaybackMediaSession({ current: audio }));
 
     act(() =>
-      handlerFor(setActionHandler, 'seekbackward')?.({ seekOffset: 20 } as MediaSessionActionDetails),
+      handlerFor(
+        setActionHandler,
+        'seekbackward',
+      )?.({ seekOffset: 20 } as MediaSessionActionDetails),
     );
     expect(state.setCurrentTime).toHaveBeenCalledWith(30);
     expect(firePlaybackCommand).toHaveBeenCalled();
@@ -366,7 +366,10 @@ describe('usePlaybackMediaSession', () => {
     vi.mocked(state.setCurrentTime).mockClear();
 
     act(() =>
-      handlerFor(setActionHandler, 'seekforward')?.({ seekOffset: 15 } as MediaSessionActionDetails),
+      handlerFor(
+        setActionHandler,
+        'seekforward',
+      )?.({ seekOffset: 15 } as MediaSessionActionDetails),
     );
     expect(state.setCurrentTime).toHaveBeenCalledWith(45);
     expect(firePlaybackCommand).toHaveBeenCalled();
@@ -393,7 +396,10 @@ describe('usePlaybackMediaSession', () => {
     getState.mockImplementation(() => state);
     customRenderHook(() => usePlaybackMediaSession({ current: null }));
     act(() =>
-      handlerFor(setActionHandler, 'seekbackward')?.({ seekOffset: 10 } as MediaSessionActionDetails),
+      handlerFor(
+        setActionHandler,
+        'seekbackward',
+      )?.({ seekOffset: 10 } as MediaSessionActionDetails),
     );
     expect(state.setCurrentTime).toHaveBeenCalledWith(30);
   });
@@ -428,7 +434,10 @@ describe('usePlaybackMediaSession', () => {
     vi.mocked(state.setCurrentTime).mockClear();
     act(() => handlerFor(setActionHandler, 'seekto')?.({} as MediaSessionActionDetails));
     act(() =>
-      handlerFor(setActionHandler, 'seekto')?.({ seekTime: Number.NaN } as MediaSessionActionDetails),
+      handlerFor(
+        setActionHandler,
+        'seekto',
+      )?.({ seekTime: Number.NaN } as MediaSessionActionDetails),
     );
     expect(state.setCurrentTime).not.toHaveBeenCalled();
   });
@@ -440,7 +449,9 @@ describe('usePlaybackMediaSession', () => {
     Object.defineProperty(audio, 'duration', { value: 200, configurable: true });
 
     customRenderHook(() => usePlaybackMediaSession({ current: audio }));
-    act(() => handlerFor(setActionHandler, 'seekto')?.({ seekTime: 42 } as MediaSessionActionDetails));
+    act(() =>
+      handlerFor(setActionHandler, 'seekto')?.({ seekTime: 42 } as MediaSessionActionDetails),
+    );
     expect(state.setCurrentTime).toHaveBeenCalledWith(42);
     expect(audio.currentTime).toBe(42);
   });
@@ -456,7 +467,9 @@ describe('usePlaybackMediaSession', () => {
     customRenderHook(() => usePlaybackMediaSession({ current: audio }));
     vi.mocked(firePlaybackCommand).mockClear();
 
-    act(() => handlerFor(setActionHandler, 'seekto')?.({ seekTime: 100 } as MediaSessionActionDetails));
+    act(() =>
+      handlerFor(setActionHandler, 'seekto')?.({ seekTime: 100 } as MediaSessionActionDetails),
+    );
     expect(state.setCurrentTime).toHaveBeenCalledWith(80);
     expect(firePlaybackCommand).not.toHaveBeenCalled();
   });
@@ -468,7 +481,9 @@ describe('usePlaybackMediaSession', () => {
     Object.defineProperty(audio, 'duration', { value: 55, configurable: true });
 
     customRenderHook(() => usePlaybackMediaSession({ current: audio }));
-    act(() => handlerFor(setActionHandler, 'seekto')?.({ seekTime: 99 } as MediaSessionActionDetails));
+    act(() =>
+      handlerFor(setActionHandler, 'seekto')?.({ seekTime: 99 } as MediaSessionActionDetails),
+    );
     expect(state.setCurrentTime).toHaveBeenCalledWith(55);
   });
 
@@ -479,7 +494,9 @@ describe('usePlaybackMediaSession', () => {
     Object.defineProperty(audio, 'duration', { value: 60, configurable: true });
 
     customRenderHook(() => usePlaybackMediaSession({ current: audio }));
-    act(() => handlerFor(setActionHandler, 'seekto')?.({ seekTime: 99 } as MediaSessionActionDetails));
+    act(() =>
+      handlerFor(setActionHandler, 'seekto')?.({ seekTime: 99 } as MediaSessionActionDetails),
+    );
     expect(state.setCurrentTime).toHaveBeenCalledWith(60);
   });
 
@@ -493,7 +510,9 @@ describe('usePlaybackMediaSession', () => {
     vi.mocked(isPlaybackSyncConnected).mockReturnValue(true);
 
     customRenderHook(() => usePlaybackMediaSession({ current: null }));
-    act(() => handlerFor(setActionHandler, 'seekto')?.({ seekTime: 42 } as MediaSessionActionDetails));
+    act(() =>
+      handlerFor(setActionHandler, 'seekto')?.({ seekTime: 42 } as MediaSessionActionDetails),
+    );
     expect(state.setCurrentTime).toHaveBeenCalledWith(42);
   });
 
@@ -502,7 +521,9 @@ describe('usePlaybackMediaSession', () => {
     getState.mockImplementation(() => state);
     customRenderHook(() => usePlaybackMediaSession({ current: null }));
 
-    act(() => handlerFor(setActionHandler, 'seekto')?.({ seekTime: 40 } as MediaSessionActionDetails));
+    act(() =>
+      handlerFor(setActionHandler, 'seekto')?.({ seekTime: 40 } as MediaSessionActionDetails),
+    );
     expect(state.setCurrentTime).toHaveBeenCalledWith(40);
   });
 
@@ -635,7 +656,9 @@ describe('usePlaybackMediaSession', () => {
     const state = minimalPlayerState({ duration: 100, currentTime: 50 });
     getState.mockImplementation(() => state);
     const { mediaSession } = navigator;
-    const ms = mediaSession as MediaSession & { setPositionState?: typeof mediaSession.setPositionState };
+    const ms = mediaSession as MediaSession & {
+      setPositionState?: typeof mediaSession.setPositionState;
+    };
     const saved = ms.setPositionState;
     // @ts-expect-error remove for flushPositionState inner guard
     delete ms.setPositionState;
