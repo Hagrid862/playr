@@ -23,8 +23,8 @@ export function albumBuilder(overrides?: Partial<Album>): Album {
     ]),
     totalTracks: randNumber({ min: 10, max: 20 }),
     totalDuration: randNumber({ min: 3000, max: 6000 }),
-    libraryId: randUuid(),
-    systemKind: rand([AlbumSystemKind.none, AlbumSystemKind.unknown_bucket]),
+    libraryId: null,
+    systemKind: AlbumSystemKind.none,
     releaseDate: randBetweenDate({
       from: new Date("2020-01-01"),
       to: new Date(),

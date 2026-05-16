@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import {
   AccessRole,
   AlbumGetPayload,
+  AlbumSystemKind,
   Image,
   Library,
   LibraryAlbumGetPayload,
@@ -108,6 +109,8 @@ describe('LibraryAlbumsController (Integration)', () => {
   const mockAlbum: AlbumWithRelations = {
     ...albumBuilder({
       id: 'album-123',
+      libraryId: null,
+      systemKind: AlbumSystemKind.none,
     }),
     artists: [artistBuilder()],
     genres: [],
@@ -396,7 +399,7 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const unknownAlbum = {
         ...mockAlbum,
-        systemKind: 'unknown_bucket' as const,
+        systemKind: AlbumSystemKind.unknown_bucket,
       };
 
       prismaMock.client.album.findFirst.mockResolvedValue(unknownAlbum);
