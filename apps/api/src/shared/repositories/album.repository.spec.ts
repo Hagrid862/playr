@@ -84,6 +84,7 @@ describe('AlbumRepository', () => {
     totalTracks: 10,
     totalDuration: 1800,
     releaseDate: null,
+    libraryId: null,
     coverId: null,
     visibility: Visibility.public,
     createdAt: new Date('2024-01-01'),
@@ -853,6 +854,7 @@ describe('AlbumRepository', () => {
           systemKind: AlbumSystemKind.unknown_bucket,
           visibility: Visibility.private,
           type: AlbumType.compilation,
+          library: { connect: { id: 'lib-1' } },
           access: {
             create: { userId: 'user-1', role: AccessRole.owner },
           },
@@ -864,6 +866,79 @@ describe('AlbumRepository', () => {
         },
         select: { id: true },
       });
+    });
+
+    it('should recover unknown-bucket album id after unique constraint on create (P2002)', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'concurrent-unknown' });
+      mockTx.album.create.mockRejectedValue(Object.assign(new Error('unique'), { code: 'P2002' }));
+      mockTx.track.updateMany.mockResolvedValue({ count: 1 });
+      mockTx.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.album.findUnique.mockResolvedValue({ coverId: null, deletedAt: null });
+      mockTx.album.update.mockResolvedValue(deletedSource);
+
+      await repository.softDeleteAlbumReassignTracksToUnknownBucket({
+        userId: 'user-1',
+        libraryId: 'lib-1',
+        sourceAlbumId: 'source-1',
+      });
+
+      expect(mockTx.album.create).toHaveBeenCalledTimes(1);
+      expect(mockTx.track.updateMany).toHaveBeenCalledWith({
+        where: { albumId: 'source-1', deletedAt: null },
+        data: { albumId: 'concurrent-unknown' },
+      });
+    });
+
+    it('should rethrow when album create fails with a non-unique error', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue(null);
+      const dbError = new Error('connection reset');
+      mockTx.album.create.mockRejectedValue(dbError);
+
+      await expect(
+        repository.softDeleteAlbumReassignTracksToUnknownBucket({
+          userId: 'user-1',
+          libraryId: 'lib-1',
+          sourceAlbumId: 'source-1',
+        }),
+      ).rejects.toThrow('connection reset');
+
+      expect(mockTx.track.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should rethrow P2002 when unknown-bucket album still cannot be resolved after race', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      const uniqueErr = Object.assign(new Error('unique'), { code: 'P2002' });
+      mockTx.album.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      mockTx.album.create.mockRejectedValue(uniqueErr);
+
+      await expect(
+        repository.softDeleteAlbumReassignTracksToUnknownBucket({
+          userId: 'user-1',
+          libraryId: 'lib-1',
+          sourceAlbumId: 'source-1',
+        }),
+      ).rejects.toBe(uniqueErr);
+
+      expect(mockTx.track.updateMany).not.toHaveBeenCalled();
     });
 
     it('should soft-delete cover image when source album has a cover', async () => {

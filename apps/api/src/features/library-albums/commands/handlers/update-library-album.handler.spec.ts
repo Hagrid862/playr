@@ -32,6 +32,7 @@ describe('UpdateLibraryAlbumHandler', () => {
     name: 'Old Name',
     description: 'Old Desc',
     type: AlbumType.album,
+    systemKind: AlbumSystemKind.none,
     coverId: 'old-cover',
   });
 

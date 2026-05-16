@@ -14,6 +14,16 @@ import {
   Visibility,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
+
+function isPrismaUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: string }).code === 'P2002'
+  );
+}
+
 @Injectable()
 export class AlbumRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -528,38 +538,52 @@ export class AlbumRepository {
     const now = new Date();
 
     return await this.prisma.mainClient.$transaction(async (tx) => {
-      let unknownAlbumId =
-        (
-          await tx.album.findFirst({
-            where: {
-              systemKind: AlbumSystemKind.unknown_bucket,
-              deletedAt: null,
-              access: { some: { userId, role: AccessRole.owner } },
-              libraryAlbums: { some: { libraryId, deletedAt: null } },
-            },
-            select: { id: true },
-          })
-        )?.id ?? null;
-
-      if (!unknownAlbumId) {
-        const created = await tx.album.create({
-          data: {
-            name: UNKNOWN_BUCKET_ALBUM_DISPLAY_NAME,
+      const findUnknownBucketAlbumId = async (): Promise<string | null> => {
+        const row = await tx.album.findFirst({
+          where: {
             systemKind: AlbumSystemKind.unknown_bucket,
-            visibility: Visibility.private,
-            type: AlbumType.compilation,
-            access: {
-              create: { userId, role: AccessRole.owner },
-            },
-            libraryAlbums: {
-              create: {
-                library: { connect: { id: libraryId } },
-              },
-            },
+            libraryId,
+            deletedAt: null,
+            access: { some: { userId, role: AccessRole.owner } },
+            libraryAlbums: { some: { libraryId, deletedAt: null } },
           },
           select: { id: true },
         });
-        unknownAlbumId = created.id;
+        return row?.id ?? null;
+      };
+
+      let unknownAlbumId = await findUnknownBucketAlbumId();
+
+      if (!unknownAlbumId) {
+        try {
+          const created = await tx.album.create({
+            data: {
+              name: UNKNOWN_BUCKET_ALBUM_DISPLAY_NAME,
+              systemKind: AlbumSystemKind.unknown_bucket,
+              visibility: Visibility.private,
+              type: AlbumType.compilation,
+              library: { connect: { id: libraryId } },
+              access: {
+                create: { userId, role: AccessRole.owner },
+              },
+              libraryAlbums: {
+                create: {
+                  library: { connect: { id: libraryId } },
+                },
+              },
+            },
+            select: { id: true },
+          });
+          unknownAlbumId = created.id;
+        } catch (e) {
+          if (!isPrismaUniqueViolation(e)) {
+            throw e;
+          }
+          unknownAlbumId = await findUnknownBucketAlbumId();
+          if (!unknownAlbumId) {
+            throw e;
+          }
+        }
       }
 
       if (unknownAlbumId === sourceAlbumId) {
