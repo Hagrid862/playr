@@ -7,7 +7,7 @@ import {
   randSong,
   randUuid,
 } from "@ngneat/falso";
-import { AlbumType, Visibility, type Album } from "@repo/db";
+import { AlbumSystemKind, AlbumType, Visibility, type Album } from "@repo/db";
 
 export function albumBuilder(overrides?: Partial<Album>): Album {
   const createdAt = randPastDate();
@@ -23,6 +23,8 @@ export function albumBuilder(overrides?: Partial<Album>): Album {
     ]),
     totalTracks: randNumber({ min: 10, max: 20 }),
     totalDuration: randNumber({ min: 3000, max: 6000 }),
+    libraryId: randUuid(),
+    systemKind: rand([AlbumSystemKind.none, AlbumSystemKind.unknown_bucket]),
     releaseDate: randBetweenDate({
       from: new Date("2020-01-01"),
       to: new Date(),
