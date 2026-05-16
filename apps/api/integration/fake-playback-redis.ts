@@ -8,9 +8,7 @@ function prefixedKey(key: string): string {
   return `${KEY_PREFIX}${key}`;
 }
 
-type PendingOp =
-  | { kind: 'set'; key: string; value: string }
-  | { kind: 'del'; key: string };
+type PendingOp = { kind: 'set'; key: string; value: string } | { kind: 'del'; key: string };
 
 class FakePlaybackRedisDup {
   private readonly watchedKeys = new Set<string>();
