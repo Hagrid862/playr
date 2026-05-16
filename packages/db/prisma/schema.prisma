@@ -365,17 +365,15 @@ model Artist {
 }
 
 model Album {
-  id            String     @id @default(cuid())
+  id            String          @id @default(cuid())
   name          String
-  description   String?    @db.Text
-  type          AlbumType  @default(album)
+  description   String?         @db.Text
+  type          AlbumType       @default(album)
   systemKind    AlbumSystemKind @default(none)
-  totalTracks   Int        @default(0)
-  totalDuration Int        @default(0)
+  totalTracks   Int             @default(0)
+  totalDuration Int             @default(0)
   releaseDate   DateTime?
-  visibility    Visibility @default(public)
-
-  systemKind AlbumSystemKind @default(none)
+  visibility    Visibility      @default(public)
 
   libraryId String?
   library   Library? @relation("AlbumLibrarySystemAlbum", fields: [libraryId], references: [id], onDelete: SetNull)
