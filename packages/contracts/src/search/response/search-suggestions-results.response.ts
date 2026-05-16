@@ -6,6 +6,7 @@ export enum SearchResultType {
   Album = "album",
   Track = "track",
   Playlist = "playlist",
+  Genre = "genre",
 }
 
 export const SearchSuggestionResultSchema = z.object({
