@@ -213,14 +213,16 @@ export function usePlaybackMediaSession(audioRef: RefObject<HTMLAudioElement | n
     trySetActionHandler('seekbackward', (details) => {
       if (!controllingNow()) return;
       const audio = audioRef.current;
-      const base = audio?.currentTime ?? usePlayerStore.getState().currentTime;
+      const fromAudio = audio?.currentTime;
+      const base = fromAudio ?? usePlayerStore.getState().currentTime;
       const offset = details?.seekOffset ?? DEFAULT_SEEK_SKIP_SEC;
       commitSeek(base - offset, audio, audioRef);
     });
     trySetActionHandler('seekforward', (details) => {
       if (!controllingNow()) return;
       const audio = audioRef.current;
-      const base = audio?.currentTime ?? usePlayerStore.getState().currentTime;
+      const fromAudio = audio?.currentTime;
+      const base = fromAudio ?? usePlayerStore.getState().currentTime;
       const offset = details?.seekOffset ?? DEFAULT_SEEK_SKIP_SEC;
       commitSeek(base + offset, audio, audioRef);
     });
@@ -263,7 +265,9 @@ export function usePlaybackMediaSession(audioRef: RefObject<HTMLAudioElement | n
     const id = window.setInterval(() => flushPositionState(audioRef), POSITION_STATE_INTERVAL_MS);
     return () => {
       window.clearInterval(id);
-      clearPositionState(navigator.mediaSession);
+      if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+        clearPositionState(navigator.mediaSession);
+      }
     };
   }, [audioRef, currentTrack, isControlling, isPlaying, duration]);
 }
