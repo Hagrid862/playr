@@ -71,7 +71,7 @@ describe('SearchSuggestionsHandler', () => {
     expect(result).toEqual({ results: [], loggedIn: false });
   });
 
-  it('should return all result types from suggestionsService', async () => {
+  it('should return all result categories from suggestionsService', async () => {
     const mixedResults: SearchSuggestionsResults = {
       results: [
         { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'public' },

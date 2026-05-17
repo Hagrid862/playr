@@ -114,13 +114,13 @@ describe('SearchService', () => {
       expect(result.total).toBe(1);
     });
 
-    it('should apply type filter when specified', async () => {
+    it('should apply categories filter when specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([]);
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { types: ['artist'] },
+        filters: { categories: ['artist'] },
         page: 1,
         pageSize: 20,
       };
@@ -225,14 +225,14 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { types: ['track'] },
+        filters: { categories: ['track'] },
         orderBy: { field: 'duration', direction: 'desc' },
         page: 1,
         pageSize: 20,
       };
       const result = await service.search('user-123', searchQuery);
 
-      expect(result.filters).toEqual({ types: ['track'] });
+      expect(result.filters).toEqual({ categories: ['track'] });
       expect(result.orderBy).toEqual({ field: 'duration', direction: 'desc' });
     });
 

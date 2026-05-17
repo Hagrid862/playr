@@ -90,7 +90,7 @@ describe('LibrarySearchSuggestionsHandler', () => {
     expect(result).toEqual(trackResults);
   });
 
-  it('should handle all category types', async () => {
+  it('should handle all categories', async () => {
     const allCategories: SearchSuggestionsCategories[] = [
       'artist',
       'album',

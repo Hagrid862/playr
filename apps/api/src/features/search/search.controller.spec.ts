@@ -123,7 +123,7 @@ describe('SearchController', () => {
       );
     });
 
-    it('should execute LibrarySearchSuggestionsQuery with all category types', async () => {
+    it('should execute LibrarySearchSuggestionsQuery with all categories', async () => {
       const queryDto = createMock<LibrarySearchSuggestionsQueryRequestDto>({
         query: 'music',
         categories: ['artist', 'album', 'track', 'playlist', 'genre'],
@@ -211,7 +211,7 @@ describe('SearchController', () => {
       const queryDto = createMock<SearchQueryRequestDto>({
         query: 'jazz',
         filters: {
-          types: ['artist'],
+          categories: ['artist'],
           visibility: 'public',
         },
         orderBy: {
@@ -236,7 +236,7 @@ describe('SearchController', () => {
       expect(queryBus.execute).toHaveBeenCalledWith(
         new SearchQueryImpl('user-456', expect.objectContaining({
           query: 'jazz',
-          filters: expect.objectContaining({ types: ['artist'] }),
+          filters: expect.objectContaining({ categories: ['artist'] }),
           orderBy: expect.objectContaining({ field: 'name', direction: 'desc' }),
           page: 2,
           pageSize: 10,
