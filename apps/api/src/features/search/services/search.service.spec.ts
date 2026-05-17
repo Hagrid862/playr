@@ -37,7 +37,7 @@ describe('SearchService', () => {
 
   describe('search', () => {
     it('should throw BadRequestException when query is too short', async () => {
-      const searchQuery: SearchQuery = { query: 'a', page: 1, pageSize: 20 };
+      const searchQuery: SearchQuery = { query: 'a', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
 
       await expect(service.search('user-123', searchQuery)).rejects.toThrow(
         BadRequestException,
@@ -45,7 +45,7 @@ describe('SearchService', () => {
     });
 
     it('should throw BadRequestException when query is empty', async () => {
-      const searchQuery: SearchQuery = { query: '', page: 1, pageSize: 20 };
+      const searchQuery: SearchQuery = { query: '', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
 
       await expect(service.search('user-123', searchQuery)).rejects.toThrow(
         BadRequestException,
@@ -78,6 +78,7 @@ describe('SearchService', () => {
         query: 'test',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search('user-123', searchQuery);
 
@@ -107,6 +108,7 @@ describe('SearchService', () => {
         query: 'public',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search(null, searchQuery);
 
@@ -120,7 +122,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { categories: ['artist'] },
+        filters: { categories: ['artist'], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -135,7 +137,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { visibility: 'public' },
+        filters: { visibility: 'public', categories: [] },
         page: 1,
         pageSize: 20,
       };
@@ -150,7 +152,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { artist: { verified: true } },
+        filters: { artist: { verified: true }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -165,7 +167,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { album: { type: 'single' } },
+        filters: { album: { type: 'single' }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -180,7 +182,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { track: { explicit: false } },
+        filters: { track: { explicit: false }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -195,7 +197,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { playlist: { isPublic: true } },
+        filters: { playlist: { isPublic: true }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -213,6 +215,7 @@ describe('SearchService', () => {
         orderBy: { field: 'name', direction: 'desc' },
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       await service.search('user-123', searchQuery);
 
@@ -225,7 +228,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { categories: ['track'] },
+        filters: { categories: ['track'], visibility: 'public' },
         orderBy: { field: 'duration', direction: 'desc' },
         page: 1,
         pageSize: 20,
@@ -244,6 +247,7 @@ describe('SearchService', () => {
         query: 'test',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search('user-123', searchQuery);
 
@@ -259,6 +263,7 @@ describe('SearchService', () => {
         query: 'test',
         page: 3,
         pageSize: 10,
+        filters: { categories: [], visibility: 'public' },
       };
       await service.search('user-123', searchQuery);
 
@@ -273,6 +278,7 @@ describe('SearchService', () => {
         query: 'nonexistent',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search('user-123', searchQuery);
 
@@ -288,6 +294,7 @@ describe('SearchService', () => {
         query: '  test  ',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       await service.search('user-123', searchQuery);
 
