@@ -582,7 +582,7 @@ describe('usePlaybackMediaSession', () => {
     );
   });
 
-  it('uses playbackRate 0 when paused in position state', () => {
+  it('uses playbackRate 1 when paused in position state', () => {
     const audio = document.createElement('audio');
     Object.defineProperty(audio, 'duration', { value: 50, configurable: true });
     audio.currentTime = 10;
@@ -591,7 +591,7 @@ describe('usePlaybackMediaSession', () => {
     setPositionState!.mockClear();
     customRenderHook(() => usePlaybackMediaSession({ current: audio }));
     expect(setPositionState).toHaveBeenCalledWith(
-      expect.objectContaining({ playbackRate: 0, duration: 50, position: 10 }),
+      expect.objectContaining({ playbackRate: 1, duration: 50, position: 10 }),
     );
   });
 

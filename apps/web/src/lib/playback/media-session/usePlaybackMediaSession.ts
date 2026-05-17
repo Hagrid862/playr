@@ -148,7 +148,7 @@ function flushPositionState(audioRef: RefObject<HTMLAudioElement | null>): void 
     navigator.mediaSession.setPositionState({
       duration: dur,
       position: clamped,
-      playbackRate: s.isPlaying ? 1 : 0,
+      playbackRate: 1,
     });
   } catch {
     /* Chromium throws if duration/position invalid */
