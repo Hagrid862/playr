@@ -88,6 +88,13 @@ export class SearchController {
     description: 'Query is too short or invalid',
     type: ApiErrorResponseDto,
   })
+  @ApiResponse({
+  status: 401,
+  description:
+    // TODO: Remove this when public and community visibilities are implemented
+    'User token is required. Public and community visibilities are not implemented yet',
+    type: ApiErrorResponseDto,
+  })
   async search(
     @Query() query: SearchQueryRequestDto,
     @CurrentUser() user: User | null,
