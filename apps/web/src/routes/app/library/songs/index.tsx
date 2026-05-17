@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import {
   TableBody,
@@ -31,11 +30,16 @@ import { sortLibraryTracksForDisplay } from '@/lib/library/sortLibraryTracks';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
-import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
-import { DiscIcon, PencilIcon, PlayIcon, QueueIcon, TrashIcon, WarningIcon } from '@phosphor-icons/react';
+import type {
+  LibraryTrackListSortBy,
+  LibraryTrackListSortOrder,
+  PlaybackTrack,
+  ZodTrack,
+} from '@repo/contracts';
+import { CaretDownIcon, CaretUpIcon, DiscIcon, PencilIcon, PlayIcon, QueueIcon, TrashIcon, WarningIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/app/library/songs/')({
@@ -132,6 +136,172 @@ function artistLine(track: ZodTrack) {
   return UNKNOWN_ARTIST_LABEL;
 }
 
+type LibrarySongsSortState = {
+  sortBy: LibraryTrackListSortBy;
+  sortOrder: LibraryTrackListSortOrder;
+} | null;
+
+function SortableColumnHead({
+  label,
+  column,
+  sortState,
+  onSortColumn,
+  className,
+  align = 'start',
+}: {
+  label: string;
+  column: LibraryTrackListSortBy;
+  sortState: LibrarySongsSortState;
+  onSortColumn: (column: LibraryTrackListSortBy) => void;
+  className?: string;
+  align?: 'start' | 'end';
+}) {
+  const active = sortState?.sortBy === column;
+  const order = active ? sortState.sortOrder : null;
+
+  return (
+    <TableHead
+      className={cn(
+        'px-3 text-muted-foreground',
+        align === 'end' && 'text-right',
+        className,
+      )}
+    >
+      <button
+        type="button"
+        className={cn(
+          '-mx-1 inline-flex max-w-full items-center gap-1 rounded-md px-1 py-0.5 text-left font-medium text-foreground/90 hover:bg-muted/60 hover:text-foreground',
+          align === 'end' && 'w-full justify-end',
+          active && 'text-foreground',
+          className,
+        )}
+        aria-sort={
+          order === 'asc' ? 'ascending' : order === 'desc' ? 'descending' : 'none'
+        }
+        onClick={() => onSortColumn(column)}
+      >
+        <span className="truncate">{label}</span>
+        {order === 'asc' ? (
+          <CaretUpIcon className="size-3.5 shrink-0 opacity-70" weight="bold" aria-hidden />
+        ) : order === 'desc' ? (
+          <CaretDownIcon className="size-3.5 shrink-0 opacity-70" weight="bold" aria-hidden />
+        ) : null}
+      </button>
+    </TableHead>
+  );
+}
+
+function LibrarySongsDesktopTableChrome({
+  sortState,
+  onSortColumn,
+}: {
+  sortState: LibrarySongsSortState;
+  onSortColumn: (column: LibraryTrackListSortBy) => void;
+}) {
+  return (
+    <>
+      <colgroup>
+        <col style={{ width: 56 }} />
+        <col style={{ width: '38%' }} />
+        <col style={{ width: '21%' }} />
+        <col style={{ width: '21%' }} />
+        <col style={{ width: 52 }} />
+        <col style={{ width: 72 }} />
+      </colgroup>
+      <TableHeader className={songsTableHeaderStickyClass}>
+        <TableRow className={songsTableHeaderRowClass}>
+          <TableHead className="px-3 text-muted-foreground" />
+          <SortableColumnHead
+            label="Title"
+            column="title"
+            sortState={sortState}
+            onSortColumn={onSortColumn}
+          />
+          <SortableColumnHead
+            label="Artist"
+            column="artist"
+            sortState={sortState}
+            onSortColumn={onSortColumn}
+          />
+          <SortableColumnHead
+            label="Album"
+            column="album"
+            sortState={sortState}
+            onSortColumn={onSortColumn}
+          />
+          <SortableColumnHead
+            label="#"
+            column="trackNumber"
+            sortState={sortState}
+            onSortColumn={onSortColumn}
+            align="end"
+            className="tabular-nums"
+          />
+          <SortableColumnHead
+            label="Time"
+            column="duration"
+            sortState={sortState}
+            onSortColumn={onSortColumn}
+            align="end"
+            className="tabular-nums"
+          />
+        </TableRow>
+      </TableHeader>
+    </>
+  );
+}
+
+function LibrarySongsDesktopInitialLoadShell({
+  sortState,
+  onSortColumn,
+}: {
+  sortState: LibrarySongsSortState;
+  onSortColumn: (column: LibraryTrackListSortBy) => void;
+}) {
+  const scrollBottomPadClass = 'pb-0 max-md:pb-[env(safe-area-inset-bottom,0px)]';
+  const desktopScrollClass = cn(
+    'min-h-0 flex-1 overflow-y-auto overflow-x-auto custom-scrollbar',
+    scrollBottomPadClass,
+  );
+
+  return (
+    <div className={desktopScrollClass}>
+      <div className="relative min-w-0">
+        <table className="w-full min-w-[44rem] table-fixed border-separate border-spacing-0 caption-bottom text-sm">
+          <LibrarySongsDesktopTableChrome sortState={sortState} onSortColumn={onSortColumn} />
+          <TableBody>
+            <TableRow
+              aria-hidden
+              className="pointer-events-none border-0 hover:bg-transparent [&>td]:border-0"
+            >
+              <TableCell colSpan={COL_COUNT} className={cn('border-0 p-0', DESKTOP_HEADER_BODY_GAP_CLASS)} />
+            </TableRow>
+            <TableRow className="border-0 hover:bg-transparent [&>td]:border-0">
+              <TableCell colSpan={COL_COUNT} className="border-0 p-0 py-14 md:py-20">
+                <div className="flex flex-col items-center justify-center gap-5 px-4">
+                  <div className="relative">
+                    <div
+                      className="absolute inset-0 scale-150 rounded-full bg-primary/10 blur-2xl motion-safe:animate-pulse"
+                      aria-hidden
+                    />
+                    <div className="relative flex size-16 items-center justify-center rounded-2xl border border-primary/25 bg-gradient-to-b from-card to-muted/40 shadow-md ring-1 ring-white/5">
+                      <DiscIcon className="size-9 text-primary/75" weight="duotone" />
+                    </div>
+                  </div>
+                  <Spinner className="size-7 text-primary" aria-label="Loading songs" />
+                  <p className="max-w-xs text-center text-sm font-medium leading-relaxed text-muted-foreground">
+                    Loading your library…
+                  </p>
+                </div>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 type LibrarySongsVirtualListProps = {
   variant: 'mobile' | 'desktop';
   tracks: ZodTrack[];
@@ -146,6 +316,8 @@ type LibrarySongsVirtualListProps = {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   fetchNextPage: () => Promise<unknown>;
+  sortState: LibrarySongsSortState;
+  onSortColumn: (column: LibraryTrackListSortBy) => void;
 };
 
 function LibrarySongsVirtualList({
@@ -162,6 +334,8 @@ function LibrarySongsVirtualList({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
+  sortState,
+  onSortColumn,
 }: LibrarySongsVirtualListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const estimateSize = variant === 'mobile' ? MOBILE_ROW_ESTIMATE : DESKTOP_ROW_ESTIMATE;
@@ -303,24 +477,7 @@ function LibrarySongsVirtualList({
     <div ref={scrollRef} className={desktopScrollClass}>
       <div className="relative min-w-0">
         <table className="w-full min-w-[44rem] table-fixed border-separate border-spacing-0 caption-bottom text-sm">
-          <colgroup>
-            <col style={{ width: 56 }} />
-            <col style={{ width: '38%' }} />
-            <col style={{ width: '21%' }} />
-            <col style={{ width: '21%' }} />
-            <col style={{ width: 52 }} />
-            <col style={{ width: 72 }} />
-          </colgroup>
-          <TableHeader className={songsTableHeaderStickyClass}>
-            <TableRow className={songsTableHeaderRowClass}>
-              <TableHead className="px-3 text-muted-foreground" />
-              <TableHead className="px-3 text-muted-foreground">Title</TableHead>
-              <TableHead className="px-3 text-muted-foreground">Artist</TableHead>
-              <TableHead className="px-3 text-muted-foreground">Album</TableHead>
-              <TableHead className="px-3 text-right text-muted-foreground">#</TableHead>
-              <TableHead className="px-3 text-right text-muted-foreground">Time</TableHead>
-            </TableRow>
-          </TableHeader>
+          <LibrarySongsDesktopTableChrome sortState={sortState} onSortColumn={onSortColumn} />
           <TableBody>
             <TableRow
               aria-hidden
@@ -465,8 +622,20 @@ function LibrarySongsPage() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [trackToDelete, setTrackToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [sortState, setSortState] = useState<LibrarySongsSortState>(null);
 
-  const tracksQuery = useLibraryTracksInfinite({ limit: PAGE_SIZE });
+  const handleSortColumn = useCallback((column: LibraryTrackListSortBy) => {
+    setSortState((prev) => {
+      if (!prev || prev.sortBy !== column) return { sortBy: column, sortOrder: 'asc' };
+      if (prev.sortOrder === 'asc') return { sortBy: column, sortOrder: 'desc' };
+      return null;
+    });
+  }, []);
+
+  const tracksQuery = useLibraryTracksInfinite({
+    limit: PAGE_SIZE,
+    ...(sortState ? { sortBy: sortState.sortBy, sortOrder: sortState.sortOrder } : {}),
+  });
   const { playTrack, addToQueue, playNext, currentTrack, isPlaying } = usePlayerStore();
   const { mutateAsync: deleteTrack, isPending: isDeletingTrack } = useDeleteLibraryTrack();
 
@@ -476,18 +645,31 @@ function LibrarySongsPage() {
     return pages.flatMap((page) => page.data?.items ?? []);
   }, [tracksQuery.data]);
 
-  const tracks = useMemo(() => sortLibraryTracksForDisplay(rawTracks), [rawTracks]);
+  const tracks = useMemo(() => {
+    if (sortState) return rawTracks;
+    return sortLibraryTracksForDisplay(rawTracks);
+  }, [rawTracks, sortState]);
 
   const playbackTracks = useMemo(() => tracks.map(zodTrackToPlaybackTrack), [tracks]);
 
-  const total = tracksQuery.data?.pages[0]?.data?.total;
+  const totalFromFirstPage = tracksQuery.data?.pages[0]?.data?.total;
+  const lastKnownTotalRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (typeof totalFromFirstPage === 'number') {
+      lastKnownTotalRef.current = totalFromFirstPage;
+    }
+  }, [totalFromFirstPage]);
+
+  const displayTotal =
+    typeof totalFromFirstPage === 'number' ? totalFromFirstPage : lastKnownTotalRef.current;
+
   const countsSubtitle = useMemo(() => {
-    const n = total ?? tracks.length;
-    return `${n} ${n === 1 ? 'song' : 'songs'}`;
-  }, [total, tracks.length]);
+    if (displayTotal == null) return undefined;
+    return `${displayTotal} ${displayTotal === 1 ? 'song' : 'songs'}`;
+  }, [displayTotal]);
 
   const hasNextPage = tracksQuery.hasNextPage === true;
-  const isPending = tracksQuery.isPending;
+  const isInitialLoad = tracksQuery.isPending && tracksQuery.data === undefined;
   const isError = tracksQuery.isError;
 
   const handleDeleteTrack = async () => {
@@ -548,16 +730,40 @@ function LibrarySongsPage() {
     );
   }
 
-  if (isPending) {
+  if (isInitialLoad) {
+    if (isMobile) {
+      return (
+        <>
+          <div className={paddedShellClass}>
+            <PageHeader title="Songs" description={countsSubtitle} />
+            <div className="flex min-h-[min(360px,52dvh)] flex-1 flex-col items-center justify-center gap-5 rounded-2xl border border-border/30 bg-gradient-to-b from-card/90 via-card/50 to-muted/15 px-6 py-16 shadow-sm ring-1 ring-white/[0.04] dark:ring-white/[0.06]">
+              <div className="flex size-[4.5rem] items-center justify-center rounded-2xl border border-border/35 bg-background/70 shadow-inner">
+                <DiscIcon className="size-10 text-muted-foreground/85" weight="duotone" />
+              </div>
+              <Spinner className="size-8 text-primary" aria-label="Loading songs" />
+              <p className="max-w-[16rem] text-center text-sm font-medium leading-relaxed text-muted-foreground">
+                Gathering your tracks…
+              </p>
+            </div>
+          </div>
+          {deleteTrackDialog}
+        </>
+      );
+    }
+
     return (
-      <div className={paddedShellClass}>
-        <PageHeader title="Songs" />
-        <div className="flex flex-col gap-2">
-          {[...Array(12)].map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-lg" />
-          ))}
+      <>
+        <div className={songsLoadedShellClass}>
+          <PageHeader title="Songs" description={countsSubtitle} />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <LibrarySongsDesktopInitialLoadShell
+              sortState={sortState}
+              onSortColumn={handleSortColumn}
+            />
+          </div>
         </div>
-      </div>
+        {deleteTrackDialog}
+      </>
     );
   }
 
@@ -593,6 +799,8 @@ function LibrarySongsPage() {
               hasNextPage={hasNextPage}
               isFetchingNextPage={tracksQuery.isFetchingNextPage}
               fetchNextPage={tracksQuery.fetchNextPage}
+              sortState={sortState}
+              onSortColumn={handleSortColumn}
             />
           </div>
         </div>
@@ -621,6 +829,8 @@ function LibrarySongsPage() {
             hasNextPage={hasNextPage}
             isFetchingNextPage={tracksQuery.isFetchingNextPage}
             fetchNextPage={tracksQuery.fetchNextPage}
+            sortState={sortState}
+            onSortColumn={handleSortColumn}
           />
         </div>
       </div>
