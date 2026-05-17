@@ -74,6 +74,8 @@ export const SearchResultItemSchema = z.discriminatedUnion("type", [
 export const SearchResultsResponseSchema = z.object({
   results: z.array(SearchResultItemSchema),
 
+  loggedIn: z.boolean(),
+
   // ── pagination ────────────────────────────────────────────────
   total: z.number().int().nonnegative(),
   page: z.number().int().positive(),

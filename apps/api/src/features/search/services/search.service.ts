@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Prisma } from '@repo/db';
 import { PrismaService } from '@/shared/services/prisma.service';
 import type { SearchQuery, SearchResultsResponse } from '@repo/contracts';
@@ -28,6 +28,16 @@ export class SearchService {
   constructor(private readonly prisma: PrismaService) {}
 
   async search(userId: string | null, searchQuery: SearchQuery): Promise<SearchResultsResponse> {
+    let loggedIn = false;
+
+    if (!userId) {
+      throw new UnauthorizedException(
+        'User token is required. Public and community visibilities are not implemented yet',
+      );
+    }
+
+    loggedIn = true;
+
     if (!searchQuery.query || searchQuery.query.trim().length < 2) {
       throw new BadRequestException('Query is too short or invalid');
     }
@@ -266,6 +276,7 @@ export class SearchService {
     if (queryParts.length === 0) {
       return {
         results: [],
+        loggedIn,
         total: 0,
         page,
         pageSize,
@@ -308,6 +319,7 @@ export class SearchService {
         coverUrl: r.coverUrl,
         avatarUrl: r.avatarUrl,
       })),
+      loggedIn,
       total,
       page,
       pageSize,
