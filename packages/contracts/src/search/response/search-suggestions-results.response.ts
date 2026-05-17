@@ -13,6 +13,8 @@ export const SearchSuggestionResultSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.enum(SearchResultType),
+  coverURL: z.string().nullable().optional(),
+  avatarURL: z.string().nullable().optional(),
   visibility: z.enum(Visibility),
   albumType: z.enum(AlbumType).nullable().optional(),
 });
