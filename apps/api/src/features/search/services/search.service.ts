@@ -3,6 +3,7 @@ import { Prisma } from '@repo/db';
 import { PrismaService } from '@/shared/services/prisma.service';
 import type { SearchQuery, SearchResultsResponse } from '@repo/contracts';
 import { AlbumType, Visibility } from '@repo/db';
+import { FUZZY_SEARCH_SIMILARITY } from '@/features/search/constants/search.constants';
 
 interface RawSearchResult {
   id: string;
@@ -25,10 +26,7 @@ interface RawSearchResult {
 export class SearchService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async search(
-    userId: string | null,
-    searchQuery: SearchQuery,
-  ): Promise<SearchResultsResponse> {
+  async search(userId: string | null, searchQuery: SearchQuery): Promise<SearchResultsResponse> {
     if (!searchQuery.query || searchQuery.query.trim().length < 2) {
       throw new BadRequestException('Query is too short or invalid');
     }
@@ -159,7 +157,7 @@ export class SearchService {
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
         FROM "artists" a
         LEFT JOIN "images" avatar ON a."avatarId" = avatar.id
-        WHERE (similarity(a.name, ${trimmedQuery}) > 0.1 OR a.name ILIKE ${searchPattern})
+        WHERE (similarity(a.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR a.name ILIKE ${searchPattern})
           AND a."deletedAt" IS NULL
           ${Prisma.raw(artistWhere)}
       `);
@@ -179,7 +177,7 @@ export class SearchService {
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
         FROM "albums" al
         LEFT JOIN "images" cover ON al."coverId" = cover.id
-        WHERE (similarity(al.name, ${trimmedQuery}) > 0.1 OR al.name ILIKE ${searchPattern})
+        WHERE (similarity(al.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR al.name ILIKE ${searchPattern})
           AND al."deletedAt" IS NULL
           ${Prisma.raw(albumWhere)}
       `);
@@ -200,7 +198,7 @@ export class SearchService {
         FROM "tracks" t
         LEFT JOIN "albums" al ON t."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
-        WHERE (similarity(t.title, ${trimmedQuery}) > 0.1 OR t.title ILIKE ${searchPattern})
+        WHERE (similarity(t.title, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR t.title ILIKE ${searchPattern})
           AND t."deletedAt" IS NULL
           ${Prisma.raw(trackWhere)}
       `);
@@ -221,7 +219,7 @@ export class SearchService {
           p."isPublic", p."isCollaborative"
         FROM "playlists" p
         LEFT JOIN "images" cover ON p."coverId" = cover.id
-        WHERE (p.name % ${trimmedQuery} OR p.name ILIKE ${searchPattern})
+        WHERE (p.name % ${trimmedQuery} > ${FUZZY_SEARCH_SIMILARITY} OR p.name ILIKE ${searchPattern})
           AND p."deletedAt" IS NULL
           ${Prisma.raw(playlistWhere)}
       `);
@@ -240,7 +238,7 @@ export class SearchService {
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
         FROM "genres" g
-        WHERE (g.name % ${trimmedQuery} OR g.name ILIKE ${searchPattern})
+        WHERE (g.name % ${trimmedQuery} > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})
           AND g."deletedAt" IS NULL
           ${Prisma.raw(genreWhere)}
       `);

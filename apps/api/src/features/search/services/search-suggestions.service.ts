@@ -3,6 +3,7 @@ import { Prisma } from '@repo/db';
 import { PrismaService } from '@/shared/services/prisma.service';
 import type { LibrarySearchSuggestionsResults, SearchSuggestionsResults } from '@repo/contracts';
 import { AlbumType, Visibility } from '@repo/db';
+import { FUZZY_SEARCH_SIMILARITY } from '@/features/search/constants/search.constants';
 
 interface RawSearchResult {
   id: string;
@@ -40,7 +41,7 @@ export class SearchSuggestionsService {
           avatar.url as "avatarUrl"
         FROM "artists" a
         LEFT JOIN "images" avatar ON a."avatarId" = avatar.id
-        WHERE (similarity(a.name, ${trimmedQuery}) > 0.15 OR a.name ILIKE ${searchPattern})
+        WHERE (similarity(a.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR a.name ILIKE ${searchPattern})
         AND a."deletedAt" IS NULL
         AND (
           a.visibility = 'public'
@@ -57,7 +58,7 @@ export class SearchSuggestionsService {
           NULL::text as "avatarUrl"
         FROM "albums" al
         LEFT JOIN "images" cover ON al."coverId" = cover.id
-        WHERE (similarity(al.name, ${trimmedQuery}) > 0.15 OR al.name ILIKE ${searchPattern})
+        WHERE (similarity(al.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR al.name ILIKE ${searchPattern})
         AND al."deletedAt" IS NULL
         AND (
           al.visibility = 'public'
@@ -75,7 +76,7 @@ export class SearchSuggestionsService {
         FROM "tracks" t
         LEFT JOIN "albums" al ON t."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
-        WHERE (similarity(t.title, ${trimmedQuery}) > 0.15 OR t.title ILIKE ${searchPattern})
+        WHERE (similarity(t.title, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR t.title ILIKE ${searchPattern})
         AND t."deletedAt" IS NULL
         AND (
           t.visibility = 'public'
@@ -109,7 +110,7 @@ export class SearchSuggestionsService {
           NULL::text as "coverUrl",
           NULL::text as "avatarUrl"
         FROM "genres" g
-        WHERE (similarity(g.name, ${trimmedQuery}) > 0.15 OR g.name ILIKE ${searchPattern})
+        WHERE (similarity(g.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})
         AND g."deletedAt" IS NULL
       )
       SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl"
@@ -154,7 +155,7 @@ export class SearchSuggestionsService {
         JOIN "artists" a ON la."artistId" = a.id
         LEFT JOIN "images" avatar ON a."avatarId" = avatar.id
         WHERE la."libraryId" = (SELECT id FROM user_library)
-        AND (similarity(a.name, ${trimmedQuery}) > 0.15 OR a.name ILIKE ${searchPattern})
+        AND (similarity(a.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR a.name ILIKE ${searchPattern})
         AND a."deletedAt" IS NULL
       `);
       needsUnionAll = true;
@@ -172,7 +173,7 @@ export class SearchSuggestionsService {
         JOIN "albums" al ON lb."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
         WHERE lb."libraryId" = (SELECT id FROM user_library)
-        AND (similarity(al.name, ${trimmedQuery}) > 0.15 OR al.name ILIKE ${searchPattern})
+        AND (similarity(al.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR al.name ILIKE ${searchPattern})
         AND al."deletedAt" IS NULL
       `);
       needsUnionAll = true;
@@ -191,7 +192,7 @@ export class SearchSuggestionsService {
         LEFT JOIN "albums" al ON t."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
         WHERE lt."libraryId" = (SELECT id FROM user_library)
-        AND (similarity(t.title, ${trimmedQuery}) > 0.15 OR t.title ILIKE ${searchPattern})
+        AND (similarity(t.title, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR t.title ILIKE ${searchPattern})
         AND t."deletedAt" IS NULL
       `);
       needsUnionAll = true;
@@ -208,7 +209,7 @@ export class SearchSuggestionsService {
         FROM "playlists" p
         LEFT JOIN "images" cover ON p."coverId" = cover.id
         WHERE p."libraryId" = (SELECT id FROM user_library)
-        AND (similarity(p.name, ${trimmedQuery}) > 0.15 OR p.name ILIKE ${searchPattern})
+        AND (similarity(p.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR p.name ILIKE ${searchPattern})
         AND p."deletedAt" IS NULL
       `);
       needsUnionAll = true;
@@ -224,7 +225,7 @@ export class SearchSuggestionsService {
           NULL::text as "avatarUrl"
         FROM "genres" g
         WHERE (g."libraryId" = (SELECT id FROM user_library) OR g."libraryId" IS NULL)
-        AND (similarity(g.name, ${trimmedQuery}) > 0.15 OR g.name ILIKE ${searchPattern})
+        AND (similarity(g.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})
         AND g."deletedAt" IS NULL
       `);
       needsUnionAll = true;
