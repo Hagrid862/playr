@@ -8,6 +8,7 @@ export const SearchTypeSchema = z.enum([
   "album",
   "track",
   "playlist",
+  "genre",
 ]);
 
 // ─── Visibility filter ────────────────────────────────────────────

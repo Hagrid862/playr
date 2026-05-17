@@ -73,7 +73,7 @@ export const SearchResultItemSchema = z.discriminatedUnion("type", [
 // reconstruct the current UI state without reparsing the request.
 
 export const SearchResultsResponseSchema = z.object({
-  data: z.array(SearchResultItemSchema),
+  results: z.array(SearchResultItemSchema),
 
   // ── pagination ────────────────────────────────────────────────
   total: z.number().int().nonnegative(),
