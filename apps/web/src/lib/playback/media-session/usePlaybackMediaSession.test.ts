@@ -52,6 +52,7 @@ function minimalPlayerState(overrides: Partial<PlayerState> = {}): PlayerState {
     availableQualities: ['auto'],
     queue: [],
     originalQueue: [],
+    listHeadTrackIds: [],
     history: [],
     repeatMode: 'off',
     isShuffled: false,
