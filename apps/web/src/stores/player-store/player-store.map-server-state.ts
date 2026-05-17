@@ -30,6 +30,7 @@ export function mapServerPlaybackToPatch(
   | 'duration'
   | 'queue'
   | 'history'
+  | 'listHeadTrackIds'
 > {
   const sortedQueue = getOrderedNextQueue(server.queue, server.shuffle);
   const item = {
@@ -63,5 +64,6 @@ export function mapServerPlaybackToPatch(
     duration: server.trackData.duration,
     queue: sortedQueue,
     history: server.history,
+    listHeadTrackIds: [],
   };
 }

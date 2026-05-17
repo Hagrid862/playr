@@ -26,6 +26,7 @@ const playerStoreInitialState: Pick<
   | 'availableQualities'
   | 'queue'
   | 'originalQueue'
+  | 'listHeadTrackIds'
   | 'history'
   | 'repeatMode'
   | 'isShuffled'

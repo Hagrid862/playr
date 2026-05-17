@@ -16,6 +16,11 @@ export interface PlayerState {
   availableQualities: (StreamAudioQuality | 'auto')[];
   queue: QueueItem[];
   originalQueue: QueueItem[];
+  /**
+   * Track ids that appeared before the clicked row in the last list/album `playTrack(..., remainder)` session.
+   * Used so shuffle can include those tracks in the pool (they live in `history` until shuffle).
+   */
+  listHeadTrackIds: string[];
   history: QueueItem[];
   repeatMode: 'off' | 'all' | 'one';
   isShuffled: boolean;

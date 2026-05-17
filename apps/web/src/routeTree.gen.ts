@@ -22,6 +22,7 @@ import { Route as AppLibraryOverviewRouteImport } from './routes/app/library/ove
 import { Route as AppLibraryGenresRouteImport } from './routes/app/library/genres'
 import { Route as AppLibraryArtistsRouteImport } from './routes/app/library/artists'
 import { Route as AppLibraryAlbumsRouteImport } from './routes/app/library/albums'
+import { Route as AppLibrarySongsIndexRouteImport } from './routes/app/library/songs/index'
 import { Route as AppLibraryOverviewIndexRouteImport } from './routes/app/library/overview/index'
 import { Route as AppLibraryGenresIndexRouteImport } from './routes/app/library/genres/index'
 import { Route as AppLibraryArtistsIndexRouteImport } from './routes/app/library/artists/index'
@@ -103,6 +104,11 @@ const AppLibraryArtistsRoute = AppLibraryArtistsRouteImport.update({
 const AppLibraryAlbumsRoute = AppLibraryAlbumsRouteImport.update({
   id: '/library/albums',
   path: '/library/albums',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLibrarySongsIndexRoute = AppLibrarySongsIndexRouteImport.update({
+  id: '/library/songs/',
+  path: '/library/songs/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLibraryOverviewIndexRoute = AppLibraryOverviewIndexRouteImport.update({
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/genres/': typeof AppLibraryGenresIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
+  '/app/library/songs/': typeof AppLibrarySongsIndexRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/app/library/artists': typeof AppLibraryArtistsIndexRoute
   '/app/library/genres': typeof AppLibraryGenresIndexRoute
   '/app/library/overview': typeof AppLibraryOverviewIndexRoute
+  '/app/library/songs': typeof AppLibrarySongsIndexRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id': typeof AppLibraryAlbumsIdIndexRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/genres/': typeof AppLibraryGenresIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
+  '/app/library/songs/': typeof AppLibrarySongsIndexRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/app/library/artists/'
     | '/app/library/genres/'
     | '/app/library/overview/'
+    | '/app/library/songs/'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id/'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/app/library/artists'
     | '/app/library/genres'
     | '/app/library/overview'
+    | '/app/library/songs'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/app/library/artists/'
     | '/app/library/genres/'
     | '/app/library/overview/'
+    | '/app/library/songs/'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id/'
@@ -484,6 +496,13 @@ declare module '@tanstack/react-router' {
       path: '/library/albums'
       fullPath: '/app/library/albums'
       preLoaderRoute: typeof AppLibraryAlbumsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/library/songs/': {
+      id: '/app/library/songs/'
+      path: '/library/songs'
+      fullPath: '/app/library/songs/'
+      preLoaderRoute: typeof AppLibrarySongsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/library/overview/': {
@@ -689,6 +708,7 @@ interface AppRouteChildren {
   AppLibraryOverviewRoute: typeof AppLibraryOverviewRouteWithChildren
   AppNewIndexRoute: typeof AppNewIndexRoute
   AppSearchIndexRoute: typeof AppSearchIndexRoute
+  AppLibrarySongsIndexRoute: typeof AppLibrarySongsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -699,6 +719,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLibraryOverviewRoute: AppLibraryOverviewRouteWithChildren,
   AppNewIndexRoute: AppNewIndexRoute,
   AppSearchIndexRoute: AppSearchIndexRoute,
+  AppLibrarySongsIndexRoute: AppLibrarySongsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

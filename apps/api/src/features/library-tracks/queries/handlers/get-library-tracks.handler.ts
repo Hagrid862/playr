@@ -10,7 +10,11 @@ const LIBRARY_TRACK_WITH_TRACK_INCLUDE = {
   track: {
     include: {
       artists: true,
-      album: true,
+      album: {
+        include: {
+          cover: true,
+        },
+      },
       genres: { include: { genre: true } },
     },
   },

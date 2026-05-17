@@ -22,6 +22,7 @@ export function createPlayerStoreMock(
     availableQualities: ["auto"],
     queue: [],
     originalQueue: [],
+    listHeadTrackIds: [],
     history: [],
     repeatMode: "off",
     isShuffled: false,
