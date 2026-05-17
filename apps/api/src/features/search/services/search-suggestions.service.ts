@@ -21,11 +21,15 @@ export class SearchSuggestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async searchSuggestions(query: string, userId?: string): Promise<SearchSuggestionsResults> {
+    let loggedIn = false;
+
     if (!userId) {
       throw new UnauthorizedException(
         'User token is required. Public and community visibilities are not implemented yet',
       );
     }
+
+    loggedIn = true;
 
     if (!query || query.trim().length < 3) {
       throw new BadRequestException('Query is too short or invalid');
@@ -119,15 +123,18 @@ export class SearchSuggestionsService {
       LIMIT 8
     `;
 
-    return results.map((r: RawSearchResult) => ({
-      id: r.id,
-      name: r.name,
-      type: r.type,
-      coverURL: r.coverUrl,
-      avatarURL: r.avatarUrl,
-      visibility: r.visibility,
-      ...(r.albumType ? { albumType: r.albumType } : {}),
-    }));
+    return {
+      results: results.map((r: RawSearchResult) => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        coverURL: r.coverUrl,
+        avatarURL: r.avatarUrl,
+        visibility: r.visibility,
+        ...(r.albumType ? { albumType: r.albumType } : {}),
+      })),
+      loggedIn,
+    };
   }
 
   async librarySearchSuggestions(
@@ -232,7 +239,7 @@ export class SearchSuggestionsService {
     }
 
     if (queryParts.length === 0) {
-      return [];
+      return { results: [] };
     }
 
     const combinedQuery = Prisma.join(queryParts, '');
@@ -250,14 +257,16 @@ export class SearchSuggestionsService {
       LIMIT 8
     `;
 
-    return results.map((r: RawSearchResult) => ({
-      id: r.id,
-      name: r.name,
-      type: r.type,
-      coverURL: r.coverUrl,
-      avatarURL: r.avatarUrl,
-      visibility: r.visibility,
-      ...(r.albumType ? { albumType: r.albumType } : {}),
-    }));
+    return {
+      results: results.map((r: RawSearchResult) => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        coverURL: r.coverUrl,
+        avatarURL: r.avatarUrl,
+        visibility: r.visibility,
+        ...(r.albumType ? { albumType: r.albumType } : {}),
+      })),
+    };
   }
 }

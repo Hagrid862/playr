@@ -69,10 +69,10 @@ describe('SearchSuggestionsService', () => {
       const result = await service.searchSuggestions('test', 'user-123');
 
       expect(mockQueryRaw).toHaveBeenCalled();
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('artist-1');
-      expect(result[0].name).toBe('Test Artist');
-      expect(result[0].type).toBe('artist');
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].id).toBe('artist-1');
+      expect(result.results[0].name).toBe('Test Artist');
+      expect(result.results[0].type).toBe('artist');
     });
 
     it('should include albumType when present in results', async () => {
@@ -90,7 +90,7 @@ describe('SearchSuggestionsService', () => {
 
       const result = await service.searchSuggestions('album', 'user-123');
 
-      expect(result[0]).toHaveProperty('albumType', 'album');
+      expect(result.results[0]).toHaveProperty('albumType', 'album');
     });
 
     it('should trim query before processing', async () => {
@@ -131,10 +131,10 @@ describe('SearchSuggestionsService', () => {
       const result = await service.librarySearchSuggestions('user-123', 'artist');
 
       expect(mockQueryRaw).toHaveBeenCalled();
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('artist-1');
-      expect(result[0].name).toBe('Library Artist');
-      expect(result[0].type).toBe('artist');
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].id).toBe('artist-1');
+      expect(result.results[0].name).toBe('Library Artist');
+      expect(result.results[0].type).toBe('artist');
     });
 
     it('should filter by artist category when specified', async () => {
@@ -198,12 +198,12 @@ describe('SearchSuggestionsService', () => {
       expect(mockQueryRaw).toHaveBeenCalled();
     });
 
-    it('should return empty array when no results found', async () => {
+    it('should return empty results when no results found', async () => {
       mockQueryRaw.mockResolvedValueOnce([]);
 
       const result = await service.librarySearchSuggestions('user-123', 'nonexistent');
 
-      expect(result).toEqual([]);
+      expect(result).toEqual({ results: [] });
     });
 
     it('should trim query before processing', async () => {

@@ -81,12 +81,12 @@ describe('SearchService', () => {
       };
       const result = await service.search('user-123', searchQuery);
 
-      expect(result.data).toHaveLength(2);
+      expect(result.results).toHaveLength(2);
       expect(result.total).toBe(2);
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(20);
-      expect(result.data[0].id).toBe('artist-1');
-      expect(result.data[1].id).toBe('album-1');
+      expect(result.results[0].id).toBe('artist-1');
+      expect(result.results[1].id).toBe('album-1');
     });
 
     it('should return only public results when userId is null (unauthenticated)', async () => {
@@ -110,7 +110,7 @@ describe('SearchService', () => {
       };
       const result = await service.search(null, searchQuery);
 
-      expect(result.data).toHaveLength(1);
+      expect(result.results).toHaveLength(1);
       expect(result.total).toBe(1);
     });
 
@@ -265,7 +265,7 @@ describe('SearchService', () => {
       expect(mockQueryRaw).toHaveBeenCalled();
     });
 
-    it('should return empty data array when no results found', async () => {
+    it('should return empty results array when no results found', async () => {
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]); // count query
       mockQueryRaw.mockResolvedValueOnce([]);                       // results query
 
@@ -276,7 +276,7 @@ describe('SearchService', () => {
       };
       const result = await service.search('user-123', searchQuery);
 
-      expect(result.data).toEqual([]);
+      expect(result.results).toEqual([]);
       expect(result.total).toBe(0);
     });
 

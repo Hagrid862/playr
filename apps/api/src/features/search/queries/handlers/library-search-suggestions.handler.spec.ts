@@ -19,16 +19,18 @@ describe('LibrarySearchSuggestionsHandler', () => {
   const categories: SearchSuggestionsCategories[] = ['artist', 'album'];
   const searchQuery = new LibrarySearchSuggestionsQuery(userId, query, categories);
 
-  const mockResults: LibrarySearchSuggestionsResults = [
-    { id: 'artist-1', name: 'Test Artist', type: SearchResultType.Artist, visibility: 'private' },
-    {
-      id: 'album-1',
-      name: 'Test Album',
-      type: SearchResultType.Album,
-      visibility: 'private',
-      albumType: 'album',
-    },
-  ];
+  const mockResults: LibrarySearchSuggestionsResults = {
+    results: [
+      { id: 'artist-1', name: 'Test Artist', type: SearchResultType.Artist, visibility: 'private' },
+      {
+        id: 'album-1',
+        name: 'Test Album',
+        type: SearchResultType.Album,
+        visibility: 'private',
+        albumType: 'album',
+      },
+    ],
+  };
 
   beforeEach(async () => {
     suggestionsService = createMock<SearchSuggestionsService>();
@@ -65,19 +67,21 @@ describe('LibrarySearchSuggestionsHandler', () => {
     expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, undefined);
   });
 
-  it('should return empty array when suggestionsService returns empty array', async () => {
-    suggestionsService.librarySearchSuggestions.mockResolvedValue([]);
+  it('should return empty results when suggestionsService returns empty results', async () => {
+    suggestionsService.librarySearchSuggestions.mockResolvedValue({ results: [] });
 
     const result = await handler.execute(searchQuery);
 
-    expect(result).toEqual([]);
+    expect(result).toEqual({ results: [] });
   });
 
   it('should handle single category filter', async () => {
     const singleCategoryQuery = new LibrarySearchSuggestionsQuery(userId, query, ['track']);
-    const trackResults: LibrarySearchSuggestionsResults = [
-      { id: 'track-1', name: 'Test Track', type: SearchResultType.Track, visibility: 'private' },
-    ];
+    const trackResults: LibrarySearchSuggestionsResults = {
+      results: [
+        { id: 'track-1', name: 'Test Track', type: SearchResultType.Track, visibility: 'private' },
+      ],
+    };
     suggestionsService.librarySearchSuggestions.mockResolvedValue(trackResults);
 
     const result = await handler.execute(singleCategoryQuery);
@@ -95,24 +99,26 @@ describe('LibrarySearchSuggestionsHandler', () => {
       'genre',
     ];
     const allCategoriesQuery = new LibrarySearchSuggestionsQuery(userId, query, allCategories);
-    const allResults: LibrarySearchSuggestionsResults = [
-      { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'private' },
-      {
-        id: 'album-1',
-        name: 'Album',
-        type: SearchResultType.Album,
-        visibility: 'private',
-        albumType: 'album',
-      },
-      { id: 'track-1', name: 'Track', type: SearchResultType.Track, visibility: 'private' },
-      {
-        id: 'playlist-1',
-        name: 'Playlist',
-        type: SearchResultType.Playlist,
-        visibility: 'private',
-      },
-      { id: 'genre-1', name: 'Genre', type: SearchResultType.Genre, visibility: 'public' },
-    ];
+    const allResults: LibrarySearchSuggestionsResults = {
+      results: [
+        { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'private' },
+        {
+          id: 'album-1',
+          name: 'Album',
+          type: SearchResultType.Album,
+          visibility: 'private',
+          albumType: 'album',
+        },
+        { id: 'track-1', name: 'Track', type: SearchResultType.Track, visibility: 'private' },
+        {
+          id: 'playlist-1',
+          name: 'Playlist',
+          type: SearchResultType.Playlist,
+          visibility: 'private',
+        },
+        { id: 'genre-1', name: 'Genre', type: SearchResultType.Genre, visibility: 'public' },
+      ],
+    };
     suggestionsService.librarySearchSuggestions.mockResolvedValue(allResults);
 
     const result = await handler.execute(allCategoriesQuery);
@@ -127,14 +133,16 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   it('should handle playlist category', async () => {
     const playlistQuery = new LibrarySearchSuggestionsQuery(userId, query, ['playlist']);
-    const playlistResults: LibrarySearchSuggestionsResults = [
-      {
-        id: 'playlist-1',
-        name: 'My Playlist',
-        type: SearchResultType.Playlist,
-        visibility: 'private',
-      },
-    ];
+    const playlistResults: LibrarySearchSuggestionsResults = {
+      results: [
+        {
+          id: 'playlist-1',
+          name: 'My Playlist',
+          type: SearchResultType.Playlist,
+          visibility: 'private',
+        },
+      ],
+    };
     suggestionsService.librarySearchSuggestions.mockResolvedValue(playlistResults);
 
     const result = await handler.execute(playlistQuery);
@@ -147,9 +155,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   it('should handle genre category', async () => {
     const genreQuery = new LibrarySearchSuggestionsQuery(userId, query, ['genre']);
-    const genreResults: LibrarySearchSuggestionsResults = [
-      { id: 'genre-1', name: 'Rock', type: SearchResultType.Genre, visibility: 'public' },
-    ];
+    const genreResults: LibrarySearchSuggestionsResults = {
+      results: [
+        { id: 'genre-1', name: 'Rock', type: SearchResultType.Genre, visibility: 'public' },
+      ],
+    };
     suggestionsService.librarySearchSuggestions.mockResolvedValue(genreResults);
 
     const result = await handler.execute(genreQuery);

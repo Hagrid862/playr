@@ -246,7 +246,7 @@ export class SearchService {
 
     if (queryParts.length === 0) {
       return {
-        data: [],
+        results: [],
         total: 0,
         page,
         pageSize,
@@ -275,7 +275,7 @@ export class SearchService {
     `;
 
     return {
-      data: results.map((r: RawSearchResult) => ({
+      results: results.map((r: RawSearchResult) => ({
         id: r.id,
         name: r.name,
         type: r.type,
