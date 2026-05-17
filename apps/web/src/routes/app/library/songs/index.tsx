@@ -662,15 +662,11 @@ function LibrarySongsPage() {
 
   const totalFromFirstPage = tracksQuery.data?.pages[0]?.data?.total;
   const [lastKnownTotal, setLastKnownTotal] = useState<number | undefined>(undefined);
-  if (
-    typeof totalFromFirstPage === 'number' &&
-    totalFromFirstPage !== lastKnownTotal
-  ) {
+  if (typeof totalFromFirstPage === 'number' && totalFromFirstPage !== lastKnownTotal) {
     setLastKnownTotal(totalFromFirstPage);
   }
 
-  const displayTotal =
-    typeof totalFromFirstPage === 'number' ? totalFromFirstPage : lastKnownTotal;
+  const displayTotal = typeof totalFromFirstPage === 'number' ? totalFromFirstPage : lastKnownTotal;
 
   const countsSubtitle = useMemo(() => {
     if (displayTotal == null) return undefined;

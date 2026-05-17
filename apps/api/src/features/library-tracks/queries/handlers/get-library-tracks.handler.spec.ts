@@ -201,7 +201,9 @@ describe('GetLibraryTracksHandler', () => {
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
     libraryTrackRepository.getIdsPaginatedByMinArtistName.mockResolvedValue([mockLibraryTrack.id]);
-    libraryTrackRepository.findManyByIdsOrdered.mockResolvedValue([mockItem]);
+    libraryTrackRepository.findManyByIdsOrdered.mockResolvedValue([
+      { ...mockItem, library: mockLibrary },
+    ]);
     libraryTrackRepository.count.mockResolvedValue(1);
 
     const result = await handler.execute(artistQuery);
