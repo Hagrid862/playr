@@ -169,6 +169,8 @@ export class SearchService {
           orderByClause = `"listenedCount" ${dir}`;
           break;
         case 'relevance':
+          orderByClause = `score ${dir}`;
+          break;
         default:
           orderByClause = 'score DESC';
           break;
