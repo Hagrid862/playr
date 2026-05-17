@@ -16,46 +16,45 @@ export const SearchResultBaseSchema = z.object({
   visibility: z.enum(Visibility),
   albumType: z.enum(AlbumType).nullable().optional(),
   score: z.number(),
+  explicit: z.boolean().optional(),
+  coverUrl: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
 });
 
 // ─── Per-entity result schemas ─────────────────────────────────────
 
 export const SearchArtistResultSchema = SearchResultBaseSchema.extend({
   type: z.literal("artist"),
-  verified: z.boolean(),
-  isCommunity: z.boolean(),
+  verified: z.boolean().optional(),
+  isCommunity: z.boolean().optional(),
   description: z.string().nullable().optional(),
-  avatarUrl: z.string().nullable().optional(),
 });
 
 export const SearchAlbumResultSchema = SearchResultBaseSchema.extend({
   type: z.literal("album"),
   albumType: z.enum(AlbumType),
   releaseDate: z.string().datetime().nullable().optional(),
-  totalTracks: z.number().int().nonnegative(),
-  totalDuration: z.number().int().nonnegative(),
+  totalTracks: z.number().int().nonnegative().optional(),
+  totalDuration: z.number().int().nonnegative().optional(),
   description: z.string().nullable().optional(),
-  coverUrl: z.string().nullable().optional(),
 });
 
 export const SearchTrackResultSchema = SearchResultBaseSchema.extend({
   type: z.literal("track"),
-  duration: z.number().int().nonnegative(),
-  trackNumber: z.number().int().nonnegative(),
-  diskNumber: z.number().int().nonnegative(),
+  duration: z.number().int().nonnegative().optional(),
+  trackNumber: z.number().int().nonnegative().optional(),
+  diskNumber: z.number().int().nonnegative().optional(),
   explicit: z.boolean(),
-  listenedCount: z.number().int().nonnegative(),
-  albumId: z.string(),
+  listenedCount: z.number().int().nonnegative().optional(),
+  albumId: z.string().optional(),
   lyrics: z.string().nullable().optional(),
-  coverUrl: z.string().nullable().optional(),
 });
 
 export const SearchPlaylistResultSchema = SearchResultBaseSchema.extend({
   type: z.literal("playlist"),
-  isPublic: z.boolean(),
+  isPublic: z.boolean().optional(),
   description: z.string().nullable().optional(),
   trackCount: z.number().int().nonnegative().optional(),
-  coverUrl: z.string().nullable().optional(),
 });
 
 // ─── Discriminated union of all result types ───────────────────────
