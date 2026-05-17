@@ -73,13 +73,13 @@ describe('GetLibraryTracksHandler', () => {
       1,
       10,
       { libraryId: mockLibrary.id, track: {} },
-      { track: { trackNumber: 'asc' } },
+      [{ track: { trackNumber: 'asc' } }, { track: { id: 'asc' } }],
       {
         include: {
           track: {
             include: {
               artists: true,
-              album: true,
+              album: { include: { cover: true } },
               genres: { include: { genre: true } },
             },
           },
@@ -104,7 +104,7 @@ describe('GetLibraryTracksHandler', () => {
         libraryId: mockLibrary.id,
         track: { albumId: 'album-123' },
       },
-      { track: { trackNumber: 'asc' } },
+      [{ track: { trackNumber: 'asc' } }, { track: { id: 'asc' } }],
       expect.objectContaining({ include: expect.any(Object) }),
     );
   });
@@ -128,7 +128,7 @@ describe('GetLibraryTracksHandler', () => {
       1,
       10,
       expectedWhere,
-      { track: { trackNumber: 'asc' } },
+      [{ track: { trackNumber: 'asc' } }, { track: { id: 'asc' } }],
       expect.objectContaining({ include: expect.any(Object) }),
     );
     expect(libraryTrackRepository.count).toHaveBeenCalledWith(expectedWhere);
@@ -155,10 +155,55 @@ describe('GetLibraryTracksHandler', () => {
       1,
       10,
       expectedWhere,
-      { track: { trackNumber: 'asc' } },
+      [{ track: { trackNumber: 'asc' } }, { track: { id: 'asc' } }],
       expect.objectContaining({ include: expect.any(Object) }),
     );
     expect(libraryTrackRepository.count).toHaveBeenCalledWith(expectedWhere);
+  });
+
+  it('should use Prisma orderBy when sorting by title', async () => {
+    const titleQuery = new GetLibraryTracksQuery(userId, 1, 10, undefined, undefined, 'title', 'asc');
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
+    libraryTrackRepository.getPaginated.mockResolvedValue([mockItem]);
+    libraryTrackRepository.count.mockResolvedValue(1);
+
+    await handler.execute(titleQuery);
+
+    expect(libraryTrackRepository.getPaginated).toHaveBeenCalledWith(
+      1,
+      10,
+      { libraryId: mockLibrary.id, track: {} },
+      [{ track: { title: 'asc' } }, { track: { id: 'asc' } }],
+      expect.objectContaining({ include: expect.any(Object) }),
+    );
+    expect(libraryTrackRepository.getIdsPaginatedByMinArtistName).not.toHaveBeenCalled();
+  });
+
+  it('should use raw SQL artist path when sorting by artist', async () => {
+    const artistQuery = new GetLibraryTracksQuery(userId, 2, 10, undefined, undefined, 'artist', 'desc');
+    libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
+    const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
+    libraryTrackRepository.getIdsPaginatedByMinArtistName.mockResolvedValue([mockLibraryTrack.id]);
+    libraryTrackRepository.findManyByIdsOrdered.mockResolvedValue([mockItem]);
+    libraryTrackRepository.count.mockResolvedValue(1);
+
+    const result = await handler.execute(artistQuery);
+
+    expect(result.items).toEqual([mockTrack]);
+    expect(libraryTrackRepository.getPaginated).not.toHaveBeenCalled();
+    expect(libraryTrackRepository.getIdsPaginatedByMinArtistName).toHaveBeenCalledWith({
+      libraryId: mockLibrary.id,
+      albumId: undefined,
+      genreId: undefined,
+      page: 2,
+      limit: 10,
+      sortOrder: 'desc',
+    });
+    expect(libraryTrackRepository.findManyByIdsOrdered).toHaveBeenCalledWith(
+      [mockLibraryTrack.id],
+      expect.objectContaining({ include: expect.any(Object) }),
+    );
   });
 
   it('should throw PreconditionFailedException if library not found', async () => {
