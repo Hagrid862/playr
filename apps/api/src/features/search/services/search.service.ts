@@ -20,6 +20,7 @@ interface RawSearchResult {
   listenedCount: number | null;
   isPublic: boolean | null;
   isCollaborative: boolean | null;
+  explicit: boolean | null;
 }
 
 @Injectable()
@@ -40,73 +41,102 @@ export class SearchService {
     const offset = (page - 1) * pageSize;
     const isAuthenticated = userId !== null;
 
-    // ── Determine which entity types to query ─────────────────────
-    const targetTypes = filters?.types ?? ['artist', 'album', 'track', 'playlist', 'genre'];
+    // ── Determine which entity categories to query ─────────────────────
+    const targetCategories = filters?.categories ?? ['artist', 'album', 'track', 'playlist', 'genre'];
 
     // ── Build per-entity WHERE clauses ─────────────────────────────
-    const artistFilters: string[] = [];
-    const albumFilters: string[] = [];
-    const trackFilters: string[] = [];
-    const playlistFilters: string[] = [];
-    const genreFilters: string[] = [];
+    const artistConditions: Prisma.Sql[] = [
+      Prisma.sql`(similarity(a.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR a.name ILIKE ${searchPattern})`,
+      Prisma.sql`a."deletedAt" IS NULL`,
+    ];
+    const albumConditions: Prisma.Sql[] = [
+      Prisma.sql`(similarity(al.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR al.name ILIKE ${searchPattern})`,
+      Prisma.sql`al."deletedAt" IS NULL`,
+    ];
+    const trackConditions: Prisma.Sql[] = [
+      Prisma.sql`(similarity(t.title, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR t.title ILIKE ${searchPattern})`,
+      Prisma.sql`t."deletedAt" IS NULL`,
+    ];
+    const playlistConditions: Prisma.Sql[] = [
+      Prisma.sql`(similarity(p.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR p.name ILIKE ${searchPattern})`,
+      Prisma.sql`p."deletedAt" IS NULL`,
+    ];
+    const genreConditions: Prisma.Sql[] = [
+      Prisma.sql`(similarity(g.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})`,
+      Prisma.sql`g."deletedAt" IS NULL`,
+    ];
 
-    // Unauthenticated users only see public content
+    // ── Visibility & Ownership Checks ──────────────────────────────
     if (!isAuthenticated) {
-      artistFilters.push(`a.visibility = 'public'`);
-      albumFilters.push(`al.visibility = 'public'`);
-      trackFilters.push(`t.visibility = 'public'`);
-      playlistFilters.push(`p."isPublic" = true`);
-      // Genres are public by default in this context
+      artistConditions.push(Prisma.sql`a.visibility = 'public'`);
+      albumConditions.push(Prisma.sql`al.visibility = 'public'`);
+      trackConditions.push(Prisma.sql`t.visibility = 'public'`);
+      playlistConditions.push(Prisma.sql`p."isPublic" = true`);
+    } else {
+      artistConditions.push(
+        Prisma.sql`(a.visibility = 'public' OR EXISTS (SELECT 1 FROM "artist_access" aa WHERE aa."artistId" = a.id AND aa."userId" = ${userId}))`,
+      );
+      albumConditions.push(
+        Prisma.sql`(al.visibility = 'public' OR EXISTS (SELECT 1 FROM "album_access" ala WHERE ala."albumId" = al.id AND ala."userId" = ${userId}))`,
+      );
+      trackConditions.push(
+        Prisma.sql`(t.visibility = 'public' OR EXISTS (SELECT 1 FROM "track_access" ta WHERE ta."trackId" = t.id AND ta."userId" = ${userId}))`,
+      );
+      playlistConditions.push(
+        Prisma.sql`(p."isPublic" = true OR EXISTS (SELECT 1 FROM "libraries" l WHERE l.id = p."libraryId" AND l."userId" = ${userId}) OR (p."artistId" IS NOT NULL AND EXISTS (SELECT 1 FROM "artist_access" aa WHERE aa."artistId" = p."artistId" AND aa."userId" = ${userId})))`,
+      );
     }
 
+    // ── Apply filters from searchQuery ─────────────────────────────
     if (filters?.visibility) {
-      artistFilters.push(`a.visibility = '${filters.visibility}'`);
-      albumFilters.push(`al.visibility = '${filters.visibility}'`);
-      trackFilters.push(`t.visibility = '${filters.visibility}'`);
+      const vis = filters.visibility;
+      artistConditions.push(Prisma.sql`a.visibility = ${vis}::"Visibility"`);
+      albumConditions.push(Prisma.sql`al.visibility = ${vis}::"Visibility"`);
+      trackConditions.push(Prisma.sql`t.visibility = ${vis}::"Visibility"`);
+
+      if (vis === 'public') {
+        playlistConditions.push(Prisma.sql`p."isPublic" = true`);
+      } else if (vis === 'private') {
+        playlistConditions.push(Prisma.sql`p."isPublic" = false`);
+      }
     }
 
     if (filters?.artist?.verified !== undefined) {
-      artistFilters.push(`a.verified = ${filters.artist.verified}`);
+      artistConditions.push(Prisma.sql`a.verified = ${filters.artist.verified}`);
     }
     if (filters?.artist?.isCommunity !== undefined) {
-      artistFilters.push(`a."isCommunity" = ${filters.artist.isCommunity}`);
+      artistConditions.push(Prisma.sql`a."isCommunity" = ${filters.artist.isCommunity}`);
     }
 
     if (filters?.album?.type) {
-      albumFilters.push(`al.type = '${filters.album.type}'`);
+      albumConditions.push(Prisma.sql`al.type = ${filters.album.type}::"AlbumType"`);
     }
     if (filters?.album?.releaseDateFrom) {
-      albumFilters.push(`al."releaseDate" >= '${filters.album.releaseDateFrom}'`);
+      albumConditions.push(Prisma.sql`al."releaseDate" >= ${new Date(filters.album.releaseDateFrom)}`);
     }
     if (filters?.album?.releaseDateTo) {
-      albumFilters.push(`al."releaseDate" <= '${filters.album.releaseDateTo}'`);
+      albumConditions.push(Prisma.sql`al."releaseDate" <= ${new Date(filters.album.releaseDateTo)}`);
     }
 
     if (filters?.track?.explicit !== undefined) {
-      trackFilters.push(`t.explicit = ${filters.track.explicit}`);
+      trackConditions.push(Prisma.sql`t.explicit = ${filters.track.explicit}`);
     }
     if (filters?.track?.durationFrom !== undefined) {
-      trackFilters.push(`t.duration >= ${filters.track.durationFrom}`);
+      trackConditions.push(Prisma.sql`t.duration >= ${filters.track.durationFrom}`);
     }
     if (filters?.track?.durationTo !== undefined) {
-      trackFilters.push(`t.duration <= ${filters.track.durationTo}`);
+      trackConditions.push(Prisma.sql`t.duration <= ${filters.track.durationTo}`);
     }
     if (filters?.track?.minListenedCount !== undefined) {
-      trackFilters.push(`t."listenedCount" >= ${filters.track.minListenedCount}`);
+      trackConditions.push(Prisma.sql`t."listenedCount" >= ${filters.track.minListenedCount}`);
     }
 
     if (filters?.playlist?.isPublic !== undefined) {
-      playlistFilters.push(`p."isPublic" = ${filters.playlist.isPublic}`);
+      playlistConditions.push(Prisma.sql`p."isPublic" = ${filters.playlist.isPublic}`);
     }
     if (filters?.playlist?.isCollaborative !== undefined) {
-      playlistFilters.push(`p."isCollaborative" = ${filters.playlist.isCollaborative}`);
+      playlistConditions.push(Prisma.sql`p."isCollaborative" = ${filters.playlist.isCollaborative}`);
     }
-
-    const artistWhere = artistFilters.length ? `AND ${artistFilters.join(' AND ')}` : '';
-    const albumWhere = albumFilters.length ? `AND ${albumFilters.join(' AND ')}` : '';
-    const trackWhere = trackFilters.length ? `AND ${trackFilters.join(' AND ')}` : '';
-    const playlistWhere = playlistFilters.length ? `AND ${playlistFilters.join(' AND ')}` : '';
-    const genreWhere = genreFilters.length ? `AND ${genreFilters.join(' AND ')}` : '';
 
     // ── Build ORDER BY clause ─────────────────────────────────────
     let orderByClause = 'score DESC';
@@ -128,12 +158,6 @@ export class SearchService {
         case 'listenedCount':
           orderByClause = `"listenedCount" ${dir}`;
           break;
-        case 'isPublic':
-          orderByClause = `"isPublic" ${dir}`;
-          break;
-        case 'isCollaborative':
-          orderByClause = `"isCollaborative" ${dir}`;
-          break;
         case 'relevance':
         default:
           orderByClause = 'score DESC';
@@ -145,7 +169,7 @@ export class SearchService {
     const queryParts: Prisma.Sql[] = [];
     let needsUnionAll = false;
 
-    if (targetTypes.includes('artist')) {
+    if (targetCategories.includes('artist')) {
       queryParts.push(Prisma.sql`
         SELECT a.id, a.name, 'artist' as type,
           a.visibility, NULL::"AlbumType" as "albumType",
@@ -154,17 +178,16 @@ export class SearchService {
           avatar.url as "avatarUrl",
           a."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
-          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
+          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
+          NULL::boolean as "explicit"
         FROM "artists" a
         LEFT JOIN "images" avatar ON a."avatarId" = avatar.id
-        WHERE (similarity(a.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR a.name ILIKE ${searchPattern})
-          AND a."deletedAt" IS NULL
-          ${Prisma.raw(artistWhere)}
+        WHERE ${Prisma.join(artistConditions, ' AND ')}
       `);
       needsUnionAll = true;
     }
 
-    if (targetTypes.includes('album')) {
+    if (targetCategories.includes('album')) {
       if (needsUnionAll) queryParts.push(Prisma.sql` UNION ALL `);
       queryParts.push(Prisma.sql`
         SELECT al.id, al.name, 'album' as type,
@@ -174,17 +197,16 @@ export class SearchService {
           NULL::text as "avatarUrl",
           al."createdAt", al."releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
-          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
+          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
+          NULL::boolean as "explicit"
         FROM "albums" al
         LEFT JOIN "images" cover ON al."coverId" = cover.id
-        WHERE (similarity(al.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR al.name ILIKE ${searchPattern})
-          AND al."deletedAt" IS NULL
-          ${Prisma.raw(albumWhere)}
+        WHERE ${Prisma.join(albumConditions, ' AND ')}
       `);
       needsUnionAll = true;
     }
 
-    if (targetTypes.includes('track')) {
+    if (targetCategories.includes('track')) {
       if (needsUnionAll) queryParts.push(Prisma.sql` UNION ALL `);
       queryParts.push(Prisma.sql`
         SELECT t.id, t.title as name, 'track' as type,
@@ -194,18 +216,17 @@ export class SearchService {
           NULL::text as "avatarUrl",
           t."createdAt", NULL::timestamp as "releaseDate",
           t.duration, t."listenedCount",
-          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
+          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
+          t.explicit as "explicit"
         FROM "tracks" t
         LEFT JOIN "albums" al ON t."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
-        WHERE (similarity(t.title, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR t.title ILIKE ${searchPattern})
-          AND t."deletedAt" IS NULL
-          ${Prisma.raw(trackWhere)}
+        WHERE ${Prisma.join(trackConditions, ' AND ')}
       `);
       needsUnionAll = true;
     }
 
-    if (targetTypes.includes('playlist')) {
+    if (targetCategories.includes('playlist')) {
       if (needsUnionAll) queryParts.push(Prisma.sql` UNION ALL `);
       queryParts.push(Prisma.sql`
         SELECT p.id, p.name, 'playlist' as type,
@@ -216,17 +237,16 @@ export class SearchService {
           NULL::text as "avatarUrl",
           p."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
-          p."isPublic", p."isCollaborative"
+          p."isPublic", p."isCollaborative",
+          NULL::boolean as "explicit"
         FROM "playlists" p
         LEFT JOIN "images" cover ON p."coverId" = cover.id
-        WHERE (similarity(p.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR p.name ILIKE ${searchPattern})
-          AND p."deletedAt" IS NULL
-          ${Prisma.raw(playlistWhere)}
+        WHERE ${Prisma.join(playlistConditions, ' AND ')}
       `);
       needsUnionAll = true;
     }
 
-    if (targetTypes.includes('genre')) {
+    if (targetCategories.includes('genre')) {
       if (needsUnionAll) queryParts.push(Prisma.sql` UNION ALL `);
       queryParts.push(Prisma.sql`
         SELECT g.id, g.name, 'genre' as type,
@@ -236,11 +256,10 @@ export class SearchService {
           NULL::text as "avatarUrl",
           g."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
-          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
+          NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
+          NULL::boolean as "explicit"
         FROM "genres" g
-        WHERE (similarity(g.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})
-          AND g."deletedAt" IS NULL
-          ${Prisma.raw(genreWhere)}
+        WHERE ${Prisma.join(genreConditions, ' AND ')}
       `);
     }
 
@@ -268,7 +287,7 @@ export class SearchService {
     const results = await this.prisma.extended.$queryRaw<RawSearchResult[]>`
       WITH unified AS (${combinedQuery})
       SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl",
-             "createdAt", "releaseDate", duration, "listenedCount", "isPublic", "isCollaborative"
+             "createdAt", "releaseDate", duration, "listenedCount", "isPublic", "isCollaborative", "explicit"
       FROM unified
       ORDER BY ${Prisma.raw(orderByClause)}
       LIMIT ${pageSize} OFFSET ${offset}
@@ -282,6 +301,10 @@ export class SearchService {
         visibility: r.visibility,
         albumType: r.albumType,
         score: r.score,
+        releaseDate: r.releaseDate,
+        duration: r.duration,
+        listenedCount: r.listenedCount,
+        explicit: r.explicit,
         coverUrl: r.coverUrl,
         avatarUrl: r.avatarUrl,
       })),
