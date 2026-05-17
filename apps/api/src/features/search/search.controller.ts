@@ -5,8 +5,11 @@ import { SearchSuggestionsQueryRequestDto } from './dto/search-suggestions-query
 import { SearchSuggestionsResultsResponseDto } from './dto/search-suggestions-results.response.dto';
 import { LibrarySearchSuggestionsQueryRequestDto } from './dto/library-search-suggestions-query.request.dto';
 import { LibrarySearchSuggestionsResultsResponseDto } from './dto/library-search-suggestions-results.response.dto';
+import { SearchQueryRequestDto } from './dto/search-query.request.dto';
+import { SearchResultsResponseDto } from './dto/search-results.response.dto';
 import { SearchSuggestionsQuery } from './queries/impl/search-suggestions.query';
 import { LibrarySearchSuggestionsQuery } from './queries/impl/library-search-suggestions.query';
+import { SearchQueryImpl } from './queries/impl/search.query';
 import { JwtAuthGuardForSearch } from '@/shared/guards/jwt-auth-for-search.guard';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
@@ -66,5 +69,29 @@ export class SearchController {
     return this.queryBus.execute(
       new LibrarySearchSuggestionsQuery(user.id, query.query, query.categories),
     );
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuardForSearch)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Full-text search across artists, albums, tracks, and playlists with filters and pagination',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Search results returned successfully',
+    type: SearchResultsResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Query is too short or invalid',
+    type: ApiErrorResponseDto,
+  })
+  async search(
+    @Query() query: SearchQueryRequestDto,
+    @CurrentUser() user: User | null,
+  ): Promise<SearchResultsResponseDto> {
+    return this.queryBus.execute(new SearchQueryImpl(user?.id ?? null, query));
   }
 }
