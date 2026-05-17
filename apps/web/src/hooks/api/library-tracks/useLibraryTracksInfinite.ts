@@ -13,14 +13,7 @@ type Params = {
   sortOrder?: LibraryTrackListSortOrder;
 };
 
-type TracksInfiniteKey = readonly [
-  'library',
-  'tracks',
-  'infinite',
-  number,
-  string,
-  string,
-];
+type TracksInfiniteKey = readonly ['library', 'tracks', 'infinite', number, string, string];
 
 export const useLibraryTracksInfinite = ({
   genreId,

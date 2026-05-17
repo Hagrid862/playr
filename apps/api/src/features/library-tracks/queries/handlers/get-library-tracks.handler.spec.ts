@@ -162,7 +162,15 @@ describe('GetLibraryTracksHandler', () => {
   });
 
   it('should use Prisma orderBy when sorting by title', async () => {
-    const titleQuery = new GetLibraryTracksQuery(userId, 1, 10, undefined, undefined, 'title', 'asc');
+    const titleQuery = new GetLibraryTracksQuery(
+      userId,
+      1,
+      10,
+      undefined,
+      undefined,
+      'title',
+      'asc',
+    );
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
     libraryTrackRepository.getPaginated.mockResolvedValue([mockItem]);
@@ -181,7 +189,15 @@ describe('GetLibraryTracksHandler', () => {
   });
 
   it('should use raw SQL artist path when sorting by artist', async () => {
-    const artistQuery = new GetLibraryTracksQuery(userId, 2, 10, undefined, undefined, 'artist', 'desc');
+    const artistQuery = new GetLibraryTracksQuery(
+      userId,
+      2,
+      10,
+      undefined,
+      undefined,
+      'artist',
+      'desc',
+    );
     libraryRepository.getByUserId.mockResolvedValue(mockLibrary);
     const mockItem: LibraryTrackWithTrack = { ...mockLibraryTrack, track: mockTrack };
     libraryTrackRepository.getIdsPaginatedByMinArtistName.mockResolvedValue([mockLibraryTrack.id]);

@@ -311,7 +311,10 @@ describe('sortLibraryTracksForDisplay', () => {
       trackNumber: 4,
       album: { id: 'a1', name: 'Al' } as ZodTrack['album'],
     });
-    expect(sortLibraryTracksForDisplay([higher, nullTn]).map((t) => t.id)).toEqual(['null-tn', 'higher']);
+    expect(sortLibraryTracksForDisplay([higher, nullTn]).map((t) => t.id)).toEqual([
+      'null-tn',
+      'higher',
+    ]);
   });
 
   it('trims leading and trailing whitespace in titles when comparing', () => {
@@ -329,7 +332,10 @@ describe('sortLibraryTracksForDisplay', () => {
       diskNumber: 1,
       album: { id: 'a1', name: 'Al' } as ZodTrack['album'],
     });
-    expect(sortLibraryTracksForDisplay([spaced, plain]).map((t) => t.id)).toEqual(['plain', 'spaced']);
+    expect(sortLibraryTracksForDisplay([spaced, plain]).map((t) => t.id)).toEqual([
+      'plain',
+      'spaced',
+    ]);
   });
 
   it('treats null title like empty string when breaking ties', () => {
@@ -350,7 +356,10 @@ describe('sortLibraryTracksForDisplay', () => {
       diskNumber: 1,
       album: { id: 'a1', name: 'Al' } as ZodTrack['album'],
     });
-    expect(sortLibraryTracksForDisplay([other, nullTitle]).map((t) => t.id)).toEqual(['nullt', 'other']);
+    expect(sortLibraryTracksForDisplay([other, nullTitle]).map((t) => t.id)).toEqual([
+      'nullt',
+      'other',
+    ]);
   });
 });
 

@@ -15,13 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
 import { useLibraryTracksInfinite } from '@/hooks/api/library-tracks/useLibraryTracksInfinite';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -36,7 +30,16 @@ import type {
   PlaybackTrack,
   ZodTrack,
 } from '@repo/contracts';
-import { CaretDownIcon, CaretUpIcon, DiscIcon, PencilIcon, PlayIcon, QueueIcon, TrashIcon, WarningIcon } from '@phosphor-icons/react';
+import {
+  CaretDownIcon,
+  CaretUpIcon,
+  DiscIcon,
+  PencilIcon,
+  PlayIcon,
+  QueueIcon,
+  TrashIcon,
+  WarningIcon,
+} from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -161,11 +164,7 @@ function SortableColumnHead({
 
   return (
     <TableHead
-      className={cn(
-        'px-3 text-muted-foreground',
-        align === 'end' && 'text-right',
-        className,
-      )}
+      className={cn('px-3 text-muted-foreground', align === 'end' && 'text-right', className)}
     >
       <button
         type="button"
@@ -175,9 +174,7 @@ function SortableColumnHead({
           active && 'text-foreground',
           className,
         )}
-        aria-sort={
-          order === 'asc' ? 'ascending' : order === 'desc' ? 'descending' : 'none'
-        }
+        aria-sort={order === 'asc' ? 'ascending' : order === 'desc' ? 'descending' : 'none'}
         onClick={() => onSortColumn(column)}
       >
         <span className="truncate">{label}</span>
@@ -274,7 +271,10 @@ function LibrarySongsDesktopInitialLoadShell({
               aria-hidden
               className="pointer-events-none border-0 hover:bg-transparent [&>td]:border-0"
             >
-              <TableCell colSpan={COL_COUNT} className={cn('border-0 p-0', DESKTOP_HEADER_BODY_GAP_CLASS)} />
+              <TableCell
+                colSpan={COL_COUNT}
+                className={cn('border-0 p-0', DESKTOP_HEADER_BODY_GAP_CLASS)}
+              />
             </TableRow>
             <TableRow className="border-0 hover:bg-transparent [&>td]:border-0">
               <TableCell colSpan={COL_COUNT} className="border-0 p-0 py-14 md:py-20">
@@ -337,9 +337,12 @@ function LibrarySongsVirtualList({
   sortState,
   onSortColumn,
 }: LibrarySongsVirtualListProps) {
+  'use no memo';
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const estimateSize = variant === 'mobile' ? MOBILE_ROW_ESTIMATE : DESKTOP_ROW_ESTIMATE;
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual; see TanStack/virtual#1119
   const virtualizer = useVirtualizer({
     count: tracks.length,
     getScrollElement: () => scrollRef.current,
@@ -432,7 +435,9 @@ function LibrarySongsVirtualList({
                               aria-label="Processing failed"
                             />
                           ) : null}
-                          <span className="line-clamp-2 font-semibold text-foreground">{track.title}</span>
+                          <span className="line-clamp-2 font-semibold text-foreground">
+                            {track.title}
+                          </span>
                         </div>
                         <div className="line-clamp-2 text-sm text-muted-foreground">
                           {track.artists && track.artists.length > 0 ? (
@@ -483,7 +488,10 @@ function LibrarySongsVirtualList({
               aria-hidden
               className="pointer-events-none border-0 hover:bg-transparent [&>td]:border-0"
             >
-              <TableCell colSpan={COL_COUNT} className={cn('border-0 p-0', DESKTOP_HEADER_BODY_GAP_CLASS)} />
+              <TableCell
+                colSpan={COL_COUNT}
+                className={cn('border-0 p-0', DESKTOP_HEADER_BODY_GAP_CLASS)}
+              />
             </TableRow>
             {virtualizer.getVirtualItems().length > 0 &&
             virtualizer.getVirtualItems()[0]!.start > 0 ? (
@@ -653,15 +661,16 @@ function LibrarySongsPage() {
   const playbackTracks = useMemo(() => tracks.map(zodTrackToPlaybackTrack), [tracks]);
 
   const totalFromFirstPage = tracksQuery.data?.pages[0]?.data?.total;
-  const lastKnownTotalRef = useRef<number | undefined>(undefined);
-  useEffect(() => {
-    if (typeof totalFromFirstPage === 'number') {
-      lastKnownTotalRef.current = totalFromFirstPage;
-    }
-  }, [totalFromFirstPage]);
+  const [lastKnownTotal, setLastKnownTotal] = useState<number | undefined>(undefined);
+  if (
+    typeof totalFromFirstPage === 'number' &&
+    totalFromFirstPage !== lastKnownTotal
+  ) {
+    setLastKnownTotal(totalFromFirstPage);
+  }
 
   const displayTotal =
-    typeof totalFromFirstPage === 'number' ? totalFromFirstPage : lastKnownTotalRef.current;
+    typeof totalFromFirstPage === 'number' ? totalFromFirstPage : lastKnownTotal;
 
   const countsSubtitle = useMemo(() => {
     if (displayTotal == null) return undefined;
@@ -703,7 +712,11 @@ function LibrarySongsPage() {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setTrackToDelete(null)} disabled={isDeletingTrack}>
+          <Button
+            variant="outline"
+            onClick={() => setTrackToDelete(null)}
+            disabled={isDeletingTrack}
+          >
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleDeleteTrack} disabled={isDeletingTrack}>

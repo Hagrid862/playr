@@ -11,7 +11,9 @@ export const LibraryTrackListSortBySchema = z.enum([
 
 export const LibraryTrackListSortOrderSchema = z.enum(["asc", "desc"]);
 
-export type LibraryTrackListSortBy = z.infer<typeof LibraryTrackListSortBySchema>;
+export type LibraryTrackListSortBy = z.infer<
+  typeof LibraryTrackListSortBySchema
+>;
 export type LibraryTrackListSortOrder = z.infer<
   typeof LibraryTrackListSortOrderSchema
 >;
