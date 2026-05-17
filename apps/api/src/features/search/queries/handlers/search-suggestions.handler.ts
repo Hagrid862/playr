@@ -1,13 +1,13 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { SearchSuggestionsQuery } from '../impl/search-suggestions.query';
-import { SearchService } from '../../services/search.service';
+import { SearchSuggestionsService } from '../../services/search-suggestions.service';
 import { SearchSuggestionsResults } from '@repo/contracts';
 
 @QueryHandler(SearchSuggestionsQuery)
 export class SearchSuggestionsHandler implements IQueryHandler<SearchSuggestionsQuery> {
-  constructor(private readonly searchService: SearchService) {}
+  constructor(private readonly searchSuggestionsService: SearchSuggestionsService) {}
 
   async execute(query: SearchSuggestionsQuery): Promise<SearchSuggestionsResults> {
-    return this.searchService.searchSuggestions(query.query, query.userId);
+    return this.searchSuggestionsService.searchSuggestions(query.query, query.userId);
   }
 }
