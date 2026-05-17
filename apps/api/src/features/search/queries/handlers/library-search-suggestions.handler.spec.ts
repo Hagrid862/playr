@@ -1,4 +1,4 @@
-import { SearchService } from '@/features/search/services/search.service';
+import { SearchSuggestionsService } from '@/features/search/services/search-suggestions.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   LibrarySearchSuggestionsResults,
@@ -12,7 +12,7 @@ import { LibrarySearchSuggestionsHandler } from './library-search-suggestions.ha
 
 describe('LibrarySearchSuggestionsHandler', () => {
   let handler: LibrarySearchSuggestionsHandler;
-  let searchService: DeepMocked<SearchService>;
+  let suggestionsService: DeepMocked<SearchSuggestionsService>;
 
   const userId = 'user-123';
   const query = 'test query';
@@ -31,12 +31,12 @@ describe('LibrarySearchSuggestionsHandler', () => {
   ];
 
   beforeEach(async () => {
-    searchService = createMock<SearchService>();
+    suggestionsService = createMock<SearchSuggestionsService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LibrarySearchSuggestionsHandler,
-        { provide: SearchService, useValue: searchService },
+        { provide: SearchSuggestionsService, useValue: suggestionsService },
       ],
     }).compile();
 
@@ -47,26 +47,26 @@ describe('LibrarySearchSuggestionsHandler', () => {
     vi.clearAllMocks();
   });
 
-  it('should call searchService.librarySearchSuggestions with userId, query, and categories', async () => {
-    searchService.librarySearchSuggestions.mockResolvedValue(mockResults);
+  it('should call suggestionsService.librarySearchSuggestions with userId, query, and categories', async () => {
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(mockResults);
 
     const result = await handler.execute(searchQuery);
 
-    expect(searchService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, categories);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, categories);
     expect(result).toEqual(mockResults);
   });
 
-  it('should call searchService.librarySearchSuggestions with undefined categories when not provided', async () => {
+  it('should call suggestionsService.librarySearchSuggestions with undefined categories when not provided', async () => {
     const queryWithoutCategories = new LibrarySearchSuggestionsQuery(userId, query);
-    searchService.librarySearchSuggestions.mockResolvedValue(mockResults);
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(mockResults);
 
     await handler.execute(queryWithoutCategories);
 
-    expect(searchService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, undefined);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, undefined);
   });
 
-  it('should return empty array when searchService returns empty array', async () => {
-    searchService.librarySearchSuggestions.mockResolvedValue([]);
+  it('should return empty array when suggestionsService returns empty array', async () => {
+    suggestionsService.librarySearchSuggestions.mockResolvedValue([]);
 
     const result = await handler.execute(searchQuery);
 
@@ -78,11 +78,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
     const trackResults: LibrarySearchSuggestionsResults = [
       { id: 'track-1', name: 'Test Track', type: SearchResultType.Track, visibility: 'private' },
     ];
-    searchService.librarySearchSuggestions.mockResolvedValue(trackResults);
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(trackResults);
 
     const result = await handler.execute(singleCategoryQuery);
 
-    expect(searchService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, ['track']);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, ['track']);
     expect(result).toEqual(trackResults);
   });
 
@@ -113,11 +113,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
       },
       { id: 'genre-1', name: 'Genre', type: SearchResultType.Genre, visibility: 'public' },
     ];
-    searchService.librarySearchSuggestions.mockResolvedValue(allResults);
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(allResults);
 
     const result = await handler.execute(allCategoriesQuery);
 
-    expect(searchService.librarySearchSuggestions).toHaveBeenCalledWith(
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(
       userId,
       query,
       allCategories,
@@ -135,11 +135,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
         visibility: 'private',
       },
     ];
-    searchService.librarySearchSuggestions.mockResolvedValue(playlistResults);
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(playlistResults);
 
     const result = await handler.execute(playlistQuery);
 
-    expect(searchService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, [
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, [
       'playlist',
     ]);
     expect(result).toEqual(playlistResults);
@@ -150,11 +150,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
     const genreResults: LibrarySearchSuggestionsResults = [
       { id: 'genre-1', name: 'Rock', type: SearchResultType.Genre, visibility: 'public' },
     ];
-    searchService.librarySearchSuggestions.mockResolvedValue(genreResults);
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(genreResults);
 
     const result = await handler.execute(genreQuery);
 
-    expect(searchService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, ['genre']);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, ['genre']);
     expect(result).toEqual(genreResults);
   });
 });

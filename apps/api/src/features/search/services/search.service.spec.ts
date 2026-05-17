@@ -1,9 +1,10 @@
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '@/shared/services/prisma.service';
 import { SearchService } from './search.service';
+import type { SearchQuery } from '@repo/contracts';
 
 describe('SearchService', () => {
   let service: SearchService;
@@ -34,24 +35,24 @@ describe('SearchService', () => {
     service = module.get<SearchService>(SearchService);
   });
 
-  describe('searchSuggestions', () => {
-    it('should throw UnauthorizedException when userId is not provided', async () => {
-      await expect(service.searchSuggestions('test')).rejects.toThrow(UnauthorizedException);
-    });
-
+  describe('search', () => {
     it('should throw BadRequestException when query is too short', async () => {
-      await expect(
-        service.searchSuggestions('ab', 'user-123'),
-      ).rejects.toThrow(BadRequestException);
-    });
+      const searchQuery: SearchQuery = { query: 'a', page: 1, pageSize: 20 };
 
-    it('should throw BadRequestException when query is empty', async () => {
-      await expect(service.searchSuggestions('', 'user-123')).rejects.toThrow(
+      await expect(service.search('user-123', searchQuery)).rejects.toThrow(
         BadRequestException,
       );
     });
 
-    it('should return search results when query is valid', async () => {
+    it('should throw BadRequestException when query is empty', async () => {
+      const searchQuery: SearchQuery = { query: '', page: 1, pageSize: 20 };
+
+      await expect(service.search('user-123', searchQuery)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should return results with pagination metadata for authenticated user', async () => {
       const mockResults = [
         {
           id: 'artist-1',
@@ -59,155 +60,236 @@ describe('SearchService', () => {
           type: 'artist',
           visibility: 'public',
           albumType: null,
-          score: 0.8,
+          score: 0.9,
         },
-      ];
-      mockQueryRaw.mockResolvedValueOnce(mockResults);
-
-      const result = await service.searchSuggestions('test', 'user-123');
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('artist-1');
-      expect(result[0].name).toBe('Test Artist');
-      expect(result[0].type).toBe('artist');
-    });
-
-    it('should include albumType when present in results', async () => {
-      const mockResults = [
         {
           id: 'album-1',
           name: 'Test Album',
           type: 'album',
           visibility: 'public',
           albumType: 'album',
-          score: 0.7,
+          score: 0.8,
         },
       ];
-      mockQueryRaw.mockResolvedValueOnce(mockResults);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(2) }]); // count query
+      mockQueryRaw.mockResolvedValueOnce(mockResults);              // results query
 
-      const result = await service.searchSuggestions('album', 'user-123');
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        page: 1,
+        pageSize: 20,
+      };
+      const result = await service.search('user-123', searchQuery);
 
-      expect(result[0]).toHaveProperty('albumType', 'album');
+      expect(result.data).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(20);
+      expect(result.data[0].id).toBe('artist-1');
+      expect(result.data[1].id).toBe('album-1');
     });
 
-    it('should trim query before processing', async () => {
-      mockQueryRaw.mockResolvedValueOnce([]);
-
-      await service.searchSuggestions('  test  ', 'user-123');
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-    });
-  });
-
-  describe('librarySearchSuggestions', () => {
-    it('should throw BadRequestException when query is too short', async () => {
-      await expect(
-        service.librarySearchSuggestions('user-123', 'ab'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException when query is empty', async () => {
-      await expect(
-        service.librarySearchSuggestions('user-123', ''),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should return search results when query is valid', async () => {
+    it('should return only public results when userId is null (unauthenticated)', async () => {
       const mockResults = [
         {
           id: 'artist-1',
-          name: 'Library Artist',
+          name: 'Public Artist',
           type: 'artist',
-          visibility: 'private',
+          visibility: 'public',
           albumType: null,
           score: 0.9,
         },
       ];
-      mockQueryRaw.mockResolvedValueOnce(mockResults);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(1) }]); // count query
+      mockQueryRaw.mockResolvedValueOnce(mockResults);              // results query
 
-      const result = await service.librarySearchSuggestions('user-123', 'artist');
+      const searchQuery: SearchQuery = {
+        query: 'public',
+        page: 1,
+        pageSize: 20,
+      };
+      const result = await service.search(null, searchQuery);
 
-      expect(mockQueryRaw).toHaveBeenCalled();
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('artist-1');
-      expect(result[0].name).toBe('Library Artist');
-      expect(result[0].type).toBe('artist');
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
     });
 
-    it('should filter by artist category when specified', async () => {
-      mockQueryRaw.mockResolvedValueOnce([
-        { id: 'artist-1', name: 'Artist', type: 'artist', visibility: 'private', albumType: null, score: 0.8 },
-      ]);
-
-      await service.librarySearchSuggestions('user-123', 'test', ['artist']);
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-    });
-
-    it('should filter by album category when specified', async () => {
-      mockQueryRaw.mockResolvedValueOnce([
-        { id: 'album-1', name: 'Album', type: 'album', visibility: 'private', albumType: 'album', score: 0.7 },
-      ]);
-
-      await service.librarySearchSuggestions('user-123', 'test', ['album']);
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-    });
-
-    it('should filter by track category when specified', async () => {
-      mockQueryRaw.mockResolvedValueOnce([
-        { id: 'track-1', name: 'Track', type: 'track', visibility: 'private', albumType: null, score: 0.6 },
-      ]);
-
-      await service.librarySearchSuggestions('user-123', 'test', ['track']);
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-    });
-
-    it('should filter by playlist category when specified', async () => {
-      mockQueryRaw.mockResolvedValueOnce([
-        { id: 'playlist-1', name: 'Playlist', type: 'playlist', visibility: 'private', albumType: null, score: 0.5 },
-      ]);
-
-      await service.librarySearchSuggestions('user-123', 'test', ['playlist']);
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-    });
-
-    it('should filter by genre category when specified', async () => {
-      mockQueryRaw.mockResolvedValueOnce([
-        { id: 'genre-1', name: 'Rock', type: 'genre', visibility: 'public', albumType: null, score: 0.4 },
-      ]);
-
-      await service.librarySearchSuggestions('user-123', 'test', ['genre']);
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-    });
-
-    it('should search all categories when no categories specified', async () => {
-      mockQueryRaw.mockResolvedValueOnce([
-        { id: 'artist-1', name: 'Artist', type: 'artist', visibility: 'private', albumType: null, score: 0.8 },
-        { id: 'album-1', name: 'Album', type: 'album', visibility: 'private', albumType: 'album', score: 0.7 },
-      ]);
-
-      await service.librarySearchSuggestions('user-123', 'test');
-
-      expect(mockQueryRaw).toHaveBeenCalled();
-    });
-
-    it('should return empty array when no results found', async () => {
+    it('should apply type filter when specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
 
-      const result = await service.librarySearchSuggestions('user-123', 'nonexistent');
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        filters: { types: ['artist'] },
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
 
-      expect(result).toEqual([]);
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should apply visibility filter when specified', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        filters: { visibility: 'public' },
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should apply artist verified filter when specified', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        filters: { artist: { verified: true } },
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should apply album type filter when specified', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        filters: { album: { type: 'single' } },
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should apply track explicit filter when specified', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        filters: { track: { explicit: false } },
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should apply playlist isPublic filter when specified', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        filters: { playlist: { isPublic: true } },
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should apply orderBy when specified', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        orderBy: { field: 'name', direction: 'desc' },
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should echo back filters and orderBy in the response', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        filters: { types: ['track'] },
+        orderBy: { field: 'duration', direction: 'desc' },
+        page: 1,
+        pageSize: 20,
+      };
+      const result = await service.search('user-123', searchQuery);
+
+      expect(result.filters).toEqual({ types: ['track'] });
+      expect(result.orderBy).toEqual({ field: 'duration', direction: 'desc' });
+    });
+
+    it('should return null filters and orderBy when not specified', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        page: 1,
+        pageSize: 20,
+      };
+      const result = await service.search('user-123', searchQuery);
+
+      expect(result.filters).toBeNull();
+      expect(result.orderBy).toBeNull();
+    });
+
+    it('should apply pagination with offset', async () => {
+      mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(100) }]);
+
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        page: 3,
+        pageSize: 10,
+      };
+      await service.search('user-123', searchQuery);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should return empty data array when no results found', async () => {
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]); // count query
+      mockQueryRaw.mockResolvedValueOnce([]);                       // results query
+
+      const searchQuery: SearchQuery = {
+        query: 'nonexistent',
+        page: 1,
+        pageSize: 20,
+      };
+      const result = await service.search('user-123', searchQuery);
+
+      expect(result.data).toEqual([]);
+      expect(result.total).toBe(0);
     });
 
     it('should trim query before processing', async () => {
       mockQueryRaw.mockResolvedValueOnce([]);
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
 
-      await service.librarySearchSuggestions('user-123', '  test  ');
+      const searchQuery: SearchQuery = {
+        query: '  test  ',
+        page: 1,
+        pageSize: 20,
+      };
+      await service.search('user-123', searchQuery);
 
       expect(mockQueryRaw).toHaveBeenCalled();
     });

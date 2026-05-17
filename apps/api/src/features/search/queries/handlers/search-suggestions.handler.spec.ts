@@ -1,4 +1,4 @@
-import { SearchService } from '@/features/search/services/search.service';
+import { SearchSuggestionsService } from '@/features/search/services/search-suggestions.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SearchSuggestionsResults, SearchResultType } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
@@ -8,7 +8,7 @@ import { SearchSuggestionsHandler } from './search-suggestions.handler';
 
 describe('SearchSuggestionsHandler', () => {
   let handler: SearchSuggestionsHandler;
-  let searchService: DeepMocked<SearchService>;
+  let suggestionsService: DeepMocked<SearchSuggestionsService>;
 
   const query = 'test query';
   const userId = 'user-123';
@@ -26,10 +26,13 @@ describe('SearchSuggestionsHandler', () => {
   ];
 
   beforeEach(async () => {
-    searchService = createMock<SearchService>();
+    suggestionsService = createMock<SearchSuggestionsService>();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SearchSuggestionsHandler, { provide: SearchService, useValue: searchService }],
+      providers: [
+        SearchSuggestionsHandler,
+        { provide: SearchSuggestionsService, useValue: suggestionsService },
+      ],
     }).compile();
 
     handler = module.get<SearchSuggestionsHandler>(SearchSuggestionsHandler);
@@ -39,33 +42,33 @@ describe('SearchSuggestionsHandler', () => {
     vi.clearAllMocks();
   });
 
-  it('should call searchService.searchSuggestions with query and userId', async () => {
-    searchService.searchSuggestions.mockResolvedValue(mockResults);
+  it('should call suggestionsService.searchSuggestions with query and userId', async () => {
+    suggestionsService.searchSuggestions.mockResolvedValue(mockResults);
 
     const result = await handler.execute(searchQuery);
 
-    expect(searchService.searchSuggestions).toHaveBeenCalledWith(query, userId);
+    expect(suggestionsService.searchSuggestions).toHaveBeenCalledWith(query, userId);
     expect(result).toEqual(mockResults);
   });
 
-  it('should call searchService.searchSuggestions with undefined userId when not provided', async () => {
+  it('should call suggestionsService.searchSuggestions with undefined userId when not provided', async () => {
     const queryWithoutUser = new SearchSuggestionsQuery(query);
-    searchService.searchSuggestions.mockResolvedValue(mockResults);
+    suggestionsService.searchSuggestions.mockResolvedValue(mockResults);
 
     await handler.execute(queryWithoutUser);
 
-    expect(searchService.searchSuggestions).toHaveBeenCalledWith(query, undefined);
+    expect(suggestionsService.searchSuggestions).toHaveBeenCalledWith(query, undefined);
   });
 
-  it('should return empty array when searchService returns empty array', async () => {
-    searchService.searchSuggestions.mockResolvedValue([]);
+  it('should return empty array when suggestionsService returns empty array', async () => {
+    suggestionsService.searchSuggestions.mockResolvedValue([]);
 
     const result = await handler.execute(searchQuery);
 
     expect(result).toEqual([]);
   });
 
-  it('should return all result types from searchService', async () => {
+  it('should return all result types from suggestionsService', async () => {
     const mixedResults: SearchSuggestionsResults = [
       { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'public' },
       {
@@ -78,7 +81,7 @@ describe('SearchSuggestionsHandler', () => {
       { id: 'track-1', name: 'Track', type: SearchResultType.Track, visibility: 'public' },
       { id: 'playlist-1', name: 'Playlist', type: SearchResultType.Playlist, visibility: 'public' },
     ];
-    searchService.searchSuggestions.mockResolvedValue(mixedResults);
+    suggestionsService.searchSuggestions.mockResolvedValue(mixedResults);
 
     const result = await handler.execute(searchQuery);
 

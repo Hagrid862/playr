@@ -4,8 +4,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SearchSuggestionsQueryRequestDto } from './dto/search-suggestions-query.request.dto';
 import { LibrarySearchSuggestionsQueryRequestDto } from './dto/library-search-suggestions-query.request.dto';
+import { SearchQueryRequestDto } from './dto/search-query.request.dto';
 import { SearchSuggestionsQuery } from './queries/impl/search-suggestions.query';
 import { LibrarySearchSuggestionsQuery } from './queries/impl/library-search-suggestions.query';
+import { SearchQueryImpl } from './queries/impl/search.query';
 import { SearchController } from './search.controller';
 import type { User } from '@repo/db';
 
@@ -153,6 +155,115 @@ describe('SearchController', () => {
       const result = await controller.searchLibrarySuggestions(queryDto, user);
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('search', () => {
+    it('should execute SearchQueryImpl with userId and full query DTO when user is authenticated', async () => {
+      const queryDto = createMock<SearchQueryRequestDto>({
+        query: 'beatles',
+        page: 1,
+        pageSize: 20,
+      });
+      const user: User = { id: 'user-123' } as User;
+      const expectedResult = {
+        data: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+        filters: null,
+        orderBy: null,
+      };
+      queryBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.search(queryDto, user);
+
+      expect(queryBus.execute).toHaveBeenCalledWith(
+        new SearchQueryImpl('user-123', expect.objectContaining({ query: 'beatles' })),
+      );
+      expect(result).toBe(expectedResult);
+    });
+
+    it('should pass null userId when user is not authenticated', async () => {
+      const queryDto = createMock<SearchQueryRequestDto>({
+        query: 'rock',
+        page: 1,
+        pageSize: 20,
+      });
+      const expectedResult = {
+        data: [],
+        total: 0,
+        page: 1,
+        pageSize: 20,
+        filters: null,
+        orderBy: null,
+      };
+      queryBus.execute.mockResolvedValue(expectedResult);
+
+      await controller.search(queryDto, null);
+
+      expect(queryBus.execute).toHaveBeenCalledWith(
+        new SearchQueryImpl(null, expect.objectContaining({ query: 'rock' })),
+      );
+    });
+
+    it('should pass through filters and orderBy from DTO', async () => {
+      const queryDto = createMock<SearchQueryRequestDto>({
+        query: 'jazz',
+        filters: {
+          types: ['artist'],
+          visibility: 'public',
+        },
+        orderBy: {
+          field: 'name',
+          direction: 'desc',
+        },
+        page: 2,
+        pageSize: 10,
+      });
+      const user: User = { id: 'user-456' } as User;
+      queryBus.execute.mockResolvedValue({
+        data: [],
+        total: 0,
+        page: 2,
+        pageSize: 10,
+        filters: null,
+        orderBy: null,
+      });
+
+      await controller.search(queryDto, user);
+
+      expect(queryBus.execute).toHaveBeenCalledWith(
+        new SearchQueryImpl('user-456', expect.objectContaining({
+          query: 'jazz',
+          filters: expect.objectContaining({ types: ['artist'] }),
+          orderBy: expect.objectContaining({ field: 'name', direction: 'desc' }),
+          page: 2,
+          pageSize: 10,
+        })),
+      );
+    });
+
+    it('should return the result from queryBus.execute', async () => {
+      const queryDto = createMock<SearchQueryRequestDto>({
+        query: 'electronic',
+      });
+      const user: User = { id: 'user-789' } as User;
+      const expectedResult = {
+        data: [
+          { id: 'artist-1', name: 'Daft Punk', type: 'artist', visibility: 'public', score: 0.9 },
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+        filters: null,
+        orderBy: null,
+      };
+      queryBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.search(queryDto, user);
+
+      expect(result).toBe(expectedResult);
     });
   });
 });
