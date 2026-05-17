@@ -219,7 +219,7 @@ export class SearchService {
           p."isPublic", p."isCollaborative"
         FROM "playlists" p
         LEFT JOIN "images" cover ON p."coverId" = cover.id
-        WHERE (p.name % ${trimmedQuery} > ${FUZZY_SEARCH_SIMILARITY} OR p.name ILIKE ${searchPattern})
+        WHERE (similarity(p.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR p.name ILIKE ${searchPattern})
           AND p."deletedAt" IS NULL
           ${Prisma.raw(playlistWhere)}
       `);
@@ -238,7 +238,7 @@ export class SearchService {
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative"
         FROM "genres" g
-        WHERE (g.name % ${trimmedQuery} > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})
+        WHERE (similarity(g.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})
           AND g."deletedAt" IS NULL
           ${Prisma.raw(genreWhere)}
       `);

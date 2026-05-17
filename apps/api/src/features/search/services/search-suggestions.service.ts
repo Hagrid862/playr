@@ -247,7 +247,7 @@ export class SearchSuggestionsService {
       SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl"
       FROM library_items
       ORDER BY score DESC
-      LIMIT 20
+      LIMIT 8
     `;
 
     return results.map((r: RawSearchResult) => ({
