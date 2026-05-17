@@ -73,7 +73,15 @@ export class LibraryTracksController {
   })
   getTracks(@CurrentUser('id') userId: string, @Query() query: GetLibraryTracksRequestDto) {
     return this.queryBus.execute(
-      new GetLibraryTracksQuery(userId, query.page, query.limit, query.albumId, query.genreId),
+      new GetLibraryTracksQuery(
+        userId,
+        query.page,
+        query.limit,
+        query.albumId,
+        query.genreId,
+        query.sortBy,
+        query.sortOrder,
+      ),
     );
   }
 
