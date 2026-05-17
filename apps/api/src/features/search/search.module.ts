@@ -6,11 +6,13 @@ import { SearchSuggestionsService } from './services/search-suggestions.service'
 import { SearchSuggestionsHandler } from './queries/handlers/search-suggestions.handler';
 import { LibrarySearchSuggestionsHandler } from './queries/handlers/library-search-suggestions.handler';
 import { SearchHandler } from './queries/handlers/search.handler';
+import { LibrarySearchHandler } from './queries/handlers/library-search.handler';
 
 const QueryHandlers = [
   SearchSuggestionsHandler,
   LibrarySearchSuggestionsHandler,
   SearchHandler,
+  LibrarySearchHandler,
 ];
 
 @Module({

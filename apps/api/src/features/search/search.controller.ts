@@ -7,9 +7,12 @@ import { LibrarySearchSuggestionsQueryRequestDto } from './dto/library-search-su
 import { LibrarySearchSuggestionsResultsResponseDto } from './dto/library-search-suggestions-results.response.dto';
 import { SearchQueryRequestDto } from './dto/search-query.request.dto';
 import { SearchResultsResponseDto } from './dto/search-results.response.dto';
+import { LibrarySearchQueryRequestDto } from './dto/library-search-query.request.dto';
+import { LibrarySearchResultsResponseDto } from './dto/library-search-results.response.dto';
 import { SearchSuggestionsQuery } from './queries/impl/search-suggestions.query';
 import { LibrarySearchSuggestionsQuery } from './queries/impl/library-search-suggestions.query';
 import { SearchQueryImpl } from './queries/impl/search.query';
+import { LibrarySearchQueryImpl } from './queries/impl/library-search.query';
 import { JwtAuthGuardForSearch } from '@/shared/guards/jwt-auth-for-search.guard';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
@@ -71,6 +74,30 @@ export class SearchController {
     );
   }
 
+  @Get('library')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Search within user library across artists, albums, tracks, and playlists with filters and pagination',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Search results returned successfully',
+    type: LibrarySearchResultsResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Query is too short or invalid',
+    type: ApiErrorResponseDto,
+  })
+  async searchLibrary(
+    @Query() query: LibrarySearchQueryRequestDto,
+    @CurrentUser() user: User,
+  ): Promise<LibrarySearchResultsResponseDto> {
+    return this.queryBus.execute(new LibrarySearchQueryImpl(user.id, query));
+  }
+
   @Get()
   @UseGuards(JwtAuthGuardForSearch)
   @ApiBearerAuth()
@@ -97,8 +124,8 @@ export class SearchController {
   })
   async search(
     @Query() query: SearchQueryRequestDto,
-    @CurrentUser() user: User | null,
+    @CurrentUser() user: User
   ): Promise<SearchResultsResponseDto> {
-    return this.queryBus.execute(new SearchQueryImpl(user?.id ?? null, query));
+    return this.queryBus.execute(new SearchQueryImpl(user?.id, query));
   }
 }
