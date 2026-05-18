@@ -5,6 +5,7 @@ import { AlbumsModule } from './library-albums/library-albums.module';
 import { LibraryArtistsModule } from './library-artists/library-artists.module';
 import { LibraryGenresModule } from './library-genres/library-genres.module';
 import { LibraryTracksModule } from './library-tracks/library-tracks.module';
+import { LibraryPlaylistsModule } from './library-playlists/library-playlists.module';
 import { LibraryModule } from './library/library.module';
 import { PlaybackModule } from './playback/playback.module';
 
@@ -16,6 +17,7 @@ import { PlaybackModule } from './playback/playback.module';
     LibraryGenresModule,
     AlbumsModule,
     LibraryTracksModule,
+    LibraryPlaylistsModule,
     AudioProcessingModule,
     PlaybackModule,
   ],
