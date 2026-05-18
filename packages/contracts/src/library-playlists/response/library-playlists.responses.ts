@@ -17,7 +17,9 @@ export const LibraryPlaylistListItemSchema = z.object({
   pinId: z.string().nullable(),
 });
 
-export type LibraryPlaylistListItem = z.infer<typeof LibraryPlaylistListItemSchema>;
+export type LibraryPlaylistListItem = z.infer<
+  typeof LibraryPlaylistListItemSchema
+>;
 
 export const GetLibraryPlaylistsResponseSchema = createApiResponseSchema(
   z.object({

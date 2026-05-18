@@ -6,15 +6,15 @@ import { GetLibraryPlaylistPinsResponse } from '@repo/contracts';
 import { GetLibraryPlaylistPinsQuery } from '../impl/get-library-playlist-pins.query';
 
 @QueryHandler(GetLibraryPlaylistPinsQuery)
-export class GetLibraryPlaylistPinsHandler
-  implements IQueryHandler<GetLibraryPlaylistPinsQuery>
-{
+export class GetLibraryPlaylistPinsHandler implements IQueryHandler<GetLibraryPlaylistPinsQuery> {
   constructor(
     private readonly libraryRepository: LibraryRepository,
     private readonly playlistRepository: PlaylistRepository,
   ) {}
 
-  async execute(query: GetLibraryPlaylistPinsQuery): Promise<GetLibraryPlaylistPinsResponse['data']> {
+  async execute(
+    query: GetLibraryPlaylistPinsQuery,
+  ): Promise<GetLibraryPlaylistPinsResponse['data']> {
     const { userId } = query;
     const library = await this.libraryRepository.getByUserId(userId);
     if (!library) {

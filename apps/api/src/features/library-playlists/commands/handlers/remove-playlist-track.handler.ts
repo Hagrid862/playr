@@ -19,7 +19,10 @@ export class RemovePlaylistTrackHandler implements ICommandHandler<RemovePlaylis
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
-    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(playlistId, library.id);
+    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(
+      playlistId,
+      library.id,
+    );
     if (!playlist) {
       throw new NotFoundException('Playlist not found');
     }

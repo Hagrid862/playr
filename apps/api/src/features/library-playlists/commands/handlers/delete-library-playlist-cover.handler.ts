@@ -14,13 +14,10 @@ import { FileBucket, PlaylistSystemRole } from '@repo/db';
 import { DeleteLibraryPlaylistCoverCommand } from '../impl/delete-library-playlist-cover.command';
 
 @CommandHandler(DeleteLibraryPlaylistCoverCommand)
-export class DeleteLibraryPlaylistCoverHandler
-  implements
-    ICommandHandler<
-      DeleteLibraryPlaylistCoverCommand,
-      DeleteLibraryPlaylistCoverResponse['data']
-    >
-{
+export class DeleteLibraryPlaylistCoverHandler implements ICommandHandler<
+  DeleteLibraryPlaylistCoverCommand,
+  DeleteLibraryPlaylistCoverResponse['data']
+> {
   private readonly logger = new Logger(DeleteLibraryPlaylistCoverHandler.name);
 
   constructor(
@@ -40,7 +37,10 @@ export class DeleteLibraryPlaylistCoverHandler
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
-    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(playlistId, library.id);
+    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(
+      playlistId,
+      library.id,
+    );
     if (!playlist) {
       throw new NotFoundException('Playlist not found');
     }

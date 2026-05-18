@@ -6,9 +6,7 @@ import { GetLibraryPlaylistDetailResponse, type ZodTrack } from '@repo/contracts
 import { GetLibraryPlaylistDetailQuery } from '../impl/get-library-playlist-detail.query';
 
 @QueryHandler(GetLibraryPlaylistDetailQuery)
-export class GetLibraryPlaylistDetailHandler
-  implements IQueryHandler<GetLibraryPlaylistDetailQuery>
-{
+export class GetLibraryPlaylistDetailHandler implements IQueryHandler<GetLibraryPlaylistDetailQuery> {
   constructor(
     private readonly libraryRepository: LibraryRepository,
     private readonly playlistRepository: PlaylistRepository,

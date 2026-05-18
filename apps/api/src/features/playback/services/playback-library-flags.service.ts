@@ -27,7 +27,10 @@ export class PlaybackLibraryFlagsService {
       trackId,
     ));
 
-    const favorited = (await this.playlistRepository.isTrackInFavoritesPlaylist(library.id, trackId))
+    const favorited = (await this.playlistRepository.isTrackInFavoritesPlaylist(
+      library.id,
+      trackId,
+    ))
       ? ('favorited' as const)
       : ('not-set' as const);
 

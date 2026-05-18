@@ -116,7 +116,11 @@ export function PlaylistFormCover({
                 </div>
               ) : (
                 <div className="relative z-[1] flex flex-col items-center gap-2.5 px-4 text-center text-muted-foreground transition-colors group-hover:text-foreground">
-                  <ImageIcon size={32} weight="duotone" className="opacity-45 group-hover:opacity-75" />
+                  <ImageIcon
+                    size={32}
+                    weight="duotone"
+                    className="opacity-45 group-hover:opacity-75"
+                  />
                   <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Add image</span>
                 </div>
               )}

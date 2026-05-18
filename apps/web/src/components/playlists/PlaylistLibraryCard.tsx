@@ -169,8 +169,9 @@ export function PlaylistLibraryCard({ playlist }: { playlist: LibraryPlaylistLis
             <AlertDialogHeader>
               <AlertDialogTitle>Delete playlist?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will remove <span className="font-medium text-foreground">{playlist.name}</span>{' '}
-                from your library. Tracks stay in your library.
+                This will remove{' '}
+                <span className="font-medium text-foreground">{playlist.name}</span> from your
+                library. Tracks stay in your library.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -24,7 +24,10 @@ export class SetTrackStateHandler implements ICommandHandler<SetTrackStateComman
     }
 
     return this.persistence.applyMutation(command.userId, expectedVersion, async (current) => {
-      const flags = await this.libraryFlags.resolveForTrack(command.userId, serialized.data.trackId);
+      const flags = await this.libraryFlags.resolveForTrack(
+        command.userId,
+        serialized.data.trackId,
+      );
       return {
         ...current,
         trackData: serialized.data,

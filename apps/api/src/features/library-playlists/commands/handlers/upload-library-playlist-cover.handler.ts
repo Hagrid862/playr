@@ -16,9 +16,10 @@ import { FileBucket, PlaylistSystemRole } from '@repo/db';
 import { UploadLibraryPlaylistCoverCommand } from '../impl/upload-library-playlist-cover.command';
 
 @CommandHandler(UploadLibraryPlaylistCoverCommand)
-export class UploadLibraryPlaylistCoverHandler
-  implements ICommandHandler<UploadLibraryPlaylistCoverCommand, ZodImage>
-{
+export class UploadLibraryPlaylistCoverHandler implements ICommandHandler<
+  UploadLibraryPlaylistCoverCommand,
+  ZodImage
+> {
   private readonly logger = new Logger(UploadLibraryPlaylistCoverHandler.name);
 
   constructor(
@@ -37,7 +38,10 @@ export class UploadLibraryPlaylistCoverHandler
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
-    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(playlistId, library.id);
+    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(
+      playlistId,
+      library.id,
+    );
     if (!playlist) {
       throw new NotFoundException('Playlist not found');
     }
@@ -102,7 +106,10 @@ export class UploadLibraryPlaylistCoverHandler
 
       if (oldImageDetails) {
         this.storageService.deleteFile(oldImageDetails.bucket, oldImageDetails.key).catch((err) => {
-          this.logger.error(`Failed to cleanup old playlist cover file: ${oldImageDetails?.key}`, err);
+          this.logger.error(
+            `Failed to cleanup old playlist cover file: ${oldImageDetails?.key}`,
+            err,
+          );
         });
       }
 

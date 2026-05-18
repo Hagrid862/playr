@@ -11,8 +11,7 @@ export const Route = createFileRoute('/app/playlists')({
 function PlaylistsLayout() {
   const location = useLocation();
   const segments = location.pathname.split('/').filter(Boolean);
-  const isIndex =
-    location.pathname === '/app/playlists' || location.pathname === '/app/playlists/';
+  const isIndex = location.pathname === '/app/playlists' || location.pathname === '/app/playlists/';
   const isCreate = segments.includes('create');
   const isEdit = segments.includes('edit');
   const playlistId =

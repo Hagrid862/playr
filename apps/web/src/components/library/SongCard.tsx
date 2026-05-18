@@ -58,8 +58,7 @@ export function SongCard({
   artworkUrl,
 }: SongCardProps) {
   const isDisabled = isProcessing || isFailed;
-  const resolvedArtworkUrl =
-    artworkUrl != null && artworkUrl !== '' ? artworkUrl : undefined;
+  const resolvedArtworkUrl = artworkUrl != null && artworkUrl !== '' ? artworkUrl : undefined;
 
   return (
     <ContextMenu>

@@ -81,7 +81,9 @@ describe('PlaylistRepository', () => {
         updatedAt: new Date(),
       } as never);
 
-      await expect(repository.pinPlaylist('lib-1', 'pl-1', 1)).rejects.toBeInstanceOf(ConflictException);
+      await expect(repository.pinPlaylist('lib-1', 'pl-1', 1)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
       expect(prisma.client.playlistSidebarPin.create).not.toHaveBeenCalled();
       expect(prisma.client.playlistSidebarPin.update).not.toHaveBeenCalled();
     });

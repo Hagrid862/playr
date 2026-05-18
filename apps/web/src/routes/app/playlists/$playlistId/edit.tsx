@@ -154,7 +154,9 @@ function RouteComponent() {
           type="button"
           variant="outline"
           disabled={busy}
-          onClick={() => void navigate({ to: '/app/playlists/$playlistId', params: { playlistId } })}
+          onClick={() =>
+            void navigate({ to: '/app/playlists/$playlistId', params: { playlistId } })
+          }
           className="w-full sm:w-auto sm:min-w-[6.5rem]"
         >
           Cancel

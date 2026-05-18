@@ -6,10 +6,7 @@ import { PrismaService } from '../services/prisma.service';
 export class PlaylistRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findActiveLibraryPlaylist(
-    playlistId: string,
-    libraryId: string,
-  ): Promise<Playlist | null> {
+  async findActiveLibraryPlaylist(playlistId: string, libraryId: string): Promise<Playlist | null> {
     return this.prisma.client.playlist.findFirst({
       where: { id: playlistId, libraryId, deletedAt: null },
     });
@@ -217,7 +214,11 @@ export class PlaylistRepository {
     return !!row;
   }
 
-  async setFavoritesMembership(libraryId: string, trackId: string, favorited: boolean): Promise<void> {
+  async setFavoritesMembership(
+    libraryId: string,
+    trackId: string,
+    favorited: boolean,
+  ): Promise<void> {
     const fav = await this.findFavoritesPlaylist(libraryId);
     if (!fav) {
       return;
@@ -229,7 +230,11 @@ export class PlaylistRepository {
     }
   }
 
-  async createPin(libraryId: string, playlistId: string, order: number): Promise<PlaylistSidebarPin> {
+  async createPin(
+    libraryId: string,
+    playlistId: string,
+    order: number,
+  ): Promise<PlaylistSidebarPin> {
     return this.prisma.client.playlistSidebarPin.create({
       data: {
         libraryId,
@@ -244,7 +249,11 @@ export class PlaylistRepository {
    * (libraryId, playlistId). Required because @@unique([libraryId, playlistId])
    * prevents inserting a second row after unpin.
    */
-  async pinPlaylist(libraryId: string, playlistId: string, order: number): Promise<PlaylistSidebarPin> {
+  async pinPlaylist(
+    libraryId: string,
+    playlistId: string,
+    order: number,
+  ): Promise<PlaylistSidebarPin> {
     const row = await this.prisma.client.playlistSidebarPin.findFirst({
       where: { libraryId, playlistId },
     });

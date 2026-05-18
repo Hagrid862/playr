@@ -20,10 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  useDeleteLibraryPlaylist,
-  useLibraryPlaylistDetail,
-} from '@/hooks/api/library-playlists';
+import { useDeleteLibraryPlaylist, useLibraryPlaylistDetail } from '@/hooks/api/library-playlists';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { PlaylistSystemRole } from '@repo/db';
@@ -259,9 +256,8 @@ function RouteComponent() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete playlist?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will remove{' '}
-                <span className="font-medium text-foreground">{detail.name}</span> from your
-                library. Tracks stay in your library.
+                This will remove <span className="font-medium text-foreground">{detail.name}</span>{' '}
+                from your library. Tracks stay in your library.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -72,7 +72,10 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       ...serialized.data,
       history: serialized.data.history.slice(0, PLAYBACK_HISTORY_MAX_LENGTH),
     };
-    const flags = await this.libraryFlags.resolveForTrack(command.userId, payloadBase.trackData.trackId);
+    const flags = await this.libraryFlags.resolveForTrack(
+      command.userId,
+      payloadBase.trackData.trackId,
+    );
     const payload: PlaybackStatePayload = { ...payloadBase, ...flags };
 
     const activeDevice: PlaybackStatePayload['devices'][number] = {

@@ -1,5 +1,8 @@
 import { apiClient } from '@/lib/api-client';
-import { RemovePlaylistTrackResponseSchema, type RemovePlaylistTrackResponse } from '@repo/contracts';
+import {
+  RemovePlaylistTrackResponseSchema,
+  type RemovePlaylistTrackResponse,
+} from '@repo/contracts';
 
 export const removePlaylistTrack = (params: { playlistId: string; trackId: string }) =>
   apiClient<RemovePlaylistTrackResponse>(

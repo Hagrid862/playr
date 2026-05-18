@@ -2,10 +2,7 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PlaylistRepository } from '@/shared/repositories/playlist.repository';
 import { PreconditionFailedException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import {
-  GetLibraryPlaylistsResponse,
-  type LibraryPlaylistListItem,
-} from '@repo/contracts';
+import { GetLibraryPlaylistsResponse, type LibraryPlaylistListItem } from '@repo/contracts';
 import { PlaylistSystemRole } from '@repo/db';
 import { GetLibraryPlaylistsQuery } from '../impl/get-library-playlists.query';
 

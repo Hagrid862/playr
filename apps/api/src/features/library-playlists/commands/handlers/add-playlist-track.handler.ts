@@ -1,7 +1,11 @@
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
 import { PlaylistRepository } from '@/shared/repositories/playlist.repository';
-import { BadRequestException, NotFoundException, PreconditionFailedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AddPlaylistTrackResponse } from '@repo/contracts';
 import { AddPlaylistTrackCommand } from '../impl/add-playlist-track.command';
@@ -21,7 +25,10 @@ export class AddPlaylistTrackHandler implements ICommandHandler<AddPlaylistTrack
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
     }
 
-    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(playlistId, library.id);
+    const playlist = await this.playlistRepository.findActiveLibraryPlaylist(
+      playlistId,
+      library.id,
+    );
     if (!playlist) {
       throw new NotFoundException('Playlist not found');
     }
