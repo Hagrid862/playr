@@ -36,8 +36,14 @@ export const SearchOrderBySchema = z.object({
 // ─── Artist-specific filters ──────────────────────────────────────
 
 export const SearchArtistFiltersSchema = z.object({
-  verified: z.coerce.boolean().optional(),
-  isCommunity: z.coerce.boolean().optional(),
+  verified: z.preprocess(
+    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
+    z.boolean().optional()
+  ),
+  isCommunity: z.preprocess(
+    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
+    z.boolean().optional()
+  ),
 });
 
 // ─── Album-specific filters ───────────────────────────────────────
@@ -113,8 +119,8 @@ export const SearchQuerySchema = z
     // Merge top-level categories and visibility into filters if provided
     const mergedFilters = {
       ...filters,
-      categories: categories ?? filters?.categories,
-      visibility: visibility ?? filters?.visibility,
+      ...(categories !== undefined && { categories }),
+      ...(visibility !== undefined && { visibility }),
     };
 
     return {

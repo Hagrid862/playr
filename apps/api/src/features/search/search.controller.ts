@@ -126,6 +126,6 @@ export class SearchController {
     @Query() query: SearchQueryRequestDto,
     @CurrentUser() user: User
   ): Promise<SearchResultsResponseDto> {
-    return this.queryBus.execute(new SearchQueryImpl(user?.id, query));
+    return this.queryBus.execute(new SearchQueryImpl(user?.id ?? null, query));
   }
 }
