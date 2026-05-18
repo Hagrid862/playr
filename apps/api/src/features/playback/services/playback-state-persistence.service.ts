@@ -142,7 +142,12 @@ export class PlaybackStatePersistenceService {
   async applyMutation(
     userId: string,
     expectedVersion: number,
-    merge: (current: PlaybackState) => Omit<PlaybackState, 'version' | 'updatedAt'> | PlaybackState,
+    merge: (
+      current: PlaybackState,
+    ) =>
+      | Omit<PlaybackState, 'version' | 'updatedAt'>
+      | PlaybackState
+      | Promise<Omit<PlaybackState, 'version' | 'updatedAt'> | PlaybackState>,
   ): Promise<PlaybackState> {
     const key = `state:${userId}`;
     for (let attempt = 0; attempt < ATOMIC_SET_MAX_ATTEMPTS; attempt++) {
@@ -187,7 +192,7 @@ export class PlaybackStatePersistenceService {
 
         let merged: Omit<PlaybackState, 'version' | 'updatedAt'> | PlaybackState;
         try {
-          merged = merge(parsed);
+          merged = await Promise.resolve(merge(parsed));
         } catch (error) {
           await conn.unwatch();
           throw error;
