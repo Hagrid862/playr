@@ -2,6 +2,9 @@ import { BadRequestException } from '@nestjs/common';
 import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
+import { LibraryRepository } from '@/shared/repositories/library.repository';
+import { LibraryTrackRepository } from '@/shared/repositories/library-track.repository';
+import { PlaylistRepository } from '@/shared/repositories/playlist.repository';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
 import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetFavoriteStateCommand } from '../impl/set-favorite-state.command';
@@ -33,24 +36,46 @@ describe('SetFavoriteStateHandler', () => {
 
   it('updates favorite state', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetFavoriteStateHandler(persistence);
+    const libraryRepository = createMock<LibraryRepository>();
+    const libraryTrackRepository = createMock<LibraryTrackRepository>();
+    const playlistRepository = createMock<PlaylistRepository>();
+
+    libraryRepository.getByUserId.mockResolvedValue({ id: 'lib-1' } as never);
+    libraryTrackRepository.getByLibraryAndTrack.mockResolvedValue({ id: 'lt-1' } as never);
+
+    const handler = new SetFavoriteStateHandler(
+      persistence,
+      libraryRepository,
+      libraryTrackRepository,
+      playlistRepository,
+    );
     const command = new SetFavoriteStateCommand(userId, sessionId, {
       favorite: 'favorited',
       expectedVersion: 1,
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
-      return { ...initialState, ...merge(initialState) } as PlaybackState;
+      const merged = await Promise.resolve(merge(initialState));
+      return { ...initialState, ...merged } as PlaybackState;
     });
 
     const result = await handler.execute(command);
     expect(result.favorited).toBe('favorited');
     expect(persistence.applyMutation).toHaveBeenCalledWith(userId, 1, expect.any(Function));
+    expect(playlistRepository.setFavoritesMembership).toHaveBeenCalledWith('lib-1', 't1', true);
   });
 
   it('throws BadRequestException when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetFavoriteStateHandler(persistence);
+    const libraryRepository = createMock<LibraryRepository>();
+    const libraryTrackRepository = createMock<LibraryTrackRepository>();
+    const playlistRepository = createMock<PlaylistRepository>();
+    const handler = new SetFavoriteStateHandler(
+      persistence,
+      libraryRepository,
+      libraryTrackRepository,
+      playlistRepository,
+    );
     const command = new SetFavoriteStateCommand(userId, sessionId, {
       favorite: 'favorited',
       expectedVersion: 0,

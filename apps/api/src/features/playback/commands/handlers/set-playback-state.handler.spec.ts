@@ -5,7 +5,8 @@ import {
   SetPlaybackStateRequest,
 } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { PlaybackLibraryFlagsService } from '../../services/playback-library-flags.service';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
 import { fixtureQueueItem, playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetPlaybackStateCommand } from '../impl/set-playback-state.command';
@@ -14,6 +15,12 @@ import { SetPlaybackStateHandler } from './set-playback-state.handler';
 describe('SetPlaybackStateHandler', () => {
   const userId = 'user-1';
   const sessionId = 'session-1';
+
+  const libraryFlags = createMock<PlaybackLibraryFlagsService>();
+
+  beforeEach(() => {
+    libraryFlags.resolveForTrack.mockResolvedValue({ favorited: 'not-set', inLibrary: false });
+  });
 
   const statePayload: SetPlaybackStateRequest['state'] = {
     devices: [],
@@ -48,7 +55,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('initializes state and claims device when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const command = new SetPlaybackStateCommand(userId, sessionId, 'device-1', 'Web', 'desktop', {
       state: statePayload,
       expectedVersion: 0,
@@ -71,7 +78,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('preserves existing payload devices when initializing state and claiming device', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const peerDevice = { id: 'peer-device', name: 'Peer', icon: 'speaker' as const };
     const command = new SetPlaybackStateCommand(userId, sessionId, 'device-1', 'Web', 'desktop', {
       state: { ...statePayload, devices: [peerDevice] },
@@ -94,7 +101,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('initializes state without claiming device when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const command = new SetPlaybackStateCommand(userId, sessionId, 'device-1', 'Web', 'desktop', {
       state: statePayload,
       expectedVersion: 0,
@@ -110,7 +117,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('updates state and claims device when expectedVersion > 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const command = new SetPlaybackStateCommand(
       userId,
       sessionId,
@@ -138,7 +145,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('updates state without claiming device when expectedVersion > 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const command = new SetPlaybackStateCommand(
       userId,
       sessionId,
@@ -163,7 +170,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('keeps current devices when payload has no devices and claimActiveDevice is false', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const existingDevice = { id: 'device-old', name: 'Old', icon: 'desktop' as const };
     const stateWithDevices = playbackStateFixture({
       userId,
@@ -199,7 +206,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('handles missing current.devices by defaulting to empty array when expectedVersion > 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const stateWithoutDevices = playbackStateFixture({
       userId,
       ...statePayload,
@@ -234,7 +241,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('merges devices when payload contains devices and expectedVersion > 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const existingDevice = { id: 'device-old', name: 'Old', icon: 'desktop' as const };
     const stateWithDevices = playbackStateFixture({
       userId,
@@ -281,7 +288,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('merges devices without claiming active device when payload contains devices and claimActiveDevice is false', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const existingDevice = { id: 'device-old', name: 'Old', icon: 'desktop' as const };
     const stateWithDevices = playbackStateFixture({
       userId,
@@ -328,7 +335,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('throws BadRequestException on Zod validation failure', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const command = new SetPlaybackStateCommand(userId, sessionId, 'device-1', 'Web', 'desktop', {
       state: { ...statePayload, trackData: { ...statePayload.trackData, duration: -1 } } as any,
       expectedVersion: 0,
@@ -340,7 +347,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('uses default expectedVersion: 0 and claimActiveDevice: true if omitted', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const command = new SetPlaybackStateCommand(userId, sessionId, 'device-1', 'Web', 'desktop', {
       state: statePayload,
     } as any);
@@ -360,7 +367,7 @@ describe('SetPlaybackStateHandler', () => {
 
   it('truncates history to PLAYBACK_HISTORY_MAX_LENGTH on create', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetPlaybackStateHandler(persistence);
+    const handler = new SetPlaybackStateHandler(persistence, libraryFlags);
     const filler = Array.from({ length: PLAYBACK_HISTORY_MAX_LENGTH + 3 }, (_, i) =>
       fixtureQueueItem({
         queueId: `01900000-0000-6000-8000-${i.toString(16).padStart(12, '0')}`,

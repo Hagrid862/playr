@@ -41,6 +41,12 @@ describe('CreateLibraryHandler', () => {
     expect(libraryRepository.getByUserId).toHaveBeenCalledWith(userId);
     expect(libraryRepository.create).toHaveBeenCalledWith({
       user: { connect: { id: userId } },
+      playlists: {
+        create: {
+          name: 'Favorite songs',
+          systemRole: 'favorites',
+        },
+      },
     });
     expect(result).toBe(mockLibrary);
   });
