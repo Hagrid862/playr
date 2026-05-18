@@ -1,4 +1,5 @@
 import { SongCard } from '@/components/library/SongCard';
+import { AddToPlaylistSubmenu } from '@/components/playlists/AddToPlaylistSubmenu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -373,6 +374,7 @@ function RouteComponent() {
                               onDelete={(trackInfo) => setTrackToDelete(trackInfo)}
                               onAddToQueue={() => addToQueue(zodTrackToPlaybackTrack(track))}
                               onPlayNext={() => playNext(zodTrackToPlaybackTrack(track))}
+                              extraMenu={<AddToPlaylistSubmenu trackId={track.id} />}
                             />
                           );
                         })}

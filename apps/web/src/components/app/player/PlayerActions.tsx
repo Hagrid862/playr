@@ -13,10 +13,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import {
-  firePlaybackCommand,
+  emitFavoriteStateSync,
   listPlaybackDevices,
   setActivePlaybackDevice,
-} from '@/lib/playback/sync/playback-sync';
+} from '@/lib/playback/sync/playback-sync.commands';
+import { firePlaybackCommand } from '@/lib/playback/sync/playback-sync.fire-and-forget';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
@@ -30,6 +31,7 @@ import {
 } from '@phosphor-icons/react';
 import { StreamAudioQuality } from '@repo/contracts';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function PlayerActions() {
   const [isDevicePopoverOpen, setIsDevicePopoverOpen] = useState(false);
@@ -45,6 +47,9 @@ export function PlayerActions() {
     availableQualities,
     playbackDevices,
     activeDeviceId,
+    currentTrack,
+    playbackVersion,
+    playbackFavorited,
   } = usePlayerStore();
 
   const hasLossless = availableQualities.includes(StreamAudioQuality.lossless);
@@ -135,9 +140,28 @@ export function PlayerActions() {
         size="icon"
         variant="ghost"
         aria-label="Favorite"
-        className="text-white/40 hover:text-white active:scale-95 h-9 w-9"
+        disabled={!currentTrack || playbackVersion === 0}
+        className={cn(
+          'active:scale-95 h-9 w-9',
+          playbackFavorited === 'favorited'
+            ? 'text-emerald-400 hover:text-emerald-300'
+            : 'text-white/40 hover:text-white',
+        )}
+        onClick={async () => {
+          if (!currentTrack || playbackVersion === 0) return;
+          const prev = playbackFavorited;
+          const next = prev === 'favorited' ? 'not-set' : 'favorited';
+          usePlayerStore.setState({ playbackFavorited: next });
+          try {
+            await emitFavoriteStateSync(next);
+          } catch (e) {
+            console.error(e);
+            usePlayerStore.setState({ playbackFavorited: prev });
+            toast.error('Could not update favorite');
+          }
+        }}
       >
-        <StarIcon size={20} />
+        <StarIcon size={20} weight={playbackFavorited === 'favorited' ? 'fill' : 'regular'} />
       </Button>
       <Button
         size="icon"

@@ -2,6 +2,7 @@ export {
   afterLocalPlaybackMutation,
   afterLocalPlaybackMutationWithClaim,
   emitCurrentTimeSync,
+  emitFavoriteStateSync,
   emitPresenceTouch,
   listPlaybackDevices,
   setActivePlaybackDevice,

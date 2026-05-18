@@ -5,6 +5,7 @@ import type {
   PresenceTouchResponse,
   SetActiveDeviceRequest,
   SetCurrentTimeStateRequest,
+  SetFavoriteStateRequest,
 } from '@repo/contracts';
 import { emitWithAck, PLAYBACK_SOCKET_ACK_TIMEOUT_MS } from './playback-sync.emit-with-ack';
 import { firePlaybackCommand } from './playback-sync.fire-and-forget';
@@ -129,6 +130,51 @@ export async function emitCurrentTimeSync(
       currentTime: result.currentTime,
       version: result.version,
     });
+  }
+}
+
+export async function emitFavoriteStateSync(
+  favorite: SetFavoriteStateRequest['favorite'],
+  ackTimeoutMs: number = PLAYBACK_SOCKET_ACK_TIMEOUT_MS,
+): Promise<void> {
+  if (!isPlaybackSocketConnected()) return;
+
+  const { currentTrack, playbackVersion } = usePlayerStore.getState();
+  if (!currentTrack || playbackVersion === 0) return;
+
+  const payload: SetFavoriteStateRequest = {
+    favorite,
+    expectedVersion: playbackVersion,
+  };
+
+  const socket = getSocket()!;
+  const result = await emitWithAck<PlaybackState | { error?: string; code?: string }>(
+    socket,
+    'command:set-favorite-state',
+    payload,
+    ackTimeoutMs,
+  );
+
+  const err = parseSyncAckError(result);
+  if (err) {
+    if (isVersionConflict(err.message, err.code)) {
+      const state = await emitWithAck<PlaybackState | null>(
+        socket,
+        'query:get-state',
+        {},
+        ackTimeoutMs,
+      );
+      if (state) {
+        applyStateFromServer(state);
+      } else {
+        usePlayerStore.getState().clearSessionPlayback();
+      }
+    }
+    return;
+  }
+
+  if (isPlaybackStateSyncAck(result)) {
+    applyStateFromServer(result);
   }
 }
 

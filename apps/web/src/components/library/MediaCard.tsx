@@ -10,6 +10,8 @@ export function MediaCard({
   link,
   coverStyle = 'square',
   placeholderIcon,
+  coverSlot,
+  routeParams,
 }: {
   coverUrl: string | undefined;
   title: string;
@@ -18,12 +20,17 @@ export function MediaCard({
   link: string;
   coverStyle?: 'circle' | 'square';
   placeholderIcon?: React.ReactNode;
+  /** When set, replaces the default cover image / placeholder area. */
+  coverSlot?: React.ReactNode;
+  /** Route params for `to` (defaults to `{ id }`). */
+  routeParams?: Record<string, string>;
 }) {
+  const params = routeParams ?? { id };
   return (
     <Link
       key={id}
       to={link}
-      params={{ id }}
+      params={params}
       className="group/artist relative p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
     >
       <div
@@ -32,7 +39,9 @@ export function MediaCard({
           coverStyle === 'circle' ? 'rounded-full' : 'rounded',
         )}
       >
-        {coverUrl ? (
+        {coverSlot ? (
+          coverSlot
+        ) : coverUrl ? (
           <img src={coverUrl} alt={title} className="size-full object-cover" />
         ) : (
           <div className="flex size-full items-center justify-center">

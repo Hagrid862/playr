@@ -26,6 +26,10 @@ interface SongCardProps {
   onDelete?: (track: { id: string; title: string }) => void;
   onAddToQueue?: () => void;
   onPlayNext?: () => void;
+  /** Extra items (e.g. “Add to playlist”) rendered after queue actions. */
+  extraMenu?: React.ReactNode;
+  /** Album / track artwork thumbnail (e.g. playlist rows). Omit on album pages. */
+  artworkUrl?: string | null;
 }
 
 function formatDuration(seconds: number) {
@@ -50,8 +54,12 @@ export function SongCard({
   onDelete,
   onAddToQueue,
   onPlayNext,
+  extraMenu,
+  artworkUrl,
 }: SongCardProps) {
   const isDisabled = isProcessing || isFailed;
+  const resolvedArtworkUrl =
+    artworkUrl != null && artworkUrl !== '' ? artworkUrl : undefined;
 
   return (
     <ContextMenu>
@@ -99,24 +107,34 @@ export function SongCard({
             )}
           </div>
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'font-bold truncate text-base',
-                  isActive ? 'text-green-500' : 'text-stone-200 group-hover:text-white',
+          <div className="min-w-0 flex items-center gap-3">
+            {resolvedArtworkUrl ? (
+              <img
+                src={resolvedArtworkUrl}
+                alt=""
+                aria-hidden
+                className="size-10 shrink-0 rounded object-cover bg-stone-800 ring-1 ring-white/10"
+              />
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    'font-bold truncate text-base',
+                    isActive ? 'text-green-500' : 'text-stone-200 group-hover:text-white',
+                  )}
+                >
+                  {title}
+                </div>
+                {explicit && (
+                  <span className="flex items-center justify-center size-3.5 bg-stone-500 text-[10px] font-bold text-stone-950 rounded-[2px] shrink-0 translate-y-px">
+                    E
+                  </span>
                 )}
-              >
-                {title}
               </div>
-              {explicit && (
-                <span className="flex items-center justify-center size-3.5 bg-stone-500 text-[10px] font-bold text-stone-950 rounded-[2px] shrink-0 translate-y-px">
-                  E
-                </span>
-              )}
-            </div>
-            <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
-              {artists?.length ? artists.map((a) => a.name).join(', ') : UNKNOWN_ARTIST_LABEL}
+              <div className="text-xs font-medium text-stone-500 group-hover:text-stone-400">
+                {artists?.length ? artists.map((a) => a.name).join(', ') : UNKNOWN_ARTIST_LABEL}
+              </div>
             </div>
           </div>
 
@@ -126,10 +144,12 @@ export function SongCard({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
-        <ContextMenuItem onClick={() => onEdit?.(id)} className="gap-2">
-          <PencilIcon size={16} />
-          Edit
-        </ContextMenuItem>
+        {onEdit ? (
+          <ContextMenuItem onClick={() => onEdit(id)} className="gap-2">
+            <PencilIcon size={16} />
+            Edit
+          </ContextMenuItem>
+        ) : null}
         {onPlayNext && (
           <ContextMenuItem onClick={onPlayNext} className="gap-2" disabled={isDisabled}>
             <PlayIcon size={16} />
@@ -142,14 +162,17 @@ export function SongCard({
             Add to Queue
           </ContextMenuItem>
         )}
-        <ContextMenuItem
-          onClick={() => onDelete?.({ id, title })}
-          variant="destructive"
-          className="gap-2"
-        >
-          <TrashIcon size={16} />
-          Delete
-        </ContextMenuItem>
+        {extraMenu}
+        {onDelete ? (
+          <ContextMenuItem
+            onClick={() => onDelete({ id, title })}
+            variant="destructive"
+            className="gap-2"
+          >
+            <TrashIcon size={16} />
+            Delete
+          </ContextMenuItem>
+        ) : null}
       </ContextMenuContent>
     </ContextMenu>
   );

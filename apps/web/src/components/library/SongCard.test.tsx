@@ -60,6 +60,15 @@ describe('SongCard', () => {
       expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
     });
 
+    it('renders artwork thumbnail when artworkUrl is set', () => {
+      const { container } = customRender(
+        <SongCard {...getDefaultProps()} artworkUrl="https://example.com/cover.jpg" />,
+      );
+      const img = container.querySelector('img');
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute('src', 'https://example.com/cover.jpg');
+    });
+
     it('renders track number and play icon structure', () => {
       const { container } = customRender(<SongCard {...getDefaultProps()} />);
 
