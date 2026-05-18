@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma, Playlist, PlaylistSidebarPin, PlaylistSystemRole } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
@@ -237,6 +237,27 @@ export class PlaylistRepository {
         order,
       },
     });
+  }
+
+  /**
+   * Creates a new sidebar pin or restores a soft-deleted pin for the same
+   * (libraryId, playlistId). Required because @@unique([libraryId, playlistId])
+   * prevents inserting a second row after unpin.
+   */
+  async pinPlaylist(libraryId: string, playlistId: string, order: number): Promise<PlaylistSidebarPin> {
+    const row = await this.prisma.client.playlistSidebarPin.findFirst({
+      where: { libraryId, playlistId },
+    });
+    if (row) {
+      if (row.deletedAt === null) {
+        throw new ConflictException('Playlist is already pinned');
+      }
+      return this.prisma.client.playlistSidebarPin.update({
+        where: { id: row.id },
+        data: { deletedAt: null, order },
+      });
+    }
+    return this.createPin(libraryId, playlistId, order);
   }
 
   async maxPinOrder(libraryId: string): Promise<number> {
