@@ -98,34 +98,34 @@ export class SearchController {
     return this.queryBus.execute(new LibrarySearchQueryImpl(user.id, query));
   }
 
-  @Get()
-  @UseGuards(JwtAuthGuardForSearch)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary:
-      'Full-text search across artists, albums, tracks, and playlists with filters and pagination',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Search results returned successfully',
-    type: SearchResultsResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Query is too short or invalid',
-    type: ApiErrorResponseDto,
-  })
-  @ApiResponse({
-  status: 401,
-  description:
-    // TODO: Remove this when public and community visibilities are implemented
-    'User token is required. Public and community visibilities are not implemented yet',
-    type: ApiErrorResponseDto,
-  })
-  async search(
-    @Query() query: SearchQueryRequestDto,
-    @CurrentUser() user: User
-  ): Promise<SearchResultsResponseDto> {
-    return this.queryBus.execute(new SearchQueryImpl(user?.id ?? null, query));
-  }
+   @Get()
+   @UseGuards(JwtAuthGuardForSearch)
+   @ApiBearerAuth()
+   @ApiOperation({
+     summary:
+       'Full-text search across artists, albums, tracks, and playlists with filters and pagination',
+   })
+   @ApiResponse({
+     status: 200,
+     description: 'Search results returned successfully',
+     type: SearchResultsResponseDto,
+   })
+   @ApiResponse({
+     status: 400,
+     description: 'Query is too short or invalid',
+     type: ApiErrorResponseDto,
+   })
+   @ApiResponse({
+   status: 401,
+   description:
+     // TODO: Remove this when public and community visibilities are implemented
+     'User token is required. Public and community visibilities are not implemented yet',
+     type: ApiErrorResponseDto,
+   })
+   async search(
+     @Query() query: SearchQueryRequestDto,
+     @CurrentUser() user: User | null
+   ): Promise<SearchResultsResponseDto> {
+     return this.queryBus.execute(new SearchQueryImpl(user?.id ?? null, query));
+   }
 }
