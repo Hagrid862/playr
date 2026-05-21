@@ -3,6 +3,16 @@ import type { PlaylistTrackSort } from '@repo/contracts';
 import { Prisma, Playlist, PlaylistSidebarPin, PlaylistSystemRole } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
 
+function effectivePlaylistTrackSort(
+  playlist: Pick<Playlist, 'systemRole'>,
+  sort: PlaylistTrackSort,
+): PlaylistTrackSort {
+  if (playlist.systemRole === PlaylistSystemRole.favorites) {
+    return 'addedAt_desc';
+  }
+  return sort;
+}
+
 function playlistTrackListOrderBy(
   sort: PlaylistTrackSort,
 ): Prisma.PlaylistTrackOrderByWithRelationInput | Prisma.PlaylistTrackOrderByWithRelationInput[] {
@@ -183,7 +193,7 @@ export class PlaylistRepository {
     });
     const trackRows = await this.prisma.client.playlistTrack.findMany({
       where: { playlistId, deletedAt: null },
-      orderBy: playlistTrackListOrderBy(sort),
+      orderBy: playlistTrackListOrderBy(effectivePlaylistTrackSort(playlist, sort)),
       skip: (page - 1) * limit,
       take: limit,
       include: trackInclude,

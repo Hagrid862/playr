@@ -83,4 +83,153 @@ describe('SetFavoriteStateHandler', () => {
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
   });
+
+  it('throws BadRequestException when favoriting without a library', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const libraryRepository = createMock<LibraryRepository>();
+    const libraryTrackRepository = createMock<LibraryTrackRepository>();
+    const playlistRepository = createMock<PlaylistRepository>();
+
+    libraryRepository.getByUserId.mockResolvedValue(null);
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = await Promise.resolve(merge(initialState));
+      return { ...initialState, ...merged } as PlaybackState;
+    });
+
+    const handler = new SetFavoriteStateHandler(
+      persistence,
+      libraryRepository,
+      libraryTrackRepository,
+      playlistRepository,
+    );
+    const command = new SetFavoriteStateCommand(userId, sessionId, {
+      favorite: 'favorited',
+      expectedVersion: 1,
+    });
+
+    await expect(handler.execute(command)).rejects.toThrow(
+      new BadRequestException('Library not found'),
+    );
+    expect(libraryTrackRepository.getByLibraryAndTrack).not.toHaveBeenCalled();
+    expect(playlistRepository.setFavoritesMembership).not.toHaveBeenCalled();
+  });
+
+  it('throws BadRequestException when favoriting a track not in library', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const libraryRepository = createMock<LibraryRepository>();
+    const libraryTrackRepository = createMock<LibraryTrackRepository>();
+    const playlistRepository = createMock<PlaylistRepository>();
+
+    libraryRepository.getByUserId.mockResolvedValue({ id: 'lib-1' } as never);
+    libraryTrackRepository.getByLibraryAndTrack.mockResolvedValue(null);
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = await Promise.resolve(merge(initialState));
+      return { ...initialState, ...merged } as PlaybackState;
+    });
+
+    const handler = new SetFavoriteStateHandler(
+      persistence,
+      libraryRepository,
+      libraryTrackRepository,
+      playlistRepository,
+    );
+    const command = new SetFavoriteStateCommand(userId, sessionId, {
+      favorite: 'favorited',
+      expectedVersion: 1,
+    });
+
+    await expect(handler.execute(command)).rejects.toThrow(
+      new BadRequestException('Track must be in your library to favorite'),
+    );
+    expect(playlistRepository.setFavoritesMembership).not.toHaveBeenCalled();
+  });
+
+  it('clears favorites membership when setting not-set', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const libraryRepository = createMock<LibraryRepository>();
+    const libraryTrackRepository = createMock<LibraryTrackRepository>();
+    const playlistRepository = createMock<PlaylistRepository>();
+
+    libraryRepository.getByUserId.mockResolvedValue({ id: 'lib-1' } as never);
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = await Promise.resolve(merge(initialState));
+      return { ...initialState, ...merged } as PlaybackState;
+    });
+
+    const handler = new SetFavoriteStateHandler(
+      persistence,
+      libraryRepository,
+      libraryTrackRepository,
+      playlistRepository,
+    );
+    const command = new SetFavoriteStateCommand(userId, sessionId, {
+      favorite: 'not-set',
+      expectedVersion: 1,
+    });
+
+    const result = await handler.execute(command);
+
+    expect(result.favorited).toBe('not-set');
+    expect(playlistRepository.setFavoritesMembership).toHaveBeenCalledWith('lib-1', 't1', false);
+    expect(libraryTrackRepository.getByLibraryAndTrack).not.toHaveBeenCalled();
+  });
+
+  it('updates disliked state without playlist membership changes', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const libraryRepository = createMock<LibraryRepository>();
+    const libraryTrackRepository = createMock<LibraryTrackRepository>();
+    const playlistRepository = createMock<PlaylistRepository>();
+
+    libraryRepository.getByUserId.mockResolvedValue({ id: 'lib-1' } as never);
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = await Promise.resolve(merge(initialState));
+      return { ...initialState, ...merged } as PlaybackState;
+    });
+
+    const handler = new SetFavoriteStateHandler(
+      persistence,
+      libraryRepository,
+      libraryTrackRepository,
+      playlistRepository,
+    );
+    const command = new SetFavoriteStateCommand(userId, sessionId, {
+      favorite: 'disliked',
+      expectedVersion: 1,
+    });
+
+    const result = await handler.execute(command);
+
+    expect(result.favorited).toBe('disliked');
+    expect(playlistRepository.setFavoritesMembership).not.toHaveBeenCalled();
+    expect(libraryTrackRepository.getByLibraryAndTrack).not.toHaveBeenCalled();
+  });
+
+  it('updates not-set state without touching playlist when user has no library', async () => {
+    const persistence = createMock<PlaybackStatePersistenceService>();
+    const libraryRepository = createMock<LibraryRepository>();
+    const libraryTrackRepository = createMock<LibraryTrackRepository>();
+    const playlistRepository = createMock<PlaylistRepository>();
+
+    libraryRepository.getByUserId.mockResolvedValue(null);
+    persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
+      const merged = await Promise.resolve(merge(initialState));
+      return { ...initialState, ...merged } as PlaybackState;
+    });
+
+    const handler = new SetFavoriteStateHandler(
+      persistence,
+      libraryRepository,
+      libraryTrackRepository,
+      playlistRepository,
+    );
+    const command = new SetFavoriteStateCommand(userId, sessionId, {
+      favorite: 'not-set',
+      expectedVersion: 1,
+    });
+
+    const result = await handler.execute(command);
+
+    expect(result.favorited).toBe('not-set');
+    expect(playlistRepository.setFavoritesMembership).not.toHaveBeenCalled();
+  });
 });
