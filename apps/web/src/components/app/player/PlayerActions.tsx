@@ -14,10 +14,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Slider } from '@/components/ui/slider';
 import {
   emitFavoriteStateSync,
+  firePlaybackCommand,
   listPlaybackDevices,
   setActivePlaybackDevice,
-} from '@/lib/playback/sync/playback-sync.commands';
-import { firePlaybackCommand } from '@/lib/playback/sync/playback-sync.fire-and-forget';
+} from '@/lib/playback/sync/playback-sync';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
