@@ -106,12 +106,40 @@ export type AddPlaylistTrackResponse = z.infer<
   typeof AddPlaylistTrackResponseSchema
 >;
 
+export const AddPlaylistAlbumResponseSchema = createApiResponseSchema(
+  z.object({
+    ok: z.literal(true),
+    addedCount: z.number().int().nonnegative(),
+    trackCount: z.number().int().nonnegative(),
+  }),
+);
+
+export type AddPlaylistAlbumResponse = z.infer<
+  typeof AddPlaylistAlbumResponseSchema
+>;
+
 export const RemovePlaylistTrackResponseSchema = createApiResponseSchema(
   z.object({ ok: z.literal(true) }),
 );
 
 export type RemovePlaylistTrackResponse = z.infer<
   typeof RemovePlaylistTrackResponseSchema
+>;
+
+export const ReorderPlaylistTracksResponseSchema = createApiResponseSchema(
+  z.object({ ok: z.literal(true) }),
+);
+
+export type ReorderPlaylistTracksResponse = z.infer<
+  typeof ReorderPlaylistTracksResponseSchema
+>;
+
+export const SortPlaylistTracksResponseSchema = createApiResponseSchema(
+  z.object({ ok: z.literal(true) }),
+);
+
+export type SortPlaylistTracksResponse = z.infer<
+  typeof SortPlaylistTracksResponseSchema
 >;
 
 export const PinPlaylistResponseSchema = createApiResponseSchema(
