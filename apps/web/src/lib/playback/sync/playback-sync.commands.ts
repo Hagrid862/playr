@@ -7,7 +7,11 @@ import type {
   SetCurrentTimeStateRequest,
   SetFavoriteStateRequest,
 } from '@repo/contracts';
-import { emitWithAck, PLAYBACK_SOCKET_ACK_TIMEOUT_MS } from './playback-sync.emit-with-ack';
+import {
+  emitWithAck,
+  PLAYBACK_SOCKET_ACK_TIMEOUT_MS,
+  PlaybackSyncCommandFailedError,
+} from './playback-sync.emit-with-ack';
 import { firePlaybackCommand } from './playback-sync.fire-and-forget';
 import {
   getPendingSetStateWrite,
@@ -169,13 +173,17 @@ export async function emitFavoriteStateSync(
       } else {
         usePlayerStore.getState().clearSessionPlayback();
       }
+      return;
     }
-    return;
+    throw new PlaybackSyncCommandFailedError('command:set-favorite-state', err.message, err.code);
   }
 
   if (isPlaybackStateSyncAck(result)) {
     applyStateFromServer(result);
+    return;
   }
+
+  throw new PlaybackSyncCommandFailedError('command:set-favorite-state', 'Unexpected ack shape');
 }
 
 export async function setActivePlaybackDevice(
