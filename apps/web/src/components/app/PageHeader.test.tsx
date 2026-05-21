@@ -55,10 +55,17 @@ describe('PageHeader', () => {
       expect(mockBack).toHaveBeenCalled();
     });
 
-    it('does not show back button when showBackButton is false', () => {
-      customRender(<PageHeader title="Test Title" showBackButton={false} />);
+    it('calls onBackClick instead of router.history.back when provided', async () => {
+      const user = userEvent.setup();
+      const onBackClick = vi.fn();
+      customRender(
+        <PageHeader title="Test Title" showBackButton={true} onBackClick={onBackClick} />,
+      );
 
-      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+      const backButton = screen.getByRole('button');
+      await user.click(backButton);
+      expect(onBackClick).toHaveBeenCalled();
+      expect(mockBack).not.toHaveBeenCalled();
     });
   });
 });
