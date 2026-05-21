@@ -1,6 +1,10 @@
 import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PlaylistRepository } from '@/shared/repositories/playlist.repository';
-import { BadRequestException, PreconditionFailedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateLibraryPlaylistResponse, type LibraryPlaylistListItem } from '@repo/contracts';
 import { CreateLibraryPlaylistCommand } from '../impl/create-library-playlist.command';
@@ -24,6 +28,11 @@ export class CreateLibraryPlaylistHandler implements ICommandHandler<CreateLibra
     const name = body.name.trim();
     if (!name) {
       throw new BadRequestException('Name is required');
+    }
+
+    const nameTaken = await this.playlistRepository.getByNameForLibrary(library.id, name);
+    if (nameTaken) {
+      throw new ConflictException('This playlist name is already taken');
     }
 
     const created = await this.playlistRepository.createUserPlaylist(library.id, name);

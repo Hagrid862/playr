@@ -1,6 +1,24 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import type { PlaylistTrackSort } from '@repo/contracts';
 import { Prisma, Playlist, PlaylistSidebarPin, PlaylistSystemRole } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
+
+function playlistTrackListOrderBy(
+  sort: PlaylistTrackSort,
+): Prisma.PlaylistTrackOrderByWithRelationInput | Prisma.PlaylistTrackOrderByWithRelationInput[] {
+  switch (sort) {
+    case 'order':
+      return { order: 'asc' };
+    case 'addedAt_asc':
+      return [{ addedAt: 'asc' }, { trackId: 'asc' }];
+    case 'addedAt_desc':
+      return [{ addedAt: 'desc' }, { trackId: 'desc' }];
+    default: {
+      const _exhaustive: never = sort;
+      return _exhaustive;
+    }
+  }
+}
 
 @Injectable()
 export class PlaylistRepository {
@@ -80,6 +98,25 @@ export class PlaylistRepository {
     });
   }
 
+  /**
+   * User playlists have `systemRole: null` (e.g. favorites uses a non-null system role).
+   */
+  async getByNameForLibrary(
+    libraryId: string,
+    name: string,
+    options?: { excludePlaylistId?: string },
+  ): Promise<Playlist | null> {
+    return this.prisma.client.playlist.findFirst({
+      where: {
+        libraryId,
+        deletedAt: null,
+        name,
+        systemRole: null,
+        ...(options?.excludePlaylistId ? { id: { not: options.excludePlaylistId } } : {}),
+      },
+    });
+  }
+
   async createUserPlaylist(libraryId: string, name: string): Promise<Playlist> {
     return this.prisma.client.playlist.create({
       data: {
@@ -108,6 +145,7 @@ export class PlaylistRepository {
     libraryId: string,
     page: number,
     limit: number,
+    sort: PlaylistTrackSort,
   ): Promise<{
     playlist: Playlist & { cover: Prisma.ImageGetPayload<object> | null };
     trackRows: Prisma.PlaylistTrackGetPayload<{
@@ -145,12 +183,27 @@ export class PlaylistRepository {
     });
     const trackRows = await this.prisma.client.playlistTrack.findMany({
       where: { playlistId, deletedAt: null },
-      orderBy: { order: 'asc' },
+      orderBy: playlistTrackListOrderBy(sort),
       skip: (page - 1) * limit,
       take: limit,
       include: trackInclude,
     });
     return { playlist, trackRows, totalTracks };
+  }
+
+  async sortPlaylistTracksByAddedAt(playlistId: string, direction: 'asc' | 'desc'): Promise<void> {
+    const rows = await this.prisma.client.playlistTrack.findMany({
+      where: { playlistId, deletedAt: null },
+      orderBy: [{ addedAt: direction }, { trackId: direction }],
+      select: { trackId: true },
+    });
+    if (rows.length === 0) {
+      return;
+    }
+    await this.reorderPlaylistTracks(
+      playlistId,
+      rows.map((r) => r.trackId),
+    );
   }
 
   async addTrackToPlaylist(playlistId: string, trackId: string): Promise<void> {
@@ -181,6 +234,52 @@ export class PlaylistRepository {
         order: nextOrder,
         addedAt: now,
       },
+    });
+  }
+
+  /**
+   * Appends tracks in order. Skips rows already active in the playlist.
+   * Counts inserts and soft-delete restores only.
+   */
+  async addTracksToPlaylist(
+    playlistId: string,
+    trackIds: string[],
+  ): Promise<{ addedCount: number }> {
+    return this.prisma.mainClient.$transaction(async (tx) => {
+      let addedCount = 0;
+      for (const trackId of trackIds) {
+        const existing = await tx.playlistTrack.findUnique({
+          where: {
+            playlistId_trackId: { playlistId, trackId },
+          },
+        });
+        const maxOrderAgg = await tx.playlistTrack.aggregate({
+          where: { playlistId, deletedAt: null },
+          _max: { order: true },
+        });
+        const nextOrder = (maxOrderAgg._max.order ?? -1) + 1;
+        const now = new Date();
+        if (existing) {
+          if (existing.deletedAt) {
+            await tx.playlistTrack.update({
+              where: { id: existing.id },
+              data: { deletedAt: null, order: nextOrder, addedAt: now },
+            });
+            addedCount++;
+          }
+        } else {
+          await tx.playlistTrack.create({
+            data: {
+              playlistId,
+              trackId,
+              order: nextOrder,
+              addedAt: now,
+            },
+          });
+          addedCount++;
+        }
+      }
+      return { addedCount };
     });
   }
 
@@ -289,6 +388,27 @@ export class PlaylistRepository {
       orderedPinIds.map((id, index) =>
         this.prisma.client.playlistSidebarPin.updateMany({
           where: { id, libraryId, deletedAt: null },
+          data: { order: index },
+        }),
+      ),
+    );
+  }
+
+  /** Active track ids in current `order` ascending (for reorder validation). */
+  async listActiveTrackIdsOrdered(playlistId: string): Promise<string[]> {
+    const rows = await this.prisma.client.playlistTrack.findMany({
+      where: { playlistId, deletedAt: null },
+      orderBy: { order: 'asc' },
+      select: { trackId: true },
+    });
+    return rows.map((r) => r.trackId);
+  }
+
+  async reorderPlaylistTracks(playlistId: string, orderedTrackIds: string[]): Promise<void> {
+    await this.prisma.mainClient.$transaction(
+      orderedTrackIds.map((trackId, index) =>
+        this.prisma.client.playlistTrack.updateMany({
+          where: { playlistId, trackId, deletedAt: null },
           data: { order: index },
         }),
       ),

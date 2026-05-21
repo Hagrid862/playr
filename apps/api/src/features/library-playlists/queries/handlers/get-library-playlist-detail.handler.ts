@@ -15,7 +15,7 @@ export class GetLibraryPlaylistDetailHandler implements IQueryHandler<GetLibrary
   async execute(
     query: GetLibraryPlaylistDetailQuery,
   ): Promise<GetLibraryPlaylistDetailResponse['data']> {
-    const { userId, playlistId, page, limit } = query;
+    const { userId, playlistId, page, limit, sort } = query;
     const library = await this.libraryRepository.getByUserId(userId);
     if (!library) {
       throw new PreconditionFailedException(`User library not found for userId: ${userId}`);
@@ -26,6 +26,7 @@ export class GetLibraryPlaylistDetailHandler implements IQueryHandler<GetLibrary
       library.id,
       page,
       limit,
+      sort,
     );
     if (!detail) {
       throw new NotFoundException('Playlist not found');

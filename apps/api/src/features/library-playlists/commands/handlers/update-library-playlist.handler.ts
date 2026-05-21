@@ -2,6 +2,7 @@ import { LibraryRepository } from '@/shared/repositories/library.repository';
 import { PlaylistRepository } from '@/shared/repositories/playlist.repository';
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
   PreconditionFailedException,
 } from '@nestjs/common';
@@ -41,6 +42,15 @@ export class UpdateLibraryPlaylistHandler implements ICommandHandler<UpdateLibra
     const name = body.name.trim();
     if (!name) {
       throw new BadRequestException('Name is required');
+    }
+
+    if (name !== playlist.name) {
+      const taken = await this.playlistRepository.getByNameForLibrary(library.id, name, {
+        excludePlaylistId: playlistId,
+      });
+      if (taken) {
+        throw new ConflictException('This playlist name is already taken');
+      }
     }
 
     await this.playlistRepository.updatePlaylistName(playlistId, name);

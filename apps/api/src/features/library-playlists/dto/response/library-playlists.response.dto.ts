@@ -1,4 +1,5 @@
 import {
+  AddPlaylistAlbumResponseSchema,
   AddPlaylistTrackResponseSchema,
   CreateLibraryPlaylistResponseSchema,
   DeleteLibraryPlaylistCoverResponseSchema,
@@ -9,6 +10,8 @@ import {
   PinPlaylistResponseSchema,
   RemovePlaylistTrackResponseSchema,
   ReorderPlaylistPinsResponseSchema,
+  ReorderPlaylistTracksResponseSchema,
+  SortPlaylistTracksResponseSchema,
   UnpinPlaylistResponseSchema,
   UpdateLibraryPlaylistResponseSchema,
   UploadLibraryPlaylistCoverResponseSchema,
@@ -31,9 +34,14 @@ export class DeleteLibraryPlaylistResponseDto extends createZodDto(
   DeleteLibraryPlaylistResponseSchema,
 ) {}
 export class AddPlaylistTrackResponseDto extends createZodDto(AddPlaylistTrackResponseSchema) {}
+export class AddPlaylistAlbumResponseDto extends createZodDto(AddPlaylistAlbumResponseSchema) {}
 export class RemovePlaylistTrackResponseDto extends createZodDto(
   RemovePlaylistTrackResponseSchema,
 ) {}
+export class ReorderPlaylistTracksResponseDto extends createZodDto(
+  ReorderPlaylistTracksResponseSchema,
+) {}
+export class SortPlaylistTracksResponseDto extends createZodDto(SortPlaylistTracksResponseSchema) {}
 export class GetLibraryPlaylistPinsResponseDto extends createZodDto(
   GetLibraryPlaylistPinsResponseSchema,
 ) {}
