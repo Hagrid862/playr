@@ -1,3 +1,4 @@
+export * from './requests/addPlaylistAlbum';
 export * from './requests/addPlaylistTrack';
 export * from './requests/createLibraryPlaylist';
 export * from './requests/deleteLibraryPlaylist';
@@ -8,6 +9,7 @@ export * from './requests/getLibraryPlaylists';
 export * from './requests/pinPlaylist';
 export * from './requests/removePlaylistTrack';
 export * from './requests/reorderPlaylistPins';
+export * from './requests/sortPlaylistTracks';
 export * from './requests/unpinPlaylist';
 export * from './requests/updateLibraryPlaylist';
 export * from './requests/uploadLibraryPlaylistCover';

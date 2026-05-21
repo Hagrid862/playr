@@ -1,11 +1,15 @@
 import type {
+  AddPlaylistAlbumRequest,
   AddPlaylistTrackRequest,
   CreateLibraryPlaylistRequest,
   PinPlaylistRequest,
   ReorderPlaylistPinsRequest,
+  ReorderPlaylistTracksRequest,
+  SortPlaylistTracksRequest,
   UpdateLibraryPlaylistRequest,
 } from '@repo/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { addPlaylistAlbum } from './requests/addPlaylistAlbum';
 import { addPlaylistTrack } from './requests/addPlaylistTrack';
 import { createLibraryPlaylist } from './requests/createLibraryPlaylist';
 import { deleteLibraryPlaylist } from './requests/deleteLibraryPlaylist';
@@ -13,6 +17,8 @@ import { deleteLibraryPlaylistCover } from './requests/deleteLibraryPlaylistCove
 import { pinPlaylist } from './requests/pinPlaylist';
 import { removePlaylistTrack } from './requests/removePlaylistTrack';
 import { reorderPlaylistPins } from './requests/reorderPlaylistPins';
+import { reorderPlaylistTracks } from './requests/reorderPlaylistTracks';
+import { sortPlaylistTracks } from './requests/sortPlaylistTracks';
 import { unpinPlaylist } from './requests/unpinPlaylist';
 import { updateLibraryPlaylist } from './requests/updateLibraryPlaylist';
 import { uploadLibraryPlaylistCover } from './requests/uploadLibraryPlaylistCover';
@@ -61,6 +67,15 @@ export const useAddPlaylistTrack = () => {
   });
 };
 
+export const useAddPlaylistAlbum = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { playlistId: string; body: AddPlaylistAlbumRequest }) =>
+      addPlaylistAlbum(params),
+    onSuccess: (_data, vars) => invalidatePlaylistQueries(qc, vars.playlistId),
+  });
+};
+
 export const useRemovePlaylistTrack = () => {
   const qc = useQueryClient();
   return useMutation({
@@ -90,6 +105,24 @@ export const useReorderPlaylistPins = () => {
   return useMutation({
     mutationFn: (body: ReorderPlaylistPinsRequest) => reorderPlaylistPins(body),
     onSuccess: () => invalidatePlaylistQueries(qc),
+  });
+};
+
+export const useReorderPlaylistTracks = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { playlistId: string; body: ReorderPlaylistTracksRequest }) =>
+      reorderPlaylistTracks(params),
+    onSuccess: (_data, vars) => invalidatePlaylistQueries(qc, vars.playlistId),
+  });
+};
+
+export const useSortPlaylistTracks = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { playlistId: string; body: SortPlaylistTracksRequest }) =>
+      sortPlaylistTracks(params),
+    onSuccess: (_data, vars) => invalidatePlaylistQueries(qc, vars.playlistId),
   });
 };
 

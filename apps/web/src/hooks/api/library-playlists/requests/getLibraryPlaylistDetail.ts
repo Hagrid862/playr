@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api-client';
 import {
   GetLibraryPlaylistDetailResponseSchema,
   type GetLibraryPlaylistDetailResponse,
+  type PlaylistTrackSort,
 } from '@repo/contracts';
 
 /** Server query DTO caps `limit` at 100; chunk requests and merge so detail works on all API builds. */
@@ -11,8 +12,10 @@ export const getLibraryPlaylistDetail = async (params: {
   playlistId: string;
   page?: number;
   limit?: number;
+  /** When set, requests that sort from the API (read-only preview). Omit for default manual order. */
+  sort?: PlaylistTrackSort;
 }) => {
-  const { playlistId } = params;
+  const { playlistId, sort } = params;
   const mergedTracks: GetLibraryPlaylistDetailResponse['data']['tracks'] = [];
   let first: GetLibraryPlaylistDetailResponse | null = null;
   let serverPage = 1;
@@ -21,6 +24,9 @@ export const getLibraryPlaylistDetail = async (params: {
       page: String(serverPage),
       limit: String(PLAYLIST_DETAIL_PAGE_SIZE),
     });
+    if (sort != null) {
+      query.set('sort', sort);
+    }
     const endpoint = `library/playlists/${playlistId}?${query.toString()}`;
     const res = await apiClient<GetLibraryPlaylistDetailResponse>(endpoint, {
       method: 'GET',
