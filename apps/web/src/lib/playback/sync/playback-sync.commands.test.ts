@@ -11,12 +11,14 @@ import {
   emitCurrentTimeSync,
   emitPresenceTouch,
   listPlaybackDevices,
+  emitFavoriteStateSync,
   setActivePlaybackDevice,
   syncPlayingStateToServer,
 } from './playback-sync';
 import {
   PlaybackSocketAckTimeoutError,
   PlaybackSocketDisconnectedError,
+  PlaybackSyncCommandFailedError,
 } from './playback-sync.emit-with-ack';
 import * as playbackSyncState from './playback-sync.state';
 import {
@@ -642,6 +644,137 @@ describe('playback-sync commands', () => {
       await setActivePlaybackDevice('new-device');
 
       expect(apply.mock.calls.length).toBe(callsBefore);
+    });
+  });
+
+  describe('emitFavoriteStateSync', () => {
+    it('returns immediately if socket is not connected', async () => {
+      const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
+      const callsBefore = apply.mock.calls.length;
+
+      await emitFavoriteStateSync('favorited');
+
+      expect(apply.mock.calls.length).toBe(callsBefore);
+    });
+
+    it('returns immediately if currentTrack is missing or playbackVersion is 0', async () => {
+      connectPlaybackSync('token');
+      const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
+      const callsBefore = apply.mock.calls.length;
+
+      vi.mocked(usePlayerStore.getState).mockReturnValue(
+        createPlayerStateMock({
+          playbackVersion: 0,
+          currentTrack: null,
+          applyPlaybackStateFromServer: vi.fn(),
+        }),
+      );
+
+      await emitFavoriteStateSync('favorited');
+
+      expect(apply.mock.calls.length).toBe(callsBefore);
+    });
+
+    it('emits set-favorite-state command and applies state on successful ack', async () => {
+      vi.mocked(usePlayerStore.getState).mockReturnValue({
+        ...basePlaybackSyncTestState,
+        playbackVersion: 10,
+      });
+      connectPlaybackSync('token');
+      const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
+
+      mockSocket.emit.mockImplementation(
+        (event: string, data: any, callback: (r: EmitCallbackPayload) => void) => {
+          expect(event).toBe('command:set-favorite-state');
+          expect(data).toEqual({ favorite: 'favorited', expectedVersion: 10 });
+          callback(playbackStateFixture({ version: 11 }));
+        },
+      );
+
+      await emitFavoriteStateSync('favorited');
+
+      expect(apply).toHaveBeenCalledWith(expect.objectContaining({ version: 11 }));
+    });
+
+    it('handles version conflict by requesting state and applying it if present', async () => {
+      connectPlaybackSync('token');
+      const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
+
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
+          if (event === 'command:set-favorite-state') {
+            callback({ error: 'version mismatch', code: 'CONFLICT' });
+          } else if (event === 'query:get-state') {
+            callback(playbackStateFixture({ version: 20 }));
+          }
+        },
+      );
+
+      await emitFavoriteStateSync('favorited');
+
+      expect(apply).toHaveBeenCalledWith(expect.objectContaining({ version: 20 }));
+    });
+
+    it('clears session playback on version conflict when query:get-state returns null/no state', async () => {
+      connectPlaybackSync('token');
+      const clear = vi.mocked(usePlayerStore.getState().clearSessionPlayback);
+
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
+          if (event === 'command:set-favorite-state') {
+            callback({ error: 'version mismatch', code: 'CONFLICT' });
+          } else if (event === 'query:get-state') {
+            callback(null as any);
+          }
+        },
+      );
+
+      await emitFavoriteStateSync('favorited');
+
+      expect(clear).toHaveBeenCalled();
+    });
+
+    it('on non-conflict error rejects without query:get-state', async () => {
+      connectPlaybackSync('token');
+      const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
+
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
+          if (event === 'command:set-favorite-state') {
+            callback({ error: 'general error', code: 'ERROR' });
+          }
+        },
+      );
+
+      await expect(emitFavoriteStateSync('favorited')).rejects.toThrow(
+        PlaybackSyncCommandFailedError,
+      );
+
+      expect(mockSocket.emit).not.toHaveBeenCalledWith(
+        'query:get-state',
+        expect.any(Object),
+        expect.any(Function),
+      );
+      expect(apply).not.toHaveBeenCalled();
+    });
+
+    it('when ack is not an error but not a playback state, rejects', async () => {
+      connectPlaybackSync('token');
+      const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
+
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
+          if (event === 'command:set-favorite-state') {
+            callback({} as any);
+          }
+        },
+      );
+
+      await expect(emitFavoriteStateSync('favorited')).rejects.toThrow(
+        PlaybackSyncCommandFailedError,
+      );
+
+      expect(apply).not.toHaveBeenCalled();
     });
   });
 });

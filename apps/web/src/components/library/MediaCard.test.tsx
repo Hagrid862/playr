@@ -23,6 +23,18 @@ vi.mock('@tanstack/react-router', () => ({
   }),
 }));
 
+vi.mock('@/components/ui/context-menu', () => ({
+  ContextMenu: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mock-context-menu">{children}</div>
+  ),
+  ContextMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mock-context-menu-trigger">{children}</div>
+  ),
+  ContextMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mock-context-menu-content">{children}</div>
+  ),
+}));
+
 function getDefaultProps() {
   return {
     id: '123',
@@ -40,6 +52,20 @@ describe('MediaCard', () => {
   });
 
   describe('rendering', () => {
+    it('renders coverSlot instead of image or placeholder when coverSlot is provided', () => {
+      customRender(
+        <MediaCard
+          {...getDefaultProps()}
+          coverSlot={<div data-testid="custom-cover-slot">Custom Slot</div>}
+        />,
+      );
+
+      expect(screen.getByTestId('custom-cover-slot')).toBeInTheDocument();
+      expect(screen.queryByRole('img')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('user-icon')).not.toBeInTheDocument();
+      expect(screen.getByText('Test Title')).toBeInTheDocument();
+    });
+
     it('renders title, subtitle, cover, and link', () => {
       customRender(<MediaCard {...getDefaultProps()} />);
 
@@ -89,6 +115,29 @@ describe('MediaCard', () => {
       );
       expect(squareContainer.querySelector('.rounded')).toBeInTheDocument();
       expect(squareContainer.querySelector('.rounded-full')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('contextMenu', () => {
+    it('does not wrap with ContextMenu when contextMenu prop is omitted', () => {
+      customRender(<MediaCard {...getDefaultProps()} />);
+      expect(screen.queryByTestId('mock-context-menu')).not.toBeInTheDocument();
+      expect(screen.getByText('Test Title')).toBeInTheDocument();
+    });
+
+    it('wraps the link element with ContextMenu when contextMenu prop is provided', () => {
+      customRender(
+        <MediaCard
+          {...getDefaultProps()}
+          contextMenu={<div data-testid="custom-context-menu-content">Custom Menu</div>}
+        />,
+      );
+
+      expect(screen.getByTestId('mock-context-menu')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-context-menu-trigger')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-context-menu-content')).toBeInTheDocument();
+      expect(screen.getByTestId('custom-context-menu-content')).toBeInTheDocument();
+      expect(screen.getByText('Test Title')).toBeInTheDocument();
     });
   });
 });
