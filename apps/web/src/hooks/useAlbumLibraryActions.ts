@@ -21,20 +21,14 @@ function toastPlaylistAddResult(addedCount: number, trackCount: number, successL
   }
 }
 
-function invalidateAlbumFavoritesQueries(
-  qc: QueryClient,
-  favPlaylistId: string | undefined,
-  albumId: string,
-) {
-  if (favPlaylistId) {
-    void qc.invalidateQueries({
-      predicate: (q) =>
-        Array.isArray(q.queryKey) &&
-        q.queryKey[0] === 'library' &&
-        q.queryKey[1] === 'playlists' &&
-        q.queryKey[2] === favPlaylistId,
-    });
-  }
+function invalidateAlbumFavoritesQueries(qc: QueryClient, favPlaylistId: string, albumId: string) {
+  void qc.invalidateQueries({
+    predicate: (q) =>
+      Array.isArray(q.queryKey) &&
+      q.queryKey[0] === 'library' &&
+      q.queryKey[1] === 'playlists' &&
+      q.queryKey[2] === favPlaylistId,
+  });
   void qc.invalidateQueries({ queryKey: ['library', 'albums', albumId, 'tracks-for-fav'] });
   void qc.invalidateQueries({ queryKey: ['library', 'albums', albumId] });
   void qc.invalidateQueries({ queryKey: libraryPlaylistsQueryKey });
@@ -99,20 +93,20 @@ export function useAlbumLibraryActions(options: { albumId: string; albumName: st
     albumTracks.length === 0;
 
   const removeMutation = useMutation({
-    mutationFn: async () => {
-      if (!favPlaylistId) {
+    mutationFn: async (): Promise<string> => {
+      const playlistId = favPlaylistId;
+      if (!playlistId) {
         throw new Error('Favorites playlist not found');
       }
       const tracks = albumTracksQuery.data?.data ?? [];
       if (!tracks.length) {
         throw new Error('No tracks');
       }
-      await Promise.all(
-        tracks.map((t) => removePlaylistTrack({ playlistId: favPlaylistId, trackId: t.id })),
-      );
+      await Promise.all(tracks.map((t) => removePlaylistTrack({ playlistId, trackId: t.id })));
+      return playlistId;
     },
-    onSuccess: () => {
-      invalidateAlbumFavoritesQueries(queryClient, favPlaylistId, albumId);
+    onSuccess: (playlistId) => {
+      invalidateAlbumFavoritesQueries(queryClient, playlistId, albumId);
       toast.success('Removed album from favorites');
     },
     onError: (e) => {
