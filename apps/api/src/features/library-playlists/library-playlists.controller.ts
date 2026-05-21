@@ -20,18 +20,25 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ZodImage } from '@repo/contracts';
+import { AddPlaylistAlbumCommand } from './commands/impl/add-playlist-album.command';
 import { AddPlaylistTrackCommand } from './commands/impl/add-playlist-track.command';
 import { CreateLibraryPlaylistCommand } from './commands/impl/create-library-playlist.command';
 import { DeleteLibraryPlaylistCoverCommand } from './commands/impl/delete-library-playlist-cover.command';
 import { DeleteLibraryPlaylistCommand } from './commands/impl/delete-library-playlist.command';
 import { RemovePlaylistTrackCommand } from './commands/impl/remove-playlist-track.command';
+import { ReorderPlaylistTracksCommand } from './commands/impl/reorder-playlist-tracks.command';
+import { SortPlaylistTracksCommand } from './commands/impl/sort-playlist-tracks.command';
 import { UpdateLibraryPlaylistCommand } from './commands/impl/update-library-playlist.command';
 import { UploadLibraryPlaylistCoverCommand } from './commands/impl/upload-library-playlist-cover.command';
+import { AddPlaylistAlbumRequestDto } from './dto/request/add-playlist-album.request.dto';
 import { AddPlaylistTrackRequestDto } from './dto/request/add-playlist-track.request.dto';
 import { CreateLibraryPlaylistRequestDto } from './dto/request/create-library-playlist.request.dto';
 import { GetLibraryPlaylistDetailRequestDto } from './dto/request/get-library-playlist-detail.request.dto';
+import { ReorderPlaylistTracksRequestDto } from './dto/request/reorder-playlist-tracks.request.dto';
+import { SortPlaylistTracksRequestDto } from './dto/request/sort-playlist-tracks.request.dto';
 import { UpdateLibraryPlaylistRequestDto } from './dto/request/update-library-playlist.request.dto';
 import {
+  AddPlaylistAlbumResponseDto,
   AddPlaylistTrackResponseDto,
   CreateLibraryPlaylistResponseDto,
   DeleteLibraryPlaylistCoverResponseDto,
@@ -39,6 +46,8 @@ import {
   GetLibraryPlaylistDetailResponseDto,
   GetLibraryPlaylistsResponseDto,
   RemovePlaylistTrackResponseDto,
+  ReorderPlaylistTracksResponseDto,
+  SortPlaylistTracksResponseDto,
   UpdateLibraryPlaylistResponseDto,
   UploadLibraryPlaylistCoverResponseDto,
 } from './dto/response/library-playlists.response.dto';
@@ -66,6 +75,7 @@ export class LibraryPlaylistsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create user playlist' })
   @ApiResponse({ status: 201, type: CreateLibraryPlaylistResponseDto })
+  @ApiResponse({ status: 409, type: ApiErrorResponseDto })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto })
   create(@CurrentUser('id') userId: string, @Body() body: CreateLibraryPlaylistRequestDto) {
     return this.commandBus.execute(new CreateLibraryPlaylistCommand(body, userId));
@@ -118,7 +128,7 @@ export class LibraryPlaylistsController {
     @Query() query: GetLibraryPlaylistDetailRequestDto,
   ) {
     return this.queryBus.execute(
-      new GetLibraryPlaylistDetailQuery(userId, id, query.page, query.limit),
+      new GetLibraryPlaylistDetailQuery(userId, id, query.page, query.limit, query.sort),
     );
   }
 
@@ -129,6 +139,7 @@ export class LibraryPlaylistsController {
   @ApiResponse({ status: 400, type: ApiErrorResponseDto })
   @ApiResponse({ status: 401, type: ApiErrorResponseDto })
   @ApiResponse({ status: 404, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 409, type: ApiErrorResponseDto })
   update(
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
@@ -148,6 +159,22 @@ export class LibraryPlaylistsController {
     return this.commandBus.execute(new DeleteLibraryPlaylistCommand(id, userId));
   }
 
+  @Post(':id/albums')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Add all library tracks from an album to playlist' })
+  @ApiResponse({ status: 201, type: AddPlaylistAlbumResponseDto })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 403, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto })
+  addAlbum(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: AddPlaylistAlbumRequestDto,
+  ) {
+    return this.commandBus.execute(new AddPlaylistAlbumCommand(id, body, userId));
+  }
+
   @Post(':id/tracks')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add track to playlist' })
@@ -159,6 +186,36 @@ export class LibraryPlaylistsController {
     @Body() body: AddPlaylistTrackRequestDto,
   ) {
     return this.commandBus.execute(new AddPlaylistTrackCommand(id, body, userId));
+  }
+
+  @Patch(':id/tracks/sort')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Permanently sort playlist tracks by date added' })
+  @ApiResponse({ status: 200, type: SortPlaylistTracksResponseDto })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto })
+  sortTracks(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: SortPlaylistTracksRequestDto,
+  ) {
+    return this.commandBus.execute(new SortPlaylistTracksCommand(id, body, userId));
+  }
+
+  @Patch(':id/tracks/reorder')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Reorder tracks in playlist' })
+  @ApiResponse({ status: 200, type: ReorderPlaylistTracksResponseDto })
+  @ApiResponse({ status: 400, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 401, type: ApiErrorResponseDto })
+  @ApiResponse({ status: 404, type: ApiErrorResponseDto })
+  reorderTracks(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: ReorderPlaylistTracksRequestDto,
+  ) {
+    return this.commandBus.execute(new ReorderPlaylistTracksCommand(id, body, userId));
   }
 
   @Delete(':id/tracks/:trackId')
