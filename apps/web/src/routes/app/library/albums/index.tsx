@@ -1,4 +1,5 @@
 import { MediaCard } from '@/components/library/MediaCard';
+import { AlbumLibraryContextMenu } from '@/components/library/albums/AlbumLibraryContextMenu';
 import { Spinner } from '@/components/ui/spinner';
 import { useLibraryAlbums } from '@/hooks/api/library-albums/useLibraryAlbums';
 import { UNKNOWN_ALBUM_LABEL, UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
@@ -63,6 +64,7 @@ function RouteComponent() {
             coverUrl={album.cover?.url ?? undefined}
             link="/app/library/albums/$id"
             placeholderIcon={<DiscIcon className="size-1/2 text-stone-400" weight="duotone" />}
+            contextMenu={<AlbumLibraryContextMenu album={album} />}
           />
         ))}
       </div>

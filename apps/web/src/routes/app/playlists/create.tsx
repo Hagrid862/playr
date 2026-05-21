@@ -7,7 +7,8 @@ import {
   useUploadLibraryPlaylistCover,
 } from '@/hooks/api/library-playlists/useLibraryPlaylistMutations';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/app/playlists/create')({
@@ -19,19 +20,9 @@ function RouteComponent() {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState('');
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  const filePreviewUrl = useObjectUrl(coverFile);
   const { mutateAsync: createPlaylist, isPending: isCreating } = useCreateLibraryPlaylist();
   const { mutateAsync: uploadCover, isPending: isUploading } = useUploadLibraryPlaylistCover();
-
-  useEffect(() => {
-    if (!coverFile) {
-      setFilePreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(coverFile);
-    setFilePreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [coverFile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

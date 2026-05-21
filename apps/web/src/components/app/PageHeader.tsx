@@ -9,15 +9,22 @@ export function PageHeader({
   description,
   actions,
   showBackButton = false,
+  onBackClick,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
   showBackButton?: boolean;
+  /** When set, invoked instead of default `router.history.back()` */
+  onBackClick?: () => void;
 }) {
   const router = useRouter();
 
   const handleBack = () => {
+    if (onBackClick) {
+      onBackClick();
+      return;
+    }
     router.history.back();
   };
 

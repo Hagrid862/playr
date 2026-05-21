@@ -15,16 +15,26 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
-import { useDeleteLibraryPlaylist, useLibraryPlaylistDetail } from '@/hooks/api/library-playlists';
+import {
+  useDeleteLibraryPlaylist,
+  useLibraryPlaylistDetail,
+  useSortPlaylistTracks,
+} from '@/hooks/api/library-playlists';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
+import type { SortPlaylistTracksRequest } from '@repo/contracts';
 import { PlaylistSystemRole } from '@repo/db';
 import {
+  ArrowsDownUpIcon,
   DotsThreeIcon,
   PencilIcon,
   PlaylistIcon,
@@ -45,8 +55,11 @@ function RouteComponent() {
   const { playlistId } = Route.useParams();
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSortConfirmOpen, setIsSortConfirmOpen] = useState(false);
+  const [pendingSort, setPendingSort] = useState<SortPlaylistTracksRequest['sort'] | null>(null);
   const { data, isLoading } = useLibraryPlaylistDetail(playlistId, { page: 1, limit: 200 });
   const { mutateAsync: deletePlaylist, isPending: isDeleting } = useDeleteLibraryPlaylist();
+  const { mutateAsync: sortPlaylistTracks, isPending: isSorting } = useSortPlaylistTracks();
   const { playTrack, addToQueue, playNext } = usePlayerStore();
 
   const detail = data?.data;
@@ -63,6 +76,31 @@ function RouteComponent() {
     } catch (e) {
       console.error(e);
       toast.error('Could not delete playlist');
+    }
+  };
+
+  const handleSortDialogOpenChange = (open: boolean) => {
+    setIsSortConfirmOpen(open);
+    if (!open) {
+      setPendingSort(null);
+    }
+  };
+
+  const openSortConfirm = (sort: SortPlaylistTracksRequest['sort']) => {
+    setPendingSort(sort);
+    setIsSortConfirmOpen(true);
+  };
+
+  const handleConfirmSort = async () => {
+    if (!pendingSort) return;
+    try {
+      await sortPlaylistTracks({ playlistId, body: { sort: pendingSort } });
+      toast.success('Playlist order updated');
+      setIsSortConfirmOpen(false);
+      setPendingSort(null);
+    } catch (e) {
+      console.error(e);
+      toast.error('Could not update playlist order');
     }
   };
 
@@ -165,11 +203,26 @@ function RouteComponent() {
                     <DotsThreeIcon size={24} weight="bold" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48">
+                <DropdownMenuContent className="w-56">
                   <DropdownMenuItem className="gap-2">
                     <ShareIcon size={18} /> Share
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="gap-2" disabled={detail.totalTracks < 2}>
+                      <ArrowsDownUpIcon size={18} /> Reorder
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent className="w-52">
+                        <DropdownMenuItem onClick={() => openSortConfirm('addedAt_asc')}>
+                          Added first
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openSortConfirm('addedAt_desc')}>
+                          Added last
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
                   <Link to="/app/playlists/$playlistId/edit" params={{ playlistId: detail.id }}>
                     <DropdownMenuItem className="gap-2">
                       <PencilIcon size={18} /> Edit
@@ -251,30 +304,56 @@ function RouteComponent() {
       </div>
 
       {detail.systemRole !== PlaylistSystemRole.favorites ? (
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete playlist?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will remove <span className="font-medium text-foreground">{detail.name}</span>{' '}
-                from your library. Tracks stay in your library.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={isDeleting}
-                onClick={(e) => {
-                  e.preventDefault();
-                  void handleDelete();
-                }}
-              >
-                {isDeleting ? 'Deleting…' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <>
+          <AlertDialog open={isSortConfirmOpen} onOpenChange={handleSortDialogOpenChange}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Change track order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Sorting will permanently change the track order in this playlist. Your current
+                  manual order cannot be restored automatically. Continue?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isSorting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={isSorting}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void handleConfirmSort();
+                  }}
+                >
+                  {isSorting ? 'Updating…' : 'Continue'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete playlist?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove{' '}
+                  <span className="font-medium text-foreground">{detail.name}</span> from your
+                  library. Tracks stay in your library.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void handleDelete();
+                  }}
+                >
+                  {isDeleting ? 'Deleting…' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
       ) : null}
     </div>
   );
