@@ -88,4 +88,97 @@ describe('PlaylistRepository', () => {
       expect(prisma.client.playlistSidebarPin.update).not.toHaveBeenCalled();
     });
   });
+
+  describe('getByNameForLibrary', () => {
+    it('finds user playlist by exact name', async () => {
+      const row = { id: 'p1', name: 'Mix', libraryId: 'lib-1', systemRole: null } as never;
+      prisma.client.playlist.findFirst.mockResolvedValue(row);
+
+      const result = await repository.getByNameForLibrary('lib-1', 'Mix');
+
+      expect(prisma.client.playlist.findFirst).toHaveBeenCalledWith({
+        where: {
+          libraryId: 'lib-1',
+          deletedAt: null,
+          name: 'Mix',
+          systemRole: null,
+        },
+      });
+      expect(result).toEqual(row);
+    });
+
+    it('excludes playlist id when provided', async () => {
+      prisma.client.playlist.findFirst.mockResolvedValue(null);
+
+      await repository.getByNameForLibrary('lib-1', 'Mix', { excludePlaylistId: 'self-id' });
+
+      expect(prisma.client.playlist.findFirst).toHaveBeenCalledWith({
+        where: {
+          libraryId: 'lib-1',
+          deletedAt: null,
+          name: 'Mix',
+          systemRole: null,
+          id: { not: 'self-id' },
+        },
+      });
+    });
+  });
+
+  describe('reorderPlaylistTracks', () => {
+    it('runs updateMany per track in a transaction', async () => {
+      const updates: unknown[] = [];
+      prisma.mainClient.$transaction.mockImplementation(async (ops: unknown) => {
+        if (Array.isArray(ops)) {
+          for (const op of ops) {
+            updates.push(op);
+          }
+        }
+        return undefined;
+      });
+
+      await repository.reorderPlaylistTracks('pl-1', ['t-b', 't-a']);
+
+      expect(prisma.mainClient.$transaction).toHaveBeenCalledTimes(1);
+      expect(updates).toHaveLength(2);
+    });
+  });
+
+  describe('sortPlaylistTracksByAddedAt', () => {
+    it('loads track ids by addedAt and reorders via transaction', async () => {
+      prisma.client.playlistTrack.findMany.mockResolvedValue([
+        { trackId: 't-oldest' },
+        { trackId: 't-newest' },
+      ] as never);
+
+      const updates: unknown[] = [];
+      prisma.mainClient.$transaction.mockImplementation(async (ops: unknown) => {
+        if (Array.isArray(ops)) {
+          for (const op of ops) {
+            updates.push(op);
+          }
+        }
+        return undefined;
+      });
+
+      await repository.sortPlaylistTracksByAddedAt('pl-1', 'asc');
+
+      expect(prisma.client.playlistTrack.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { playlistId: 'pl-1', deletedAt: null },
+          orderBy: [{ addedAt: 'asc' }, { trackId: 'asc' }],
+          select: { trackId: true },
+        }),
+      );
+      expect(prisma.mainClient.$transaction).toHaveBeenCalledTimes(1);
+      expect(updates).toHaveLength(2);
+    });
+
+    it('does not call transaction when playlist has no tracks', async () => {
+      prisma.client.playlistTrack.findMany.mockResolvedValue([]);
+
+      await repository.sortPlaylistTracksByAddedAt('pl-1', 'desc');
+
+      expect(prisma.mainClient.$transaction).not.toHaveBeenCalled();
+    });
+  });
 });
