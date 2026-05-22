@@ -2,7 +2,13 @@ import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { Transform } from '@dnd-kit/utilities';
-import { albumBuilder, artistBuilder, audioFileBuilder, imageBuilder, trackBuilder } from '@repo/testing';
+import {
+  albumBuilder,
+  artistBuilder,
+  audioFileBuilder,
+  imageBuilder,
+  trackBuilder,
+} from '@repo/testing';
 import { ProcessingStatus, Visibility } from '@repo/db';
 import type { ZodAlbum, ZodArtist, ZodAudioFile, ZodTrack } from '@repo/contracts';
 import type { PropsWithChildren } from 'react';
@@ -54,7 +60,9 @@ function testTrack(
   });
 }
 
-function testArtist(overrides: Partial<Parameters<typeof artistBuilder>[0]> & { name: string }): ZodArtist {
+function testArtist(
+  overrides: Partial<Parameters<typeof artistBuilder>[0]> & { name: string },
+): ZodArtist {
   return artistBuilder(overrides);
 }
 
