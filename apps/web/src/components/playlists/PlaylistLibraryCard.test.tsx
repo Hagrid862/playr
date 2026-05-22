@@ -2,7 +2,7 @@ import { imageBuilder } from '@repo/testing';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { toast } from 'sonner';
-import { PropsWithChildren } from 'react';
+import type { MouseEventHandler, PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlaylistLibraryCard } from './PlaylistLibraryCard';
 import { PlaylistSystemRole } from '@repo/db';
@@ -37,8 +37,14 @@ vi.mock('@/hooks/api/library-playlists/useLibraryPlaylistMutations', () => ({
 }));
 
 const navigateMock = vi.fn();
+
+type MockLinkProps = PropsWithChildren<{
+  to: string;
+  params?: Record<string, string>;
+}>;
+
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, params }: any) => (
+  Link: ({ children, to, params }: MockLinkProps) => (
     <a href={to} data-params={JSON.stringify(params)} data-testid="mock-link">
       {children}
     </a>
@@ -87,7 +93,7 @@ vi.mock('@/components/ui/alert-dialog', () => ({
     children,
     onClick,
     disabled,
-  }: PropsWithChildren<{ onClick?: any; disabled?: boolean }>) => (
+  }: PropsWithChildren<{ onClick?: MouseEventHandler<HTMLButtonElement>; disabled?: boolean }>) => (
     <button type="button" onClick={onClick} disabled={disabled}>
       {children}
     </button>
@@ -96,7 +102,7 @@ vi.mock('@/components/ui/alert-dialog', () => ({
     children,
     onClick,
     disabled,
-  }: PropsWithChildren<{ onClick?: any; disabled?: boolean }>) => (
+  }: PropsWithChildren<{ onClick?: MouseEventHandler<HTMLButtonElement>; disabled?: boolean }>) => (
     <button type="button" onClick={onClick} disabled={disabled}>
       {children}
     </button>
@@ -113,7 +119,7 @@ vi.mock('@/components/ui/context-menu', () => ({
   ContextMenuContent: ({ children }: PropsWithChildren) => (
     <div data-testid="mock-context-menu-content">{children}</div>
   ),
-  ContextMenuItem: ({ children, onSelect }: any) => {
+  ContextMenuItem: ({ children, onSelect }: PropsWithChildren<{ onSelect?: () => void }>) => {
     return (
       <button type="button" onClick={onSelect}>
         {children}

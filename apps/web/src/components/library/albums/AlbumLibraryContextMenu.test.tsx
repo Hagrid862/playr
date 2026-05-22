@@ -1,6 +1,7 @@
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { toast } from 'sonner';
+import type { ComponentPropsWithoutRef } from 'react';
 import { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlbumLibraryContextMenu } from './AlbumLibraryContextMenu';
@@ -21,7 +22,8 @@ vi.mock('@/hooks/api/library-albums/useDeleteLibraryAlbum', () => ({
 const useAlbumLibraryActionsMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/useAlbumLibraryActions', () => ({
-  useAlbumLibraryActions: (args: any) => useAlbumLibraryActionsMock(args),
+  useAlbumLibraryActions: (args: { albumId: string; albumName: string }) =>
+    useAlbumLibraryActionsMock(args),
 }));
 
 vi.mock('@/components/playlists/AddAlbumToPlaylistSubmenu', () => ({
@@ -117,8 +119,16 @@ vi.mock('@/components/ui/checkbox', () => ({
   ),
 }));
 
+type MockContextMenuItemProps = ComponentPropsWithoutRef<'button'> & { asChild?: boolean };
+
 vi.mock('@/components/ui/context-menu', () => ({
-  ContextMenuItem: ({ children, onClick, disabled, asChild, ...props }: any) => {
+  ContextMenuItem: ({
+    children,
+    onClick,
+    disabled,
+    asChild,
+    ...props
+  }: MockContextMenuItemProps) => {
     if (asChild) return <>{children}</>;
     return (
       <button type="button" onClick={onClick} disabled={disabled} {...props}>

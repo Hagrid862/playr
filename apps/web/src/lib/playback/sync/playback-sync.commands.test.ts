@@ -684,7 +684,7 @@ describe('playback-sync commands', () => {
       const apply = vi.mocked(usePlayerStore.getState().applyPlaybackStateFromServer);
 
       mockSocket.emit.mockImplementation(
-        (event: string, data: any, callback: (r: EmitCallbackPayload) => void) => {
+        (event: string, data: unknown, callback: (r: EmitCallbackPayload) => void) => {
           expect(event).toBe('command:set-favorite-state');
           expect(data).toEqual({ favorite: 'favorited', expectedVersion: 10 });
           callback(playbackStateFixture({ version: 11 }));
@@ -724,7 +724,7 @@ describe('playback-sync commands', () => {
           if (event === 'command:set-favorite-state') {
             callback({ error: 'version mismatch', code: 'CONFLICT' });
           } else if (event === 'query:get-state') {
-            callback(null as any);
+            callback(null);
           }
         },
       );
@@ -765,7 +765,7 @@ describe('playback-sync commands', () => {
       mockSocket.emit.mockImplementation(
         (event: string, _data: unknown, callback: (r: EmitCallbackPayload) => void) => {
           if (event === 'command:set-favorite-state') {
-            callback({} as any);
+            callback({} as EmitCallbackPayload);
           }
         },
       );

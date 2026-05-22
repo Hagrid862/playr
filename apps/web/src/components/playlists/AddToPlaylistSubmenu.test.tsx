@@ -1,37 +1,64 @@
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import type { ComponentPropsWithoutRef, PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddToPlaylistSubmenu } from './AddToPlaylistSubmenu';
 import { PlaylistSystemRole } from '@repo/db';
+import type { GetLibraryPlaylistsResponse, LibraryPlaylistListItem } from '@repo/contracts';
+import { imageBuilder } from '@repo/testing';
 
 const addTrackMock = vi.fn();
 const createPlaylistMock = vi.fn();
 
-const mockPlaylists = {
-  current: {
+const testMeta: GetLibraryPlaylistsResponse['meta'] = {
+  timestamp: '2020-01-01T00:00:00.000Z',
+  requestId: 'req-test',
+  path: '/library/playlists',
+};
+
+function playlistListItem(
+  overrides: Pick<LibraryPlaylistListItem, 'id' | 'name'> &
+    Partial<Omit<LibraryPlaylistListItem, 'id' | 'name'>>,
+): LibraryPlaylistListItem {
+  return {
+    systemRole: null,
+    pinned: false,
+    pinOrder: null,
+    pinId: null,
+    cover: null,
+    trackCount: 1,
+    ...overrides,
+  };
+}
+
+function defaultPlaylistsResponse(): GetLibraryPlaylistsResponse {
+  return {
+    success: true,
     data: {
       items: [
-        {
+        playlistListItem({
           id: 'playlist-favorites',
           name: 'My Favorites',
           systemRole: PlaylistSystemRole.favorites,
-          cover: null,
-        },
-        {
+        }),
+        playlistListItem({
           id: 'playlist-custom-cover',
           name: 'Chill Mix',
-          systemRole: null,
-          cover: { url: 'https://example.com/chill.jpg' },
-        },
-        {
+          cover: imageBuilder({ url: 'https://example.com/chill.jpg' }),
+        }),
+        playlistListItem({
           id: 'playlist-no-cover',
           name: 'Rock Vibes',
-          systemRole: null,
-          cover: null,
-        },
+        }),
       ],
     },
-  } as any,
+    error: null,
+    meta: testMeta,
+  };
+}
+
+const mockPlaylists: { current: GetLibraryPlaylistsResponse | null } = {
+  current: defaultPlaylistsResponse(),
 };
 
 vi.mock('@/hooks/api/library-playlists', () => ({
@@ -45,34 +72,48 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('@/components/ui/dialog', () => ({
-  Dialog: ({ children, open, onOpenChange }: any) =>
+  Dialog: ({
+    children,
+    open,
+    onOpenChange,
+  }: PropsWithChildren<{ open?: boolean; onOpenChange?: (open: boolean) => void }>) =>
     open ? (
       <div data-testid="mock-dialog">
-        <button type="button" data-testid="close-dialog-btn" onClick={() => onOpenChange(false)}>
+        <button type="button" data-testid="close-dialog-btn" onClick={() => onOpenChange?.(false)}>
           Close
         </button>
         {children}
       </div>
     ) : null,
-  DialogContent: ({ children }: any) => <div data-testid="mock-dialog-content">{children}</div>,
-  DialogHeader: ({ children }: any) => <div data-testid="mock-dialog-header">{children}</div>,
-  DialogTitle: ({ children }: any) => <h2 data-testid="mock-dialog-title">{children}</h2>,
-  DialogFooter: ({ children }: any) => <div data-testid="mock-dialog-footer">{children}</div>,
+  DialogContent: ({ children }: PropsWithChildren) => (
+    <div data-testid="mock-dialog-content">{children}</div>
+  ),
+  DialogHeader: ({ children }: PropsWithChildren) => (
+    <div data-testid="mock-dialog-header">{children}</div>
+  ),
+  DialogTitle: ({ children }: PropsWithChildren) => (
+    <h2 data-testid="mock-dialog-title">{children}</h2>
+  ),
+  DialogFooter: ({ children }: PropsWithChildren) => (
+    <div data-testid="mock-dialog-footer">{children}</div>
+  ),
 }));
 
 vi.mock('@/components/ui/context-menu', () => ({
-  ContextMenuItem: ({ children, onClick, disabled }: any) => (
+  ContextMenuItem: ({ children, onClick, disabled }: ComponentPropsWithoutRef<'button'>) => (
     <button type="button" onClick={onClick} disabled={disabled}>
       {children}
     </button>
   ),
-  ContextMenuPortal: ({ children }: any) => <>{children}</>,
+  ContextMenuPortal: ({ children }: PropsWithChildren) => <>{children}</>,
   ContextMenuSeparator: () => <hr data-testid="menu-separator" />,
-  ContextMenuSub: ({ children }: any) => <div data-testid="mock-context-sub">{children}</div>,
-  ContextMenuSubContent: ({ children }: any) => (
+  ContextMenuSub: ({ children }: PropsWithChildren) => (
+    <div data-testid="mock-context-sub">{children}</div>
+  ),
+  ContextMenuSubContent: ({ children }: PropsWithChildren) => (
     <div data-testid="mock-context-sub-content">{children}</div>
   ),
-  ContextMenuSubTrigger: ({ children }: any) => (
+  ContextMenuSubTrigger: ({ children }: PropsWithChildren) => (
     <div data-testid="mock-context-sub-trigger">{children}</div>
   ),
 }));
@@ -86,30 +127,7 @@ import { toast } from 'sonner';
 describe('AddToPlaylistSubmenu', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPlaylists.current = {
-      data: {
-        items: [
-          {
-            id: 'playlist-favorites',
-            name: 'My Favorites',
-            systemRole: PlaylistSystemRole.favorites,
-            cover: null,
-          },
-          {
-            id: 'playlist-custom-cover',
-            name: 'Chill Mix',
-            systemRole: null,
-            cover: { url: 'https://example.com/chill.jpg' },
-          },
-          {
-            id: 'playlist-no-cover',
-            name: 'Rock Vibes',
-            systemRole: null,
-            cover: null,
-          },
-        ],
-      },
-    };
+    mockPlaylists.current = defaultPlaylistsResponse();
   });
 
   it('renders context menu items properly with system roles and custom covers', () => {

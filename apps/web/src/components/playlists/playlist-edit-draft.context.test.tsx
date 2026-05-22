@@ -1,10 +1,12 @@
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import type { DragEndEvent } from '@dnd-kit/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlaylistEditDraftProvider, usePlaylistEditDraft } from './playlist-edit-draft.context';
 import { PlaylistSystemRole } from '@repo/db';
 import { toast } from 'sonner';
 import { ApiError } from '@/lib/api-error';
+import type { PlaylistTrackSort } from '@repo/contracts';
 
 // Mock mutations
 const updatePlaylistMock = vi.fn();
@@ -24,8 +26,10 @@ vi.mock('@/hooks/api/library-playlists/useLibraryPlaylistMutations', () => ({
 }));
 
 vi.mock('@/hooks/api/library-playlists/useLibraryPlaylistDetail', () => ({
-  useLibraryPlaylistDetail: (playlistId: string, options: any) =>
-    useLibraryPlaylistDetailMock(playlistId, options),
+  useLibraryPlaylistDetail: (
+    playlistId: string,
+    options?: { page?: number; limit?: number; sort?: PlaylistTrackSort },
+  ) => useLibraryPlaylistDetailMock(playlistId, options),
 }));
 
 vi.mock('@/hooks/api/library-playlists/useLibraryPlaylists', () => ({
@@ -52,7 +56,6 @@ function ConsumerComponent({
 }) {
   const {
     playlistId,
-    detail: _detail,
     isLoading,
     isSaving,
     initialSnapshot,
@@ -60,7 +63,6 @@ function ConsumerComponent({
     setDraftName,
     titleError,
     setTitleError,
-    coverFile: _coverFile,
     setCoverFile,
     removeCover,
     scheduleRemoveCover,
@@ -132,7 +134,7 @@ function ConsumerComponent({
           reorderTracksFromDragEnd({
             active: { id: 'track-2' },
             over: { id: 'track-1' },
-          } as any)
+          } as DragEndEvent)
         }
       >
         Reorder Valid
@@ -143,7 +145,7 @@ function ConsumerComponent({
           reorderTracksFromDragEnd({
             active: { id: 'track-1' },
             over: { id: 'track-1' },
-          } as any)
+          } as DragEndEvent)
         }
       >
         Reorder Same
@@ -154,7 +156,7 @@ function ConsumerComponent({
           reorderTracksFromDragEnd({
             active: { id: 'track-1' },
             over: null,
-          } as any)
+          } as DragEndEvent)
         }
       >
         Reorder No Over
@@ -165,7 +167,7 @@ function ConsumerComponent({
           reorderTracksFromDragEnd({
             active: { id: 'track-missing' },
             over: { id: 'track-1' },
-          } as any)
+          } as DragEndEvent)
         }
       >
         Reorder Missing
@@ -828,7 +830,7 @@ describe('PlaylistEditDraftProvider Context Suite', () => {
               items: undefined,
             },
           },
-        } as any);
+        } as { data: unknown });
 
         customRender(
           <PlaylistEditDraftProvider playlistId="playlist-123">

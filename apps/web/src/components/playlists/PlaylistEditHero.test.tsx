@@ -1,26 +1,63 @@
+import { imageBuilder } from '@repo/testing';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlaylistEditHero } from './PlaylistEditHero';
+import type { LibraryPlaylistDetailData } from './playlist-edit-draft.context';
 
 const setDraftNameMock = vi.fn();
 const setCoverFileMock = vi.fn();
 const scheduleRemoveCoverMock = vi.fn();
 const undoRemoveCoverMock = vi.fn();
 
-const mockDraft = {
-  detail: null as any,
+type PlaylistEditInitialSnapshot = {
+  name: string;
+  trackIds: string[];
+  hasCover: boolean;
+};
+
+function minimalPlaylistDetail(
+  overrides: Partial<LibraryPlaylistDetailData> = {},
+): LibraryPlaylistDetailData {
+  return {
+    id: 'playlist-123',
+    name: 'Chill Vibes',
+    systemRole: null,
+    cover: null,
+    tracks: [],
+    page: 1,
+    limit: 200,
+    totalTracks: 0,
+    ...overrides,
+  };
+}
+
+const mockDraft: {
+  detail: LibraryPlaylistDetailData | undefined;
+  draftName: string;
+  setDraftName: typeof setDraftNameMock;
+  titleError: string | null;
+  coverInputRef: { current: HTMLInputElement | null };
+  coverFile: File | null;
+  setCoverFile: typeof setCoverFileMock;
+  removeCover: boolean;
+  scheduleRemoveCover: typeof scheduleRemoveCoverMock;
+  undoRemoveCover: typeof undoRemoveCoverMock;
+  initialSnapshot: PlaylistEditInitialSnapshot | null;
+  draftTrackIds: string[];
+} = {
+  detail: undefined,
   draftName: 'My Playlist',
   setDraftName: setDraftNameMock,
-  titleError: null as string | null,
-  coverInputRef: { current: null as HTMLInputElement | null },
-  coverFile: null as File | null,
+  titleError: null,
+  coverInputRef: { current: null },
+  coverFile: null,
   setCoverFile: setCoverFileMock,
   removeCover: false,
   scheduleRemoveCover: scheduleRemoveCoverMock,
   undoRemoveCover: undoRemoveCoverMock,
-  initialSnapshot: null as any,
-  draftTrackIds: [] as string[],
+  initialSnapshot: null,
+  draftTrackIds: [],
 };
 
 vi.mock('@/components/playlists/playlist-edit-draft.context', () => ({
@@ -28,24 +65,19 @@ vi.mock('@/components/playlists/playlist-edit-draft.context', () => ({
 }));
 
 vi.mock('@/hooks/useObjectUrl', () => ({
-  useObjectUrl: (file: any) => (file ? 'blob://mock-object-url' : null),
+  useObjectUrl: (file: File | null | undefined) => (file ? 'blob://mock-object-url' : null),
 }));
 
 describe('PlaylistEditHero', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockDraft.detail = {
-      id: 'playlist-123',
-      name: 'Chill Vibes',
-      cover: null,
-      trackCount: 0,
-    };
+    mockDraft.detail = minimalPlaylistDetail();
     mockDraft.draftName = 'My Playlist';
     mockDraft.titleError = null;
     mockDraft.coverInputRef = { current: null };
     mockDraft.coverFile = null;
     mockDraft.removeCover = false;
-    mockDraft.initialSnapshot = { hasCover: false };
+    mockDraft.initialSnapshot = { name: 'Chill Vibes', trackIds: [], hasCover: false };
     mockDraft.draftTrackIds = ['track-1', 'track-2'];
   });
 
@@ -68,7 +100,7 @@ describe('PlaylistEditHero', () => {
   });
 
   it('displays the existing cover image if it exists', () => {
-    mockDraft.detail.cover = { url: 'https://example.com/cover.jpg' };
+    mockDraft.detail!.cover = imageBuilder({ url: 'https://example.com/cover.jpg' });
     const { container } = customRender(<PlaylistEditHero />);
 
     const images = container.querySelectorAll('img');
@@ -137,8 +169,8 @@ describe('PlaylistEditHero', () => {
   });
 
   it('triggers scheduleRemoveCover when clicking remove cover button', () => {
-    mockDraft.initialSnapshot.hasCover = true;
-    mockDraft.detail.cover = { url: 'https://example.com/cover.jpg' };
+    mockDraft.initialSnapshot = { ...mockDraft.initialSnapshot!, hasCover: true };
+    mockDraft.detail!.cover = imageBuilder({ url: 'https://example.com/cover.jpg' });
     customRender(<PlaylistEditHero />);
 
     const removeBtn = screen.getByRole('button', { name: /Remove cover/i });
@@ -148,7 +180,7 @@ describe('PlaylistEditHero', () => {
   });
 
   it('triggers undoRemoveCover when clicking undo remove button', () => {
-    mockDraft.initialSnapshot.hasCover = true;
+    mockDraft.initialSnapshot = { ...mockDraft.initialSnapshot!, hasCover: true };
     mockDraft.removeCover = true;
     customRender(<PlaylistEditHero />);
 

@@ -29,7 +29,7 @@ describe('share-app-link Lib Suite', () => {
   describe('shareOrCopyAppLink', () => {
     it('returns immediately if window is undefined', async () => {
       const originalWindow = global.window;
-      // @ts-ignore
+      // @ts-expect-error Tests temporarily delete global.window
       delete global.window;
 
       try {
@@ -70,7 +70,7 @@ describe('share-app-link Lib Suite', () => {
     });
 
     it('falls back to clipboard if navigator.share is not supported', async () => {
-      // @ts-ignore
+      // @ts-expect-error Tests temporarily delete navigator.share
       delete global.navigator.share;
       writeTextMock.mockResolvedValueOnce(undefined);
 
@@ -81,7 +81,7 @@ describe('share-app-link Lib Suite', () => {
     });
 
     it('displays error toast if copying to clipboard fails', async () => {
-      // @ts-ignore
+      // @ts-expect-error Tests temporarily delete navigator.share
       delete global.navigator.share;
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       writeTextMock.mockRejectedValueOnce(new Error('Clipboard failure'));
@@ -97,7 +97,7 @@ describe('share-app-link Lib Suite', () => {
   describe('albumPublicUrl', () => {
     it('returns relative path when window is undefined', () => {
       const originalWindow = global.window;
-      // @ts-ignore
+      // @ts-expect-error Tests temporarily delete global.window
       delete global.window;
 
       try {
