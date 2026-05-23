@@ -64,11 +64,22 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link to="/app/search" activeProps={{ 'data-active': 'true' }}>
+                <SidebarMenuButton 
+                    onClick={() => {
+                        const input = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+                        if (input) {
+                            input.focus();
+                        } else {
+                            navigate({ to: '/app' });
+                            setTimeout(() => {
+                                const input = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+                                if (input) input.focus();
+                            }, 100);
+                        }
+                    }}
+                >
                     <MagnifyingGlassIcon />
                     <span>Search</span>
-                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
