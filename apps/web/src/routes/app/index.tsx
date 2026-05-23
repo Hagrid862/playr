@@ -1,4 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router';
+import {createFileRoute} from '@tanstack/react-router';
+import {PageHeader} from "@/components/app/PageHeader";
+import {SearchInput} from "@/components/search/SearchInput";
 
 export const Route = createFileRoute('/app/')({
   component: App,
@@ -6,9 +8,12 @@ export const Route = createFileRoute('/app/')({
 
 function App() {
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="text-muted-foreground">Welcome to your dashboard.</p>
+    <div className="flex flex-col gap-4 p-4">
+      <PageHeader
+        title="Home"
+        actions={<SearchInput />}
+        centerActions
+      />
     </div>
   );
 }
