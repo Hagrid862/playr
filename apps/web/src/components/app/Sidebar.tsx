@@ -11,11 +11,12 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
-} from '@/components/ui/sidebar';
+} from '../ui/sidebar';
+import { Spinner } from '../ui/spinner';
 import { useAuthStore } from '@/stores/auth.store';
+import { useSearchPreferencesStore } from "@/stores/search-preferences.store";
 import {
   BooksIcon,
-  CircleNotchIcon,
   DiscIcon,
   GridFourIcon,
   HouseIcon,
@@ -36,6 +37,7 @@ import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
+  const { lastQuery } = useSearchPreferencesStore();
   const router = useRouter();
   const navigate = useNavigate();
   const { mutateAsync: logoutHook, isPending: logoutIsLoading } = useLogout();
@@ -67,15 +69,15 @@ export function AppSidebar() {
                 <SidebarMenuButton 
                   onClick={() => {
                     if (lastQuery) {
-                      navigate({
-                        to: '/app/search',
-                        search: {
-                            query: lastQuery,
-                            page: 1,
-                            pageSize: 20,
+                      navigate({ 
+                        to: '/app/search', 
+                        search: { 
+                            query: lastQuery, 
+                            page: 1, 
+                            pageSize: 20, 
                             filters: { visibility: 'public', categories: undefined },
                             orderBy: { field: 'relevance', direction: 'asc' }
-                        }
+                        } 
                       });
                     } else {
                       navigate({ to: '/app' });
@@ -217,7 +219,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} disabled={logoutIsLoading}>
-              {logoutIsLoading && <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {logoutIsLoading && <Spinner className="mr-2" />}
               <SignOutIcon />
               <span>Log out</span>
             </SidebarMenuButton>
