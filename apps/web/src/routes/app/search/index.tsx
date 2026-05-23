@@ -46,16 +46,15 @@ function SearchPage() {
   }
   const navigate = Route.useNavigate();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const { viewType, setViewType, setLastQuery } = useSearchPreferencesStore();
+  const { viewType, setViewType, searchHistory, addSearchToHistory, clearHistory } = useSearchPreferencesStore();
 
   useEffect(() => {
     if (search.query) {
-      setLastQuery(search.query);
+      addSearchToHistory(search.query);
     }
-  }, [search.query, setLastQuery]);
+  }, [search.query, addSearchToHistory]);
 
   const isLibrarySearch = search.filters?.visibility === 'private';
-
   const globalResults = useSearch(search, { enabled: !isLibrarySearch && !!search.query });
   const libraryResults = useLibrarySearch(search, { enabled: isLibrarySearch && !!search.query });
 
@@ -76,10 +75,34 @@ function SearchPage() {
                 initialValue={search.query}
             />
         </PageHeader>
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
-            Start searching...
-        </div>
+
+        {searchHistory.length > 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-6">
+            <div className="w-full max-w-md">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recent Searches</h2>
+                    <Button variant="ghost" size="sm" onClick={clearHistory} className="text-xs text-muted-foreground">Clear All</Button>
+                </div>
+                <div className="flex flex-col gap-2">
+                    {searchHistory.map((query) => (
+                        <button
+                            key={query}
+                            onClick={() => navigate({ search: (prev) => ({ ...prev, query }) })}
+                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left w-full"
+                        >
+                            <MagnifyingGlassIcon className="text-muted-foreground" />
+                            <span>{query}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+          </div>
+        ) : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
+                Start searching...
+            </div>
+        )}
       </div>
     );
   }
