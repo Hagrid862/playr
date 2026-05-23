@@ -75,7 +75,7 @@ function SearchPage() {
           <Button
             variant={isFiltersOpen ? "secondary" : "outline"}
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className="gap-2"
+            className=" gap-2"
           >
             <FunnelIcon weight={isFiltersOpen ? "fill" : "regular"} />
             Filters
