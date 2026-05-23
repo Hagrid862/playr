@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCreateLibrary, useLibrary } from '@/hooks/api/library';
 import { ApiError } from '@/lib/api-error';
 import { useLibraryStore } from '@/stores/library.store';
@@ -23,7 +24,7 @@ function RouteComponent() {
       return (
         <div className="flex flex-col items-center justify-center p-8 gap-4">
           <Spinner className="size-8 text-primary" />
-          <div className="animate-pulse text-muted-foreground text-lg">Loading your library...</div>
+          <Skeleton className="h-6 w-48 bg-stone-800" />
         </div>
       );
     }

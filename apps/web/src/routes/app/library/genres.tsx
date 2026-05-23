@@ -1,5 +1,6 @@
 import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLibraryGenresInfinite } from '@/hooks/api/library-genres/useLibraryGenresInfinite';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -51,7 +52,7 @@ function GenresLayout() {
             {isLoading ? (
               <div className="flex flex-col gap-2">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-12 w-full animate-pulse rounded-lg bg-accent/50" />
+                  <Skeleton key={i} className="h-12 w-full rounded-lg bg-accent/50" />
                 ))}
               </div>
             ) : (
@@ -103,7 +104,7 @@ function GenresLayout() {
               {isLoading ? (
                 <div className="flex flex-col gap-2 px-2">
                   {[...Array(8)].map((_, i) => (
-                    <div key={i} className="h-10 w-full animate-pulse rounded-lg bg-accent/50" />
+                    <Skeleton key={i} className="h-10 w-full rounded-lg bg-accent/50" />
                   ))}
                 </div>
               ) : (

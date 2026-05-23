@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Outlet, createFileRoute, useLocation, useRouter } from '@tanstack/react-router';
+import { SearchInput } from '@/components/search/SearchInput';
 
 export const Route = createFileRoute('/app/library/overview')({
   component: OverviewLayout,
@@ -58,24 +59,27 @@ function OverviewLayout() {
       <PageHeader
         title="Overview"
         showBackButton={!isIndex}
+        centerActions
         actions={
-          isIndex || isCategoryIndex ? (
-            <Select value={currentCategory} onValueChange={handleContentTypeChange}>
-              <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Select view" />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectGroup>
-                  <SelectItem value="all">All Content</SelectItem>
-                  <SelectItem value="private">Private Library</SelectItem>
-                  <SelectItem value="community">Community Library</SelectItem>
-                  <SelectItem value="public">Public Library</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          ) : null
+            (isIndex || isCategoryIndex) ? (
+                <Select value={currentCategory} onValueChange={handleContentTypeChange}>
+                <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                    <SelectGroup>
+                    <SelectItem value="all">All Content</SelectItem>
+                    <SelectItem value="private">Private Library</SelectItem>
+                    <SelectItem value="community">Community Library</SelectItem>
+                    <SelectItem value="public">Public Library</SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+                </Select>
+            ) : null
         }
-      />
+      >
+        <SearchInput lockedScope="library" className="max-w-xl" />
+      </PageHeader>
       <div className="flex-1">
         <Outlet />
       </div>
