@@ -535,8 +535,8 @@ export class SearchService {
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
           NULL::boolean as "explicit"
         FROM "genres" g
-        JOIN "libraries" l ON g."libraryId" = l.id
-        WHERE l."userId" = ${userId}
+        LEFT JOIN "libraries" l ON g."libraryId" = l.id
+        WHERE (l."userId" = ${userId} OR (g."libraryId" IS NULL AND g.kind = 'system'::"GenreKind"))
         AND (similarity(g.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR g.name ILIKE ${searchPattern})
         AND g."deletedAt" IS NULL
       `);
