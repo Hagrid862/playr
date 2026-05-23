@@ -37,7 +37,6 @@ import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
-  const { lastQuery } = useSearchPreferencesStore();
   const router = useRouter();
   const navigate = useNavigate();
   const { mutateAsync: logoutHook, isPending: logoutIsLoading } = useLogout();
@@ -66,30 +65,15 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => {
-                    if (lastQuery) {
-                      navigate({ 
-                        to: '/app/search', 
-                        search: { 
-                            query: lastQuery, 
-                            page: 1, 
-                            pageSize: 20, 
-                            filters: { visibility: 'public', categories: undefined },
-                            orderBy: { field: 'relevance', direction: 'asc' }
-                        } 
-                      });
-                    } else {
-                      navigate({ to: '/app' });
-                      setTimeout(() => {
-                        const input = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-                        if (input) input.focus();
-                      }, 100);
-                    }
-                  }}
-                >
+                <SidebarMenuButton asChild>
+                  <Link 
+                    to="/app/search"
+                    activeOptions={{ exact: false }}
+                    activeProps={{ 'data-active': 'true' }}
+                  >
                     <MagnifyingGlassIcon />
                     <span>Search</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
