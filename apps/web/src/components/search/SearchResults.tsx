@@ -1,4 +1,4 @@
-import { type SearchResultItem, type SearchResultsResponse } from "@repo/contracts";
+import { type SearchResultItem } from "@repo/contracts";
 import { MagnifyingGlassIcon, MusicNoteIcon, MicrophoneStageIcon, DiscIcon, PlaylistIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -58,6 +58,7 @@ export function SearchResults({ data, viewType = 'grid', isLibrarySearch = false
         key={`${result.type}-${result.id}`}
         onClick={() => handleItemClick(result)}
         className={cn(
+          // TODO make hover for both cases current code in temporally we must  add public content first
             "group flex items-center gap-4 p-4 rounded-xl transition-all active:scale-[1]",
             isLibrarySearch ? "cursor-pointer hover:bg-stone-900/40 hover:scale-[1.01]" : "cursor-default"
         )}
@@ -68,7 +69,7 @@ export function SearchResults({ data, viewType = 'grid', isLibrarySearch = false
         )}>
           {(result.coverUrl || result.avatarUrl) ? (
             <img 
-              src={result.coverUrl || result.avatarUrl || ''} 
+              src={result.coverUrl || result.avatarUrl || undefined} 
               alt={result.name} 
               className="h-full w-full object-cover"
             />
@@ -139,12 +140,11 @@ export function SearchResults({ data, viewType = 'grid', isLibrarySearch = false
         )}>
           {(result.coverUrl || result.avatarUrl) ? (
             <img 
-              src={result.coverUrl || result.avatarUrl || ''} 
+              src={result.coverUrl || result.avatarUrl || undefined} 
               alt={result.name} 
               className="h-full w-full object-cover"
             />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center">
+          ) : (            <div className="h-full w-full flex items-center justify-center">
               {result.type === 'artist' && <MicrophoneStageIcon size={40} className="text-stone-600" />}
               {result.type === 'album' && <DiscIcon size={40} className="text-stone-600" />}
               {result.type === 'track' && <MusicNoteIcon size={40} className="text-stone-600" />}

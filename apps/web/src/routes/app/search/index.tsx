@@ -83,15 +83,15 @@ function SearchPage() {
                     <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recent Searches</h2>
                     <Button variant="ghost" size="sm" onClick={clearHistory} className="text-xs text-muted-foreground">Clear All</Button>
                 </div>
-                <div className="flex flex-col gap-2">
-                    {searchHistory.map((query) => (
+                <div className="flex flex-col gap-1">
+                    {searchHistory.map((item) => (
                         <button
-                            key={query}
-                            onClick={() => navigate({ search: (prev) => ({ ...prev, query }) })}
-                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left w-full"
+                            key={item}
+                            onClick={() => navigate({ search: (prev) => ({ ...prev, query: item }) })}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-stone-900/40 transition-colors text-left w-full text-sm"
                         >
-                            <MagnifyingGlassIcon className="text-muted-foreground" />
-                            <span>{query}</span>
+                            <MagnifyingGlassIcon className="text-muted-foreground w-4 h-4" />
+                            <span className="text-white">{item}</span>
                         </button>
                     ))}
                 </div>

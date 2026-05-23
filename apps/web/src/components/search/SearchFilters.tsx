@@ -22,25 +22,33 @@ export function SearchFilters({ search, navigate }: SearchFiltersProps) {
               onCheckedChange={(checked) => navigate({
                 search: (prev: any) => ({
                   ...prev,
+                  page: 1,
                   filters: {
                     ...prev.filters,
-                    artist: { ...prev.filters?.artist, verified: checked || undefined },
-                    track: { ...prev.filters?.track, verified: checked || undefined },
-                    album: { ...prev.filters?.album, verified: checked || undefined }
+                    artist: { ...prev.filters?.artist, verified: checked === true ? true : undefined },
+                    track: { ...prev.filters?.track, verified: checked === true ? true : undefined },
+                    album: { ...prev.filters?.album, verified: checked === true ? true : undefined }
                   }
                 })
-              })}            />
-            <Label htmlFor="verified-only" className="cursor-pointer hover:text-white text-sm">Verified Artists Only</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
+              })}
+              />
+              <Label htmlFor="verified-only" className="cursor-pointer hover:text-white text-sm">Verified Artists Only</Label>
+              </div>
+              <div className="flex items-center gap-2">
+              <Checkbox
               id="no-explicit"
               checked={search.filters?.track?.explicit === false}
               onCheckedChange={(checked) => navigate({
-                search: (prev: any) => ({ ...prev, filters: { ...prev.filters, track: { ...prev.filters?.track, explicit: checked ? false : undefined } } })
+                search: (prev: any) => ({ 
+                  ...prev, 
+                  page: 1,
+                  filters: { 
+                    ...prev.filters, 
+                    track: { ...prev.filters?.track, explicit: checked === true ? false : undefined } 
+                  } 
+                })
               })}
-            />
-            <Label htmlFor="no-explicit" className="cursor-pointer hover:text-white text-sm">No Explicit Content</Label>
+              />            <Label htmlFor="no-explicit" className="cursor-pointer hover:text-white text-sm">No Explicit Content</Label>
           </div>
         </div>
       </div>
