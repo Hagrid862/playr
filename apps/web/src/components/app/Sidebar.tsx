@@ -14,7 +14,6 @@ import {
 } from '../ui/sidebar';
 import { Spinner } from '../ui/spinner';
 import { useAuthStore } from '@/stores/auth.store';
-import { useSearchPreferencesStore } from "@/stores/search-preferences.store";
 import {
   BooksIcon,
   DiscIcon,

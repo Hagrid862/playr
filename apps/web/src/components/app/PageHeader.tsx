@@ -11,12 +11,14 @@ export function PageHeader({
   showBackButton = false,
   onBackClick,
   centerActions = false,
+  children,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
   showBackButton?: boolean;
   centerActions?: boolean;
+  children?: ReactNode;
   /** When set, invoked instead of default `router.history.back()` */
   onBackClick?: () => void;
 }) {
@@ -32,8 +34,8 @@ export function PageHeader({
 
   return (
     <div className="flex flex-col gap-2">
-      {centerActions && actions ? (
-        <div className="flex items-center gap-4 mr-2">
+      {centerActions ? (
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
           {/* Left: title + optional back button */}
           <div className="flex gap-2 items-center flex-shrink-0">
             {showBackButton && (
@@ -46,10 +48,10 @@ export function PageHeader({
               {description && <p className="text-muted-foreground text-sm">{description}</p>}
             </div>
           </div>
-          {/* Center: actions (e.g. search bar) — pulled up with negative margin so it visually rises above the header row */}
-          <div className="flex-1 flex items-center justify-center -mt-3">{actions}</div>
-          {/* Right: empty spacer to balance the layout */}
-          <div className="flex-shrink-0" />
+          {/* Center: children */}
+          <div className="flex items-center justify-center w-full">{children}</div>
+          {/* Right: actions */}
+          <div className="flex-shrink-0 w-[180px] flex justify-end">{actions}</div>
         </div>
       ) : (
         <div className="flex items-center justify-between mr-2">
