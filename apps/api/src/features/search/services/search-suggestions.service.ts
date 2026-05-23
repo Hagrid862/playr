@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Prisma } from '@repo/db';
 import { PrismaService } from '@/shared/services/prisma.service';
-import type { LibrarySearchSuggestionsResults, SearchSuggestionsResults } from '@repo/contracts';
+import type { LibrarySearchSuggestionsData, SearchSuggestionsData } from '@repo/contracts';
 import { AlbumType, Visibility } from '@repo/db';
 import { FUZZY_SEARCH_SIMILARITY } from '@/features/search/constants/search.constants';
 
@@ -20,7 +20,7 @@ interface RawSearchResult {
 export class SearchSuggestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async searchSuggestions(query: string, userId?: string): Promise<SearchSuggestionsResults> {
+  async searchSuggestions(query: string, userId?: string): Promise<SearchSuggestionsData> {
     let loggedIn = false;
 
     if (!userId) {
@@ -141,7 +141,7 @@ export class SearchSuggestionsService {
     userId: string,
     query: string,
     types?: ('artist' | 'album' | 'track' | 'playlist' | 'genre')[],
-  ): Promise<LibrarySearchSuggestionsResults> {
+  ): Promise<LibrarySearchSuggestionsData> {
     if (!query || query.trim().length < 3) {
       throw new BadRequestException('Query is too short or invalid');
     }

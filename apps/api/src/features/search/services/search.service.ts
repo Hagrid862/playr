@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Prisma } from '@repo/db';
 import { PrismaService } from '@/shared/services/prisma.service';
-import type { LibrarySearchResultsResponse, SearchQuery, SearchResultsResponse } from '@repo/contracts';
+import type { LibrarySearchResultsData, SearchQuery, SearchResultsData } from '@repo/contracts';
 import { AlbumType, Visibility } from '@repo/db';
 import { FUZZY_SEARCH_SIMILARITY } from '@/features/search/constants/search.constants';
 
@@ -14,6 +14,8 @@ interface RawSearchResult {
   score: number;
   coverUrl: string | null;
   avatarUrl: string | null;
+  authorName: string | null;
+  authorId: string | null;
   createdAt: Date;
   releaseDate: Date | null;
   duration: number | null;
@@ -27,7 +29,7 @@ interface RawSearchResult {
 export class SearchService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async search(userId: string | null, searchQuery: SearchQuery): Promise<SearchResultsResponse> {
+  async search(userId: string | null, searchQuery: SearchQuery): Promise<SearchResultsData> {
     let loggedIn = false;
 
     if (!userId) {
@@ -49,7 +51,7 @@ export class SearchService {
     const page = searchQuery.page;
     const pageSize = searchQuery.pageSize;
     const offset = (page - 1) * pageSize;
-    const isAuthenticated = userId !== null;
+    const isAuthenticated = true;
 
     // ── Determine which entity categories to query ─────────────────────
     const targetCategories = filters?.categories ?? ['artist', 'album', 'track', 'playlist', 'genre'];
@@ -111,11 +113,21 @@ export class SearchService {
       }
     }
 
-    if (filters?.artist?.verified !== undefined) {
-      artistConditions.push(Prisma.sql`a.verified = ${filters.artist.verified}`);
+    // Artist Filters
+    if (filters?.artist?.verified === true) {
+      artistConditions.push(Prisma.sql`a.verified = true`);
     }
     if (filters?.artist?.isCommunity !== undefined) {
       artistConditions.push(Prisma.sql`a."isCommunity" = ${filters.artist.isCommunity}`);
+    }
+
+    // Cross-entity Verified Artist Filter
+    // If ANY verified filter is set to true (from general or specific group),
+    // apply it to albums and tracks by checking their associated artists.
+    const isVerifiedOnly = filters?.artist?.verified || filters?.album?.verified || filters?.track?.verified;
+    if (isVerifiedOnly) {
+      albumConditions.push(Prisma.sql`EXISTS (SELECT 1 FROM "_AlbumArtists" rel JOIN "artists" art ON rel."B" = art.id WHERE rel."A" = al.id AND art.verified = true)`);
+      trackConditions.push(Prisma.sql`EXISTS (SELECT 1 FROM "_TrackArtists" rel JOIN "artists" art ON rel."A" = art.id WHERE rel."B" = t.id AND art.verified = true)`);
     }
 
     if (filters?.album?.type) {
@@ -188,6 +200,7 @@ export class SearchService {
           similarity(a.name, ${trimmedQuery}) as score,
           NULL::text as "coverUrl",
           avatar.url as "avatarUrl",
+          NULL::text as "authorName", NULL::text as "authorId",
           a."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -207,12 +220,20 @@ export class SearchService {
           similarity(al.name, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
+          primary_artist.name as "authorName", primary_artist.id as "authorId",
           al."createdAt", al."releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
           NULL::boolean as "explicit"
         FROM "albums" al
         LEFT JOIN "images" cover ON al."coverId" = cover.id
+        LEFT JOIN LATERAL (
+          SELECT art.id, art.name
+          FROM "_AlbumArtists" rel
+          JOIN "artists" art ON rel."B" = art.id
+          WHERE rel."A" = al.id
+          LIMIT 1
+        ) primary_artist ON TRUE
         WHERE ${Prisma.join(albumConditions, ' AND ')}
       `);
       needsUnionAll = true;
@@ -226,6 +247,7 @@ export class SearchService {
           similarity(t.title, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
+          primary_artist.name as "authorName", primary_artist.id as "authorId",
           t."createdAt", NULL::timestamp as "releaseDate",
           t.duration, t."listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -233,6 +255,13 @@ export class SearchService {
         FROM "tracks" t
         LEFT JOIN "albums" al ON t."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
+        LEFT JOIN LATERAL (
+          SELECT art.id, art.name
+          FROM "_TrackArtists" rel
+          JOIN "artists" art ON rel."A" = art.id
+          WHERE rel."B" = t.id
+          LIMIT 1
+        ) primary_artist ON TRUE
         WHERE ${Prisma.join(trackConditions, ' AND ')}
       `);
       needsUnionAll = true;
@@ -247,6 +276,7 @@ export class SearchService {
           similarity(p.name, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
+          NULL::text as "authorName", NULL::text as "authorId",
           p."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           p."isPublic", p."isCollaborative",
@@ -266,6 +296,7 @@ export class SearchService {
           similarity(g.name, ${trimmedQuery}) as score,
           NULL::text as "coverUrl",
           NULL::text as "avatarUrl",
+          NULL::text as "authorName", NULL::text as "authorId",
           g."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -299,7 +330,7 @@ export class SearchService {
     // ── Fetch paginated results ───────────────────────────────────
     const results = await this.prisma.extended.$queryRaw<RawSearchResult[]>`
       WITH unified AS (${combinedQuery})
-      SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl",
+      SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl", "authorName", "authorId",
              "createdAt", "releaseDate", duration, "listenedCount", "isPublic", "isCollaborative", "explicit"
       FROM unified
       ORDER BY ${Prisma.raw(orderByClause)}
@@ -320,6 +351,8 @@ export class SearchService {
         explicit: r.explicit,
         coverUrl: r.coverUrl,
         avatarUrl: r.avatarUrl,
+        authorName: r.authorName,
+        authorId: r.authorId,
       })),
       loggedIn,
       total,
@@ -330,7 +363,7 @@ export class SearchService {
     };
   }
 
-  async librarySearch(userId: string, searchQuery: SearchQuery): Promise<LibrarySearchResultsResponse> {
+  async librarySearch(userId: string, searchQuery: SearchQuery): Promise<LibrarySearchResultsData> {
     if (!searchQuery.query || searchQuery.query.trim().length < 2) {
       throw new BadRequestException('Query is too short or invalid');
     }
@@ -385,6 +418,7 @@ export class SearchService {
           similarity(a.name, ${trimmedQuery}) as score,
           NULL::text as "coverUrl",
           avatar.url as "avatarUrl",
+          NULL::text as "authorName", NULL::text as "authorId",
           a."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -408,6 +442,7 @@ export class SearchService {
           similarity(al.name, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
+          primary_artist.name as "authorName", primary_artist.id as "authorId",
           al."createdAt", al."releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -416,6 +451,13 @@ export class SearchService {
         JOIN "library_albums" lb ON al.id = lb."albumId"
         JOIN "libraries" l ON lb."libraryId" = l.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
+        LEFT JOIN LATERAL (
+          SELECT art.id, art.name
+          FROM "_AlbumArtists" rel
+          JOIN "artists" art ON rel."B" = art.id
+          WHERE rel."A" = al.id
+          LIMIT 1
+        ) primary_artist ON TRUE
         WHERE l."userId" = ${userId}
         AND (similarity(al.name, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR al.name ILIKE ${searchPattern})
         AND al."deletedAt" IS NULL
@@ -431,6 +473,7 @@ export class SearchService {
           similarity(t.title, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
+          primary_artist.name as "authorName", primary_artist.id as "authorId",
           t."createdAt", NULL::timestamp as "releaseDate",
           t.duration, t."listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -440,6 +483,13 @@ export class SearchService {
         JOIN "libraries" l ON lt."libraryId" = l.id
         LEFT JOIN "albums" al ON t."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
+        LEFT JOIN LATERAL (
+          SELECT art.id, art.name
+          FROM "_TrackArtists" rel
+          JOIN "artists" art ON rel."A" = art.id
+          WHERE rel."B" = t.id
+          LIMIT 1
+        ) primary_artist ON TRUE
         WHERE l."userId" = ${userId}
         AND (similarity(t.title, ${trimmedQuery}) > ${FUZZY_SEARCH_SIMILARITY} OR t.title ILIKE ${searchPattern})
         AND t."deletedAt" IS NULL
@@ -456,6 +506,7 @@ export class SearchService {
           similarity(p.name, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
+          NULL::text as "authorName", NULL::text as "authorId",
           p."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           p."isPublic", p."isCollaborative",
@@ -478,6 +529,7 @@ export class SearchService {
           similarity(g.name, ${trimmedQuery}) as score,
           NULL::text as "coverUrl",
           NULL::text as "avatarUrl",
+          NULL::text as "authorName", NULL::text as "authorId",
           g."createdAt", NULL::timestamp as "releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -513,7 +565,7 @@ export class SearchService {
     // ── Fetch paginated results ───────────────────────────────────
     const results = await this.prisma.extended.$queryRaw<RawSearchResult[]>`
       WITH unified AS (${combinedQuery})
-      SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl",
+      SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl", "authorName", "authorId",
              "createdAt", "releaseDate", duration, "listenedCount", "isPublic", "isCollaborative", "explicit"
       FROM unified
       ORDER BY ${Prisma.raw(orderByClause)}
@@ -534,6 +586,8 @@ export class SearchService {
         explicit: r.explicit,
         coverUrl: r.coverUrl,
         avatarUrl: r.avatarUrl,
+        authorName: r.authorName,
+        authorId: r.authorId,
       })),
       total,
       page,
