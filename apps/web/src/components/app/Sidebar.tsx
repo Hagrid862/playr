@@ -65,18 +65,26 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                    onClick={() => {
-                        const input = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-                        if (input) {
-                            input.focus();
-                        } else {
-                            navigate({ to: '/app' });
-                            setTimeout(() => {
-                                const input = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-                                if (input) input.focus();
-                            }, 100);
+                  onClick={() => {
+                    if (lastQuery) {
+                      navigate({
+                        to: '/app/search',
+                        search: {
+                            query: lastQuery,
+                            page: 1,
+                            pageSize: 20,
+                            filters: { visibility: 'public', categories: undefined },
+                            orderBy: { field: 'relevance', direction: 'asc' }
                         }
-                    }}
+                      });
+                    } else {
+                      navigate({ to: '/app' });
+                      setTimeout(() => {
+                        const input = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+                        if (input) input.focus();
+                      }, 100);
+                    }
+                  }}
                 >
                     <MagnifyingGlassIcon />
                     <span>Search</span>
