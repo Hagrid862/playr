@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AlbumType, Visibility } from "@repo/db";
+import { createApiResponseSchema } from "../../api/response.schema";
 
 export enum SearchResultType {
   Artist = "artist",
@@ -12,14 +13,14 @@ export enum SearchResultType {
 export const SearchSuggestionResultSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.enum(SearchResultType),
+  type: z.nativeEnum(SearchResultType),
   coverURL: z.string().nullable().optional(),
   avatarURL: z.string().nullable().optional(),
-  visibility: z.enum(Visibility),
-  albumType: z.enum(AlbumType).nullable().optional(),
+  visibility: z.nativeEnum(Visibility),
+  albumType: z.nativeEnum(AlbumType).nullable().optional(),
 });
 
-export const SearchSuggestionsResultsSchema = z.object({
+export const SearchSuggestionsDataSchema = z.object({
   results: z.array(SearchSuggestionResultSchema).refine(
     (data) => {
       return data.length <= 8;
@@ -31,8 +32,15 @@ export const SearchSuggestionsResultsSchema = z.object({
   loggedIn: z.boolean(),
 });
 
+export const SearchSuggestionsResultsSchema = createApiResponseSchema(
+  SearchSuggestionsDataSchema,
+);
+
 export type SearchSuggestionsResult = z.infer<
   typeof SearchSuggestionResultSchema
+>;
+export type SearchSuggestionsData = z.infer<
+  typeof SearchSuggestionsDataSchema
 >;
 export type SearchSuggestionsResults = z.infer<
   typeof SearchSuggestionsResultsSchema

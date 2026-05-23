@@ -4,6 +4,7 @@ import {
   SearchFiltersSchema,
   SearchOrderBySchema,
 } from "../request/search-query.request";
+import { createApiResponseSchema } from "../../api/response.schema";
 
 // ─── Base fields shared by every result item ───────────────────────
 // Mirrors SearchSuggestionResultSchema but adds `score` (relevance)
@@ -12,13 +13,15 @@ import {
 export const SearchResultBaseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.string(), // discriminated at union level
-  visibility: z.enum(Visibility),
-  albumType: z.enum(AlbumType).nullable().optional(),
+  type: z.enum(["artist", "album", "track", "playlist", "genre"]),
+  visibility: z.nativeEnum(Visibility),
+  albumType: z.nativeEnum(AlbumType).nullable().optional(),
   score: z.number(),
-  explicit: z.boolean().optional(),
+  explicit: z.boolean().nullable().optional(),
   coverUrl: z.string().nullable().optional(),
   avatarUrl: z.string().nullable().optional(),
+  authorName: z.string().nullable().optional(),
+  authorId: z.string().nullable().optional(),
 });
 
 // ─── Per-entity result schemas ─────────────────────────────────────
@@ -32,7 +35,7 @@ export const SearchArtistResultSchema = SearchResultBaseSchema.extend({
 
 export const SearchAlbumResultSchema = SearchResultBaseSchema.extend({
   type: z.literal("album"),
-  albumType: z.enum(AlbumType),
+  albumType: z.nativeEnum(AlbumType),
   releaseDate: z.string().datetime().nullable().optional(),
   totalTracks: z.number().int().nonnegative().optional(),
   totalDuration: z.number().int().nonnegative().optional(),
@@ -48,13 +51,17 @@ export const SearchTrackResultSchema = SearchResultBaseSchema.extend({
   listenedCount: z.number().int().nonnegative().optional(),
   albumId: z.string().optional(),
   lyrics: z.string().nullable().optional(),
-});
+}).refine((data) => data.explicit !== null && data.explicit !== undefined);
 
 export const SearchPlaylistResultSchema = SearchResultBaseSchema.extend({
   type: z.literal("playlist"),
   isPublic: z.boolean().optional(),
   description: z.string().nullable().optional(),
   trackCount: z.number().int().nonnegative().optional(),
+});
+
+export const SearchGenreResultSchema = SearchResultBaseSchema.extend({
+  type: z.literal("genre"),
 });
 
 // ─── Discriminated union of all result types ───────────────────────
@@ -64,6 +71,7 @@ export const SearchResultItemSchema = z.discriminatedUnion("type", [
   SearchAlbumResultSchema,
   SearchTrackResultSchema,
   SearchPlaylistResultSchema,
+  SearchGenreResultSchema,
 ]);
 
 // ─── Paginated search response ─────────────────────────────────────
@@ -71,7 +79,7 @@ export const SearchResultItemSchema = z.discriminatedUnion("type", [
 // Echoes back the active `filters` and `orderBy` so the client can
 // reconstruct the current UI state without reparsing the request.
 
-export const SearchResultsResponseSchema = z.object({
+export const SearchResultsDataSchema = z.object({
   results: z.array(SearchResultItemSchema),
 
   loggedIn: z.boolean(),
@@ -86,9 +94,14 @@ export const SearchResultsResponseSchema = z.object({
   orderBy: SearchOrderBySchema.nullable(),
 });
 
+export const SearchResultsResponseSchema = createApiResponseSchema(
+  SearchResultsDataSchema,
+);
+
 export type SearchResultItem = z.infer<typeof SearchResultItemSchema>;
 export type SearchArtistResult = z.infer<typeof SearchArtistResultSchema>;
 export type SearchAlbumResult = z.infer<typeof SearchAlbumResultSchema>;
 export type SearchTrackResult = z.infer<typeof SearchTrackResultSchema>;
 export type SearchPlaylistResult = z.infer<typeof SearchPlaylistResultSchema>;
+export type SearchResultsData = z.infer<typeof SearchResultsDataSchema>;
 export type SearchResultsResponse = z.infer<typeof SearchResultsResponseSchema>;

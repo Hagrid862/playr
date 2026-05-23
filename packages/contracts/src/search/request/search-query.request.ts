@@ -50,6 +50,10 @@ export const SearchArtistFiltersSchema = z.object({
 
 export const SearchAlbumFiltersSchema = z.object({
   type: z.enum(AlbumType).optional(),
+  verified: z.preprocess(
+    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
+    z.boolean().optional()
+  ),
   releaseDateFrom: z.string().datetime().optional(),
   releaseDateTo: z.string().datetime().optional(),
 });
@@ -57,7 +61,20 @@ export const SearchAlbumFiltersSchema = z.object({
 // ─── Track-specific filters ───────────────────────────────────────
 
 export const SearchTrackFiltersSchema = z.object({
-  explicit: z.coerce.boolean().optional(),
+  explicit: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        if (val.toLowerCase() === 'true') return true;
+        if (val.toLowerCase() === 'false') return false;
+      }
+      return val;
+    },
+    z.boolean().optional()
+  ),
+  verified: z.preprocess(
+    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
+    z.boolean().optional()
+  ),
   durationFrom: z.coerce.number().int().nonnegative().optional(),
   durationTo: z.coerce.number().int().nonnegative().optional(),
   minListenedCount: z.coerce.number().int().nonnegative().optional(),
@@ -66,8 +83,14 @@ export const SearchTrackFiltersSchema = z.object({
 // ─── Playlist-specific filters ────────────────────────────────────
 
 export const SearchPlaylistFiltersSchema = z.object({
-  isPublic: z.coerce.boolean().optional(),
-  isCollaborative: z.coerce.boolean().optional(),
+  isPublic: z.preprocess(
+    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
+    z.boolean().optional()
+  ),
+  isCollaborative: z.preprocess(
+    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
+    z.boolean().optional()
+  ),
 });
 
 // ─── Top-level filters bag ────────────────────────────────────────
