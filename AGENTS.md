@@ -3,6 +3,7 @@
 ## Architecture
 
 **Monorepo** powered by Turborepo. Key apps:
+
 - `apps/api` - NestJS backend with CQRS pattern
 - `apps/web` - TanStack Router + React frontend
 - `apps/e2e` - Playwright end-to-end tests
@@ -18,6 +19,7 @@
 **Start**: `pnpm dev` (assumes Docker Compose is running; see `.cursor/rules/never-run-pnpm-dev.mdc`).
 
 **Testing**:
+
 - Unit: `pnpm test:unit` (vitest)
 - Integration: `pnpm test:integration` (vitest with mocked Prisma)
 - E2E: `pnpm test:e2e` (Playwright)
@@ -29,11 +31,13 @@
 ## Key Patterns
 
 **API Testing** (from `.cursor/rules/api-testing.mdc`):
+
 - Unit tests: `createMock<T>()` and `DeepMocked<T>` from `@repo/testing/nestjs`
 - Builders: `trackBuilder`, `albumBuilder`, `userBuilder` from `@repo/testing`
 - Integration: `createIntegrationApp()` from `apps/api/integration/test-utils`
 
 **Web Testing** (from `.cursor/rules/web-testing.mdc`):
+
 - Co-locate `*.test.ts` with source
 - Use `customRender` or `customRenderWithRouter` from `@repo/testing/web`
 - Zustand: `vi.mocked(usePlayerStore).mockReturnValue(createPlayerStoreMock({...}))`
