@@ -195,7 +195,13 @@ describe('SearchController', () => {
       const user: User = userBuilder();
       const expectedResult = {
         data: [
-          { id: 'track-1', name: 'My Awesome Track', type: 'track', visibility: 'private', score: 1.0 },
+          {
+            id: 'track-1',
+            name: 'My Awesome Track',
+            type: 'track',
+            visibility: 'private',
+            score: 1.0,
+          },
         ],
         total: 1,
         page: 1,
@@ -287,13 +293,16 @@ describe('SearchController', () => {
       await controller.search(queryDto, user);
 
       expect(queryBus.execute).toHaveBeenCalledWith(
-        new SearchQueryImpl(user.id, expect.objectContaining({
-          query: 'jazz',
-          filters: expect.objectContaining({ categories: ['artist'] }),
-          orderBy: expect.objectContaining({ field: 'name', direction: 'desc' }),
-          page: 2,
-          pageSize: 10,
-        })),
+        new SearchQueryImpl(
+          user.id,
+          expect.objectContaining({
+            query: 'jazz',
+            filters: expect.objectContaining({ categories: ['artist'] }),
+            orderBy: expect.objectContaining({ field: 'name', direction: 'desc' }),
+            page: 2,
+            pageSize: 10,
+          }),
+        ),
       );
     });
 

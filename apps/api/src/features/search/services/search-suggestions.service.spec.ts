@@ -25,10 +25,7 @@ describe('SearchSuggestionsService', () => {
     });
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SearchSuggestionsService,
-        { provide: PrismaService, useValue: prismaService },
-      ],
+      providers: [SearchSuggestionsService, { provide: PrismaService, useValue: prismaService }],
     }).compile();
 
     service = module.get<SearchSuggestionsService>(SearchSuggestionsService);
@@ -36,21 +33,17 @@ describe('SearchSuggestionsService', () => {
 
   describe('searchSuggestions', () => {
     it('should throw UnauthorizedException when userId is not provided', async () => {
-      await expect(service.searchSuggestions('test')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.searchSuggestions('test')).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw BadRequestException when query is too short', async () => {
-      await expect(
-        service.searchSuggestions('ab', 'user-123'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.searchSuggestions('ab', 'user-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when query is empty', async () => {
-      await expect(service.searchSuggestions('', 'user-123')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.searchSuggestions('', 'user-123')).rejects.toThrow(BadRequestException);
     });
 
     it('should return search results when query is valid', async () => {
@@ -156,15 +149,15 @@ describe('SearchSuggestionsService', () => {
 
   describe('librarySearchSuggestions', () => {
     it('should throw BadRequestException when query is too short', async () => {
-      await expect(
-        service.librarySearchSuggestions('user-123', 'ab'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.librarySearchSuggestions('user-123', 'ab')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when query is empty', async () => {
-      await expect(
-        service.librarySearchSuggestions('user-123', ''),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.librarySearchSuggestions('user-123', '')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return search results when query is valid', async () => {
@@ -191,7 +184,14 @@ describe('SearchSuggestionsService', () => {
 
     it('should filter by artist category when specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'artist-1', name: 'Artist', type: 'artist', visibility: 'private', albumType: null, score: 0.8 },
+        {
+          id: 'artist-1',
+          name: 'Artist',
+          type: 'artist',
+          visibility: 'private',
+          albumType: null,
+          score: 0.8,
+        },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test', ['artist']);
@@ -201,7 +201,14 @@ describe('SearchSuggestionsService', () => {
 
     it('should filter by album category when specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'album-1', name: 'Album', type: 'album', visibility: 'private', albumType: 'album', score: 0.7 },
+        {
+          id: 'album-1',
+          name: 'Album',
+          type: 'album',
+          visibility: 'private',
+          albumType: 'album',
+          score: 0.7,
+        },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test', ['album']);
@@ -211,7 +218,14 @@ describe('SearchSuggestionsService', () => {
 
     it('should filter by track category when specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'track-1', name: 'Track', type: 'track', visibility: 'private', albumType: null, score: 0.6 },
+        {
+          id: 'track-1',
+          name: 'Track',
+          type: 'track',
+          visibility: 'private',
+          albumType: null,
+          score: 0.6,
+        },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test', ['track']);
@@ -221,7 +235,14 @@ describe('SearchSuggestionsService', () => {
 
     it('should filter by playlist category when specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'playlist-1', name: 'Playlist', type: 'playlist', visibility: 'private', albumType: null, score: 0.5 },
+        {
+          id: 'playlist-1',
+          name: 'Playlist',
+          type: 'playlist',
+          visibility: 'private',
+          albumType: null,
+          score: 0.5,
+        },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test', ['playlist']);
@@ -231,7 +252,14 @@ describe('SearchSuggestionsService', () => {
 
     it('should filter by genre category when specified (user library genre)', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'genre-1', name: 'Rock', type: 'genre', visibility: 'private', albumType: null, score: 0.4 },
+        {
+          id: 'genre-1',
+          name: 'Rock',
+          type: 'genre',
+          visibility: 'private',
+          albumType: null,
+          score: 0.4,
+        },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test', ['genre']);
@@ -241,7 +269,14 @@ describe('SearchSuggestionsService', () => {
 
     it('should filter by genre category when specified (public genre)', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'genre-2', name: 'Pop', type: 'genre', visibility: 'public', albumType: null, score: 0.3 },
+        {
+          id: 'genre-2',
+          name: 'Pop',
+          type: 'genre',
+          visibility: 'public',
+          albumType: null,
+          score: 0.3,
+        },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test', ['genre']);
@@ -251,8 +286,22 @@ describe('SearchSuggestionsService', () => {
 
     it('should search all categories when no categories specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'artist-1', name: 'Artist', type: 'artist', visibility: 'private', albumType: null, score: 0.8 },
-        { id: 'album-1', name: 'Album', type: 'album', visibility: 'private', albumType: 'album', score: 0.7 },
+        {
+          id: 'artist-1',
+          name: 'Artist',
+          type: 'artist',
+          visibility: 'private',
+          albumType: null,
+          score: 0.8,
+        },
+        {
+          id: 'album-1',
+          name: 'Album',
+          type: 'album',
+          visibility: 'private',
+          albumType: 'album',
+          score: 0.7,
+        },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test');
@@ -284,7 +333,7 @@ describe('SearchSuggestionsService', () => {
         type: 'artist' as const,
         visibility: 'private',
         albumType: null,
-        score: 0.9 - (i * 0.01), // Decreasing scores
+        score: 0.9 - i * 0.01, // Decreasing scores
       }));
       mockQueryRaw.mockResolvedValueOnce(mockResults);
 

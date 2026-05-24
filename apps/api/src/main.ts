@@ -14,9 +14,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
 
-  app.getHttpAdapter().getInstance().set('query parser', (str: string) => {
-    return qs.parse(str, { allowDots: true });
-  });
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .set('query parser', (str: string) => {
+      return qs.parse(str, { allowDots: true });
+    });
 
   app.use(cookieParser());
   app.useGlobalFilters(new GlobalExceptionFilter(app.get(ConfigService)));

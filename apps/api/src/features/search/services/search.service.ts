@@ -54,7 +54,13 @@ export class SearchService {
     const isAuthenticated = true;
 
     // ── Determine which entity categories to query ─────────────────────
-    const targetCategories = filters?.categories ?? ['artist', 'album', 'track', 'playlist', 'genre'];
+    const targetCategories = filters?.categories ?? [
+      'artist',
+      'album',
+      'track',
+      'playlist',
+      'genre',
+    ];
 
     // ── Build per-entity WHERE clauses ─────────────────────────────
     const artistConditions: Prisma.Sql[] = [
@@ -122,20 +128,29 @@ export class SearchService {
     }
 
     // Cross-entity Verified Artist Filter
-    const isVerifiedOnly = filters?.artist?.verified || filters?.album?.verified || filters?.track?.verified;
+    const isVerifiedOnly =
+      filters?.artist?.verified || filters?.album?.verified || filters?.track?.verified;
     if (isVerifiedOnly) {
-      albumConditions.push(Prisma.sql`EXISTS (SELECT 1 FROM "_AlbumArtists" rel JOIN "artists" art ON rel."B" = art.id WHERE rel."A" = al.id AND art.verified = true)`);
-      trackConditions.push(Prisma.sql`EXISTS (SELECT 1 FROM "_TrackArtists" rel JOIN "artists" art ON rel."A" = art.id WHERE rel."B" = t.id AND art.verified = true)`);
+      albumConditions.push(
+        Prisma.sql`EXISTS (SELECT 1 FROM "_AlbumArtists" rel JOIN "artists" art ON rel."B" = art.id WHERE rel."A" = al.id AND art.verified = true)`,
+      );
+      trackConditions.push(
+        Prisma.sql`EXISTS (SELECT 1 FROM "_TrackArtists" rel JOIN "artists" art ON rel."A" = art.id WHERE rel."B" = t.id AND art.verified = true)`,
+      );
     }
 
     if (filters?.album?.type) {
       albumConditions.push(Prisma.sql`al.type = ${filters.album.type}::"AlbumType"`);
     }
     if (filters?.album?.releaseDateFrom) {
-      albumConditions.push(Prisma.sql`al."releaseDate" >= ${new Date(filters.album.releaseDateFrom)}`);
+      albumConditions.push(
+        Prisma.sql`al."releaseDate" >= ${new Date(filters.album.releaseDateFrom)}`,
+      );
     }
     if (filters?.album?.releaseDateTo) {
-      albumConditions.push(Prisma.sql`al."releaseDate" <= ${new Date(filters.album.releaseDateTo)}`);
+      albumConditions.push(
+        Prisma.sql`al."releaseDate" <= ${new Date(filters.album.releaseDateTo)}`,
+      );
     }
 
     if (filters?.track?.explicit !== undefined) {
@@ -155,7 +170,9 @@ export class SearchService {
       playlistConditions.push(Prisma.sql`p."isPublic" = ${filters.playlist.isPublic}`);
     }
     if (filters?.playlist?.isCollaborative !== undefined) {
-      playlistConditions.push(Prisma.sql`p."isCollaborative" = ${filters.playlist.isCollaborative}`);
+      playlistConditions.push(
+        Prisma.sql`p."isCollaborative" = ${filters.playlist.isCollaborative}`,
+      );
     }
 
     // ── Build ORDER BY clause ─────────────────────────────────────
@@ -372,7 +389,13 @@ export class SearchService {
     const pageSize = searchQuery.pageSize;
     const offset = (page - 1) * pageSize;
 
-    const targetCategories = filters?.categories ?? ['artist', 'album', 'track', 'playlist', 'genre'];
+    const targetCategories = filters?.categories ?? [
+      'artist',
+      'album',
+      'track',
+      'playlist',
+      'genre',
+    ];
 
     // ── Build per-entity WHERE clauses ─────────────────────────────
     const artistConditions: Prisma.Sql[] = [
@@ -419,20 +442,29 @@ export class SearchService {
     }
 
     // Cross-entity Verified Artist Filter (Działa teraz w librarySearch)
-    const isVerifiedOnly = filters?.artist?.verified || filters?.album?.verified || filters?.track?.verified;
+    const isVerifiedOnly =
+      filters?.artist?.verified || filters?.album?.verified || filters?.track?.verified;
     if (isVerifiedOnly) {
-      albumConditions.push(Prisma.sql`EXISTS (SELECT 1 FROM "_AlbumArtists" rel JOIN "artists" art ON rel."B" = art.id WHERE rel."A" = al.id AND art.verified = true)`);
-      trackConditions.push(Prisma.sql`EXISTS (SELECT 1 FROM "_TrackArtists" rel JOIN "artists" art ON rel."A" = art.id WHERE rel."B" = t.id AND art.verified = true)`);
+      albumConditions.push(
+        Prisma.sql`EXISTS (SELECT 1 FROM "_AlbumArtists" rel JOIN "artists" art ON rel."B" = art.id WHERE rel."A" = al.id AND art.verified = true)`,
+      );
+      trackConditions.push(
+        Prisma.sql`EXISTS (SELECT 1 FROM "_TrackArtists" rel JOIN "artists" art ON rel."A" = art.id WHERE rel."B" = t.id AND art.verified = true)`,
+      );
     }
 
     if (filters?.album?.type) {
       albumConditions.push(Prisma.sql`al.type = ${filters.album.type}::"AlbumType"`);
     }
     if (filters?.album?.releaseDateFrom) {
-      albumConditions.push(Prisma.sql`al."releaseDate" >= ${new Date(filters.album.releaseDateFrom)}`);
+      albumConditions.push(
+        Prisma.sql`al."releaseDate" >= ${new Date(filters.album.releaseDateFrom)}`,
+      );
     }
     if (filters?.album?.releaseDateTo) {
-      albumConditions.push(Prisma.sql`al."releaseDate" <= ${new Date(filters.album.releaseDateTo)}`);
+      albumConditions.push(
+        Prisma.sql`al."releaseDate" <= ${new Date(filters.album.releaseDateTo)}`,
+      );
     }
 
     // Track Filters (Działa teraz explicit w librarySearch)
@@ -453,7 +485,9 @@ export class SearchService {
       playlistConditions.push(Prisma.sql`p."isPublic" = ${filters.playlist.isPublic}`);
     }
     if (filters?.playlist?.isCollaborative !== undefined) {
-      playlistConditions.push(Prisma.sql`p."isCollaborative" = ${filters.playlist.isCollaborative}`);
+      playlistConditions.push(
+        Prisma.sql`p."isCollaborative" = ${filters.playlist.isCollaborative}`,
+      );
     }
 
     // ── Build ORDER BY clause ─────────────────────────────────────

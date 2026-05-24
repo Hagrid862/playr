@@ -54,7 +54,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
     const result = await handler.execute(searchQuery);
 
-    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, categories);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(
+      userId,
+      query,
+      categories,
+    );
     expect(result).toEqual(mockResults);
   });
 
@@ -64,7 +68,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
     await handler.execute(queryWithoutCategories);
 
-    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, undefined);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(
+      userId,
+      query,
+      undefined,
+    );
   });
 
   it('should return empty results when suggestionsService returns empty results', async () => {
@@ -86,7 +94,9 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
     const result = await handler.execute(singleCategoryQuery);
 
-    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, ['track']);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, [
+      'track',
+    ]);
     expect(result).toEqual(trackResults);
   });
 
@@ -164,7 +174,9 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
     const result = await handler.execute(genreQuery);
 
-    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, ['genre']);
+    expect(suggestionsService.librarySearchSuggestions).toHaveBeenCalledWith(userId, query, [
+      'genre',
+    ]);
     expect(result).toEqual(genreResults);
   });
 });
