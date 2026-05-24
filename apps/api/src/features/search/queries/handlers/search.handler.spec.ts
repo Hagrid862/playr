@@ -1,6 +1,6 @@
 import { SearchService } from '@/features/search/services/search.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { SearchResultsResponse, SearchResultType } from '@repo/contracts';
+import { SearchResultsData } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchQueryImpl } from '../impl/search.query';
@@ -18,12 +18,12 @@ describe('SearchHandler', () => {
     pageSize: 20,
   });
 
-  const mockResults: SearchResultsResponse = {
+  const mockResults: SearchResultsData = {
     results: [
       {
         id: 'artist-1',
         name: 'Test Artist',
-        type: SearchResultType.Artist,
+        type: 'artist',
         visibility: 'public',
         score: 0.9,
         coverUrl: null,
@@ -36,15 +36,13 @@ describe('SearchHandler', () => {
       {
         id: 'album-1',
         name: 'Test Album',
-        type: SearchResultType.Album,
+        type: 'album',
         visibility: 'public',
         score: 0.8,
         coverUrl: 'https://example.com/cover.jpg',
         avatarUrl: null,
         albumType: 'album',
         releaseDate: '2024-01-01T00:00:00.000Z',
-        totalTracks: 10,
-        totalDuration: 3600,
         description: null,
       },
     ],
@@ -107,7 +105,7 @@ describe('SearchHandler', () => {
   });
 
   it('should return empty results when searchService returns empty results', async () => {
-    const emptyResults: SearchResultsResponse = {
+    const emptyResults: SearchResultsData = {
       results: [],
       loggedIn: true,
       total: 0,
@@ -132,12 +130,12 @@ describe('SearchHandler', () => {
   });
 
   it('should return all result types from searchService', async () => {
-    const allTypeResults: SearchResultsResponse = {
+    const allTypeResults: SearchResultsData = {
       results: [
         {
           id: 'artist-1',
           name: 'Artist',
-          type: SearchResultType.Artist,
+          type: 'artist',
           visibility: 'public',
           score: 0.9,
           coverUrl: null,
@@ -150,46 +148,38 @@ describe('SearchHandler', () => {
         {
           id: 'album-1',
           name: 'Album',
-          type: SearchResultType.Album,
+          type: 'album',
           visibility: 'public',
           score: 0.8,
           coverUrl: null,
           avatarUrl: null,
           albumType: 'album',
           releaseDate: '2024-01-01T00:00:00.000Z',
-          totalTracks: 10,
-          totalDuration: 3600,
           description: null,
         },
         {
           id: 'track-1',
           name: 'Track',
-          type: SearchResultType.Track,
+          type: 'track',
           visibility: 'public',
           score: 0.7,
           coverUrl: null,
           avatarUrl: null,
           albumType: null,
           duration: 180,
-          trackNumber: 1,
-          diskNumber: 1,
           explicit: true,
           listenedCount: 100,
-          albumId: 'album-1',
-          lyrics: null,
         },
         {
           id: 'playlist-1',
           name: 'Playlist',
-          type: SearchResultType.Playlist,
+          type: 'playlist',
           visibility: 'public',
           score: 0.6,
           coverUrl: null,
           avatarUrl: null,
           albumType: null,
-          isPublic: true,
           description: null,
-          trackCount: 20,
         },
       ],
       loggedIn: true,

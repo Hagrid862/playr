@@ -3,11 +3,13 @@ import { LibrarySearchSuggestionsQuery } from '../impl/library-search-suggestion
 import { SearchSuggestionsService } from '../../services/search-suggestions.service';
 import { LibrarySearchSuggestionsResults } from '@repo/contracts';
 
+type librarySearchSuggestionsData = LibrarySearchSuggestionsResults['data'];
+
 @QueryHandler(LibrarySearchSuggestionsQuery)
 export class LibrarySearchSuggestionsHandler implements IQueryHandler<LibrarySearchSuggestionsQuery> {
   constructor(private readonly searchSuggestionsService: SearchSuggestionsService) {}
 
-  async execute(query: LibrarySearchSuggestionsQuery): Promise<LibrarySearchSuggestionsResults> {
+  async execute(query: LibrarySearchSuggestionsQuery): Promise<librarySearchSuggestionsData> {
     return this.searchSuggestionsService.librarySearchSuggestions(
       query.userId,
       query.query,

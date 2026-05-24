@@ -424,37 +424,69 @@ describe('SearchService', () => {
       expect(mockQueryRaw).toHaveBeenCalled();
     });
 
-    it('should apply orderBy relevance', async () => {
+    it('should apply orderBy duration', async () => {
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
       mockQueryRaw.mockResolvedValueOnce([]);
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        orderBy: { field: 'relevance', direction: 'desc' },
+        orderBy: { field: 'duration', direction: 'asc' },
         page: 1,
         pageSize: 20,
-        filters: { categories: ['artist'], visibility: 'public' },
+        filters: { categories: ['track'], visibility: 'public' },
       };
       await service.search('user-123', searchQuery);
 
       expect(mockQueryRaw).toHaveBeenCalled();
     });
 
-    it('should apply orderBy with unknown field defaults to score', async () => {
+    it('should handle filters when targetCategories is empty', async () => {
+      const searchQuery: SearchQuery = {
+        query: 'test',
+        page: 1,
+        pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
+      };
+      const result = await service.search('user-123', searchQuery);
+      expect(mockQueryRaw).not.toHaveBeenCalled();
+      expect(result.results).toHaveLength(0);
+    });
+
+    it('should cover visibility and ownership logic for authenticated users', async () => {
+      mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+      mockQueryRaw.mockResolvedValueOnce([]);
+
+      // Trigger the `else` block for authenticated user visibility/ownership checks
+      await service.search('user-123', {
+        query: 'test',
+        page: 1,
+        pageSize: 20,
+        filters: { categories: ['artist', 'album', 'track', 'playlist'], visibility: 'private' },
+      });
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should apply all filters in search to cover branches', async () => {
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
       mockQueryRaw.mockResolvedValueOnce([]);
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        orderBy: { field: 'unknown' as any, direction: 'asc' },
         page: 1,
         pageSize: 20,
-        filters: { categories: ['artist'], visibility: 'public' },
+        filters: {
+          categories: ['artist', 'album', 'track', 'playlist', 'genre'],
+          visibility: 'public',
+          artist: { verified: true, isCommunity: true },
+          album: { type: 'album', releaseDateFrom: '2020-01-01', releaseDateTo: '2021-01-01' },
+          track: { explicit: true, durationFrom: 10, durationTo: 200, minListenedCount: 5 },
+          playlist: { isPublic: true, isCollaborative: true },
+        },
       };
       await service.search('user-123', searchQuery);
-
       expect(mockQueryRaw).toHaveBeenCalled();
     });
+
 
     it('should search multiple categories at once', async () => {
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
@@ -765,21 +797,42 @@ describe('SearchService', () => {
       expect(mockQueryRaw).toHaveBeenCalled();
     });
 
-    it('should apply orderBy relevance in librarySearch', async () => {
+    it('should apply playlist isCollaborative filter in librarySearch', async () => {
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
       mockQueryRaw.mockResolvedValueOnce([]);
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        orderBy: { field: 'relevance', direction: 'desc' },
         page: 1,
         pageSize: 20,
-        filters: { categories: ['artist'], visibility: 'public' },
+        filters: {
+          categories: ['playlist'],
+          visibility: 'private',
+          playlist: { isCollaborative: false },
+        },
       };
       await service.librarySearch('user-123', searchQuery);
-
       expect(mockQueryRaw).toHaveBeenCalled();
     });
+
+    it('should apply orderBy fields in librarySearch', async () => {
+      const fields = ['name', 'createdAt', 'releaseDate', 'duration', 'listenedCount', 'relevance'] as const;
+      for (const field of fields) {
+        mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
+        mockQueryRaw.mockResolvedValueOnce([]);
+
+        const searchQuery: SearchQuery = {
+          query: 'test',
+          orderBy: { field: field as any, direction: 'asc' },
+          page: 1,
+          pageSize: 20,
+          filters: { categories: ['artist'], visibility: 'private' },
+        };
+        await service.librarySearch('user-123', searchQuery);
+      }
+      expect(mockQueryRaw).toHaveBeenCalledTimes(12);
+    });
+
 
     it('should apply orderBy with unknown field defaults to score in librarySearch', async () => {
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
