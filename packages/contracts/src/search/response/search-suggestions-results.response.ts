@@ -39,9 +39,7 @@ export const SearchSuggestionsResultsSchema = createApiResponseSchema(
 export type SearchSuggestionsResult = z.infer<
   typeof SearchSuggestionResultSchema
 >;
-export type SearchSuggestionsData = z.infer<
-  typeof SearchSuggestionsDataSchema
->;
+export type SearchSuggestionsData = z.infer<typeof SearchSuggestionsDataSchema>;
 export type SearchSuggestionsResults = z.infer<
   typeof SearchSuggestionsResultsSchema
 >;

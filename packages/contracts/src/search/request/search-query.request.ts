@@ -37,12 +37,12 @@ export const SearchOrderBySchema = z.object({
 
 export const SearchArtistFiltersSchema = z.object({
   verified: z.preprocess(
-    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
-    z.boolean().optional()
+    (val) => (typeof val === "string" ? val.toLowerCase() === "true" : val),
+    z.boolean().optional(),
   ),
   isCommunity: z.preprocess(
-    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
-    z.boolean().optional()
+    (val) => (typeof val === "string" ? val.toLowerCase() === "true" : val),
+    z.boolean().optional(),
   ),
 });
 
@@ -51,8 +51,8 @@ export const SearchArtistFiltersSchema = z.object({
 export const SearchAlbumFiltersSchema = z.object({
   type: z.enum(AlbumType).optional(),
   verified: z.preprocess(
-    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
-    z.boolean().optional()
+    (val) => (typeof val === "string" ? val.toLowerCase() === "true" : val),
+    z.boolean().optional(),
   ),
   releaseDateFrom: z.string().datetime().optional(),
   releaseDateTo: z.string().datetime().optional(),
@@ -61,19 +61,16 @@ export const SearchAlbumFiltersSchema = z.object({
 // ─── Track-specific filters ───────────────────────────────────────
 
 export const SearchTrackFiltersSchema = z.object({
-  explicit: z.preprocess(
-    (val) => {
-      if (typeof val === 'string') {
-        if (val.toLowerCase() === 'true') return true;
-        if (val.toLowerCase() === 'false') return false;
-      }
-      return val;
-    },
-    z.boolean().optional()
-  ),
+  explicit: z.preprocess((val) => {
+    if (typeof val === "string") {
+      if (val.toLowerCase() === "true") return true;
+      if (val.toLowerCase() === "false") return false;
+    }
+    return val;
+  }, z.boolean().optional()),
   verified: z.preprocess(
-    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
-    z.boolean().optional()
+    (val) => (typeof val === "string" ? val.toLowerCase() === "true" : val),
+    z.boolean().optional(),
   ),
   durationFrom: z.coerce.number().int().nonnegative().optional(),
   durationTo: z.coerce.number().int().nonnegative().optional(),
@@ -84,12 +81,12 @@ export const SearchTrackFiltersSchema = z.object({
 
 export const SearchPlaylistFiltersSchema = z.object({
   isPublic: z.preprocess(
-    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
-    z.boolean().optional()
+    (val) => (typeof val === "string" ? val.toLowerCase() === "true" : val),
+    z.boolean().optional(),
   ),
   isCollaborative: z.preprocess(
-    (val) => (typeof val === 'string' ? val.toLowerCase() === 'true' : val),
-    z.boolean().optional()
+    (val) => (typeof val === "string" ? val.toLowerCase() === "true" : val),
+    z.boolean().optional(),
   ),
 });
 
@@ -119,10 +116,14 @@ export const SearchQuerySchema = z
       .optional(),
 
     categories: z
-      .preprocess((val) => {
-        if (typeof val === "string") return val.split(",").map((s) => s.trim());
-        return val;
-      }, z.union([SearchCategorySchema, z.array(SearchCategorySchema)]))
+      .preprocess(
+        (val) => {
+          if (typeof val === "string")
+            return val.split(",").map((s) => s.trim());
+          return val;
+        },
+        z.union([SearchCategorySchema, z.array(SearchCategorySchema)]),
+      )
       .transform((val) => (Array.isArray(val) ? val : val ? [val] : undefined))
       .optional(),
 
