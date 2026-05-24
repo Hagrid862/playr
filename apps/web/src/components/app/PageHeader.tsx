@@ -13,7 +13,7 @@ export function PageHeader({
   centerActions = false,
   children,
 }: {
-  title: string;
+  title: string | ReactNode;
   description?: string;
   actions?: ReactNode;
   showBackButton?: boolean;
@@ -43,9 +43,16 @@ export function PageHeader({
                 <ArrowLeftIcon />
               </Button>
             )}
-            <div>
-              <h1 className="text-3xl font-semibold">{title}</h1>
-              {description && <p className="text-muted-foreground text-sm">{description}</p>}
+            <div className="flex gap-4 items-center">
+              {typeof title === 'string' ? (
+                <h1 className="text-3xl font-semibold">{title}</h1>
+              ) : (
+                title
+              )}
+              {description && (
+                <div className="h-6 w-px bg-white/10" />
+              )}
+              {description && <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">{description}</p>}
             </div>
           </div>
           {/* Center: children */}
@@ -61,9 +68,16 @@ export function PageHeader({
                 <ArrowLeftIcon />
               </Button>
             )}
-            <div>
-              <h1 className="text-3xl font-semibold">{title}</h1>
-              {description && <p className="text-muted-foreground text-sm">{description}</p>}
+            <div className="flex gap-4 items-center">
+              {typeof title === 'string' ? (
+                <h1 className="text-3xl font-semibold">{title}</h1>
+              ) : (
+                title
+              )}
+              {description && (
+                <div className="h-6 w-px bg-white/10" />
+              )}
+              {description && <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">{description}</p>}
             </div>
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
