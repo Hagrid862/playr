@@ -52,27 +52,22 @@ function ArtistsLayout() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <PageHeader
-        title={title}
-        actions={
-          isIndex ? (
-            <Button variant="outline" asChild>
-              <Link to="/app/library/artists/create">
-                <PlusIcon />
-                Add Artist
-              </Link>
-            </Button>
-          ) : artist?.visibility === 'private' && isDetail && artistId ? (
-            <Button variant="outline" asChild>
-              <Link to="/app/library/artists/$id/add-content" params={{ id: artistId }}>
-                <PlusIcon />
-                Add Content
-              </Link>
-            </Button>
-          ) : null
-        }
-        showBackButton={!isIndex}
-      />
+      {!isIndex && (
+        <PageHeader
+          title={title}
+          actions={
+            artist?.visibility === 'private' && isDetail && artistId ? (
+              <Button variant="outline" asChild>
+                <Link to="/app/library/artists/$id/add-content" params={{ id: artistId }}>
+                  <PlusIcon />
+                  Add Content
+                </Link>
+              </Button>
+            ) : null
+          }
+          showBackButton={!isIndex}
+        />
+      )}
       <div className="flex-1">
         <Outlet />
       </div>
