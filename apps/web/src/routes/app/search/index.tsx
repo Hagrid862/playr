@@ -1,24 +1,36 @@
-import {createFileRoute} from '@tanstack/react-router';
-import { SearchQuerySchema, type SearchCategory, type SearchQuery, type SearchOrderByField } from '@repo/contracts';
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  SearchQuerySchema,
+  type SearchCategory,
+  type SearchQuery,
+  type SearchOrderByField,
+} from '@repo/contracts';
 import { useSearch } from '@/hooks/api/search/useSearch';
 import { useLibrarySearch } from '@/hooks/api/search/useLibrarySearch';
 import { SearchInput } from '@/components/search/SearchInput';
 import { PageHeader } from '@/components/app/PageHeader';
-import { 
-  FunnelIcon, 
-  SortAscendingIcon, 
+import {
+  FunnelIcon,
+  SortAscendingIcon,
   SortDescendingIcon,
   SquaresFourIcon,
   ListIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
 } from '@phosphor-icons/react';
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { SearchResults, SearchResultsData } from '@/components/search/SearchResults';
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SearchCategoryFilters } from '@/components/search/SearchCategoryFilters';
 
 export const Route = createFileRoute('/app/search/')({
   component: SearchPage,
@@ -35,7 +47,7 @@ function SearchPage() {
   } else {
     try {
       const cleaned = Object.fromEntries(
-        Object.entries(rawSearch || {}).filter(([, v]) => v !== '' && v !== undefined)
+        Object.entries(rawSearch || {}).filter(([, v]) => v !== '' && v !== undefined),
       );
       const reparsed = SearchQuerySchema.safeParse(cleaned);
       if (reparsed.success) search = reparsed.data as SearchQuery;
@@ -46,7 +58,8 @@ function SearchPage() {
   }
   const navigate = Route.useNavigate();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const { viewType, setViewType, searchHistory, addSearchToHistory, clearHistory } = useSearchPreferencesStore();
+  const { viewType, setViewType, searchHistory, addSearchToHistory, clearHistory } =
+    useSearchPreferencesStore();
 
   useEffect(() => {
     if (search.query) {
@@ -61,47 +74,48 @@ function SearchPage() {
   const { data: response, isLoading, error } = isLibrarySearch ? libraryResults : globalResults;
   const data = (response as SearchResultsData)?.data;
 
-  // ... (toggleCategory unchanged)
-
   if (!search.query || search.query.trim() === '') {
     return (
       <div className="flex flex-col gap-4 p-4 min-h-[60vh]">
-        <PageHeader
-            title="Search"
-            centerActions
-        >
-            <SearchInput
-                className="max-w-xl"
-                initialValue={search.query}
-            />
+        <PageHeader title="Search" centerActions>
+          <SearchInput className="max-w-xl" initialValue={search.query} />
         </PageHeader>
 
         {searchHistory.length > 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
             <div className="w-full max-w-md">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recent Searches</h2>
-                    <Button variant="ghost" size="sm" onClick={clearHistory} className="text-xs text-muted-foreground">Clear All</Button>
-                </div>
-                <div className="flex flex-col gap-1">
-                    {searchHistory.map((item) => (
-                        <button
-                            key={item}
-                            onClick={() => navigate({ search: (prev) => ({ ...prev, query: item }) })}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-stone-900/40 transition-colors text-left w-full text-sm"
-                        >
-                            <MagnifyingGlassIcon className="text-muted-foreground w-4 h-4" />
-                            <span className="text-white">{item}</span>
-                        </button>
-                    ))}
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Recent Searches
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearHistory}
+                  className="text-xs text-muted-foreground"
+                >
+                  Clear All
+                </Button>
+              </div>
+              <div className="flex flex-col gap-1">
+                {searchHistory.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => navigate({ search: (prev) => ({ ...prev, query: item }) })}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-stone-900/40 transition-colors text-left w-full text-sm"
+                  >
+                    <MagnifyingGlassIcon className="text-muted-foreground w-4 h-4" />
+                    <span className="text-white">{item}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
-                Start searching...
-            </div>
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
+            Start searching...
+          </div>
         )}
       </div>
     );
@@ -129,40 +143,29 @@ function SearchPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <PageHeader
-        title="Search"
-        centerActions
-      >
-        <SearchInput
-          className="max-w-xl"
-          initialValue={search.query}
-        />
+      <PageHeader title="Search" centerActions>
+        <SearchInput className="max-w-xl" initialValue={search.query} />
       </PageHeader>
-      
+
       <div className="flex flex-col gap-4">
         {/* Controls Bar */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
           <Button
-            variant={isFiltersOpen ? "secondary" : "outline"}
+            variant={isFiltersOpen ? 'secondary' : 'outline'}
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
             className=" gap-2"
           >
-            <FunnelIcon weight={isFiltersOpen ? "fill" : "regular"} />
+            <FunnelIcon weight={isFiltersOpen ? 'fill' : 'regular'} />
             Filters
           </Button>
-          
+
           <div className="h-4 w-px bg-white/10 mx-1" />
 
-          {['artist', 'album', 'track', 'playlist', 'genre'].map((cat) => (
-            <Button
-              key={cat}
-              variant={(search.filters?.categories as SearchCategory[] | undefined)?.includes(cat as SearchCategory) ? "secondary" : "outline"}
-              onClick={() => toggleCategory(cat)}
-              className=" capitalize"
-            >
-              {cat}s
-            </Button>
-          ))}
+          <SearchCategoryFilters
+            selectedCategories={(search.filters?.categories as SearchCategory[]) ?? []}
+            onToggle={toggleCategory}
+            className="flex items-center gap-2"
+          />
 
           <div className="flex items-center gap-2 ml-auto">
             <div className="hidden sm:flex items-center gap-1 bg-stone-900 border border-white/10 rounded-xl p-1 h-10">
@@ -186,15 +189,23 @@ function SearchPage() {
 
             <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
 
-            <span className="text-xs font-semibold uppercase text-muted-foreground whitespace-nowrap hidden md:inline">Sort</span>
-            <Select 
+            <span className="text-xs font-semibold uppercase text-muted-foreground whitespace-nowrap hidden md:inline">
+              Sort
+            </span>
+            <Select
               value={search.orderBy?.field || 'relevance'}
-              onValueChange={(val) => navigate({
-                search: (prev: SearchQuery) => ({
-                  ...prev,
-                  orderBy: { field: val as SearchOrderByField, direction: prev.orderBy?.direction || 'asc' }
-                } as SearchQuery)
-              })}
+              onValueChange={(val) =>
+                navigate({
+                  search: (prev: SearchQuery) =>
+                    ({
+                      ...prev,
+                      orderBy: {
+                        field: val as SearchOrderByField,
+                        direction: prev.orderBy?.direction || 'asc',
+                      },
+                    } as SearchQuery),
+                })
+              }
             >
               <SelectTrigger className="w-32 bg-stone-900 border-white/10 h-10 rounded-xl">
                 <SelectValue placeholder="Sort by" />
@@ -212,24 +223,25 @@ function SearchPage() {
               variant="outline"
               size="icon"
               className="h-10 w-10 rounded-xl border-white/10"
-              onClick={() => navigate({
-                search: (prev: SearchQuery) => ({
-                  ...prev,
-                  orderBy: {
-                    field: (prev.orderBy?.field || 'relevance') as SearchOrderByField,
-                    direction: prev.orderBy?.direction === 'asc' ? 'desc' : 'asc'
-                  }
-                } as SearchQuery)
-              })}
+              onClick={() =>
+                navigate({
+                  search: (prev: SearchQuery) =>
+                    ({
+                      ...prev,
+                      orderBy: {
+                        field: (prev.orderBy?.field || 'relevance') as SearchOrderByField,
+                        direction: prev.orderBy?.direction === 'asc' ? 'desc' : 'asc',
+                      },
+                    } as SearchQuery),
+                })
+              }
             >
               {search.orderBy?.direction === 'desc' ? <SortDescendingIcon /> : <SortAscendingIcon />}
             </Button>
           </div>
         </div>
 
-        {isFiltersOpen && (
-          <SearchFilters search={search} navigate={navigate} />
-        )}
+        {isFiltersOpen && <SearchFilters search={search} navigate={navigate} />}
       </div>
 
       <div className="flex-1">
@@ -263,11 +275,7 @@ function SearchPage() {
             <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
           </div>
         ) : (
-          <SearchResults 
-            data={data} 
-            viewType={viewType} 
-            isLibrarySearch={isLibrarySearch} 
-          />
+          <SearchResults data={data} viewType={viewType} isLibrarySearch={isLibrarySearch} />
         )}
       </div>
     </div>

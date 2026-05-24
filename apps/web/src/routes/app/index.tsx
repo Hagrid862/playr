@@ -13,7 +13,7 @@ function App() {
         title="Home"
         centerActions
       >
-        <SearchInput />
+        <SearchInput className="max-w-xl" />
       </PageHeader>
     </div>
   );
