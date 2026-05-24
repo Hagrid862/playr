@@ -315,15 +315,11 @@ function OverviewLayout() {
             </div>
           </div>
 
-          {isFiltersOpen && (
-            <SearchFilters search={searchParams} navigate={handleFilterNavigate} />
-          )}
+          {isFiltersOpen && <SearchFilters search={searchParams} navigate={handleFilterNavigate} />}
         </div>
       )}
 
-      <div className="flex-1">
-        {isSearchActive ? renderSearchContent() : <Outlet />}
-      </div>
+      <div className="flex-1">{isSearchActive ? renderSearchContent() : <Outlet />}</div>
     </div>
   );
 }

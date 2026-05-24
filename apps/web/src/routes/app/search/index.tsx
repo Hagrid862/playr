@@ -203,7 +203,7 @@ function SearchPage() {
                         field: val as SearchOrderByField,
                         direction: prev.orderBy?.direction || 'asc',
                       },
-                    } as SearchQuery),
+                    }) as SearchQuery,
                 })
               }
             >
@@ -232,11 +232,15 @@ function SearchPage() {
                         field: (prev.orderBy?.field || 'relevance') as SearchOrderByField,
                         direction: prev.orderBy?.direction === 'asc' ? 'desc' : 'asc',
                       },
-                    } as SearchQuery),
+                    }) as SearchQuery,
                 })
               }
             >
-              {search.orderBy?.direction === 'desc' ? <SortDescendingIcon /> : <SortAscendingIcon />}
+              {search.orderBy?.direction === 'desc' ? (
+                <SortDescendingIcon />
+              ) : (
+                <SortAscendingIcon />
+              )}
             </Button>
           </div>
         </div>

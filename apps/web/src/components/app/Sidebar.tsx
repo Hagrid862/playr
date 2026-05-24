@@ -65,7 +65,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link 
+                  <Link
                     to="/app/search"
                     activeOptions={{ exact: false }}
                     activeProps={{ 'data-active': 'true' }}

@@ -1,5 +1,9 @@
 import { apiClient } from '@/lib/api-client';
-import { SearchResultsResponseSchema, type SearchQuery, type SearchResultsResponse } from '@repo/contracts';
+import {
+  SearchResultsResponseSchema,
+  type SearchQuery,
+  type SearchResultsResponse,
+} from '@repo/contracts';
 import qs from 'qs';
 
 export const getSearch = (query: SearchQuery) => {

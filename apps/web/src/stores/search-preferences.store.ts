@@ -24,9 +24,10 @@ export const useSearchPreferencesStore = create<SearchPreferencesState>()(
       setSearchScope: (searchScope) => set({ searchScope }),
       searchHistory: [],
       // TODO: Replace this frontend-only search history with a server-side implementation later.
-      addSearchToHistory: (query) => set((state) => ({
-        searchHistory: [query, ...state.searchHistory.filter(q => q !== query)].slice(0, 10)
-      })),
+      addSearchToHistory: (query) =>
+        set((state) => ({
+          searchHistory: [query, ...state.searchHistory.filter((q) => q !== query)].slice(0, 10),
+        })),
       clearHistory: () => set({ searchHistory: [] }),
     }),
     {
