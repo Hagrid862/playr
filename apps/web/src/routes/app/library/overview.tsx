@@ -30,6 +30,7 @@ import {
 import { SearchCategoryFilters } from '@/components/search/SearchCategoryFilters';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PlayrLogo } from '@/components/app/PlayrLogo.tsx';
 
 export const Route = createFileRoute('/app/library/overview')({
   component: OverviewLayout,
@@ -164,7 +165,8 @@ function OverviewLayout() {
   return (
     <div className="flex flex-col gap-4 p-4">
       <PageHeader
-        title="Overview"
+        title={<PlayrLogo />}
+        description="Overview"
         showBackButton={!isIndex}
         centerActions
         actions={

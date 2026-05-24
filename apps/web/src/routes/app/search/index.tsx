@@ -31,6 +31,7 @@ import { SearchResults, SearchResultsData } from '@/components/search/SearchResu
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchCategoryFilters } from '@/components/search/SearchCategoryFilters';
+import { PlayrLogo } from '@/components/app/PlayrLogo';
 
 export const Route = createFileRoute('/app/search/')({
   component: SearchPage,
@@ -77,7 +78,7 @@ function SearchPage() {
   if (!search.query || search.query.trim() === '') {
     return (
       <div className="flex flex-col gap-4 p-4 min-h-[60vh]">
-        <PageHeader title="Search" centerActions>
+        <PageHeader title={<PlayrLogo />} description="Search" centerActions>
           <SearchInput className="max-w-xl" initialValue={search.query} />
         </PageHeader>
 
@@ -143,7 +144,7 @@ function SearchPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <PageHeader title="Search" centerActions>
+      <PageHeader title={<PlayrLogo />} description="Search" centerActions>
         <SearchInput className="max-w-xl" initialValue={search.query} />
       </PageHeader>
 
