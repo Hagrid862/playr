@@ -1,4 +1,3 @@
-import { PageHeader } from '@/components/app/PageHeader';
 import {
   Select,
   SelectContent,
@@ -8,7 +7,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Outlet, createFileRoute, useLocation, useRouter } from '@tanstack/react-router';
-import { SearchInput } from '@/components/search/SearchInput';
 import { useState } from 'react';
 import {
   type LibrarySearchQuery,
@@ -21,7 +19,6 @@ import { SearchResults } from '@/components/search/SearchResults';
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { Button } from '@/components/ui/button';
 import {
-  FunnelIcon,
   ListIcon,
   SortAscendingIcon,
   SortDescendingIcon,
@@ -30,10 +27,15 @@ import {
 import { SearchCategoryFilters } from '@/components/search/SearchCategoryFilters';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlayrLogo } from '@/components/app/PlayrLogo.tsx';
+import { SubHeader } from '@/components/app/SubHeader';
+import { CompactSearch } from '@/components/search/CompactSearch';
 
 export const Route = createFileRoute('/app/library/overview')({
   component: OverviewLayout,
+  staticData: {
+    title: 'Overview',
+    description: 'Library',
+  },
 });
 
 function OverviewLayout() {
@@ -42,7 +44,7 @@ function OverviewLayout() {
   const { viewType, setViewType } = useSearchPreferencesStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isFiltersOpen] = useState(false);
   const [searchParams, setSearchParams] = useState<LibrarySearchQuery>({
     query: '',
     filters: {
@@ -61,15 +63,6 @@ function OverviewLayout() {
   });
 
   const searchData = searchResponse?.data as LibrarySearchResultsData | undefined;
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setSearchParams((prev) => ({
-      ...prev,
-      query,
-      page: 1,
-    }));
-  };
 
   const handleFilterNavigate = (params: {
     search: (prev: LibrarySearchQuery) => LibrarySearchQuery;
@@ -163,165 +156,137 @@ function OverviewLayout() {
   const isSearchActive = searchQuery && searchQuery.length >= 3;
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <PageHeader
-        title={<PlayrLogo />}
-        description="Overview"
+    <div className="flex flex-col">
+      <SubHeader
+        title="Overview"
         showBackButton={!isIndex}
-        centerActions
-        actions={
-          isIndex || isCategoryIndex ? (
-            <Select value={currentCategory} onValueChange={handleContentTypeChange}>
-              <SelectTrigger className="w-[150px] sm:w-[180px] h-9 rounded-xl">
-                <SelectValue placeholder="Select view" />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectGroup>
-                  <SelectItem value="all">All Content</SelectItem>
-                  <SelectItem value="private">Private Library</SelectItem>
-                  <SelectItem value="community">Community Library</SelectItem>
-                  <SelectItem value="public">Public Library</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          ) : null
-        }
+        search={<CompactSearch category="all" />}
       >
-        <div className="flex items-center gap-4 w-full max-w-xl">
-          <SearchInput
-            simple
-            placeholder="Search in library overview..."
-            className="flex-1"
-            initialValue={searchQuery}
-            onSearch={handleSearch}
-          />
-          <Button
-            variant={isFiltersOpen ? 'secondary' : 'outline'}
-            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className="gap-2 h-10 rounded-xl border-white/10"
-          >
-            <FunnelIcon weight={isFiltersOpen ? 'fill' : 'regular'} />
-            Filters
-          </Button>
-        </div>
-      </PageHeader>
+        {isIndex || isCategoryIndex ? (
+          <Select value={currentCategory} onValueChange={handleContentTypeChange}>
+            <SelectTrigger className="w-[150px] sm:w-[180px] h-7">
+              <SelectValue placeholder="Select view" />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectGroup>
+                <SelectItem value="all">All Content</SelectItem>
+                <SelectItem value="private">Private Library</SelectItem>
+                <SelectItem value="community">Community Library</SelectItem>
+                <SelectItem value="public">Public Library</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        ) : null}
+      </SubHeader>
 
-      {(isSearchActive || isFiltersOpen) && (
-        <div className="flex flex-col gap-4">
-          {/* Controls Bar - Matches Global Search */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {/* Show Filters button here too if search is active to match Search Page exactly */}
-            {isSearchActive && (
-              <Button
-                variant={isFiltersOpen ? 'secondary' : 'outline'}
-                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                className="gap-2"
-              >
-                <FunnelIcon weight={isFiltersOpen ? 'fill' : 'regular'} />
-                Filters
-              </Button>
-            )}
+      <div className="p-4 flex flex-col gap-4">
+        {/* Page Content */}
+        {(isSearchActive || isFiltersOpen) && (
+          <>
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+              <div className={isSearchActive ? 'h-4 w-px bg-white/10 mx-1' : ''} />
 
-            <div className={isSearchActive ? 'h-4 w-px bg-white/10 mx-1' : ''} />
+              <SearchCategoryFilters
+                selectedCategories={(searchParams.filters?.categories as SearchCategory[]) ?? []}
+                onToggle={toggleCategory}
+                className="flex items-center gap-2"
+              />
 
-            <SearchCategoryFilters
-              selectedCategories={(searchParams.filters?.categories as SearchCategory[]) ?? []}
-              onToggle={toggleCategory}
-              className="flex items-center gap-2"
-            />
+              {searchQuery && (
+                <>
+                  <div className="h-4 w-px bg-white/10 mx-1" />
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchParams((prev) => ({ ...prev, query: '' }));
+                    }}
+                    className="text-sm text-muted-foreground hover:text-white transition-colors whitespace-nowrap"
+                  >
+                    Clear Search
+                  </button>
+                </>
+              )}
 
-            {searchQuery && (
-              <>
-                <div className="h-4 w-px bg-white/10 mx-1" />
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchParams((prev) => ({ ...prev, query: '' }));
-                  }}
-                  className="text-sm text-muted-foreground hover:text-white transition-colors whitespace-nowrap"
+              <div className="flex items-center gap-2 ml-auto">
+                <div className="hidden sm:flex items-center gap-1 bg-stone-900 border border-white/10 rounded-xl p-1 h-10">
+                  <Button
+                    variant={viewType === 'row' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8 rounded-lg"
+                    onClick={() => setViewType('row')}
+                  >
+                    <ListIcon weight={viewType === 'row' ? 'fill' : 'regular'} />
+                  </Button>
+                  <Button
+                    variant={viewType === 'grid' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8 rounded-lg"
+                    onClick={() => setViewType('grid')}
+                  >
+                    <SquaresFourIcon weight={viewType === 'grid' ? 'fill' : 'regular'} />
+                  </Button>
+                </div>
+
+                <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
+
+                <span className="text-xs font-semibold uppercase text-muted-foreground whitespace-nowrap hidden md:inline">
+                  Sort
+                </span>
+                <Select
+                  value={searchParams.orderBy?.field || 'relevance'}
+                  onValueChange={(val) =>
+                    setSearchParams((prev) => ({
+                      ...prev,
+                      orderBy: {
+                        field: val as SearchOrderByField,
+                        direction: prev.orderBy?.direction || 'asc',
+                      },
+                    }))
+                  }
                 >
-                  Clear Search
-                </button>
-              </>
-            )}
-
-            <div className="flex items-center gap-2 ml-auto">
-              <div className="hidden sm:flex items-center gap-1 bg-stone-900 border border-white/10 rounded-xl p-1 h-10">
+                  <SelectTrigger className="w-32 bg-stone-900 border-white/10 h-10 rounded-xl">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="relevance">Relevance</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="createdAt">Date Added</SelectItem>
+                    <SelectItem value="releaseDate">Release Date</SelectItem>
+                    <SelectItem value="duration">Duration</SelectItem>
+                    <SelectItem value="listenedCount">Listened</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button
-                  variant={viewType === 'row' ? 'secondary' : 'ghost'}
+                  variant="outline"
                   size="icon"
-                  className="h-8 w-8 rounded-lg"
-                  onClick={() => setViewType('row')}
+                  className="h-10 w-10 rounded-xl border-white/10"
+                  onClick={() =>
+                    setSearchParams((prev) => ({
+                      ...prev,
+                      orderBy: {
+                        field: (prev.orderBy?.field || 'relevance') as SearchOrderByField,
+                        direction: prev.orderBy?.direction === 'asc' ? 'desc' : 'asc',
+                      },
+                    }))
+                  }
                 >
-                  <ListIcon weight={viewType === 'row' ? 'fill' : 'regular'} />
-                </Button>
-                <Button
-                  variant={viewType === 'grid' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-8 w-8 rounded-lg"
-                  onClick={() => setViewType('grid')}
-                >
-                  <SquaresFourIcon weight={viewType === 'grid' ? 'fill' : 'regular'} />
+                  {searchParams.orderBy?.direction === 'desc' ? (
+                    <SortDescendingIcon />
+                  ) : (
+                    <SortAscendingIcon />
+                  )}
                 </Button>
               </div>
-
-              <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
-
-              <span className="text-xs font-semibold uppercase text-muted-foreground whitespace-nowrap hidden md:inline">
-                Sort
-              </span>
-              <Select
-                value={searchParams.orderBy?.field || 'relevance'}
-                onValueChange={(val) =>
-                  setSearchParams((prev) => ({
-                    ...prev,
-                    orderBy: {
-                      field: val as SearchOrderByField,
-                      direction: prev.orderBy?.direction || 'asc',
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger className="w-32 bg-stone-900 border-white/10 h-10 rounded-xl">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="relevance">Relevance</SelectItem>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="createdAt">Date Added</SelectItem>
-                  <SelectItem value="releaseDate">Release Date</SelectItem>
-                  <SelectItem value="duration">Duration</SelectItem>
-                  <SelectItem value="listenedCount">Listened</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 rounded-xl border-white/10"
-                onClick={() =>
-                  setSearchParams((prev) => ({
-                    ...prev,
-                    orderBy: {
-                      field: (prev.orderBy?.field || 'relevance') as SearchOrderByField,
-                      direction: prev.orderBy?.direction === 'asc' ? 'desc' : 'asc',
-                    },
-                  }))
-                }
-              >
-                {searchParams.orderBy?.direction === 'desc' ? (
-                  <SortDescendingIcon />
-                ) : (
-                  <SortAscendingIcon />
-                )}
-              </Button>
             </div>
-          </div>
 
-          {isFiltersOpen && <SearchFilters search={searchParams} navigate={handleFilterNavigate} />}
-        </div>
-      )}
+            {isFiltersOpen && (
+              <SearchFilters search={searchParams} navigate={handleFilterNavigate} />
+            )}
+          </>
+        )}
 
-      <div className="flex-1">{isSearchActive ? renderSearchContent() : <Outlet />}</div>
+        <div className="flex-1">{isSearchActive ? renderSearchContent() : <Outlet />}</div>
+      </div>
     </div>
   );
 }

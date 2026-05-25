@@ -1,8 +1,9 @@
-import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
 import { useLibraryStore } from '@/stores/library.store';
 import { PlusIcon } from '@phosphor-icons/react';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
+import { SubHeader } from '@/components/app/SubHeader.tsx';
+import { CompactSearch } from '@/components/search/CompactSearch.tsx';
 
 export const Route = createFileRoute('/app/library/artists')({
   component: ArtistsLayout,
@@ -51,26 +52,21 @@ function ArtistsLayout() {
           : 'Artists';
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {!isIndex && (
-        <PageHeader
-          title={title}
-          actions={
-            artist?.visibility === 'private' && isDetail && artistId ? (
-              <Button variant="outline" asChild>
-                <Link to="/app/library/artists/$id/add-content" params={{ id: artistId }}>
-                  <PlusIcon />
-                  Add Content
-                </Link>
-              </Button>
-            ) : null
-          }
-          showBackButton={!isIndex}
-        />
-      )}
-      <div className="flex-1">
-        <Outlet />
-      </div>
+    <div className="flex flex-col gap-4">
+      <SubHeader
+        title={title}
+        search={<CompactSearch category="artist" />}
+        actions={
+          <Button variant="outline" className="h-7" asChild>
+            <Link to="/app/library/artists/create">
+              <PlusIcon />
+              Add Content
+            </Link>
+          </Button>
+        }
+        showBackButton={!isIndex}
+      />
+      <Outlet />
     </div>
   );
 }
