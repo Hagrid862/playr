@@ -1,6 +1,7 @@
 import type { EditAlbumTracksSubmitPayload } from '@/components/library/albums/edit/useEditAlbumTracks';
 import { EditAlbumForm } from '@/components/library/albums/edit/EditAlbumForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { useCreateLibraryArtist } from '@/hooks/api/library-artists/useCreateLibraryArtist';
 import { useDeleteLibraryAlbumCover } from '@/hooks/api/library-albums/useDeleteLibraryAlbumCover';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
@@ -11,6 +12,7 @@ import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCr
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
 import { useUpdateLibraryTrack } from '@/hooks/api/library-tracks/useUpdateLibraryTrack';
 import type { UpdateLibraryAlbumRequest } from '@repo/contracts';
+import { AlbumSystemKind } from '@repo/db';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
@@ -150,6 +152,26 @@ function EditAlbumComponent() {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <p className="text-muted-foreground">Album not found</p>
+      </div>
+    );
+  }
+
+  if (album.systemKind !== AlbumSystemKind.none) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
+        <Alert className="max-w-md border-muted">
+          <AlertTitle className="text-foreground">This album cannot be edited</AlertTitle>
+          <AlertDescription className="text-muted-foreground">
+            System albums such as the library Unknown album are managed automatically. You can open
+            it to view or organize tracks, but metadata and bulk edits are not available here.
+          </AlertDescription>
+        </Alert>
+        <Button
+          type="button"
+          onClick={() => navigate({ to: '/app/library/albums/$id', params: { id } })}
+        >
+          Back to album
+        </Button>
       </div>
     );
   }

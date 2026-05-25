@@ -1,8 +1,6 @@
--- CreateEnum (required before backfill / index reference systemKind)
-CREATE TYPE "AlbumSystemKind" AS ENUM ('none', 'unknown_bucket');
-
--- AlterTable
-ALTER TABLE "albums" ADD COLUMN "systemKind" "AlbumSystemKind" NOT NULL DEFAULT 'none'::"AlbumSystemKind";
+-- Adds albums.libraryId, backfills from library_albums for unknown_bucket albums,
+-- and enforces one active unknown-bucket album per library.
+-- AlbumSystemKind enum and albums.systemKind column are created in migration 20260514174243.
 
 -- AlterTable
 ALTER TABLE "albums" ADD COLUMN "libraryId" TEXT;

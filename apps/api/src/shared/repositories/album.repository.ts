@@ -1,15 +1,29 @@
 import { Injectable } from '@nestjs/common';
+import { UNKNOWN_BUCKET_ALBUM_DISPLAY_NAME } from '@repo/contracts';
 import {
   AccessRole,
   Album,
   AlbumCreateInput,
   AlbumGetPayload,
   AlbumOrderByWithRelationInput,
+  AlbumSystemKind,
+  AlbumType,
   AlbumUpdateInput,
   AlbumWhereInput,
   Prisma,
+  Visibility,
 } from '@repo/db';
 import { PrismaService } from '../services/prisma.service';
+
+function isPrismaUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: string }).code === 'P2002'
+  );
+}
+
 @Injectable()
 export class AlbumRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -126,6 +140,7 @@ export class AlbumRepository {
       where: {
         name,
         deletedAt: null,
+        systemKind: AlbumSystemKind.none,
         OR: this.ownerEditOr(userId),
       },
       ...(options?.include ? { include: options.include } : {}),
@@ -505,6 +520,116 @@ export class AlbumRepository {
 
       return tx.album.update({
         where: { id },
+        data: { deletedAt: now },
+      });
+    });
+  }
+
+  /**
+   * Moves active tracks from {@link sourceAlbumId} into the user's unknown-bucket album, then
+   * soft-deletes album-scoped rows without removing tracks from playlists or library.
+   */
+  async softDeleteAlbumReassignTracksToUnknownBucket(params: {
+    userId: string;
+    libraryId: string;
+    sourceAlbumId: string;
+  }): Promise<Album> {
+    const { userId, libraryId, sourceAlbumId } = params;
+    const now = new Date();
+
+    return await this.prisma.mainClient.$transaction(async (tx) => {
+      const findUnknownBucketAlbumId = async (): Promise<string | null> => {
+        const row = await tx.album.findFirst({
+          where: {
+            systemKind: AlbumSystemKind.unknown_bucket,
+            libraryId,
+            deletedAt: null,
+            access: { some: { userId, role: AccessRole.owner } },
+            libraryAlbums: { some: { libraryId, deletedAt: null } },
+          },
+          select: { id: true },
+        });
+        return row?.id ?? null;
+      };
+
+      let unknownAlbumId = await findUnknownBucketAlbumId();
+
+      if (!unknownAlbumId) {
+        try {
+          const created = await tx.album.create({
+            data: {
+              name: UNKNOWN_BUCKET_ALBUM_DISPLAY_NAME,
+              systemKind: AlbumSystemKind.unknown_bucket,
+              visibility: Visibility.private,
+              type: AlbumType.compilation,
+              library: { connect: { id: libraryId } },
+              access: {
+                create: { userId, role: AccessRole.owner },
+              },
+              libraryAlbums: {
+                create: {
+                  library: { connect: { id: libraryId } },
+                },
+              },
+            },
+            select: { id: true },
+          });
+          unknownAlbumId = created.id;
+        } catch (e) {
+          if (!isPrismaUniqueViolation(e)) {
+            throw e;
+          }
+          unknownAlbumId = await findUnknownBucketAlbumId();
+          if (!unknownAlbumId) {
+            throw e;
+          }
+        }
+      }
+
+      if (unknownAlbumId === sourceAlbumId) {
+        throw new Error('Cannot reassign tracks from the unknown album to itself');
+      }
+
+      await tx.track.updateMany({
+        where: { albumId: sourceAlbumId, deletedAt: null },
+        data: { albumId: unknownAlbumId },
+      });
+
+      await tx.reportTarget.updateMany({
+        where: { albumId: sourceAlbumId, deletedAt: null },
+        data: { deletedAt: now },
+      });
+
+      await tx.libraryAlbum.updateMany({
+        where: { albumId: sourceAlbumId, deletedAt: null },
+        data: { deletedAt: now },
+      });
+
+      await tx.libraryPin.updateMany({
+        where: { albumId: sourceAlbumId, deletedAt: null },
+        data: { deletedAt: now },
+      });
+
+      await tx.communityComment.updateMany({
+        where: { albumId: sourceAlbumId, deletedAt: null },
+        data: { deletedAt: now },
+      });
+
+      const albumRow = await tx.album.findUnique({
+        where: { id: sourceAlbumId },
+        select: { coverId: true, deletedAt: true },
+      });
+      const snapshot = albumRow && !albumRow.deletedAt ? { coverId: albumRow.coverId } : null;
+
+      if (snapshot?.coverId) {
+        await tx.image.updateMany({
+          where: { id: snapshot.coverId, deletedAt: null },
+          data: { deletedAt: now },
+        });
+      }
+
+      return tx.album.update({
+        where: { id: sourceAlbumId },
         data: { deletedAt: now },
       });
     });

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { AlbumSchema, ZodAlbum } from '@repo/contracts';
+import { AlbumSystemKind } from '@repo/db';
 import { UpdateLibraryAlbumCommand } from '../impl/update-library-album.command';
 
 @CommandHandler(UpdateLibraryAlbumCommand)
@@ -29,6 +30,10 @@ export class UpdateLibraryAlbumHandler implements ICommandHandler<UpdateLibraryA
 
     if (!album) {
       throw new NotFoundException('Album not found');
+    }
+
+    if (album.systemKind !== AlbumSystemKind.none) {
+      throw new BadRequestException('This album cannot be edited');
     }
 
     let uniqueGenreIds: string[] | undefined;

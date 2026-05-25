@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import {
   AccessRole,
   AlbumGetPayload,
+  AlbumSystemKind,
   Image,
   Library,
   LibraryAlbumGetPayload,
@@ -108,6 +109,8 @@ describe('LibraryAlbumsController (Integration)', () => {
   const mockAlbum: AlbumWithRelations = {
     ...albumBuilder({
       id: 'album-123',
+      libraryId: null,
+      systemKind: AlbumSystemKind.none,
     }),
     artists: [artistBuilder()],
     genres: [],
@@ -327,9 +330,23 @@ describe('LibraryAlbumsController (Integration)', () => {
     it('should delete an album successfully (200)', async () => {
       const authHeader = await getAuthHeader();
 
-      // Handler
       prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
-      // Soft delete via update
+      prismaMock.mainClient.$transaction.mockImplementation(
+        async (cb: (client: PrismaClient) => Promise<unknown>) => cb(prismaMock.client),
+      );
+      prismaMock.client.album.findUnique.mockResolvedValue({
+        coverId: null,
+        deletedAt: null,
+      } as any);
+      prismaMock.client.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.playlistTrack.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.libraryTrack.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.libraryFavorite.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.track.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.image.updateMany.mockResolvedValue({ count: 0 });
       prismaMock.client.album.update.mockResolvedValue({
         ...mockAlbum,
         deletedAt: new Date(),
@@ -342,6 +359,56 @@ describe('LibraryAlbumsController (Integration)', () => {
 
       expect(response.body.data.id).toBe(mockAlbum.id);
       expect(response.body.data.deletedAt).toBeDefined();
+    });
+
+    it('should delete with keepTracks and reassign (200)', async () => {
+      const authHeader = await getAuthHeader();
+
+      prismaMock.client.album.findFirst
+        .mockResolvedValueOnce(mockAlbum)
+        .mockResolvedValueOnce({ id: 'unknown-album-id' } as any);
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
+      prismaMock.mainClient.$transaction.mockImplementation(
+        async (cb: (client: PrismaClient) => Promise<unknown>) => cb(prismaMock.client),
+      );
+      prismaMock.client.track.updateMany.mockResolvedValue({ count: 2 });
+      prismaMock.client.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      prismaMock.client.album.findUnique.mockResolvedValue({
+        coverId: null,
+        deletedAt: null,
+      } as any);
+      prismaMock.client.album.update.mockResolvedValue({
+        ...mockAlbum,
+        deletedAt: new Date(),
+      });
+
+      const response = await request(app.getHttpServer())
+        .delete(`/library/albums/${mockAlbum.id}`)
+        .query({ keepTracks: true })
+        .set('Authorization', authHeader)
+        .expect(200);
+
+      expect(response.body.data.id).toBe(mockAlbum.id);
+      expect(prismaMock.client.track.updateMany).toHaveBeenCalled();
+    });
+
+    it('should return 400 when keepTracks on unknown bucket album', async () => {
+      const authHeader = await getAuthHeader();
+      const unknownAlbum = {
+        ...mockAlbum,
+        systemKind: AlbumSystemKind.unknown_bucket,
+      };
+
+      prismaMock.client.album.findFirst.mockResolvedValue(unknownAlbum);
+
+      await request(app.getHttpServer())
+        .delete(`/library/albums/${mockAlbum.id}`)
+        .query({ keepTracks: true })
+        .set('Authorization', authHeader)
+        .expect(400);
     });
 
     it('should return 404 if album to delete not found', async () => {

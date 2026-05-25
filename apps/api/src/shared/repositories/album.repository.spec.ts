@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { UNKNOWN_BUCKET_ALBUM_DISPLAY_NAME } from '@repo/contracts';
 import { AlbumRepository } from './album.repository';
 import { PrismaService } from '../services/prisma.service';
-import { AccessRole, Album, AlbumType, Prisma, Visibility } from '@repo/db';
+import { AccessRole, Album, AlbumSystemKind, AlbumType, Prisma, Visibility } from '@repo/db';
 
 describe('AlbumRepository', () => {
   let repository: AlbumRepository;
@@ -79,9 +80,11 @@ describe('AlbumRepository', () => {
     name: 'Test Album',
     description: null,
     type: AlbumType.album,
+    systemKind: AlbumSystemKind.none,
     totalTracks: 10,
     totalDuration: 1800,
     releaseDate: null,
+    libraryId: null,
     coverId: null,
     visibility: Visibility.public,
     createdAt: new Date('2024-01-01'),
@@ -227,6 +230,7 @@ describe('AlbumRepository', () => {
         where: {
           name: 'Test Album',
           deletedAt: null,
+          systemKind: AlbumSystemKind.none,
           OR: [
             { access: { some: { userId: 'user-1', role: AccessRole.owner } } },
             {
@@ -250,6 +254,7 @@ describe('AlbumRepository', () => {
         where: {
           name: 'Test Album',
           deletedAt: null,
+          systemKind: AlbumSystemKind.none,
           OR: [
             { access: { some: { userId: 'user-1', role: AccessRole.owner } } },
             {
@@ -770,6 +775,268 @@ describe('AlbumRepository', () => {
       await repository.softDeleteCascade('album-1');
 
       expect(mockTx.image.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('softDeleteAlbumReassignTracksToUnknownBucket', () => {
+    const baseTx = () => ({
+      album: {
+        findFirst: vi.fn(),
+        create: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+      },
+      track: { updateMany: vi.fn() },
+      reportTarget: { updateMany: vi.fn() },
+      libraryAlbum: { updateMany: vi.fn() },
+      libraryPin: { updateMany: vi.fn() },
+      communityComment: { updateMany: vi.fn() },
+      image: { updateMany: vi.fn() },
+    });
+
+    const deletedSource = { ...mockAlbum, id: 'source-1', deletedAt: new Date() };
+
+    it('should reuse existing unknown-bucket album and soft-delete source without cover', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue({ id: 'unknown-existing' });
+      mockTx.track.updateMany.mockResolvedValue({ count: 2 });
+      mockTx.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.album.findUnique.mockResolvedValue({ coverId: null, deletedAt: null });
+      mockTx.album.update.mockResolvedValue(deletedSource);
+
+      const result = await repository.softDeleteAlbumReassignTracksToUnknownBucket({
+        userId: 'user-1',
+        libraryId: 'lib-1',
+        sourceAlbumId: 'source-1',
+      });
+
+      expect(result).toEqual(deletedSource);
+      expect(mockTx.album.create).not.toHaveBeenCalled();
+      expect(mockTx.track.updateMany).toHaveBeenCalledWith({
+        where: { albumId: 'source-1', deletedAt: null },
+        data: { albumId: 'unknown-existing' },
+      });
+      expect(mockTx.image.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should create unknown-bucket album when none exists', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue(null);
+      mockTx.album.create.mockResolvedValue({ id: 'new-unknown' });
+      mockTx.track.updateMany.mockResolvedValue({ count: 1 });
+      mockTx.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.album.findUnique.mockResolvedValue({ coverId: null, deletedAt: null });
+      mockTx.album.update.mockResolvedValue(deletedSource);
+
+      await repository.softDeleteAlbumReassignTracksToUnknownBucket({
+        userId: 'user-1',
+        libraryId: 'lib-1',
+        sourceAlbumId: 'source-1',
+      });
+
+      expect(mockTx.album.create).toHaveBeenCalledWith({
+        data: {
+          name: UNKNOWN_BUCKET_ALBUM_DISPLAY_NAME,
+          systemKind: AlbumSystemKind.unknown_bucket,
+          visibility: Visibility.private,
+          type: AlbumType.compilation,
+          library: { connect: { id: 'lib-1' } },
+          access: {
+            create: { userId: 'user-1', role: AccessRole.owner },
+          },
+          libraryAlbums: {
+            create: {
+              library: { connect: { id: 'lib-1' } },
+            },
+          },
+        },
+        select: { id: true },
+      });
+    });
+
+    it('should recover unknown-bucket album id after unique constraint on create (P2002)', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'concurrent-unknown' });
+      mockTx.album.create.mockRejectedValue(Object.assign(new Error('unique'), { code: 'P2002' }));
+      mockTx.track.updateMany.mockResolvedValue({ count: 1 });
+      mockTx.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.album.findUnique.mockResolvedValue({ coverId: null, deletedAt: null });
+      mockTx.album.update.mockResolvedValue(deletedSource);
+
+      await repository.softDeleteAlbumReassignTracksToUnknownBucket({
+        userId: 'user-1',
+        libraryId: 'lib-1',
+        sourceAlbumId: 'source-1',
+      });
+
+      expect(mockTx.album.create).toHaveBeenCalledTimes(1);
+      expect(mockTx.track.updateMany).toHaveBeenCalledWith({
+        where: { albumId: 'source-1', deletedAt: null },
+        data: { albumId: 'concurrent-unknown' },
+      });
+    });
+
+    it('should rethrow when album create fails with a non-unique error', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue(null);
+      const dbError = new Error('connection reset');
+      mockTx.album.create.mockRejectedValue(dbError);
+
+      await expect(
+        repository.softDeleteAlbumReassignTracksToUnknownBucket({
+          userId: 'user-1',
+          libraryId: 'lib-1',
+          sourceAlbumId: 'source-1',
+        }),
+      ).rejects.toThrow('connection reset');
+
+      expect(mockTx.track.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should rethrow P2002 when unknown-bucket album still cannot be resolved after race', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      const uniqueErr = Object.assign(new Error('unique'), { code: 'P2002' });
+      mockTx.album.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      mockTx.album.create.mockRejectedValue(uniqueErr);
+
+      await expect(
+        repository.softDeleteAlbumReassignTracksToUnknownBucket({
+          userId: 'user-1',
+          libraryId: 'lib-1',
+          sourceAlbumId: 'source-1',
+        }),
+      ).rejects.toBe(uniqueErr);
+
+      expect(mockTx.track.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should soft-delete cover image when source album has a cover', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue({ id: 'unknown-existing' });
+      mockTx.track.updateMany.mockResolvedValue({ count: 1 });
+      mockTx.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.album.findUnique.mockResolvedValue({ coverId: 'cover-img-1', deletedAt: null });
+      mockTx.album.update.mockResolvedValue(deletedSource);
+      mockTx.image.updateMany.mockResolvedValue({ count: 1 });
+
+      await repository.softDeleteAlbumReassignTracksToUnknownBucket({
+        userId: 'user-1',
+        libraryId: 'lib-1',
+        sourceAlbumId: 'source-1',
+      });
+
+      expect(mockTx.image.updateMany).toHaveBeenCalledWith({
+        where: { id: 'cover-img-1', deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
+      });
+    });
+
+    it('should not soft-delete cover when album row is missing', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue({ id: 'unknown-existing' });
+      mockTx.track.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.album.findUnique.mockResolvedValue(null);
+      mockTx.album.update.mockResolvedValue(deletedSource);
+
+      await repository.softDeleteAlbumReassignTracksToUnknownBucket({
+        userId: 'user-1',
+        libraryId: 'lib-1',
+        sourceAlbumId: 'source-1',
+      });
+
+      expect(mockTx.image.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should not soft-delete cover when album row is already soft-deleted', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue({ id: 'unknown-existing' });
+      mockTx.track.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.reportTarget.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryAlbum.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.libraryPin.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.communityComment.updateMany.mockResolvedValue({ count: 0 });
+      mockTx.album.findUnique.mockResolvedValue({
+        coverId: 'cover-img-1',
+        deletedAt: new Date('2020-01-01'),
+      });
+      mockTx.album.update.mockResolvedValue(deletedSource);
+
+      await repository.softDeleteAlbumReassignTracksToUnknownBucket({
+        userId: 'user-1',
+        libraryId: 'lib-1',
+        sourceAlbumId: 'source-1',
+      });
+
+      expect(mockTx.image.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should throw when unknown album id matches source album id', async () => {
+      const mockTx = baseTx();
+      mockMainClient.$transaction.mockImplementation(async (cb) => {
+        return await cb(mockTx as unknown as typeof mockPrismaClient);
+      });
+
+      mockTx.album.findFirst.mockResolvedValue({ id: 'source-1' });
+
+      await expect(
+        repository.softDeleteAlbumReassignTracksToUnknownBucket({
+          userId: 'user-1',
+          libraryId: 'lib-1',
+          sourceAlbumId: 'source-1',
+        }),
+      ).rejects.toThrow('Cannot reassign tracks from the unknown album to itself');
+
+      expect(mockTx.track.updateMany).not.toHaveBeenCalled();
     });
   });
 });
