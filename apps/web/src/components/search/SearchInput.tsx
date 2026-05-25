@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useClickAway } from 'react-use';
 import { Input } from '../ui/input';
 import { useNavigate } from '@tanstack/react-router';
-import { type SearchCategory, type SearchSuggestionsResult } from '@repo/contracts';
-import { useSearchPreferencesStore, type SearchScope } from '@/stores/search-preferences.store';
+import { type SearchSuggestionsResult } from '@repo/contracts';
+import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { SearchScopeToggle } from './SearchScopeToggle';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -15,9 +15,6 @@ interface SearchInputProps {
   className?: string;
   initialValue?: string;
   onSearch?: (query: string) => void;
-  lockedScope?: SearchScope;
-  simple?: boolean;
-  lockedCategory?: SearchCategory;
   placeholder?: string;
   size?: 'default' | 'sm';
   hideDropdown?: boolean;
@@ -27,9 +24,6 @@ export function SearchInput({
   className,
   initialValue = '',
   onSearch,
-  lockedScope,
-  simple = false,
-  lockedCategory,
   placeholder,
   size = 'default',
   hideDropdown = false,
@@ -42,11 +36,9 @@ export function SearchInput({
   const navigate = useNavigate();
   const { searchScope } = useSearchPreferencesStore();
 
-  const currentScope = simple ? 'library' : lockedScope || searchScope;
+  const currentScope = searchScope;
 
   useEffect(() => {
-    // If we're already on the search page and the scope changes,
-    // trigger a new search to refresh results
     if (window.location.pathname.includes('/app/search') && query.trim().length >= 3) {
       handleSearch();
     }
@@ -66,7 +58,6 @@ export function SearchInput({
     };
   }, [query]);
 
-  // Handle both global and library suggestions
   const globalSuggestions = useSearchSuggestions(
     { query: debouncedQuery },
     {
@@ -76,7 +67,7 @@ export function SearchInput({
   );
 
   const librarySuggestions = useLibrarySearchSuggestions(
-    { query: debouncedQuery, categories: lockedCategory ? [lockedCategory] : undefined },
+    { query: debouncedQuery },
     {
       enabled:
         !hideDropdown && currentScope === 'library' && isOpen && debouncedQuery.trim().length >= 3,
@@ -259,7 +250,7 @@ export function SearchInput({
         )}
       </div>
 
-      {!simple && <SearchScopeToggle lockedScope={lockedScope} />}
+      <SearchScopeToggle />
     </div>
   );
 }
