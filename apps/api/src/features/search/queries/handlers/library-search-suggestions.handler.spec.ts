@@ -1,9 +1,6 @@
 import { SearchSuggestionsService } from '@/features/search/services/search-suggestions.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  LibrarySearchSuggestionsData,
-  SearchResultType,
-} from '@repo/contracts';
+import { LibrarySearchSuggestionsData, SearchResultType } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LibrarySearchSuggestionsQuery } from '../impl/library-search-suggestions.query';
@@ -101,7 +98,11 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   it('should handle all categories', async () => {
     const allCategories = ['artist', 'album', 'track', 'playlist', 'genre'] as const;
-    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(userId, query, allCategories as any);
+    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(
+      userId,
+      query,
+      allCategories as any,
+    );
     const allResults: LibrarySearchSuggestionsData = {
       results: [
         { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'private' },
