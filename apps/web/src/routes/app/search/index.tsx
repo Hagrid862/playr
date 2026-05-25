@@ -174,12 +174,13 @@ function SearchPage() {
                     />
                   </div>
                   <div className="pt-6 border-t border-white/5 space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">Additional Filters</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Additional Filters
+                    </h4>
                     <SearchFilters search={search} navigate={navigate} />
                   </div>
                 </div>
               </DialogContent>
-
             </Dialog>
 
             <div className="h-4 w-px bg-white/10 mx-1" />
