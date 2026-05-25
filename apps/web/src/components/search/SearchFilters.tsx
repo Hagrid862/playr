@@ -25,7 +25,7 @@ export function SearchFilters({
   const isSectionVisible = (section: FilterSection) => visibleSections.includes(section);
 
   return (
-    <div className="p-6 bg-stone-900/50 border border-white/10 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in slide-in-from-top-2 duration-200">
+    <div className="p-6 bg-stone-900/50 border border-white/10 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in slide-in-from-top-2 duration-200 w-min-xl">
       {/* General Filter */}
       {isSectionVisible('general') && (
         <div className="flex flex-col gap-3">
