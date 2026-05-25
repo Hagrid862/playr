@@ -32,6 +32,13 @@ export const envSchema = z.object({
   // Redis
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
+
+  /** Max age of `PlaybackState.updatedAt` before reads treat state as absent (ms). Default 30 days. */
+  PLAYBACK_STATE_STALE_AFTER_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1000 * 60 * 60 * 24 * 30),
 });
 
 export type Env = z.infer<typeof envSchema>;

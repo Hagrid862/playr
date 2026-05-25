@@ -98,6 +98,9 @@ describe('usePlayerAudio', () => {
       expect(result.current.audioRef).toBeDefined();
       expect(result.current.formatTime(65)).toBe('1:05');
       expect(result.current.formatTimeLeft(20, 100)).toBe('-1:20');
+      expect(result.current.formatTimeLeft(100, 90)).toBe('-0:00');
+      expect(result.current.formatTimeLeft(23, 0)).toBe('--:--');
+      expect(result.current.formatTimeLeft(0, 0)).toBe('--:--');
     });
   });
 

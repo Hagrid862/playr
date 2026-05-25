@@ -11,6 +11,21 @@ vi.mock('./idb-storage', () => ({
   },
 }));
 
+const mockClearLibrary = vi.fn();
+const mockResetForLogout = vi.fn();
+
+vi.mock('./library.store', () => ({
+  useLibraryStore: {
+    getState: () => ({ clearLibrary: mockClearLibrary }),
+  },
+}));
+
+vi.mock('./player-store/player.store', () => ({
+  usePlayerStore: {
+    getState: () => ({ resetForLogout: mockResetForLogout }),
+  },
+}));
+
 const mockUser = (() => {
   const { password, ...user } = userBuilder({ id: 'user-1', username: 'testuser' });
   void password; // Omitted for ZodUser
@@ -20,6 +35,7 @@ const mockUser = (() => {
 describe('auth.store', () => {
   beforeEach(() => {
     useAuthStore.getState().logout();
+    vi.clearAllMocks();
   });
 
   it('initializes with null state', () => {
@@ -55,5 +71,7 @@ describe('auth.store', () => {
     expect(state.accessToken).toBeNull();
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
+    expect(mockClearLibrary).toHaveBeenCalledTimes(1);
+    expect(mockResetForLogout).toHaveBeenCalledTimes(1);
   });
 });

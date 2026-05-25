@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { idbStorage } from './idb-storage';
 import { useLibraryStore } from './library.store';
+import { usePlayerStore } from './player-store/player.store';
 
 export interface AuthState {
   accessToken: string | null;
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         set({ user: null, accessToken: null, isAuthenticated: false });
         useLibraryStore.getState().clearLibrary();
+        usePlayerStore.getState().resetForLogout();
       },
     }),
     {

@@ -28,6 +28,10 @@ export interface PlayerState {
   playbackDevices: ListPlaybackDeviceEntry[];
 
   applyPlaybackStateFromServer: (state: PlaybackState) => void;
+  /** Clears track/queue/history and pauses; keeps volume/quality and local device id. */
+  clearSessionPlayback: () => void;
+  /** Full player reset for logout (including persisted volume/quality/currentTrack/repeatMode). */
+  resetForLogout: () => void;
   setLocalPlaybackDeviceId: (deviceId: string) => void;
   setPlaybackDevices: (devices: ListPlaybackDeviceEntry[]) => void;
 

@@ -13,6 +13,9 @@ import { GlobalExceptionFilter } from '../src/common/filters/global-exception.fi
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
 import { PrismaService } from '../src/shared/services/prisma.service';
 import { MailerService } from '@nestjs-modules/mailer';
+import type Redis from 'ioredis';
+import { RedisProvider } from '../src/features/playback/utils/redis.provider';
+import { createFakePlaybackRedis, type FakePlaybackRedis } from './fake-playback-redis';
 
 // Mock BullMQ to avoid Redis connections in integration tests
 vi.mock('@nestjs/bullmq', async () => {
@@ -55,6 +58,7 @@ vi.mock('@nestjs/bullmq', async () => {
 /**
  * Creates a NestJS application configured for integration testing.
  * Uses a mocked PrismaService to avoid database dependencies.
+ * Replaces playback `RedisProvider` with an in-memory fake so tests do not require Redis.
  */
 export async function createIntegrationApp(
   builder: (module: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
@@ -62,7 +66,11 @@ export async function createIntegrationApp(
   app: INestApplication;
   moduleFixture: TestingModule;
   prismaMock: PrismaServiceMock;
+  /** In-memory double for `PLAYBACK_REDIS` (no real Redis required). */
+  playbackRedis: FakePlaybackRedis;
 }> {
+  const playbackRedis = createFakePlaybackRedis();
+
   let moduleBuilder = Test.createTestingModule({
     imports: [AppModule],
   })
@@ -76,6 +84,11 @@ export async function createIntegrationApp(
       eval: vi.fn(),
       on: vi.fn(),
       quit: vi.fn().mockResolvedValue('OK'),
+    })
+    .overrideProvider(RedisProvider)
+    .useValue({
+      client: playbackRedis as unknown as Redis,
+      onModuleDestroy: async () => {},
     })
     .overrideProvider(MailerService)
     .useValue({
@@ -98,5 +111,5 @@ export async function createIntegrationApp(
 
   const prismaMock = app.get<PrismaServiceMock>(PrismaService);
 
-  return { app, moduleFixture, prismaMock };
+  return { app, moduleFixture, prismaMock, playbackRedis };
 }

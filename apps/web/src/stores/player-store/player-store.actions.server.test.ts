@@ -148,5 +148,29 @@ describe('player-store.actions.server', () => {
       getState().setPlaybackDevices([device]);
       expect(getState().playbackDevices).toEqual([device]);
     });
+
+    it('clearSessionPlayback resets playback slice but keeps volume and local device', () => {
+      getState().setVolume(0.4);
+      getState().setLocalPlaybackDeviceId('dev-1');
+      getState().playTrack(createTrack('t1'));
+
+      getState().clearSessionPlayback();
+
+      expect(getState().currentTrack).toBeNull();
+      expect(getState().volume).toBe(0.4);
+      expect(getState().localPlaybackDeviceId).toBe('dev-1');
+    });
+
+    it('resetForLogout restores defaults including persisted fields', () => {
+      getState().setVolume(0.3);
+      getState().setLocalPlaybackDeviceId('dev-1');
+      getState().playTrack(createTrack('t1'));
+
+      getState().resetForLogout();
+
+      expect(getState().currentTrack).toBeNull();
+      expect(getState().volume).toBe(1);
+      expect(getState().localPlaybackDeviceId).toBe('');
+    });
   });
 });

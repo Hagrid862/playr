@@ -4,8 +4,7 @@ import { userBuilder } from '@repo/testing/builders';
 import { PrismaServiceMock } from '@repo/testing/nestjs';
 import { TokenService } from '../src/features/auth/services/token.service';
 import { PlaybackGateway } from '../src/features/playback/playback.gateway';
-import { RedisProvider } from '../src/features/playback/utils/redis.provider';
-import { createFakePlaybackRedis } from './fake-playback-redis';
+import type { FakePlaybackRedis } from './fake-playback-redis';
 import { setupJwtAuthPrismaMocks } from './jwt-auth-prisma-setup';
 import { createIntegrationApp } from './test-utils';
 
@@ -68,10 +67,9 @@ describe('PlaybackGateway (Integration)', () => {
   let app: INestApplication;
   let prismaMock: PrismaServiceMock;
   let gateway: PlaybackGateway;
-  let fakeRedis: ReturnType<typeof createFakePlaybackRedis>;
+  let fakeRedis: FakePlaybackRedis;
 
   beforeAll(async () => {
-    fakeRedis = createFakePlaybackRedis();
     const tokenServiceMock = {
       authenticateWithAccessToken: vi.fn().mockResolvedValue({
         user: userBuilder({ id: USER_ID, username: 'playback-int' }),
@@ -80,17 +78,11 @@ describe('PlaybackGateway (Integration)', () => {
     };
 
     const setup = await createIntegrationApp((builder) =>
-      builder
-        .overrideProvider(RedisProvider)
-        .useValue({
-          client: fakeRedis,
-          onModuleDestroy: async () => {},
-        })
-        .overrideProvider(TokenService)
-        .useValue(tokenServiceMock),
+      builder.overrideProvider(TokenService).useValue(tokenServiceMock),
     );
     app = setup.app;
     prismaMock = setup.prismaMock;
+    fakeRedis = setup.playbackRedis;
     gateway = app.get(PlaybackGateway);
   });
 

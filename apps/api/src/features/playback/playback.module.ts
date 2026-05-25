@@ -65,6 +65,6 @@ export const CommandHandlers = [
     },
     RedisProvider,
   ],
-  exports: [PLAYBACK_REDIS],
+  exports: [PLAYBACK_REDIS, PlaybackStatePersistenceService, PlaybackGateway],
 })
 export class PlaybackModule {}

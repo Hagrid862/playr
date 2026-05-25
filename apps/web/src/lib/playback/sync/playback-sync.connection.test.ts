@@ -7,7 +7,9 @@ import {
   disconnectPlaybackSync,
   getPlaybackSocket,
   isPlaybackSyncConnected,
+  PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS,
 } from './playback-sync';
+import { emitPresenceTouch } from './playback-sync.commands';
 import {
   asSocketMock,
   basePlaybackSyncTestState,
@@ -47,6 +49,14 @@ vi.mock('@/stores/player-store/player.store', () => ({
   },
 }));
 
+vi.mock('./playback-sync.commands', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./playback-sync.commands')>();
+  return {
+    ...actual,
+    emitPresenceTouch: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
 describe('playback-sync connection', () => {
   let mockSocket: PlaybackSocketMock;
 
@@ -67,12 +77,17 @@ describe('playback-sync connection', () => {
 
       expect(createPlaybackSocket).toHaveBeenCalled();
       expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function));
+      expect(mockSocket.on).toHaveBeenCalledWith('disconnect', expect.any(Function));
       expect(mockSocket.on).toHaveBeenCalledWith(
         'event:playback-state-updated',
         expect.any(Function),
       );
       expect(mockSocket.on).toHaveBeenCalledWith(
         'event:current-time-updated',
+        expect.any(Function),
+      );
+      expect(mockSocket.on).toHaveBeenCalledWith(
+        'event:playback-session-ended',
         expect.any(Function),
       );
       expect(mockSocket.on).toHaveBeenCalledWith('connect_error', expect.any(Function));
@@ -91,6 +106,85 @@ describe('playback-sync connection', () => {
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalled();
 
       expect(mockSocket.emit).toHaveBeenCalledWith('query:list-devices', {}, expect.any(Function));
+    });
+
+    it('swallows rejected presence-touch on initial connect', async () => {
+      mockSocket.emit.mockImplementation(
+        (event: string, _data: unknown, cb?: (r: unknown) => void) => {
+          if (event === 'query:get-state' && cb) cb(null);
+          if (event === 'query:list-devices' && cb) cb({ devices: [] });
+        },
+      );
+      const emitPresenceTouchMock = vi.mocked(emitPresenceTouch);
+      emitPresenceTouchMock.mockRejectedValueOnce(new Error('presence failed on connect'));
+      emitPresenceTouchMock.mockResolvedValue(undefined);
+
+      connectPlaybackSync('token');
+      const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
+      connectHandler();
+      await flushMicrotasks();
+
+      expect(emitPresenceTouchMock).toHaveBeenCalledTimes(1);
+
+      emitPresenceTouchMock.mockReset();
+      emitPresenceTouchMock.mockResolvedValue(undefined);
+    });
+
+    it('swallows rejected presence-touch from the heartbeat interval', async () => {
+      vi.useFakeTimers();
+      try {
+        mockSocket.emit.mockImplementation(
+          (event: string, _data: unknown, cb?: (r: unknown) => void) => {
+            if (event === 'query:get-state' && cb) cb(null);
+            if (event === 'query:list-devices' && cb) cb({ devices: [] });
+          },
+        );
+        const emitPresenceTouchMock = vi.mocked(emitPresenceTouch);
+        emitPresenceTouchMock.mockResolvedValueOnce(undefined);
+        emitPresenceTouchMock.mockRejectedValue(new Error('presence failed'));
+
+        connectPlaybackSync('token');
+        const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
+        connectHandler();
+
+        await vi.advanceTimersByTimeAsync(PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS);
+        await flushMicrotasks();
+
+        expect(emitPresenceTouchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+      } finally {
+        vi.useRealTimers();
+        vi.mocked(emitPresenceTouch).mockReset();
+        vi.mocked(emitPresenceTouch).mockResolvedValue(undefined);
+      }
+    });
+
+    it('clears presence heartbeat interval on socket disconnect', async () => {
+      vi.useFakeTimers();
+      try {
+        mockSocket.emit.mockImplementation(
+          (event: string, _data: unknown, cb?: (r: unknown) => void) => {
+            if (event === 'query:get-state' && cb) cb(null);
+            if (event === 'query:list-devices' && cb) cb({ devices: [] });
+          },
+        );
+        const emitPresenceTouchMock = vi.mocked(emitPresenceTouch);
+        emitPresenceTouchMock.mockResolvedValue(undefined);
+
+        connectPlaybackSync('token');
+        const connectHandler = findOnHandler(mockSocket.on.mock.calls, 'connect');
+        const disconnectHandler = findOnHandler(mockSocket.on.mock.calls, 'disconnect');
+        connectHandler();
+        await flushMicrotasks();
+        disconnectHandler();
+        await vi.advanceTimersByTimeAsync(PLAYBACK_PRESENCE_TOUCH_INTERVAL_MS);
+        await flushMicrotasks();
+
+        expect(emitPresenceTouchMock).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+        vi.mocked(emitPresenceTouch).mockReset();
+        vi.mocked(emitPresenceTouch).mockResolvedValue(undefined);
+      }
     });
 
     it('recovers when first listPlaybackDevices call fails on connect', async () => {
@@ -124,6 +218,13 @@ describe('playback-sync connection', () => {
       updateHandler(newState);
 
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).toHaveBeenCalledWith(newState);
+    });
+
+    it('clears session when playback-session-ended fires', () => {
+      connectPlaybackSync('token');
+      const endedHandler = findOnHandler(mockSocket.on.mock.calls, 'event:playback-session-ended');
+      endedHandler();
+      expect(usePlayerStore.getState().clearSessionPlayback).toHaveBeenCalled();
     });
 
     it('applies current time update from server', () => {
@@ -210,6 +311,7 @@ describe('playback-sync connection', () => {
       );
       connectHandler();
       expect(usePlayerStore.getState().applyPlaybackStateFromServer).not.toHaveBeenCalled();
+      expect(usePlayerStore.getState().clearSessionPlayback).toHaveBeenCalled();
     });
 
     it('returns early if disconnected', () => {

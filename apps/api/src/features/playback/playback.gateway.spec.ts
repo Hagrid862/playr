@@ -385,6 +385,7 @@ describe('PlaybackGateway', () => {
 
     beforeEach(() => {
       roomEmit = vi.fn();
+      server.to.mockReturnValue({ emit: roomEmit } as any);
       mockSocket = {
         data: {
           user: { user: { id: 'u1' }, sessionId: 's1' },
@@ -431,6 +432,30 @@ describe('PlaybackGateway', () => {
       await gateway.handleListDevices(mockSocket);
 
       expect(playbackDeviceRegistry.listDevices).toHaveBeenCalledWith('u1', '', 'd1');
+    });
+
+    it('handlePresenceTouch should refresh device registry and return ack', async () => {
+      const result = await gateway.handlePresenceTouch(mockSocket);
+
+      expect(playbackDeviceRegistry.registerOrUpdateDevice).toHaveBeenCalledWith('u1', {
+        deviceId: 'd1',
+        deviceName: 'Web Player',
+        deviceIcon: 'desktop',
+      });
+      expect(result).toEqual({ ok: true, serverTime: expect.any(String) });
+    });
+
+    it('emitPlaybackStateToUserRoom and emitPlaybackSessionEndedToUserRoom use server room', () => {
+      gateway.emitPlaybackStateToUserRoom('u1', mockPlaybackState);
+      expect(server.to).toHaveBeenCalledWith('user:u1');
+      expect(roomEmit).toHaveBeenCalledWith('event:playback-state-updated', mockPlaybackState);
+
+      vi.mocked(server.to).mockClear();
+      roomEmit.mockClear();
+
+      gateway.emitPlaybackSessionEndedToUserRoom('u1');
+      expect(server.to).toHaveBeenCalledWith('user:u1');
+      expect(roomEmit).toHaveBeenCalledWith('event:playback-session-ended', {});
     });
 
     it('handleSetPlayback should dispatch command and broadcast state', async () => {

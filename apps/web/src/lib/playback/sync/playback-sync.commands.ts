@@ -2,6 +2,7 @@ import { usePlayerStore } from '@/stores/player-store/player.store';
 import type {
   ListPlaybackDevicesResponse,
   PlaybackState,
+  PresenceTouchResponse,
   SetActiveDeviceRequest,
   SetCurrentTimeStateRequest,
 } from '@repo/contracts';
@@ -70,6 +71,19 @@ export function listPlaybackDevices(
   });
 }
 
+/**
+ * Refreshes playback device presence in Redis. The API uses a 90s TTL on the device hash;
+ * the client heartbeat interval must stay comfortably below that (see playback-sync.connection).
+ */
+export async function emitPresenceTouch(
+  ackTimeoutMs: number = PLAYBACK_SOCKET_ACK_TIMEOUT_MS,
+): Promise<void> {
+  if (!isPlaybackSocketConnected()) return;
+
+  const socket = getSocket()!;
+  await emitWithAck<PresenceTouchResponse>(socket, 'command:presence-touch', {}, ackTimeoutMs);
+}
+
 export async function emitCurrentTimeSync(
   currentTime: number,
   ackTimeoutMs: number = PLAYBACK_SOCKET_ACK_TIMEOUT_MS,
@@ -101,7 +115,11 @@ export async function emitCurrentTimeSync(
         {},
         ackTimeoutMs,
       );
-      if (state) applyStateFromServer(state);
+      if (state) {
+        applyStateFromServer(state);
+      } else {
+        usePlayerStore.getState().clearSessionPlayback();
+      }
     }
     return;
   }
@@ -145,7 +163,10 @@ export async function setActivePlaybackDevice(
       {},
       ackTimeoutMs,
     );
-    if (!state) return;
+    if (!state) {
+      usePlayerStore.getState().clearSessionPlayback();
+      return;
+    }
 
     applyStateFromServer(state);
     const sock = getSocket();
