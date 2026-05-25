@@ -1,4 +1,9 @@
+import {
+  isControllingLocalAudio,
+  isNoActivePlaybackDevice,
+} from '@/lib/playback/playback-active-device';
 import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
+import { usePlaybackMediaSession } from '@/lib/playback/media-session/usePlaybackMediaSession';
 import {
   emitCurrentTimeSync,
   firePlaybackCommand,
@@ -11,15 +16,12 @@ import { useEffect, useRef, useState } from 'react';
 
 const PLAYBACK_TIME_SYNC_INTERVAL_MS = 1500;
 
-const isNoActiveDevice = (value: string | null | undefined): boolean => {
-  return value == null || value === '';
-};
-
 /**
  * Hook to manage audio element synchronization with player store
  */
 export function usePlayerAudio() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  usePlaybackMediaSession(audioRef);
   const timeToRestoreRef = useRef<number | null>(null);
   const lastTimeSyncAtRef = useRef<number>(0);
   const lastSyncedSecondRef = useRef<number | null>(null);
@@ -108,10 +110,11 @@ export function usePlayerAudio() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const shouldOutputAudio =
-      !isPlaybackSyncConnected() ||
-      isNoActiveDevice(activeDeviceId) ||
-      activeDeviceId === localPlaybackDeviceId;
+    const shouldOutputAudio = isControllingLocalAudio({
+      isPlaybackSyncConnected: isPlaybackSyncConnected(),
+      activeDeviceId,
+      localPlaybackDeviceId,
+    });
 
     if (!isPlaying || !shouldOutputAudio) {
       audio.pause();
@@ -166,10 +169,11 @@ export function usePlayerAudio() {
 
   const handleTimeUpdate = () => {
     const audio = audioRef.current;
-    const shouldOutputAudio =
-      !isPlaybackSyncConnected() ||
-      isNoActiveDevice(activeDeviceId) ||
-      activeDeviceId === localPlaybackDeviceId;
+    const shouldOutputAudio = isControllingLocalAudio({
+      isPlaybackSyncConnected: isPlaybackSyncConnected(),
+      activeDeviceId,
+      localPlaybackDeviceId,
+    });
     if (!audio || !shouldOutputAudio) {
       return;
     }
@@ -181,7 +185,7 @@ export function usePlayerAudio() {
       !isPlaybackSyncConnected() ||
       !isPlaying ||
       !currentTrack ||
-      isNoActiveDevice(activeDeviceId) ||
+      isNoActivePlaybackDevice(activeDeviceId) ||
       activeDeviceId !== localPlaybackDeviceId ||
       playbackVersion === 0
     ) {
