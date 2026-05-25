@@ -22,6 +22,7 @@ describe('LibraryTrackRepository', () => {
       deleteMany: vi.fn(),
       count: vi.fn(),
     },
+    $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   });
 
@@ -243,6 +244,105 @@ describe('LibraryTrackRepository', () => {
           track: { deletedAt: null },
         },
         orderBy: undefined,
+        include: { track: true },
+      });
+    });
+  });
+
+  describe('getIdsPaginatedByMinArtistName', () => {
+    it('returns ordered ids for asc sort', async () => {
+      mockPrismaClient.$queryRaw.mockResolvedValue([{ id: 'lt-2' }, { id: 'lt-1' }]);
+
+      const result = await repository.getIdsPaginatedByMinArtistName({
+        libraryId: 'lib-1',
+        page: 1,
+        limit: 10,
+        sortOrder: 'asc',
+      });
+
+      expect(result).toEqual(['lt-2', 'lt-1']);
+      expect(mockPrismaClient.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses page offset and desc sort direction', async () => {
+      mockPrismaClient.$queryRaw.mockResolvedValue([]);
+
+      await repository.getIdsPaginatedByMinArtistName({
+        libraryId: 'lib-1',
+        page: 3,
+        limit: 5,
+        sortOrder: 'desc',
+      });
+
+      expect(mockPrismaClient.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('adds album and genre filters when provided', async () => {
+      mockPrismaClient.$queryRaw.mockResolvedValue([{ id: 'lt-1' }]);
+
+      const result = await repository.getIdsPaginatedByMinArtistName({
+        libraryId: 'lib-1',
+        albumId: 'album-9',
+        genreId: 'genre-9',
+        page: 1,
+        limit: 20,
+        sortOrder: 'asc',
+      });
+
+      expect(result).toEqual(['lt-1']);
+      expect(mockPrismaClient.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips album filter when albumId is empty string', async () => {
+      mockPrismaClient.$queryRaw.mockResolvedValue([]);
+
+      await repository.getIdsPaginatedByMinArtistName({
+        libraryId: 'lib-1',
+        albumId: '',
+        genreId: undefined,
+        page: 1,
+        limit: 10,
+        sortOrder: 'asc',
+      });
+
+      expect(mockPrismaClient.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips genre filter when genreId is empty string', async () => {
+      mockPrismaClient.$queryRaw.mockResolvedValue([]);
+
+      await repository.getIdsPaginatedByMinArtistName({
+        libraryId: 'lib-1',
+        genreId: '',
+        page: 1,
+        limit: 10,
+        sortOrder: 'asc',
+      });
+
+      expect(mockPrismaClient.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findManyByIdsOrdered', () => {
+    it('returns empty array when ids is empty', async () => {
+      const result = await repository.findManyByIdsOrdered([], { include: { track: true } });
+
+      expect(result).toEqual([]);
+      expect(mockPrismaClient.libraryTrack.findMany).not.toHaveBeenCalled();
+    });
+
+    it('reorders results to match id order and omits missing ids', async () => {
+      const rowB = { ...mockLibraryTrack, id: 'id-b' };
+      const rowA = { ...mockLibraryTrack, id: 'id-a' };
+      mockPrismaClient.libraryTrack.findMany.mockResolvedValue([rowA, rowB]);
+
+      const result = await repository.findManyByIdsOrdered(['id-b', 'id-a', 'id-missing'], {
+        include: { track: true },
+      });
+
+      expect(result).toEqual([rowB, rowA]);
+      expect(mockPrismaClient.libraryTrack.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['id-b', 'id-a', 'id-missing'] }, deletedAt: null },
         include: { track: true },
       });
     });

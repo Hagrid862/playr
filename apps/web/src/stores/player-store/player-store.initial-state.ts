@@ -10,6 +10,7 @@ export const playerStorePlaybackInitialSlice: Pick<
   | 'duration'
   | 'queue'
   | 'originalQueue'
+  | 'listHeadTrackIds'
   | 'history'
   | 'repeatMode'
   | 'isShuffled'
@@ -27,6 +28,7 @@ export const playerStorePlaybackInitialSlice: Pick<
   duration: 0,
   queue: [],
   originalQueue: [],
+  listHeadTrackIds: [],
   history: [],
   repeatMode: 'off',
   isShuffled: false,

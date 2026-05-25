@@ -55,6 +55,7 @@ export function resetPlayerStore(): void {
     availableQualities: ['auto'],
     queue: [],
     originalQueue: [],
+    listHeadTrackIds: [],
     history: [],
     repeatMode: 'off',
     isShuffled: false,

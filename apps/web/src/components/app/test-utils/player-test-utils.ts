@@ -12,6 +12,7 @@ export function createPlayerStateMock(overrides: Partial<PlayerState> = {}): Pla
     availableQualities: ['auto'],
     queue: [],
     originalQueue: [],
+    listHeadTrackIds: [],
     history: [],
     repeatMode: 'off',
     isShuffled: false,

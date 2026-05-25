@@ -126,6 +126,31 @@ describe('player-store.actions.queue', () => {
   });
 
   describe('Shuffle', () => {
+    it('toggle shuffle merges list-head history into the shuffle pool', () => {
+      const t1 = createTrack('track-1');
+      const t2 = createTrack('track-2');
+      const t3 = createTrack('track-3');
+      const t4 = createTrack('track-4');
+      const t5 = createTrack('track-5');
+
+      getState().playTrack(t3, [t1, t2, t3, t4, t5]);
+      expect(getState().queue.map((i) => i.track.id)).toEqual(['track-4', 'track-5']);
+      expect(getState().history.map((h) => h.track.id)).toEqual(['track-2', 'track-1']);
+
+      getState().toggleShuffle();
+
+      const state = getState();
+      expect(state.isShuffled).toBe(true);
+      expect(state.listHeadTrackIds).toEqual([]);
+      expect(state.history.length).toBe(0);
+      expect(state.queue.map((i) => i.track.id).sort()).toEqual(
+        ['track-1', 'track-2', 'track-4', 'track-5'].sort(),
+      );
+      expect(state.originalQueue.map((i) => i.track.id).sort()).toEqual(
+        ['track-1', 'track-2', 'track-4', 'track-5'].sort(),
+      );
+    });
+
     it('toggles shuffle on and off preserving original queue', () => {
       const q = [createTrack('1'), createTrack('2'), createTrack('3')];
       getState().playTrack(q[0]!, q);

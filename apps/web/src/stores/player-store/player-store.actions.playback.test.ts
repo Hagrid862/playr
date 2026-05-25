@@ -40,9 +40,10 @@ describe('player-store.actions.playback', () => {
 
       const state = getState();
       expect(state.currentTrack?.id).toBe('track-2');
-      expect(state.queue.length).toBe(2);
-      expect(state.queue[0]?.track.id).toBe('track-1');
-      expect(state.queue[1]?.track.id).toBe('track-3');
+      expect(state.queue.length).toBe(1);
+      expect(state.queue[0]?.track.id).toBe('track-3');
+      expect(state.history.map((h) => h.track.id)).toEqual(['track-1']);
+      expect(state.listHeadTrackIds).toEqual(['track-1']);
     });
 
     it('plays a track providing a queue where track is NOT inside (prepends)', () => {
@@ -118,7 +119,21 @@ describe('player-store.actions.playback', () => {
       expect(getState().currentTrack?.id).toBe('new');
     });
 
-    it('clears history when starting album context', () => {
+    it('seeds history with list-order tracks before the clicked row when starting mid-list', () => {
+      const t1 = createTrack('track-1');
+      const t2 = createTrack('track-2');
+      const t3 = createTrack('track-3');
+      const t4 = createTrack('track-4');
+      const t5 = createTrack('track-5');
+
+      getState().playTrack(t3, [t1, t2, t3, t4, t5]);
+
+      expect(getState().queue.map((q) => q.track.id)).toEqual(['track-4', 'track-5']);
+      expect(getState().history.map((h) => h.track.id)).toEqual(['track-2', 'track-1']);
+      expect(getState().listHeadTrackIds).toEqual(['track-1', 'track-2']);
+    });
+
+    it('clears history when starting album context from the first row', () => {
       usePlayerStore.setState({
         history: [
           testQueueItem({

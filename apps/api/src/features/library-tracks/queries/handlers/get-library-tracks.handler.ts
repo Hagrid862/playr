@@ -5,12 +5,17 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetLibraryTracksResponse, type ZodTrack } from '@repo/contracts';
 import { Prisma } from '@repo/db';
 import { GetLibraryTracksQuery } from '../impl/get-library-tracks.query';
+import { buildGetLibraryTracksOrderBy } from './get-library-tracks.order-by';
 
 const LIBRARY_TRACK_WITH_TRACK_INCLUDE = {
   track: {
     include: {
       artists: true,
-      album: true,
+      album: {
+        include: {
+          cover: true,
+        },
+      },
       genres: { include: { genre: true } },
     },
   },
@@ -24,7 +29,7 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
   ) {}
 
   async execute(query: GetLibraryTracksQuery): Promise<GetLibraryTracksResponse['data']> {
-    const { userId, page, limit, albumId, genreId } = query;
+    const { userId, page, limit, albumId, genreId, sortBy, sortOrder } = query;
 
     const library = await this.libraryRepository.getByUserId(userId);
 
@@ -40,14 +45,33 @@ export class GetLibraryTracksHandler implements IQueryHandler<GetLibraryTracksQu
       },
     };
 
+    const isArtistSort = sortBy === 'artist' && sortOrder !== undefined;
+
+    const itemsPromise =
+      isArtistSort && sortOrder
+        ? (async () => {
+            const ids = await this.libraryTrackRepository.getIdsPaginatedByMinArtistName({
+              libraryId: library.id,
+              albumId,
+              genreId,
+              page,
+              limit,
+              sortOrder,
+            });
+            return this.libraryTrackRepository.findManyByIdsOrdered(ids, {
+              include: LIBRARY_TRACK_WITH_TRACK_INCLUDE,
+            });
+          })()
+        : this.libraryTrackRepository.getPaginated(
+            page,
+            limit,
+            where,
+            buildGetLibraryTracksOrderBy(sortBy, sortOrder),
+            { include: LIBRARY_TRACK_WITH_TRACK_INCLUDE },
+          );
+
     const [items, total] = await Promise.all([
-      this.libraryTrackRepository.getPaginated(
-        page,
-        limit,
-        where,
-        { track: { trackNumber: 'asc' } },
-        { include: LIBRARY_TRACK_WITH_TRACK_INCLUDE },
-      ),
+      itemsPromise,
       this.libraryTrackRepository.count(where),
     ]);
 

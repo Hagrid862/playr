@@ -55,7 +55,15 @@ describe('LibraryTracksController', () => {
 
       expect(result).toBe(expectedResult);
       expect(queryBus.execute).toHaveBeenCalledWith(
-        new GetLibraryTracksQuery(userId, query.page, query.limit, undefined),
+        new GetLibraryTracksQuery(
+          userId,
+          query.page,
+          query.limit,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+        ),
       );
     });
 
@@ -65,7 +73,26 @@ describe('LibraryTracksController', () => {
       await controller.getTracks(userId, query);
 
       expect(queryBus.execute).toHaveBeenCalledWith(
-        new GetLibraryTracksQuery(userId, query.page, query.limit, 'album-123'),
+        new GetLibraryTracksQuery(
+          userId,
+          query.page,
+          query.limit,
+          'album-123',
+          undefined,
+          undefined,
+          undefined,
+        ),
+      );
+    });
+
+    it('should pass sortBy and sortOrder when provided', async () => {
+      const query = { page: 1, limit: 10, sortBy: 'title', sortOrder: 'desc' } as const;
+      queryBus.execute.mockResolvedValue({ items: [], total: 0 });
+
+      await controller.getTracks(userId, query);
+
+      expect(queryBus.execute).toHaveBeenCalledWith(
+        new GetLibraryTracksQuery(userId, 1, 10, undefined, undefined, 'title', 'desc'),
       );
     });
   });

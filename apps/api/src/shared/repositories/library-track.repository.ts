@@ -133,6 +133,75 @@ export class LibraryTrackRepository {
       ...(options?.include ? { include: options.include } : {}),
     });
   }
+
+  /**
+   * Paginated `library_tracks.id` values ordered by the lexicographically smallest
+   * linked artist name (MIN over implicit M2M `_TrackArtists`).
+   */
+  async getIdsPaginatedByMinArtistName(params: {
+    libraryId: string;
+    albumId?: string;
+    genreId?: string;
+    page: number;
+    limit: number;
+    sortOrder: 'asc' | 'desc';
+  }): Promise<string[]> {
+    const { libraryId, albumId, genreId, page, limit, sortOrder } = params;
+    const offset = (page - 1) * limit;
+    const orderDirection =
+      sortOrder === 'desc' ? Prisma.sql`DESC NULLS LAST` : Prisma.sql`ASC NULLS LAST`;
+    const albumClause =
+      albumId !== undefined && albumId !== ''
+        ? Prisma.sql`AND t."albumId" = ${albumId}`
+        : Prisma.sql``;
+    const genreClause =
+      genreId !== undefined && genreId !== ''
+        ? Prisma.sql`AND EXISTS (
+          SELECT 1 FROM track_genres tg
+          WHERE tg."trackId" = t.id AND tg."genreId" = ${genreId}
+        )`
+        : Prisma.sql``;
+
+    const rows = await this.prisma.client.$queryRaw<{ id: string }[]>`
+      SELECT lt.id
+      FROM library_tracks lt
+      INNER JOIN tracks t ON t.id = lt."trackId"
+      WHERE lt."libraryId" = ${libraryId}
+        AND lt."deletedAt" IS NULL
+        AND t."deletedAt" IS NULL
+        ${albumClause}
+        ${genreClause}
+      ORDER BY (
+        SELECT MIN(a.name)
+        FROM "_TrackArtists" ta
+        INNER JOIN artists a ON a.id = ta."A"
+        WHERE ta."B" = t.id
+      ) ${orderDirection}, t.id ASC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+    return rows.map((r) => r.id);
+  }
+
+  async findManyByIdsOrdered<T extends Prisma.LibraryTrackInclude>(
+    ids: string[],
+    options: { include: T },
+  ): Promise<LibraryTrackGetPayload<{ include: T }>[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const rows = await this.prisma.client.libraryTrack.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: null,
+      },
+      include: options.include,
+    });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    return ids
+      .map((id) => byId.get(id))
+      .filter((r): r is LibraryTrackGetPayload<{ include: T }> => r !== undefined);
+  }
+
   async listByLibraryAndAlbum(
     libraryId: string,
     albumId: string,

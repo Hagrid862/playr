@@ -19,6 +19,7 @@ import {
   DiscIcon,
   GridFourIcon,
   HouseIcon,
+  ListBulletsIcon,
   MagnifyingGlassIcon,
   MicrophoneStageIcon,
   MusicNotesIcon,
@@ -112,6 +113,14 @@ export function AppSidebar() {
                   <Link to="/app/library/albums" activeProps={{ 'data-active': 'true' }}>
                     <DiscIcon />
                     <span>Albums</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/app/library/songs" activeProps={{ 'data-active': 'true' }}>
+                    <ListBulletsIcon />
+                    <span>Songs</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

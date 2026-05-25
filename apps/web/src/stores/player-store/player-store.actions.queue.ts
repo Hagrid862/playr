@@ -33,6 +33,7 @@ export function createPlayerQueueActions(
         queue: items,
         originalQueue: [],
         isShuffled: false,
+        listHeadTrackIds: [],
       });
       afterLocalPlaybackMutation();
     },
@@ -51,13 +52,19 @@ export function createPlayerQueueActions(
         }
 
         const ordered = getOrderedNextQueue(state.queue, false);
-        const snapshot = ordered.map((q) => ({ ...q }));
-        const shuffled = shuffleArray(ordered);
+        const headIdSet = new Set(state.listHeadTrackIds);
+        const headFromHist = state.history.filter((h) => headIdSet.has(h.track.id));
+        const historyWithoutHead = state.history.filter((h) => !headIdSet.has(h.track.id));
+        const poolItems = [...ordered, ...headFromHist];
+        const snapshot = poolItems.map((q) => ({ ...q }));
+        const shuffled = shuffleArray(poolItems);
         const newQueue = shuffled.map((item, i) => ({ ...item, position: i }));
         return {
           isShuffled: true,
           originalQueue: snapshot,
           queue: newQueue,
+          history: historyWithoutHead,
+          listHeadTrackIds: [],
         };
       });
       afterLocalPlaybackMutation();

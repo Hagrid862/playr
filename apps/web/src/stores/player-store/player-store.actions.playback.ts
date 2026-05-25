@@ -1,6 +1,6 @@
 import { playbackTrackToQueueItem } from '@/lib/playback/playback-mappers';
 import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
-import type { QueueItem } from '@repo/contracts';
+import type { PlaybackTrack, QueueItem } from '@repo/contracts';
 import { PLAYBACK_HISTORY_MAX_LENGTH } from '@repo/contracts';
 import type { StoreApi } from 'zustand';
 import type { PlayerState } from './player-store.types';
@@ -29,8 +29,29 @@ export function createPlayerPlaybackActions(
       }
 
       let nextQueue: QueueItem[] = [];
+      let listHeadTrackIds: string[] = [];
+      let albumHistory: QueueItem[] = [];
+
       if (isAlbumContext) {
-        const rest = albumRemainder.filter((t) => t.id !== track.id);
+        const clickedIndex = albumRemainder.findIndex((t) => t.id === track.id);
+        let rest: PlaybackTrack[];
+        if (clickedIndex === -1) {
+          rest = albumRemainder.filter((t) => t.id !== track.id);
+        } else {
+          rest = albumRemainder.slice(clickedIndex + 1);
+          if (clickedIndex > 0) {
+            const beforeTracks = albumRemainder.slice(0, clickedIndex);
+            listHeadTrackIds = beforeTracks.map((t) => t.id);
+            const newestFirst = [...beforeTracks].reverse();
+            albumHistory = newestFirst.map((t, i) =>
+              playbackTrackToQueueItem(t, {
+                type: 'playingNext',
+                position: i,
+                originalPosition: i,
+              }),
+            );
+          }
+        }
         nextQueue = rest.map((t, i) =>
           playbackTrackToQueueItem(t, {
             type: 'playingNext',
@@ -49,7 +70,8 @@ export function createPlayerPlaybackActions(
         originalQueue: [],
         isShuffled: false,
         currentTime: 0,
-        ...(isAlbumContext ? { history: [] } : {}),
+        listHeadTrackIds: isAlbumContext ? listHeadTrackIds : [],
+        ...(isAlbumContext ? { history: albumHistory } : {}),
       });
 
       flushPlaybackClaimAfterLocalMutation(get);
