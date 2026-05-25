@@ -3,11 +3,6 @@ import { cn } from '@/lib/utils';
 import { DiscIcon } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu.tsx';
 
 export function MediaCard({
   coverUrl,
