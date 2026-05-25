@@ -16,12 +16,15 @@ export interface ZodPlaylist extends Playlist {
   tracks?: ZodPlaylistTrack[];
 }
 
+export const PlaylistSystemRoleSchema = z.enum(["favorites"]);
+
 export const PlaylistSchema: z.ZodType<ZodPlaylist> = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   isPublic: z.boolean(),
   isCollaborative: z.boolean(),
+  systemRole: PlaylistSystemRoleSchema.nullable(),
   libraryId: z.string().nullable(),
   artistId: z.string().nullable(),
   coverId: z.string().nullable(),

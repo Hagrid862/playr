@@ -6,6 +6,7 @@ import {
   PlaybackStatePayload,
   PlaybackStatePayloadSchema,
 } from '@repo/contracts';
+import { PlaybackLibraryFlagsService } from '../../services/playback-library-flags.service';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
 import { SetPlaybackStateCommand } from './../impl/set-playback-state.command';
 
@@ -13,7 +14,10 @@ import { SetPlaybackStateCommand } from './../impl/set-playback-state.command';
 export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackStateCommand> {
   private readonly logger = new Logger(SetPlaybackStateHandler.name);
 
-  constructor(private readonly persistence: PlaybackStatePersistenceService) {}
+  constructor(
+    private readonly persistence: PlaybackStatePersistenceService,
+    private readonly libraryFlags: PlaybackLibraryFlagsService,
+  ) {}
 
   private upsertDeviceById(
     devices: PlaybackStatePayload['devices'],
@@ -64,10 +68,15 @@ export class SetPlaybackStateHandler implements ICommandHandler<SetPlaybackState
       throw new BadRequestException('Data sent was not valid.');
     }
 
-    const payload: PlaybackStatePayload = {
+    const payloadBase: PlaybackStatePayload = {
       ...serialized.data,
       history: serialized.data.history.slice(0, PLAYBACK_HISTORY_MAX_LENGTH),
     };
+    const flags = await this.libraryFlags.resolveForTrack(
+      command.userId,
+      payloadBase.trackData.trackId,
+    );
+    const payload: PlaybackStatePayload = { ...payloadBase, ...flags };
 
     const activeDevice: PlaybackStatePayload['devices'][number] = {
       id: command.playbackDeviceId,

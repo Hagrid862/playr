@@ -16,17 +16,22 @@ import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as AppPlaylistsRouteImport } from './routes/app/playlists'
 import { Route as AppSearchIndexRouteImport } from './routes/app/search/index'
+import { Route as AppPlaylistsIndexRouteImport } from './routes/app/playlists/index'
 import { Route as AppNewIndexRouteImport } from './routes/app/new/index'
+import { Route as AppPlaylistsCreateRouteImport } from './routes/app/playlists/create'
 import { Route as AppLibraryOverviewRouteImport } from './routes/app/library/overview'
 import { Route as AppLibraryGenresRouteImport } from './routes/app/library/genres'
 import { Route as AppLibraryArtistsRouteImport } from './routes/app/library/artists'
 import { Route as AppLibraryAlbumsRouteImport } from './routes/app/library/albums'
+import { Route as AppPlaylistsPlaylistIdIndexRouteImport } from './routes/app/playlists/$playlistId/index'
 import { Route as AppLibrarySongsIndexRouteImport } from './routes/app/library/songs/index'
 import { Route as AppLibraryOverviewIndexRouteImport } from './routes/app/library/overview/index'
 import { Route as AppLibraryGenresIndexRouteImport } from './routes/app/library/genres/index'
 import { Route as AppLibraryArtistsIndexRouteImport } from './routes/app/library/artists/index'
 import { Route as AppLibraryAlbumsIndexRouteImport } from './routes/app/library/albums/index'
+import { Route as AppPlaylistsPlaylistIdEditRouteImport } from './routes/app/playlists/$playlistId/edit'
 import { Route as AppLibraryOverviewPublicRouteImport } from './routes/app/library/overview/public'
 import { Route as AppLibraryOverviewPrivateRouteImport } from './routes/app/library/overview/private'
 import { Route as AppLibraryOverviewCommunityRouteImport } from './routes/app/library/overview/community'
@@ -76,15 +81,30 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPlaylistsRoute = AppPlaylistsRouteImport.update({
+  id: '/playlists',
+  path: '/playlists',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSearchIndexRoute = AppSearchIndexRouteImport.update({
   id: '/search/',
   path: '/search/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlaylistsIndexRoute = AppPlaylistsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPlaylistsRoute,
+} as any)
 const AppNewIndexRoute = AppNewIndexRouteImport.update({
   id: '/new/',
   path: '/new/',
   getParentRoute: () => AppRoute,
+} as any)
+const AppPlaylistsCreateRoute = AppPlaylistsCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => AppPlaylistsRoute,
 } as any)
 const AppLibraryOverviewRoute = AppLibraryOverviewRouteImport.update({
   id: '/library/overview',
@@ -106,6 +126,12 @@ const AppLibraryAlbumsRoute = AppLibraryAlbumsRouteImport.update({
   path: '/library/albums',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlaylistsPlaylistIdIndexRoute =
+  AppPlaylistsPlaylistIdIndexRouteImport.update({
+    id: '/$playlistId/',
+    path: '/$playlistId/',
+    getParentRoute: () => AppPlaylistsRoute,
+  } as any)
 const AppLibrarySongsIndexRoute = AppLibrarySongsIndexRouteImport.update({
   id: '/library/songs/',
   path: '/library/songs/',
@@ -131,6 +157,12 @@ const AppLibraryAlbumsIndexRoute = AppLibraryAlbumsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppLibraryAlbumsRoute,
 } as any)
+const AppPlaylistsPlaylistIdEditRoute =
+  AppPlaylistsPlaylistIdEditRouteImport.update({
+    id: '/$playlistId/edit',
+    path: '/$playlistId/edit',
+    getParentRoute: () => AppPlaylistsRoute,
+  } as any)
 const AppLibraryOverviewPublicRoute =
   AppLibraryOverviewPublicRouteImport.update({
     id: '/public',
@@ -207,6 +239,7 @@ const AppLibraryAlbumsIdSongsSongIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/playlists': typeof AppPlaylistsRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -216,7 +249,9 @@ export interface FileRoutesByFullPath {
   '/app/library/artists': typeof AppLibraryArtistsRouteWithChildren
   '/app/library/genres': typeof AppLibraryGenresRouteWithChildren
   '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
+  '/app/playlists/create': typeof AppPlaylistsCreateRoute
   '/app/new/': typeof AppNewIndexRoute
+  '/app/playlists/': typeof AppPlaylistsIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
   '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
@@ -224,11 +259,13 @@ export interface FileRoutesByFullPath {
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
   '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
   '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
+  '/app/playlists/$playlistId/edit': typeof AppPlaylistsPlaylistIdEditRoute
   '/app/library/albums/': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/genres/': typeof AppLibraryGenresIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
   '/app/library/songs/': typeof AppLibrarySongsIndexRoute
+  '/app/playlists/$playlistId/': typeof AppPlaylistsPlaylistIdIndexRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
@@ -244,7 +281,9 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
   '/app': typeof AppIndexRoute
+  '/app/playlists/create': typeof AppPlaylistsCreateRoute
   '/app/new': typeof AppNewIndexRoute
+  '/app/playlists': typeof AppPlaylistsIndexRoute
   '/app/search': typeof AppSearchIndexRoute
   '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
@@ -252,11 +291,13 @@ export interface FileRoutesByTo {
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
   '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
   '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
+  '/app/playlists/$playlistId/edit': typeof AppPlaylistsPlaylistIdEditRoute
   '/app/library/albums': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists': typeof AppLibraryArtistsIndexRoute
   '/app/library/genres': typeof AppLibraryGenresIndexRoute
   '/app/library/overview': typeof AppLibraryOverviewIndexRoute
   '/app/library/songs': typeof AppLibrarySongsIndexRoute
+  '/app/playlists/$playlistId': typeof AppPlaylistsPlaylistIdIndexRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id': typeof AppLibraryAlbumsIdIndexRoute
@@ -269,6 +310,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/playlists': typeof AppPlaylistsRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -278,7 +320,9 @@ export interface FileRoutesById {
   '/app/library/artists': typeof AppLibraryArtistsRouteWithChildren
   '/app/library/genres': typeof AppLibraryGenresRouteWithChildren
   '/app/library/overview': typeof AppLibraryOverviewRouteWithChildren
+  '/app/playlists/create': typeof AppPlaylistsCreateRoute
   '/app/new/': typeof AppNewIndexRoute
+  '/app/playlists/': typeof AppPlaylistsIndexRoute
   '/app/search/': typeof AppSearchIndexRoute
   '/app/library/albums/create': typeof AppLibraryAlbumsCreateRoute
   '/app/library/artists/create': typeof AppLibraryArtistsCreateRoute
@@ -286,11 +330,13 @@ export interface FileRoutesById {
   '/app/library/overview/community': typeof AppLibraryOverviewCommunityRoute
   '/app/library/overview/private': typeof AppLibraryOverviewPrivateRoute
   '/app/library/overview/public': typeof AppLibraryOverviewPublicRoute
+  '/app/playlists/$playlistId/edit': typeof AppPlaylistsPlaylistIdEditRoute
   '/app/library/albums/': typeof AppLibraryAlbumsIndexRoute
   '/app/library/artists/': typeof AppLibraryArtistsIndexRoute
   '/app/library/genres/': typeof AppLibraryGenresIndexRoute
   '/app/library/overview/': typeof AppLibraryOverviewIndexRoute
   '/app/library/songs/': typeof AppLibrarySongsIndexRoute
+  '/app/playlists/$playlistId/': typeof AppPlaylistsPlaylistIdIndexRoute
   '/app/library/albums/$id/edit': typeof AppLibraryAlbumsIdEditRoute
   '/app/library/artists/$id/edit': typeof AppLibraryArtistsIdEditRoute
   '/app/library/albums/$id/': typeof AppLibraryAlbumsIdIndexRoute
@@ -304,6 +350,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/app/playlists'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -313,7 +360,9 @@ export interface FileRouteTypes {
     | '/app/library/artists'
     | '/app/library/genres'
     | '/app/library/overview'
+    | '/app/playlists/create'
     | '/app/new/'
+    | '/app/playlists/'
     | '/app/search/'
     | '/app/library/albums/create'
     | '/app/library/artists/create'
@@ -321,11 +370,13 @@ export interface FileRouteTypes {
     | '/app/library/overview/community'
     | '/app/library/overview/private'
     | '/app/library/overview/public'
+    | '/app/playlists/$playlistId/edit'
     | '/app/library/albums/'
     | '/app/library/artists/'
     | '/app/library/genres/'
     | '/app/library/overview/'
     | '/app/library/songs/'
+    | '/app/playlists/$playlistId/'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id/'
@@ -341,7 +392,9 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/verify-email'
     | '/app'
+    | '/app/playlists/create'
     | '/app/new'
+    | '/app/playlists'
     | '/app/search'
     | '/app/library/albums/create'
     | '/app/library/artists/create'
@@ -349,11 +402,13 @@ export interface FileRouteTypes {
     | '/app/library/overview/community'
     | '/app/library/overview/private'
     | '/app/library/overview/public'
+    | '/app/playlists/$playlistId/edit'
     | '/app/library/albums'
     | '/app/library/artists'
     | '/app/library/genres'
     | '/app/library/overview'
     | '/app/library/songs'
+    | '/app/playlists/$playlistId'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id'
@@ -365,6 +420,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/app/playlists'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -374,7 +430,9 @@ export interface FileRouteTypes {
     | '/app/library/artists'
     | '/app/library/genres'
     | '/app/library/overview'
+    | '/app/playlists/create'
     | '/app/new/'
+    | '/app/playlists/'
     | '/app/search/'
     | '/app/library/albums/create'
     | '/app/library/artists/create'
@@ -382,11 +440,13 @@ export interface FileRouteTypes {
     | '/app/library/overview/community'
     | '/app/library/overview/private'
     | '/app/library/overview/public'
+    | '/app/playlists/$playlistId/edit'
     | '/app/library/albums/'
     | '/app/library/artists/'
     | '/app/library/genres/'
     | '/app/library/overview/'
     | '/app/library/songs/'
+    | '/app/playlists/$playlistId/'
     | '/app/library/albums/$id/edit'
     | '/app/library/artists/$id/edit'
     | '/app/library/albums/$id/'
@@ -456,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/playlists': {
+      id: '/app/playlists'
+      path: '/playlists'
+      fullPath: '/app/playlists'
+      preLoaderRoute: typeof AppPlaylistsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/search/': {
       id: '/app/search/'
       path: '/search'
@@ -463,12 +530,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSearchIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/playlists/': {
+      id: '/app/playlists/'
+      path: '/'
+      fullPath: '/app/playlists/'
+      preLoaderRoute: typeof AppPlaylistsIndexRouteImport
+      parentRoute: typeof AppPlaylistsRoute
+    }
     '/app/new/': {
       id: '/app/new/'
       path: '/new'
       fullPath: '/app/new/'
       preLoaderRoute: typeof AppNewIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/app/playlists/create': {
+      id: '/app/playlists/create'
+      path: '/create'
+      fullPath: '/app/playlists/create'
+      preLoaderRoute: typeof AppPlaylistsCreateRouteImport
+      parentRoute: typeof AppPlaylistsRoute
     }
     '/app/library/overview': {
       id: '/app/library/overview'
@@ -497,6 +578,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/library/albums'
       preLoaderRoute: typeof AppLibraryAlbumsRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/app/playlists/$playlistId/': {
+      id: '/app/playlists/$playlistId/'
+      path: '/$playlistId'
+      fullPath: '/app/playlists/$playlistId/'
+      preLoaderRoute: typeof AppPlaylistsPlaylistIdIndexRouteImport
+      parentRoute: typeof AppPlaylistsRoute
     }
     '/app/library/songs/': {
       id: '/app/library/songs/'
@@ -532,6 +620,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/library/albums/'
       preLoaderRoute: typeof AppLibraryAlbumsIndexRouteImport
       parentRoute: typeof AppLibraryAlbumsRoute
+    }
+    '/app/playlists/$playlistId/edit': {
+      id: '/app/playlists/$playlistId/edit'
+      path: '/$playlistId/edit'
+      fullPath: '/app/playlists/$playlistId/edit'
+      preLoaderRoute: typeof AppPlaylistsPlaylistIdEditRouteImport
+      parentRoute: typeof AppPlaylistsRoute
     }
     '/app/library/overview/public': {
       id: '/app/library/overview/public'
@@ -627,6 +722,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppPlaylistsRouteChildren {
+  AppPlaylistsCreateRoute: typeof AppPlaylistsCreateRoute
+  AppPlaylistsIndexRoute: typeof AppPlaylistsIndexRoute
+  AppPlaylistsPlaylistIdEditRoute: typeof AppPlaylistsPlaylistIdEditRoute
+  AppPlaylistsPlaylistIdIndexRoute: typeof AppPlaylistsPlaylistIdIndexRoute
+}
+
+const AppPlaylistsRouteChildren: AppPlaylistsRouteChildren = {
+  AppPlaylistsCreateRoute: AppPlaylistsCreateRoute,
+  AppPlaylistsIndexRoute: AppPlaylistsIndexRoute,
+  AppPlaylistsPlaylistIdEditRoute: AppPlaylistsPlaylistIdEditRoute,
+  AppPlaylistsPlaylistIdIndexRoute: AppPlaylistsPlaylistIdIndexRoute,
+}
+
+const AppPlaylistsRouteWithChildren = AppPlaylistsRoute._addFileChildren(
+  AppPlaylistsRouteChildren,
+)
+
 interface AppLibraryAlbumsRouteChildren {
   AppLibraryAlbumsCreateRoute: typeof AppLibraryAlbumsCreateRoute
   AppLibraryAlbumsIndexRoute: typeof AppLibraryAlbumsIndexRoute
@@ -701,6 +814,7 @@ const AppLibraryOverviewRouteWithChildren =
   AppLibraryOverviewRoute._addFileChildren(AppLibraryOverviewRouteChildren)
 
 interface AppRouteChildren {
+  AppPlaylistsRoute: typeof AppPlaylistsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppLibraryAlbumsRoute: typeof AppLibraryAlbumsRouteWithChildren
   AppLibraryArtistsRoute: typeof AppLibraryArtistsRouteWithChildren
@@ -712,6 +826,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppPlaylistsRoute: AppPlaylistsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppLibraryAlbumsRoute: AppLibraryAlbumsRouteWithChildren,
   AppLibraryArtistsRoute: AppLibraryArtistsRouteWithChildren,

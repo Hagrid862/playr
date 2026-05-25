@@ -1,12 +1,31 @@
 import * as playbackSync from '@/lib/playback/sync/playback-sync';
+import { PlaybackSyncCommandFailedError } from '@/lib/playback/sync/playback-sync.emit-with-ack';
+import { toast } from 'sonner';
 import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
-import { StreamAudioQuality } from '@repo/contracts';
+import { StreamAudioQuality, type PlaybackTrack } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
 import { fireEvent, screen } from '@testing-library/react';
+import type { ButtonHTMLAttributes } from 'react';
 import { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPlayerStateMock } from '../test-utils/player-test-utils';
 import { PlayerActions } from './PlayerActions';
+
+const playbackTrackFixture = (id: string): PlaybackTrack => ({
+  id,
+  title: 'Test',
+  trackId: id,
+  artists: ['Artist'],
+  albumName: 'Album',
+  albumId: 'album-1',
+  albumArt: null,
+  duration: 180,
+  explicit: false,
+});
+
+const mockUsePlayerStore = vi.hoisted(() =>
+  Object.assign(vi.fn(), { setState: vi.fn(), getState: vi.fn() }),
+);
 
 const { findPopoverTriggerChild, findPopoverContentChild } = vi.hoisted(() => {
   // Vitest hoists this before ESM imports; use require so React is available to the mock factory.
@@ -47,14 +66,39 @@ const { findPopoverTriggerChild, findPopoverContentChild } = vi.hoisted(() => {
 });
 
 vi.mock('@/stores/player-store/player.store', () => ({
-  usePlayerStore: vi.fn(),
+  usePlayerStore: mockUsePlayerStore,
 }));
 vi.mock('@/lib/playback/sync/playback-sync', () => ({
   listPlaybackDevices: vi.fn(),
   setActivePlaybackDevice: vi.fn(),
+  emitFavoriteStateSync: vi.fn(),
   firePlaybackCommand: vi.fn(() => {
     /* args evaluated at call site before mock runs; no-op */
   }),
+}));
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}));
+
+/** React does not invoke `onClick` on truly disabled buttons; mirror `disabled` for assertions only. */
+vi.mock('@/components/ui/button', () => ({
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    className,
+    ...rest
+  }: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button
+      type="button"
+      className={className}
+      onClick={onClick}
+      data-actually-disabled={disabled ? 'true' : 'false'}
+      {...rest}
+    >
+      {children}
+    </button>
+  ),
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => ({
@@ -338,6 +382,147 @@ describe('PlayerActions', () => {
       const lowItem = screen.getByRole('menuitemcheckbox', { name: /Low/i });
       fireEvent.click(lowItem);
       expect(setQuality).not.toHaveBeenCalledWith(StreamAudioQuality.low);
+    });
+  });
+
+  describe('favorite button', () => {
+    it('is disabled when no track or playback version is 0', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: null,
+          playbackVersion: 0,
+          playbackFavorited: 'not-set',
+        }),
+      );
+      customRender(<PlayerActions />);
+      const favBtn = screen.getByRole('button', { name: /favorite/i });
+      expect(favBtn).toHaveAttribute('data-actually-disabled', 'true');
+    });
+
+    it('does not trigger state change if clicked while technically no currentTrack', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: null,
+          playbackVersion: 1,
+          playbackFavorited: 'not-set',
+        }),
+      );
+      customRender(<PlayerActions />);
+      const favBtn = screen.getByRole('button', { name: /favorite/i });
+      expect(favBtn).toHaveAttribute('data-actually-disabled', 'true');
+
+      fireEvent.click(favBtn);
+
+      expect(mockUsePlayerStore.setState).not.toHaveBeenCalled();
+      expect(playbackSync.emitFavoriteStateSync).not.toHaveBeenCalled();
+    });
+
+    it('does not trigger state change if clicked while technically playbackVersion is 0', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: playbackTrackFixture('track-1'),
+          playbackVersion: 0,
+          playbackFavorited: 'not-set',
+        }),
+      );
+      customRender(<PlayerActions />);
+      const favBtn = screen.getByRole('button', { name: /favorite/i });
+      expect(favBtn).toHaveAttribute('data-actually-disabled', 'true');
+
+      fireEvent.click(favBtn);
+
+      expect(mockUsePlayerStore.setState).not.toHaveBeenCalled();
+      expect(playbackSync.emitFavoriteStateSync).not.toHaveBeenCalled();
+    });
+
+    it('does not trigger state change when both no currentTrack and playbackVersion is 0', () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: null,
+          playbackVersion: 0,
+          playbackFavorited: 'not-set',
+        }),
+      );
+      customRender(<PlayerActions />);
+      const favBtn = screen.getByRole('button', { name: /favorite/i });
+      expect(favBtn).toHaveAttribute('data-actually-disabled', 'true');
+
+      fireEvent.click(favBtn);
+
+      expect(mockUsePlayerStore.setState).not.toHaveBeenCalled();
+      expect(playbackSync.emitFavoriteStateSync).not.toHaveBeenCalled();
+    });
+
+    it('from disliked, clicking favorite sets favorited and syncs favorited', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: playbackTrackFixture('track-1'),
+          playbackVersion: 1,
+          playbackFavorited: 'disliked',
+        }),
+      );
+      vi.mocked(playbackSync.emitFavoriteStateSync).mockResolvedValue();
+
+      customRender(<PlayerActions />);
+      const favBtn = screen.getByRole('button', { name: /favorite/i });
+      expect(favBtn).toHaveAttribute('data-actually-disabled', 'false');
+
+      fireEvent.click(favBtn);
+
+      expect(mockUsePlayerStore.setState).toHaveBeenCalledWith({ playbackFavorited: 'favorited' });
+      expect(playbackSync.emitFavoriteStateSync).toHaveBeenCalledWith('favorited');
+    });
+
+    it('toggles favorite status and calls emitFavoriteStateSync successfully', async () => {
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: playbackTrackFixture('track-1'),
+          playbackVersion: 1,
+          playbackFavorited: 'not-set',
+        }),
+      );
+      vi.mocked(playbackSync.emitFavoriteStateSync).mockResolvedValue();
+
+      customRender(<PlayerActions />);
+      const favBtn = screen.getByRole('button', { name: /favorite/i });
+      expect(favBtn).toHaveAttribute('data-actually-disabled', 'false');
+
+      fireEvent.click(favBtn);
+
+      expect(mockUsePlayerStore.setState).toHaveBeenCalledWith({ playbackFavorited: 'favorited' });
+      expect(playbackSync.emitFavoriteStateSync).toHaveBeenCalledWith('favorited');
+    });
+
+    it('rolls back favorite status and calls toast.error on sync failure', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(usePlayerStore).mockReturnValue(
+        buildState({
+          currentTrack: playbackTrackFixture('track-1'),
+          playbackVersion: 1,
+          playbackFavorited: 'favorited',
+        }),
+      );
+      vi.mocked(playbackSync.emitFavoriteStateSync).mockRejectedValue(
+        new PlaybackSyncCommandFailedError('command:set-favorite-state', 'Sync failed'),
+      );
+
+      customRender(<PlayerActions />);
+      const favBtn = screen.getByRole('button', { name: /favorite/i });
+      expect(favBtn).toHaveAttribute('data-actually-disabled', 'false');
+
+      fireEvent.click(favBtn);
+
+      expect(mockUsePlayerStore.setState).toHaveBeenCalledWith({ playbackFavorited: 'not-set' });
+      expect(playbackSync.emitFavoriteStateSync).toHaveBeenCalledWith('not-set');
+
+      // Wait for promise resolution (microtask queue)
+      await Promise.resolve();
+      await Promise.resolve(); // extra tick just in case
+
+      expect(mockUsePlayerStore.setState).toHaveBeenCalledWith({ playbackFavorited: 'favorited' });
+      expect(toast.error).toHaveBeenCalledWith('Could not update favorite');
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
     });
   });
 });

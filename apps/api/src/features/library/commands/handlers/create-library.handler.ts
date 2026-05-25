@@ -19,6 +19,12 @@ export class CreateLibraryHandler implements ICommandHandler<CreateLibraryComman
 
     return this.libraryRepository.create({
       user: { connect: { id: userId } },
+      playlists: {
+        create: {
+          name: 'Favorite songs',
+          systemRole: 'favorites',
+        },
+      },
     });
   }
 }

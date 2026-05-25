@@ -1,9 +1,11 @@
 import { PageHeader } from '@/components/app/PageHeader';
+import { AddToPlaylistSubmenu } from '@/components/playlists/AddToPlaylistSubmenu';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import {
@@ -121,6 +123,8 @@ function LibrarySongContextMenuContent({
         <QueueIcon size={16} />
         Add to Queue
       </ContextMenuItem>
+      <AddToPlaylistSubmenu trackId={track.id} />
+      <ContextMenuSeparator />
       <ContextMenuItem
         onClick={() => onDelete({ id: track.id, title: track.title })}
         variant="destructive"

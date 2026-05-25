@@ -68,7 +68,7 @@ describe('AddQueueItemHandler', () => {
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
-      const merged = merge(initialState);
+      const merged = await Promise.resolve(merge(initialState));
       return {
         ...initialState,
         ...merged,
@@ -98,7 +98,7 @@ describe('AddQueueItemHandler', () => {
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
-      const merged = merge(initialState);
+      const merged = await Promise.resolve(merge(initialState));
       return {
         ...initialState,
         ...merged,
@@ -128,7 +128,7 @@ describe('AddQueueItemHandler', () => {
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
-      const merged = merge(initialState);
+      const merged = await Promise.resolve(merge(initialState));
       return {
         ...initialState,
         ...merged,
@@ -160,7 +160,7 @@ describe('AddQueueItemHandler', () => {
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
-      const merged = merge(initialState);
+      const merged = await Promise.resolve(merge(initialState));
       return {
         ...initialState,
         ...merged,
@@ -211,7 +211,7 @@ describe('AddQueueItemHandler', () => {
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
-      const merged = merge(stateMissingOriginalOnSecond);
+      const merged = await Promise.resolve(merge(stateMissingOriginalOnSecond));
       return {
         ...stateMissingOriginalOnSecond,
         ...merged,

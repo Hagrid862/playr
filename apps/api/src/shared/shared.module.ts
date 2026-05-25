@@ -15,6 +15,7 @@ import { AudioFileRepository } from './repositories/audio-file.repository';
 import { GenreRepository } from './repositories/genre.repository';
 import { ImageRepository } from './repositories/image.repository';
 import { LibraryRepository } from './repositories/library.repository';
+import { PlaylistRepository } from './repositories/playlist.repository';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { SessionRepository } from './repositories/session.repository';
 import { TrackRepository } from './repositories/track.repository';
@@ -58,6 +59,7 @@ import { MailService } from '@/shared/services/mail.service';
     AudioFileRepository,
     GenreRepository,
     ImageRepository,
+    PlaylistRepository,
     // guards
     JwtAuthGuard,
     AlbumAccessGuard,
@@ -89,6 +91,7 @@ import { MailService } from '@/shared/services/mail.service';
     AudioFileRepository,
     GenreRepository,
     ImageRepository,
+    PlaylistRepository,
     // guards
     JwtAuthGuard,
     AlbumAccessGuard,

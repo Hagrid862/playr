@@ -1,4 +1,7 @@
 import { SongCard } from '@/components/library/SongCard';
+import { AlbumFavoriteStarGlyph } from '@/components/library/albums/AlbumFavoriteStarGlyph';
+import { AddAlbumToPlaylistDropdownSubmenu } from '@/components/playlists/AddAlbumToPlaylistDropdownSubmenu';
+import { AddToPlaylistSubmenu } from '@/components/playlists/AddToPlaylistSubmenu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useDeleteLibraryAlbum } from '@/hooks/api/library-albums/useDeleteLibraryAlbum';
 import { useLibraryAlbum } from '@/hooks/api/library-albums/useLibraryAlbum';
 import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibraryTrack';
+import { useAlbumLibraryActions } from '@/hooks/useAlbumLibraryActions';
 import { UNKNOWN_ALBUM_LABEL, UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import {
   albumTypeDisplayName,
@@ -37,7 +41,6 @@ import { AlbumSystemKind } from '@repo/db';
 import {
   DiscIcon,
   DotsThreeIcon,
-  HeartIcon,
   PencilIcon,
   PlayIcon,
   ShareIcon,
@@ -62,6 +65,28 @@ function RouteComponent() {
   const { data: albumResponse, isLoading } = useLibraryAlbum(id);
   const { mutateAsync: deleteAlbum, isPending: isDeleting } = useDeleteLibraryAlbum();
   const { mutateAsync: deleteTrack, isPending: isDeletingTrack } = useDeleteLibraryTrack();
+
+  const albumName = albumResponse?.data?.name ?? '';
+  const {
+    allInFavorites,
+    favoritesMembershipPending,
+    noLibraryTracks,
+    favoritesActionDisabled,
+    toggleAlbumFavorites,
+    shareAlbum,
+    isFavoritesMutating,
+  } = useAlbumLibraryActions({
+    albumId: id,
+    albumName,
+  });
+
+  const favoriteTooltip = noLibraryTracks
+    ? 'Add songs to this album in your library first'
+    : favoritesMembershipPending
+      ? 'Checking favorites…'
+      : allInFavorites
+        ? 'Remove from favorites'
+        : 'Add to favorites';
 
   const { playTrack, addToQueue, playNext } = usePlayerStore();
 
@@ -251,13 +276,26 @@ function RouteComponent() {
           </Button>
 
           <div className="flex items-center gap-1 ml-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
-            >
-              <HeartIcon size={24} />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  disabled={favoritesActionDisabled}
+                  className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
+                  aria-label={favoriteTooltip}
+                  onClick={() => void toggleAlbumFavorites()}
+                >
+                  {isFavoritesMutating ? (
+                    <Spinner className="size-5 text-muted-foreground" />
+                  ) : (
+                    <AlbumFavoriteStarGlyph allInFavorites={allInFavorites} />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{favoriteTooltip}</TooltipContent>
+            </Tooltip>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -270,16 +308,18 @@ function RouteComponent() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48">
-                <DropdownMenuItem className="gap-2">
+                <AddAlbumToPlaylistDropdownSubmenu albumId={album.id} />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2" onClick={() => void shareAlbum()}>
                   <ShareIcon size={18} /> Share
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {album.systemKind === AlbumSystemKind.none ? (
-                  <Link to="/app/library/albums/$id/edit" params={{ id: album.id }}>
-                    <DropdownMenuItem className="gap-2">
+                  <DropdownMenuItem asChild className="gap-2">
+                    <Link to="/app/library/albums/$id/edit" params={{ id: album.id }}>
                       <PencilIcon size={18} /> Edit
-                    </DropdownMenuItem>
-                  </Link>
+                    </Link>
+                  </DropdownMenuItem>
                 ) : null}
                 <DropdownMenuItem
                   onClick={() => setIsDeleteDialogOpen(true)}
@@ -373,6 +413,7 @@ function RouteComponent() {
                               onDelete={(trackInfo) => setTrackToDelete(trackInfo)}
                               onAddToQueue={() => addToQueue(zodTrackToPlaybackTrack(track))}
                               onPlayNext={() => playNext(zodTrackToPlaybackTrack(track))}
+                              extraMenu={<AddToPlaylistSubmenu trackId={track.id} />}
                             />
                           );
                         })}

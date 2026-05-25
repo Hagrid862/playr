@@ -21,6 +21,18 @@ export class PlaybackSocketDisconnectedError extends Error {
   }
 }
 
+export class PlaybackSyncCommandFailedError extends Error {
+  readonly code = 'COMMAND_FAILED' as const;
+  constructor(
+    readonly event: string,
+    readonly reason: string,
+    readonly serverCode?: string,
+  ) {
+    super(`Playback sync command "${event}" failed: ${reason}`);
+    this.name = 'PlaybackSyncCommandFailedError';
+  }
+}
+
 /**
  * Emits a Socket.IO event with an acknowledgement callback, racing against timeout and disconnect.
  * Cleans up timer and disconnect listener on any outcome; ignores a late ack after settle.

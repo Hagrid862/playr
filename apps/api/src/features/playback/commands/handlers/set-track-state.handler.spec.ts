@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { PlaybackState } from '@repo/contracts';
 import { createMock } from '@repo/testing/nestjs';
 import { describe, expect, it } from 'vitest';
+import { PlaybackLibraryFlagsService } from '../../services/playback-library-flags.service';
 import { PlaybackStatePersistenceService } from '../../services/playback-state-persistence.service';
 import { playbackStateFixture } from '../../test-utils/playback-state.fixture';
 import { SetTrackStateCommand } from '../impl/set-track-state.command';
@@ -35,7 +36,10 @@ describe('SetTrackStateHandler', () => {
 
   it('updates track state with valid data', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetTrackStateHandler(persistence);
+    const libraryFlags = createMock<PlaybackLibraryFlagsService>();
+    libraryFlags.resolveForTrack.mockResolvedValue({ favorited: 'not-set', inLibrary: false });
+
+    const handler = new SetTrackStateHandler(persistence, libraryFlags);
     const newTrack = { ...trackData, title: 'New Title' };
     const command = new SetTrackStateCommand(userId, sessionId, {
       track: newTrack,
@@ -43,17 +47,20 @@ describe('SetTrackStateHandler', () => {
     });
 
     persistence.applyMutation.mockImplementation(async (_uid, _ver, merge) => {
-      return { ...initialState, ...merge(initialState) } as PlaybackState;
+      const merged = await Promise.resolve(merge(initialState));
+      return { ...initialState, ...merged } as PlaybackState;
     });
 
     const result = await handler.execute(command);
     expect(result.trackData.title).toBe('New Title');
     expect(persistence.applyMutation).toHaveBeenCalled();
+    expect(libraryFlags.resolveForTrack).toHaveBeenCalledWith(userId, 't1');
   });
 
   it('throws BadRequestException when expectedVersion is 0', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetTrackStateHandler(persistence);
+    const libraryFlags = createMock<PlaybackLibraryFlagsService>();
+    const handler = new SetTrackStateHandler(persistence, libraryFlags);
     const command = new SetTrackStateCommand(userId, sessionId, {
       track: trackData,
       expectedVersion: 0,
@@ -64,7 +71,8 @@ describe('SetTrackStateHandler', () => {
 
   it('throws BadRequestException on invalid track data', async () => {
     const persistence = createMock<PlaybackStatePersistenceService>();
-    const handler = new SetTrackStateHandler(persistence);
+    const libraryFlags = createMock<PlaybackLibraryFlagsService>();
+    const handler = new SetTrackStateHandler(persistence, libraryFlags);
     const command = new SetTrackStateCommand(userId, sessionId, {
       track: { ...trackData, duration: 'invalid' } as any,
       expectedVersion: 1,

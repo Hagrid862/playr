@@ -14,6 +14,7 @@ export const PlaylistTrackSchema: z.ZodType<ZodPlaylistTrack> = z.object({
   order: z.number().int(),
   playlistId: z.string(),
   trackId: z.string(),
+  addedAt: zodDateTime(),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
   deletedAt: zodDateTimeNullable(),

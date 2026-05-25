@@ -130,6 +130,8 @@ model Library {
   pins      LibraryPin[]      @relation("LibraryPinLibrary")
   favorites LibraryFavorite[] @relation("LibraryFavoriteLibrary")
 
+  playlistSidebarPins PlaylistSidebarPin[] @relation("PlaylistSidebarPinLibrary")
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -734,6 +736,8 @@ model Playlist {
   isPublic        Boolean @default(false)
   isCollaborative Boolean @default(false)
 
+  systemRole PlaylistSystemRole?
+
   libraryId String?
   library   Library? @relation("LibraryPlaylistLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
 
@@ -746,17 +750,40 @@ model Playlist {
   tracks     PlaylistTrack[] @relation("PlaylistTrackPlaylist")
   importedIn Library[]       @relation("ImportedPlaylistLibrary")
 
+  sidebarPins PlaylistSidebarPin[] @relation("PlaylistSidebarPinPlaylist")
+
   reportTargets ReportTarget[] @relation("PlaylistReportTargets")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@unique([libraryId, systemRole])
   @@index([libraryId])
   @@index([artistId])
   @@index([deletedAt])
   @@index([isPublic])
   @@map("playlists")
+}
+
+model PlaylistSidebarPin {
+  id    String @id @default(cuid())
+  order Int    @default(0)
+
+  libraryId String
+  library   Library @relation("PlaylistSidebarPinLibrary", fields: [libraryId], references: [id], onDelete: Cascade)
+
+  playlistId String
+  playlist   Playlist @relation("PlaylistSidebarPinPlaylist", fields: [playlistId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([libraryId, playlistId])
+  @@index([libraryId])
+  @@index([playlistId])
+  @@map("playlist_sidebar_pins")
 }
 
 model PlaylistTrack {
@@ -768,6 +795,8 @@ model PlaylistTrack {
 
   trackId String
   track   Track  @relation("PlaylistTrackTrack", fields: [trackId], references: [id], onDelete: Cascade)
+
+  addedAt DateTime @default(now())
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -1096,4 +1125,8 @@ enum Visibility {
 enum OtpCodeType {
   emailVerification
   passwordReset
+}
+
+enum PlaylistSystemRole {
+  favorites
 }
