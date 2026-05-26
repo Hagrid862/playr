@@ -114,7 +114,7 @@ export function CompactSearch({
     >
       <div
         className={cn(
-          'flex items-center justify-center bg-stone-900/50 border border-white/10 rounded-xl transition-all duration-300 ease-in-out cursor-pointer select-none box-border',
+          'flex items-center justify-center bg-stone-900/50 border border-white/10 rounded-lg transition-all duration-300 ease-in-out cursor-pointer select-none box-border',
           isExpanded ? 'w-64 px-3 h-8 bg-stone-900' : 'w-8 h-8 p-0',
           isFocused &&
             'ring-1 ring-ring border-primary bg-stone-900 ring-offset-background outline-none',
