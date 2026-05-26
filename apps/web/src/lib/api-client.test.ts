@@ -314,7 +314,9 @@ describe('api-client', () => {
         const reason1 = (res1 as PromiseRejectedResult).reason;
         const reason2 = (res2 as PromiseRejectedResult).reason;
 
-        expect(reason1).toBe('String error');
+        expect(reason1).toBeInstanceOf(ApiError);
+        expect(reason1.status).toBe(401);
+        expect(reason1.message).toBe('Session expired');
 
         expect(reason2).toBeInstanceOf(ApiError);
         expect(reason2.status).toBe(401);

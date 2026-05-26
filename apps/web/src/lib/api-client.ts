@@ -128,6 +128,7 @@ class ApiClient {
             if (useAuthStore.getState().isAuthenticated) {
               useAuthStore.getState().logout();
             }
+            throw refreshError;
           }
         } catch (error) {
           const refreshError =
@@ -140,7 +141,7 @@ class ApiClient {
           if (useAuthStore.getState().isAuthenticated) {
             useAuthStore.getState().logout();
           }
-          throw error;
+          throw refreshError;
         } finally {
           this.isRefreshing = false;
         }
