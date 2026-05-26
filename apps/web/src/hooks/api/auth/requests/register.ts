@@ -6,5 +6,6 @@ export const register = (data: RegisterRequest) => {
   return apiClient<RegisterResponse>('auth/register', {
     body: data,
     zodSchema: RegisterResponseSchema,
+    allowRefresh: false,
   });
 };

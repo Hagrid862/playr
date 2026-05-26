@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { ZodType } from 'zod';
 import { ApiError } from './api-error';
+import { toast } from 'sonner';
 
 /** Public configuration for API requests */
 export type ApiRequestConfig<T = unknown> = Omit<RequestInit, 'body'> & {
@@ -127,6 +128,7 @@ class ApiClient {
             this.processQueue(refreshError);
             if (useAuthStore.getState().isAuthenticated) {
               useAuthStore.getState().logout();
+              toast.error('Session expired');
             }
             throw refreshError;
           }
@@ -140,6 +142,7 @@ class ApiClient {
           this.processQueue(refreshError);
           if (useAuthStore.getState().isAuthenticated) {
             useAuthStore.getState().logout();
+            toast.error(refreshError.message);
           }
           throw refreshError;
         } finally {
