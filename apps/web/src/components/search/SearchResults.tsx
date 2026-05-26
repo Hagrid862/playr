@@ -1,4 +1,4 @@
-import { type SearchResultItem } from '@repo/contracts';
+import { type SearchResultItem, type SearchTrackResult } from '@repo/contracts';
 import {
   MagnifyingGlassIcon,
   MusicNoteIcon,
@@ -9,6 +9,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { SearchViewType } from '@/stores/search-preferences.store';
+import { usePlayerStore } from '@/stores/player-store/player.store';
+import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 
 export interface SearchResultsData {
   data: any;
@@ -29,6 +31,7 @@ export function SearchResults({
 }: SearchResultsData) {
   const results = data?.results || [];
   const navigate = useNavigate();
+  const { playTrack } = usePlayerStore();
 
   if (results.length === 0) {
     return (
@@ -56,9 +59,42 @@ export function SearchResults({
       case 'genre':
         navigate({ to: '/app/library/genres/$genreId', params: { genreId: result.id } });
         break;
-      case 'track':
-        // TODO: Implement track navigation once a dedicated tracks page is available.
+      case 'playlist':
+        navigate({ to: '/app/playlists/$playlistId', params: { playlistId: result.id } });
         break;
+      case 'track':
+        {
+          const trackResult = result as SearchTrackResult;
+          playTrack(
+            zodTrackToPlaybackTrack({
+              id: trackResult.id,
+              title: trackResult.name,
+              trackNumber: trackResult.trackNumber ?? 1,
+              diskNumber: trackResult.diskNumber ?? 1,
+              duration: trackResult.duration ?? 0,
+              listenedCount: trackResult.listenedCount ?? 0,
+              explicit: !!trackResult.explicit,
+              lyrics: null,
+              albumId: trackResult.albumId ?? '',
+              visibility: result.visibility,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              deletedAt: null,
+              artists: trackResult.authorName
+                ? [{ id: trackResult.authorId ?? '', name: trackResult.authorName }]
+                : [],
+              album: trackResult.coverUrl
+                ? {
+                    id: trackResult.albumId ?? '',
+                    name: '',
+                    cover: { url: trackResult.coverUrl },
+                  }
+                : undefined,
+            } as any),
+          );
+        }
+        break;
+
     }
   };
 
