@@ -1,6 +1,7 @@
 import { create, StateCreator } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { idbStorage } from './idb-storage';
+import type { SearchQuery } from '@repo/contracts';
 
 export type SearchViewType = 'row' | 'grid';
 export type SearchScope = 'all' | 'library';
@@ -15,6 +16,8 @@ interface SearchPreferencesState {
   searchHistory: string[];
   addSearchToHistory: (query: string) => void;
   clearHistory: () => void;
+  lastSearch: SearchQuery | null;
+  setLastSearch: (search: SearchQuery | null) => void;
 }
 
 export const createSearchPreferencesStore: StateCreator<SearchPreferencesState> = (set) => ({
@@ -39,6 +42,8 @@ export const createSearchPreferencesStore: StateCreator<SearchPreferencesState> 
       };
     }),
   clearHistory: () => set({ searchHistory: [] }),
+  lastSearch: null,
+  setLastSearch: (lastSearch) => set({ lastSearch }),
 });
 
 export const useSearchPreferencesStore = create<SearchPreferencesState>()(

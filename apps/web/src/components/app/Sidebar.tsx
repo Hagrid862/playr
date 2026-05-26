@@ -32,6 +32,7 @@ import { PlaylistSystemRole } from '@repo/db';
 import { useLibraryPlaylistPins } from '@/hooks/api/library-playlists/useLibraryPlaylistPins';
 import { useLogout } from '@/hooks/api/auth/useLogout';
 import { Link, useNavigate, useRouter, useLocation } from '@tanstack/react-router';
+import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import type { LibraryPlaylistPinRowSchema } from '@repo/contracts';
 import { z } from 'zod';
 
@@ -45,6 +46,7 @@ export function AppSidebar() {
   const { mutateAsync: logoutHook, isPending: logoutIsLoading } = useLogout();
   const { data: pinsResponse } = useLibraryPlaylistPins();
   const pins = pinsResponse?.data ?? [];
+  const { lastSearch } = useSearchPreferencesStore();
 
   const handleLogout = async () => {
     try {
@@ -99,7 +101,13 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    to={getPersistentLink('search', '/app/search')}
+                    to="/app/search"
+                    search={
+                      location.pathname.startsWith('/app/search') &&
+                      Object.keys(location.search).length > 0
+                        ? {}
+                        : lastSearch || {}
+                    }
                     activeOptions={{ exact: false }}
                     activeProps={{ className: 'bg-accent text-primary' }}
                     className={getLinkClassName('/app/search')}

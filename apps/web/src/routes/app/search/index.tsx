@@ -65,14 +65,29 @@ function SearchPage() {
     }
   }
   const navigate = Route.useNavigate();
-  const { viewType, setViewType, searchHistory, addSearchToHistory, clearHistory } =
-    useSearchPreferencesStore();
+  const {
+    viewType,
+    setViewType,
+    searchHistory,
+    addSearchToHistory,
+    clearHistory,
+    setLastSearch,
+    lastSearch,
+  } = useSearchPreferencesStore();
 
   useEffect(() => {
+    const searchString = JSON.stringify(search);
+    const lastSearchString = JSON.stringify(lastSearch);
+
+    if (searchString === lastSearchString) return;
+
     if (search.query) {
       addSearchToHistory(search.query);
+      setLastSearch(search);
+    } else if (lastSearch !== null) {
+      setLastSearch(null);
     }
-  }, [search.query, addSearchToHistory]);
+  }, [search, lastSearch, addSearchToHistory, setLastSearch]);
 
   const isLibrarySearch = search.filters?.visibility === 'private';
   const globalResults = useSearch(search, { enabled: !isLibrarySearch && !!search.query });
