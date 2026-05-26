@@ -121,13 +121,19 @@ class ApiClient {
               _isRetry: true,
             });
           } else {
-            this.processQueue(new Error('Refresh failed'));
+            const refreshError = new ApiError(401, 'Unauthorized', {
+              error: { message: 'Session expired' },
+            });
+            this.processQueue(refreshError);
             if (useAuthStore.getState().isAuthenticated) {
               useAuthStore.getState().logout();
             }
           }
         } catch (error) {
-          this.processQueue(error);
+          const refreshError = error instanceof ApiError ? error : new ApiError(401, 'Unauthorized', {
+            error: { message: error instanceof Error ? error.message : 'Session expired' },
+          });
+          this.processQueue(refreshError);
           if (useAuthStore.getState().isAuthenticated) {
             useAuthStore.getState().logout();
           }

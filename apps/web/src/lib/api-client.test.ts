@@ -299,6 +299,16 @@ describe('api-client', () => {
 
       expect(res1.status).toBe('rejected');
       expect(res2.status).toBe('rejected');
+
+      const reason1 = (res1 as PromiseRejectedResult).reason;
+      const reason2 = (res2 as PromiseRejectedResult).reason;
+
+      expect(reason1).toBeInstanceOf(ApiError);
+      expect(reason1.status).toBe(401);
+
+      expect(reason2).toBeInstanceOf(ApiError);
+      expect(reason2.status).toBe(401);
+      expect(reason2.message).toBe('Session expired');
     });
 
     it('handles refresh response with missing token in queued requests', async () => {
