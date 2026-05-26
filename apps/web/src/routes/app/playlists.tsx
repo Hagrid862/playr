@@ -7,6 +7,7 @@ import { Outlet, createFileRoute, useLocation, Link } from '@tanstack/react-rout
 import { SubHeader } from '@/components/app/SubHeader.tsx';
 import { PlusIcon } from '@phosphor-icons/react';
 import { CompactSearch } from '@/components/search/CompactSearch.tsx';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/playlists')({
   component: PlaylistsLayout,
@@ -41,6 +42,7 @@ function PlaylistsEditActions() {
 }
 
 function PlaylistsLayout() {
+  usePersistentNavigation('playlists', '/app/playlists');
   const location = useLocation();
   const segments = location.pathname.split('/').filter(Boolean);
   const isIndex =

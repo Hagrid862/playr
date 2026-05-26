@@ -7,6 +7,7 @@ import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-rout
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import { CompactSearch } from '@/components/search/CompactSearch';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/library/genres')({
   component: GenresLayout,
@@ -21,6 +22,7 @@ function formatLoadedOfTotal(loaded: number, total: number | undefined, pluralNo
 }
 
 function GenresLayout() {
+  usePersistentNavigation('genres', '/app/library/genres');
   const isMobile = useIsMobile();
   const location = useLocation();
   const isRoot =

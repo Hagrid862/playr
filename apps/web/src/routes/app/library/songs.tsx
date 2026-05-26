@@ -1,12 +1,14 @@
 import { SubHeader } from '@/components/app/SubHeader';
 import { Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 import { CompactSearch } from '@/components/search/CompactSearch.tsx';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/library/songs')({
   component: SongsLayout,
 });
 
 function SongsLayout() {
+  usePersistentNavigation('songs', '/app/library/songs');
   const location = useLocation();
   const isIndex =
     location.pathname === '/app/library/songs' || location.pathname === '/app/library/songs/';

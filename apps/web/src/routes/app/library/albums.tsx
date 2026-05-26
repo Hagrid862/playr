@@ -4,12 +4,14 @@ import { useLibraryStore } from '@/stores/library.store';
 import { PlusIcon } from '@phosphor-icons/react';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 import { CompactSearch } from '@/components/search/CompactSearch.tsx';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/library/albums')({
   component: AlbumLayout,
 });
 
 function AlbumLayout() {
+  usePersistentNavigation('albums', '/app/library/albums');
   const location = useLocation();
   const segments = location.pathname.split('/').filter(Boolean);
 

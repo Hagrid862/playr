@@ -4,12 +4,14 @@ import { PlusIcon } from '@phosphor-icons/react';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 import { SubHeader } from '@/components/app/SubHeader.tsx';
 import { CompactSearch } from '@/components/search/CompactSearch.tsx';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/library/artists')({
   component: ArtistsLayout,
 });
 
 function ArtistsLayout() {
+  usePersistentNavigation('artists', '/app/library/artists');
   const location = useLocation();
   const segments = location.pathname.split('/').filter(Boolean);
   const isIndex =

@@ -29,6 +29,7 @@ import { SearchFilters } from '@/components/search/SearchFilters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SubHeader } from '@/components/app/SubHeader';
 import { CompactSearch } from '@/components/search/CompactSearch';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/library/overview')({
   component: OverviewLayout,
@@ -39,6 +40,7 @@ export const Route = createFileRoute('/app/library/overview')({
 });
 
 function OverviewLayout() {
+  usePersistentNavigation('overview', '/app/library/overview');
   const location = useLocation();
   const router = useRouter();
   const { viewType, setViewType } = useSearchPreferencesStore();
