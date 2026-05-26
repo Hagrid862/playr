@@ -197,7 +197,7 @@ export function SearchInput({
                               query: result.name,
                               filters: {
                                 ...prev.filters,
-                                visibility: currentScope === 'library' ? 'private' : 'public',
+                                visibility: currentScope === 'library' ? 'private' : undefined,
                               },
                             }),
                           });

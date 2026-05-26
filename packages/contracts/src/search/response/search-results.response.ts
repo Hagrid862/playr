@@ -10,6 +10,11 @@ import { createApiResponseSchema } from "../../api/response.schema";
 // Mirrors SearchSuggestionResultSchema but adds `score` (relevance)
 // so the client can optionally re-sort client-side.
 
+export const SearchResultAuthorSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
 export const SearchResultBaseSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -20,8 +25,7 @@ export const SearchResultBaseSchema = z.object({
   explicit: z.boolean().nullable().optional(),
   coverUrl: z.string().nullable().optional(),
   avatarUrl: z.string().nullable().optional(),
-  authorName: z.string().nullable().optional(),
-  authorId: z.string().nullable().optional(),
+  authors: z.array(SearchResultAuthorSchema).default([]),
 });
 
 // ─── Per-entity result schemas ─────────────────────────────────────
@@ -99,6 +103,7 @@ export const SearchResultsResponseSchema = createApiResponseSchema(
 );
 
 export type SearchResultItem = z.infer<typeof SearchResultItemSchema>;
+export type SearchResultAuthor = z.infer<typeof SearchResultAuthorSchema>;
 export type SearchArtistResult = z.infer<typeof SearchArtistResultSchema>;
 export type SearchAlbumResult = z.infer<typeof SearchAlbumResultSchema>;
 export type SearchTrackResult = z.infer<typeof SearchTrackResultSchema>;

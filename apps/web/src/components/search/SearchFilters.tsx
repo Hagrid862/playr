@@ -118,6 +118,7 @@ export function SearchFilters({
                   navigate({
                     search: (prev: any) => ({
                       ...prev,
+                      page: 1,
                       filters: {
                         ...prev.filters,
                         track: { ...prev.filters?.track, durationTo: val },
@@ -143,6 +144,7 @@ export function SearchFilters({
                 navigate({
                   search: (prev: any) => ({
                     ...prev,
+                    page: 1,
                     filters: {
                       ...prev.filters,
                       album: {

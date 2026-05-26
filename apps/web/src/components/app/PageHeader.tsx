@@ -37,7 +37,7 @@ export function PageHeader({
         {/* Left: Logo/Back Button */}
         <div className="flex items-center gap-2">
           {showBackButton && (
-            <Button variant="ghost" size="icon" onClick={handleBack}>
+            <Button variant="ghost" size="icon" onClick={handleBack} aria-label="Go back">
               <ArrowLeftIcon />
             </Button>
           )}

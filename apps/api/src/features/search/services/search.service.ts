@@ -14,8 +14,7 @@ interface RawSearchResult {
   score: number;
   coverUrl: string | null;
   avatarUrl: string | null;
-  authorName: string | null;
-  authorId: string | null;
+  authors: { id: string; name: string }[] | null;
   createdAt: Date;
   releaseDate: Date | null;
   duration: number | null;
@@ -28,6 +27,19 @@ interface RawSearchResult {
 @Injectable()
 export class SearchService {
   constructor(private readonly prisma: PrismaService) {}
+
+  // ... rest of the code ...
+  
+  // (In search/librarySearch, update UNION ALL query for albums/tracks)
+  // ...
+  // LEFT JOIN LATERAL (
+  //   SELECT json_agg(json_build_object('id', art.id, 'name', art.name)) as authors
+  //   FROM "_AlbumArtists" rel
+  //   JOIN "artists" art ON rel."B" = art.id
+  //   WHERE rel."A" = al.id
+  // ) authors ON TRUE
+  // ...
+
 
   async search(userId: string | null, searchQuery: SearchQuery): Promise<SearchResultsData> {
     let loggedIn = false;
@@ -215,7 +227,7 @@ export class SearchService {
               similarity(a.name, ${trimmedQuery}) as score,
                  NULL::text as "coverUrl",
               avatar.url as "avatarUrl",
-                 NULL::text as "authorName", NULL::text as "authorId",
+                 '[]'::json as "authors",
               a."createdAt", NULL::timestamp as "releaseDate",
               NULL::integer as duration, NULL::integer as "listenedCount",
               NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -235,7 +247,7 @@ export class SearchService {
                  similarity(al.name, ${trimmedQuery}) as score,
                  cover.url as "coverUrl",
                  NULL::text as "avatarUrl",
-              primary_artist.name as "authorName", primary_artist.id as "authorId",
+              authors.list as "authors",
                  al."createdAt", al."releaseDate",
                  NULL::integer as duration, NULL::integer as "listenedCount",
               NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -243,12 +255,11 @@ export class SearchService {
           FROM "albums" al
                    LEFT JOIN "images" cover ON al."coverId" = cover.id
                    LEFT JOIN LATERAL (
-              SELECT art.id, art.name
+              SELECT json_agg(json_build_object('id', art.id, 'name', art.name)) as list
               FROM "_AlbumArtists" rel
                        JOIN "artists" art ON rel."B" = art.id
               WHERE rel."A" = al.id
-                  LIMIT 1
-        ) primary_artist ON TRUE
+        ) authors ON TRUE
           WHERE ${Prisma.join(albumConditions, ' AND ')}
       `);
       needsUnionAll = true;
@@ -262,7 +273,7 @@ export class SearchService {
               similarity(t.title, ${trimmedQuery}) as score,
                  cover.url as "coverUrl",
                  NULL::text as "avatarUrl",
-              primary_artist.name as "authorName", primary_artist.id as "authorId",
+              authors.list as "authors",
                  t."createdAt", NULL::timestamp as "releaseDate",
               t.duration, t."listenedCount",
                  NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -271,12 +282,11 @@ export class SearchService {
                    LEFT JOIN "albums" al ON t."albumId" = al.id
                    LEFT JOIN "images" cover ON al."coverId" = cover.id
                    LEFT JOIN LATERAL (
-              SELECT art.id, art.name
+              SELECT json_agg(json_build_object('id', art.id, 'name', art.name)) as list
               FROM "_TrackArtists" rel
                        JOIN "artists" art ON rel."A" = art.id
               WHERE rel."B" = t.id
-                  LIMIT 1
-        ) primary_artist ON TRUE
+        ) authors ON TRUE
           WHERE ${Prisma.join(trackConditions, ' AND ')}
       `);
       needsUnionAll = true;
@@ -291,7 +301,7 @@ export class SearchService {
               similarity(p.name, ${trimmedQuery}) as score,
                  cover.url as "coverUrl",
                  NULL::text as "avatarUrl",
-              NULL::text as "authorName", NULL::text as "authorId",
+              '[]'::json as "authors",
               p."createdAt", NULL::timestamp as "releaseDate",
               NULL::integer as duration, NULL::integer as "listenedCount",
               p."isPublic", p."isCollaborative",
@@ -311,7 +321,7 @@ export class SearchService {
               similarity(g.name, ${trimmedQuery}) as score,
                  NULL::text as "coverUrl",
               NULL::text as "avatarUrl",
-              NULL::text as "authorName", NULL::text as "authorId",
+              '[]'::json as "authors",
               g."createdAt", NULL::timestamp as "releaseDate",
               NULL::integer as duration, NULL::integer as "listenedCount",
               NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -343,7 +353,7 @@ export class SearchService {
 
     const results = await this.prisma.extended.$queryRaw<RawSearchResult[]>`
         WITH unified AS (${combinedQuery})
-        SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl", "authorName", "authorId",
+        SELECT id, name, type, visibility, "albumType", score, "coverUrl", "avatarUrl", authors,
                "createdAt", "releaseDate", duration, "listenedCount", "isPublic", "isCollaborative", "explicit"
         FROM unified
         ORDER BY ${Prisma.raw(orderByClause)}
@@ -364,8 +374,7 @@ export class SearchService {
         explicit: r.explicit,
         coverUrl: r.coverUrl,
         avatarUrl: r.avatarUrl,
-        authorName: r.authorName,
-        authorId: r.authorId,
+        authors: r.authors ?? [],
       })),
       loggedIn,
       total,
@@ -552,7 +561,7 @@ export class SearchService {
           similarity(al.name, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
-          primary_artist.name as "authorName", primary_artist.id as "authorId",
+          authors.list as "authors",
           al."createdAt", al."releaseDate",
           NULL::integer as duration, NULL::integer as "listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -562,12 +571,11 @@ export class SearchService {
         JOIN "libraries" l ON lb."libraryId" = l.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
         LEFT JOIN LATERAL (
-          SELECT art.id, art.name
+          SELECT json_agg(json_build_object('id', art.id, 'name', art.name)) as list
           FROM "_AlbumArtists" rel
           JOIN "artists" art ON rel."B" = art.id
           WHERE rel."A" = al.id
-          LIMIT 1
-        ) primary_artist ON TRUE
+        ) authors ON TRUE
         WHERE ${Prisma.join(albumConditions, ' AND ')}
       `);
       needsUnionAll = true;
@@ -581,7 +589,7 @@ export class SearchService {
           similarity(t.title, ${trimmedQuery}) as score,
           cover.url as "coverUrl",
           NULL::text as "avatarUrl",
-          primary_artist.name as "authorName", primary_artist.id as "authorId",
+          authors.list as "authors",
           t."createdAt", NULL::timestamp as "releaseDate",
           t.duration, t."listenedCount",
           NULL::boolean as "isPublic", NULL::boolean as "isCollaborative",
@@ -592,12 +600,11 @@ export class SearchService {
         LEFT JOIN "albums" al ON t."albumId" = al.id
         LEFT JOIN "images" cover ON al."coverId" = cover.id
         LEFT JOIN LATERAL (
-          SELECT art.id, art.name
+          SELECT json_agg(json_build_object('id', art.id, 'name', art.name)) as list
           FROM "_TrackArtists" rel
           JOIN "artists" art ON rel."A" = art.id
           WHERE rel."B" = t.id
-          LIMIT 1
-        ) primary_artist ON TRUE
+        ) authors ON TRUE
         WHERE ${Prisma.join(trackConditions, ' AND ')}
       `);
       needsUnionAll = true;
@@ -690,8 +697,7 @@ export class SearchService {
         explicit: r.explicit,
         coverUrl: r.coverUrl,
         avatarUrl: r.avatarUrl,
-        authorName: r.authorName,
-        authorId: r.authorId,
+        authors: r.authors ?? [],
       })),
       total,
       page,

@@ -8,7 +8,7 @@ export const Route = createFileRoute('/app/library/genres/')({
 });
 
 function RouteComponent() {
-  const { data: genresResponse, isLoading } = useLibraryGenres({ page: 1, limit: 100 });
+  const { data: genresResponse, isLoading, error, isError } = useLibraryGenres({ page: 1, limit: 100 });
   const genres = genresResponse?.data?.items || [];
 
   if (isLoading) {
@@ -16,6 +16,15 @@ function RouteComponent() {
       <div className="flex h-[400px] flex-col items-center justify-center gap-4">
         <Spinner className="size-8 text-primary" />
         <p className="text-muted-foreground animate-pulse">Fetching your genres...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl p-12 text-center backdrop-blur-sm">
+        <h3 className="mb-2 text-xl font-semibold text-destructive">Failed to load genres</h3>
+        <p className="text-muted-foreground">{error?.message || 'An unexpected error occurred.'}</p>
       </div>
     );
   }
