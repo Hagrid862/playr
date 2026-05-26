@@ -265,6 +265,66 @@ describe('api-client', () => {
         logoutSpy.mockRestore();
       }
     });
+
+    it('logs out on refresh exception (ApiError)', async () => {
+      useAuthStore.getState().setAuth(mockUser, 'expired-token');
+      const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
+
+      mockFetch.mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 401, statusText: '' }));
+      mockFetch.mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 401, statusText: '' }));
+      mockFetch.mockRejectedValueOnce(
+        new ApiError(401, 'Custom Auth Error', { error: { message: 'Custom Auth Error message' } }),
+      );
+
+      try {
+        const [res1, res2] = await Promise.allSettled([api.request('req1'), api.request('req2')]);
+
+        expect(res1.status).toBe('rejected');
+        expect(res2.status).toBe('rejected');
+
+        const reason1 = (res1 as PromiseRejectedResult).reason;
+        const reason2 = (res2 as PromiseRejectedResult).reason;
+
+        expect(reason1).toBeInstanceOf(ApiError);
+        expect(reason1.message).toBe('Custom Auth Error message');
+
+        expect(reason2).toBeInstanceOf(ApiError);
+        expect(reason2.message).toBe('Custom Auth Error message');
+
+        expect(logoutSpy).toHaveBeenCalled();
+      } finally {
+        logoutSpy.mockRestore();
+      }
+    });
+
+    it('logs out on refresh exception (non-Error object)', async () => {
+      useAuthStore.getState().setAuth(mockUser, 'expired-token');
+      const logoutSpy = vi.spyOn(useAuthStore.getState(), 'logout');
+
+      mockFetch.mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 401, statusText: '' }));
+      mockFetch.mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 401, statusText: '' }));
+      mockFetch.mockRejectedValueOnce('String error');
+
+      try {
+        const [res1, res2] = await Promise.allSettled([api.request('req1'), api.request('req2')]);
+
+        expect(res1.status).toBe('rejected');
+        expect(res2.status).toBe('rejected');
+
+        const reason1 = (res1 as PromiseRejectedResult).reason;
+        const reason2 = (res2 as PromiseRejectedResult).reason;
+
+        expect(reason1).toBe('String error');
+
+        expect(reason2).toBeInstanceOf(ApiError);
+        expect(reason2.status).toBe(401);
+        expect(reason2.message).toBe('Session expired');
+
+        expect(logoutSpy).toHaveBeenCalled();
+      } finally {
+        logoutSpy.mockRestore();
+      }
+    });
   });
 
   describe('concurrent refresh', () => {
