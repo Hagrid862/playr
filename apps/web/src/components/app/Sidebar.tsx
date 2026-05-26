@@ -46,12 +46,11 @@ export function AppSidebar() {
       await logoutHook({});
     } catch (err) {
       console.error('Failed to log out', err);
-      return;
+    } finally {
+      logout();
+      await router.invalidate();
+      await navigate({ to: '/auth/login' });
     }
-
-    logout();
-    await router.invalidate();
-    await navigate({ to: '/auth/login' });
   };
 
   return (
