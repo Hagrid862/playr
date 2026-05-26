@@ -32,7 +32,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { SearchFilters } from '@/components/search/SearchFilters';
-import { SearchResults, SearchResultsData } from '@/components/search/SearchResults';
+import { SearchResults } from '@/components/search/SearchResults';
+import type { SearchResultsResponse } from '@repo/contracts';
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchCategoryFilters } from '@/components/search/SearchCategoryFilters';
@@ -94,7 +95,7 @@ function SearchPage() {
   const libraryResults = useLibrarySearch(search, { enabled: isLibrarySearch && !!search.query });
 
   const { data: response, isLoading, error } = isLibrarySearch ? libraryResults : globalResults;
-  const data = (response as SearchResultsData)?.data;
+  const data = (response as SearchResultsResponse)?.data;
 
   if (!search.query || search.query.trim() === '') {
     return (
