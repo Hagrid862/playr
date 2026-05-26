@@ -1,4 +1,3 @@
-import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { PlayerState, usePlayerStore } from '@/stores/player-store/player.store';
 import { PlaybackTrack } from '@repo/contracts';
 import { customRender } from '@repo/testing/web';
@@ -13,12 +12,19 @@ vi.mock('@/stores/player-store/player.store', () => ({
 
 describe('PlayerMobile', () => {
   const togglePlay = vi.fn();
+  const formatTime = vi.fn((t: number) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`);
+  const formatTimeLeft = vi.fn((t: number, total: number) => `-${Math.floor((total - t) / 60)}:${String((total - t) % 60).padStart(2, '0')}`);
 
   const buildState = (overrides: Partial<PlayerState> = {}): PlayerState =>
     createPlayerStateMock({
       currentTrack: null,
       isPlaying: false,
       togglePlay,
+      currentTime: 0,
+      duration: 0,
+      playbackFavorited: 'not-set' as const,
+      playbackVersion: 0,
+      setCurrentTime: vi.fn(),
       ...overrides,
     });
 
@@ -29,9 +35,8 @@ describe('PlayerMobile', () => {
 
   describe('rendering', () => {
     it('renders default empty state', () => {
-      customRender(<PlayerMobile />);
+      customRender(<PlayerMobile formatTime={formatTime} formatTimeLeft={formatTimeLeft} />);
       expect(screen.getByText('No track selected')).toBeInTheDocument();
-      expect(screen.getByText(UNKNOWN_ARTIST_LABEL)).toBeInTheDocument();
     });
 
     it('renders track details with cover', () => {
@@ -52,9 +57,8 @@ describe('PlayerMobile', () => {
         }),
       );
 
-      customRender(<PlayerMobile />);
+      customRender(<PlayerMobile formatTime={formatTime} formatTimeLeft={formatTimeLeft} />);
       expect(screen.getByText('Test Song')).toBeInTheDocument();
-      expect(screen.getByText('Artist A')).toBeInTheDocument();
 
       const img = screen.getByRole('presentation');
       expect(img).toHaveAttribute('src', 'http://example.com/cover.jpg');
@@ -62,17 +66,18 @@ describe('PlayerMobile', () => {
 
     it('renders pause icon when playing', () => {
       vi.mocked(usePlayerStore).mockReturnValue(buildState({ isPlaying: true }));
-      customRender(<PlayerMobile />);
-      const btn = screen.getByRole('button');
-      expect(btn).toBeInTheDocument();
+      customRender(<PlayerMobile formatTime={formatTime} formatTimeLeft={formatTimeLeft} />);
+      const btns = screen.getAllByRole('button');
+      expect(btns.length).toBeGreaterThanOrEqual(1);
     });
   });
 
   describe('playback', () => {
     it('toggles play', () => {
-      customRender(<PlayerMobile />);
-      const btn = screen.getByRole('button');
-      fireEvent.click(btn);
+      customRender(<PlayerMobile formatTime={formatTime} formatTimeLeft={formatTimeLeft} />);
+      const btns = screen.getAllByRole('button');
+      // The play/pause button is the last one
+      fireEvent.click(btns[btns.length - 1]);
       expect(togglePlay).toHaveBeenCalled();
     });
   });

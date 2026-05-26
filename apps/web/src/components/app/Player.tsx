@@ -1,4 +1,4 @@
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import {
   emitCurrentTimeSync,
   firePlaybackCommand,
@@ -11,8 +11,12 @@ import { PlayerMobile } from './player/PlayerMobile';
 import { PlayerTrackInfo } from './player/PlayerTrackInfo';
 import { usePlayerAudio } from './player/use-player-audio';
 
+const MOBILE_BREAKPOINT = '(max-width: 767px)';
+const LARGE_BREAKPOINT = '(min-width: 1200px)';
+
 export function AppPlayer() {
-  const isMobile = useIsMobile();
+  const isMobile = useMediaQuery(MOBILE_BREAKPOINT);
+  const isLargeScreen = useMediaQuery(LARGE_BREAKPOINT);
   const { currentTrack, playbackVersion } = usePlayerStore();
   const {
     audioRef,
@@ -52,8 +56,8 @@ export function AppPlayer() {
         onError={handleStreamError}
       />
 
-      {isMobile ? (
-        <PlayerMobile />
+      {!isLargeScreen ? (
+        <PlayerMobile formatTime={formatTime} formatTimeLeft={formatTimeLeft} compact={isMobile} />
       ) : (
         <div className="flex w-full h-full items-center justify-center px-6 gap-2">
           {/* Island 1: Controls (Left) */}
