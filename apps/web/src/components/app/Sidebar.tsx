@@ -35,8 +35,12 @@ import { Link, useNavigate, useRouter, useLocation } from '@tanstack/react-route
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import type { LibraryPlaylistPinRowSchema } from '@repo/contracts';
 import { z } from 'zod';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 type LibraryPlaylistPinRow = z.infer<typeof LibraryPlaylistPinRowSchema>;
+
+// Large screen breakpoint - sidebar can be expanded/collapsed
+const LARGE_BREAKPOINT = '(min-width: 1200px)';
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
@@ -47,6 +51,7 @@ export function AppSidebar() {
   const { data: pinsResponse } = useLibraryPlaylistPins();
   const pins = pinsResponse?.data ?? [];
   const { lastSearch } = useSearchPreferencesStore();
+  const isLargeScreen = useMediaQuery(LARGE_BREAKPOINT);
 
   const handleLogout = async () => {
     try {
@@ -89,10 +94,16 @@ export function AppSidebar() {
       ? 'bg-accent text-primary'
       : 'text-white hover:text-primary';
 
+  // Sidebar always uses 'icon' collapsible mode.
+  // On large screens (>=1024px), the SidebarProvider allows toggling via SidebarTrigger.
+  // On medium screens (768-1023px), the SidebarProvider forces open=false, locking it collapsed.
+  // On mobile (<768px), the AppSidebar is not rendered at all.
+  const collapsible = 'icon' as const;
+
   return (
-    <Sidebar collapsible="icon" variant="floating">
+    <Sidebar collapsible={collapsible} variant="floating">
       <SidebarHeader>
-        <SidebarTrigger />
+        {isLargeScreen && <SidebarTrigger />}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
