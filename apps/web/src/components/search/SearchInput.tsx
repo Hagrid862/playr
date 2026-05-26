@@ -156,7 +156,7 @@ export function SearchInput({
         )}
 
         {showDropdown && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-stone-900 border border-white/10 shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-stone-900 border border-white/10 shadow-2xl rounded-lg z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-2 min-h-[40px]">
               {debouncedQuery.trim().length < 3 ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">
