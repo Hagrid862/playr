@@ -5,7 +5,7 @@ import { MagnifyingGlassIcon, WarningIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { useClickAway } from 'react-use';
 import { Input } from '../ui/input';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { type SearchSuggestionsResult } from '@repo/contracts';
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { SearchScopeToggle } from './SearchScopeToggle';
@@ -29,6 +29,7 @@ export function SearchInput({
   hideDropdown = false,
 }: SearchInputProps) {
   const [query, setQuery] = useState(initialValue);
+  const searchParams = useSearch({ strict: false });
   const [isOpen, setIsOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,12 @@ export function SearchInput({
   const { searchScope } = useSearchPreferencesStore();
 
   const currentScope = searchScope;
+
+  useEffect(() => {
+    if ((searchParams as any)?.query) {
+      setQuery((searchParams as any).query);
+    }
+  }, [(searchParams as any)?.query]);
 
   useEffect(() => {
     if (window.location.pathname.includes('/app/search') && query.trim().length >= 3) {

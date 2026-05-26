@@ -106,7 +106,7 @@ function SearchPage() {
                   {searchHistory.map((item) => (
                     <button
                       key={item}
-                      onClick={() => navigate({ search: (prev) => ({ ...prev, query: item }) })}
+                      onClick={() => navigate({ search: { query: item, page: 1 } })}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-stone-900/40 transition-colors text-left w-full text-sm"
                     >
                       <MagnifyingGlassIcon className="text-muted-foreground w-4 h-4" />

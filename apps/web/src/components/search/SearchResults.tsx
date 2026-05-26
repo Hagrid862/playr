@@ -24,11 +24,7 @@ function formatDuration(seconds: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-export function SearchResults({
-  data,
-  viewType = 'grid',
-  isLibrarySearch = false,
-}: SearchResultsData) {
+export function SearchResults({ data, viewType = 'grid' }: SearchResultsData) {
   const results = data?.results || [];
   const navigate = useNavigate();
   const { playTrack } = usePlayerStore();
@@ -47,8 +43,6 @@ export function SearchResults({
   const remainingResults = topResult ? results.slice(1) : results;
 
   const handleItemClick = (result: SearchResultItem) => {
-    if (!isLibrarySearch) return;
-
     switch (result.type) {
       case 'artist':
         navigate({ to: '/app/library/artists/$id', params: { id: result.id } });
@@ -94,7 +88,6 @@ export function SearchResults({
           );
         }
         break;
-
     }
   };
 
