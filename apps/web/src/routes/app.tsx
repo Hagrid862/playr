@@ -3,6 +3,8 @@ import { SidebarLayout } from '@/components/layout/sidebar-layout';
 import { Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 
+import { useAuthStore } from '@/stores/auth.store';
+
 export const Route = createFileRoute('/app')({
   beforeLoad: ({ context, location }) => {
     if (!context.auth.isAuthenticated) {
@@ -18,14 +20,14 @@ export const Route = createFileRoute('/app')({
 });
 
 function AppLayout() {
-  const { auth } = Route.useRouteContext();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!auth.isAuthenticated) {
+    if (!isAuthenticated) {
       navigate({ to: '/auth/login' });
     }
-  }, [auth.isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate]);
 
   return (
     <SidebarLayout>
