@@ -1,7 +1,7 @@
 import { useSearchSuggestions } from '@/hooks/api/search/useSearchSuggestions';
 import { useLibrarySearchSuggestions } from '@/hooks/api/search/useLibrarySearchSuggestions';
 import { cn } from '@/lib/utils';
-import { MagnifyingGlassIcon, WarningIcon } from '@phosphor-icons/react';
+import { MagnifyingGlassIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { useClickAway } from 'react-use';
 import { Input } from '../ui/input';
@@ -117,6 +117,24 @@ export function SearchInput({
     }
   };
 
+  const handleClear = () => {
+    setQuery('');
+    setIsOpen(false);
+    inputRef.current?.focus();
+
+    // Jeśli jesteśmy na podstronie wyszukiwania, wyczyszczenie inputa resetuje stan wyszukiwania w URL
+    if (window.location.pathname.includes('/app/search')) {
+      navigate({
+        to: '/app/search',
+        search: (prev: any) => ({
+          ...prev,
+          query: undefined,
+          page: undefined,
+        }),
+      });
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -124,13 +142,14 @@ export function SearchInput({
   };
 
   const showDropdown = !hideDropdown && isOpen && debouncedQuery.trim().length > 0;
+  const showClearButton = query.length > 0 && !isFetching;
 
   return (
     <div ref={containerRef} className={cn('flex items-center gap-2 w-full', className)}>
       <div className="relative flex-1">
         <MagnifyingGlassIcon
           className={cn(
-            'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors',
+            'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
             size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
           )}
           onClick={() => handleSearch()}
@@ -149,10 +168,30 @@ export function SearchInput({
             (currentScope === 'all' ? 'Search on Playr...' : 'Search in your library...')
           }
           className={cn(
-            'pl-9 pr-9 bg-stone-900/50 border-white/10 focus:bg-stone-900 transition-all',
-            size === 'sm' ? 'h-8 text-xs pl-8 pr-8' : 'h-10 text-sm',
+            'pl-9 bg-stone-900/50 border-white/10 focus:bg-stone-900 transition-all',
+            size === 'sm' ? 'h-8 text-xs pl-8' : 'h-10 text-sm',
+            // Zwiększamy prawy padding, jeśli wyświetla się krzyżyk lub spinner, by tekst na nie nie nachodził
+            showClearButton || isFetching
+              ? size === 'sm'
+                ? 'pr-8'
+                : 'pr-9'
+              : size === 'sm'
+                ? 'pr-4'
+                : 'pr-4',
           )}
         />
+
+        {/* Przycisk czyszczenia pola tekstowego o identycznym pozycjonowaniu co lupa */}
+        {showClearButton && (
+          <XIcon
+            className={cn(
+              'absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
+              size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
+            )}
+            onClick={handleClear}
+          />
+        )}
+
         {isFetching && (
           <Spinner
             className={cn(
