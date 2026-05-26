@@ -70,7 +70,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             {/* Player Bar — floating rounded on mobile/medium, inline on large desktop */}
             <div
               className={cn(
-                'flex items-center justify-center z-[60]',
+                'flex items-center justify-center z-[99999]',
                 isMobile &&
                   'fixed bottom-16 left-3 right-3 h-16 bg-stone-900/95 backdrop-blur-md rounded-lg border border-white/10 shadow-xl shadow-black/30',
                 !isMobile && !isLarge &&

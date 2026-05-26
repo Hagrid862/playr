@@ -283,7 +283,7 @@ export function SearchInput({
         </div>
       )}
       {suggestions && suggestions.results.length > 0 && (
-        <div className="border-t">
+        <div className={cn(!resultsInline && 'border-t ')}>
           <button
             onClick={() => {
               setIsOpen(false);

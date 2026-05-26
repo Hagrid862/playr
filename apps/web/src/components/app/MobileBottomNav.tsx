@@ -47,7 +47,7 @@ export function MobileBottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-stone-900/95 backdrop-blur-sm border-t border-white/10 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-[99999] bg-stone-900/95 backdrop-blur-sm border-t border-white/10 md:hidden">
       <div className="flex items-center justify-around h-14 px-2">
         {navItems.map((item) => (
           <Link
