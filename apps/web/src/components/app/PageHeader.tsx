@@ -13,6 +13,8 @@ export function PageHeader({
   description,
   showBackButton,
   onBackClick,
+  mobileSearchExpanded = false,
+  onMobileSearchToggle,
 }: {
   actions?: ReactNode;
   hideSearch?: boolean;
@@ -20,6 +22,8 @@ export function PageHeader({
   description?: string;
   showBackButton?: boolean;
   onBackClick?: () => void;
+  mobileSearchExpanded?: boolean;
+  onMobileSearchToggle?: () => void;
 }) {
   const router = useRouter();
 
@@ -31,9 +35,12 @@ export function PageHeader({
     }
   };
 
+  const showSearch = !hideSearch && !title;
+
   return (
-    <div className="flex flex-col gap-2 py-2">
-      <div className="grid grid-cols-[1fr_2fr_1fr] items-center gap-4 px-4">
+    <div className="flex flex-col py-2">
+      {/* ── Desktop layout ── */}
+      <div className="hidden md:grid grid-cols-[1fr_2fr_1fr] items-center gap-4 px-4">
         {/* Left: Logo/Back Button */}
         <div className="flex items-center gap-2">
           {showBackButton && (
@@ -41,7 +48,7 @@ export function PageHeader({
               <ArrowLeftIcon />
             </Button>
           )}
-          <PlayrLogo className="text-emerald-500" />
+          <PlayrLogo className="text-emerald-500 shrink-0" />
         </div>
 
         {/* Center: Search / Title */}
@@ -52,14 +59,89 @@ export function PageHeader({
               {description && <p className="text-xs text-muted-foreground">{description}</p>}
             </div>
           ) : (
-            !hideSearch && <SearchInput />
+            showSearch && <SearchInput />
           )}
         </div>
 
         {/* Right: global actions */}
         <div className="flex justify-end items-center gap-2">{actions}</div>
       </div>
-      <Separator />
+
+      {/* ── Mobile layout ── */}
+      <div className="md:hidden flex flex-col">
+        <div className="flex items-center gap-2 px-4 min-h-10">
+          {/* Left: Back Button + Logo — hidden when search overlay is active */}
+          {!mobileSearchExpanded && (
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {showBackButton && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={handleBack}
+                aria-label="Go back"
+                className="shrink-0"
+              >
+                <ArrowLeftIcon />
+              </Button>
+            )}
+            <PlayrLogo className="text-emerald-500 shrink-0" />
+            {title && (
+              <div className="truncate min-w-0">
+                <h1 className="text-lg font-bold truncate">{title}</h1>
+                {description && (
+                  <p className="text-xs text-muted-foreground truncate">{description}</p>
+                )}
+              </div>
+            )}
+          </div>
+          )}
+
+          {/* Right side */}
+          <div className={`flex items-center gap-1 ${mobileSearchExpanded ? 'flex-1 min-w-0' : 'shrink-0'}`}>
+            {!mobileSearchExpanded ? (
+              /* ── Collapsed: icon + toggle + actions ── */
+              <>
+                {showSearch && (
+                  <SearchInput
+                    mobile
+                    mobileExpanded={false}
+                    onMobileToggle={onMobileSearchToggle}
+                  />
+                )}
+                {actions}
+              </>
+            ) : (
+              /* ── Expanded: ← back arrow + search input ── */
+              showSearch && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={onMobileSearchToggle}
+                    aria-label="Close search"
+                    className="shrink-0"
+                  >
+                    <ArrowLeftIcon className="h-4 w-4" />
+                  </Button>
+                  <SearchInput
+                    mobile
+                    mobileExpanded
+                    hideScopeToggle
+                    hideDropdown={false}
+                    autoFocus
+                    onEscape={onMobileSearchToggle}
+                    onSearchComplete={onMobileSearchToggle}
+                    placeholder="Search something..."
+                  />
+                </>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Separator - hidden on mobile */}
+      <Separator className="max-md:hidden mt-2" />
     </div>
   );
 }

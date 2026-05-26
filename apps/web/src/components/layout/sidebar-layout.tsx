@@ -1,6 +1,7 @@
 import { AppSidebar } from '@/components/app/Sidebar';
+import { MobileBottomNav } from '@/components/app/MobileBottomNav';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMounted } from '@/hooks/use-is-mounted';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
@@ -10,9 +11,18 @@ import { Lyrics } from '../app/Lyrics';
 import { AppPlayer } from '../app/Player';
 import { Queue } from '../app/Queue';
 
+// Breakpoints for responsive sidebar behavior:
+// Mobile (<768px): sidebar hidden, bottom nav visible
+// Medium (768-1199px): sidebar locked collapsed (icon-only), PlayerMobile with controls
+// Large (>=1200px): sidebar expandable/collapsible, full desktop player
+const MOBILE_BREAKPOINT = '(max-width: 767px)';
+const LARGE_BREAKPOINT = '(min-width: 1200px)';
+
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const { isQueueOpen, setQueueOpen, sidebarView } = usePlayerStore();
   const isDesktop = useMediaQuery('(min-width: 1500px)');
+  const isMobile = useMediaQuery(MOBILE_BREAKPOINT);
+  const isLarge = useMediaQuery(LARGE_BREAKPOINT);
   const mounted = useIsMounted();
   const [isSettledInternal, setIsSettledInternal] = useState(false);
 
@@ -28,9 +38,14 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
 
   const isSettled = isQueueOpen && isSettledInternal;
 
+  // On large screens, sidebar state is uncontrolled (user can toggle).
+  // On medium screens, sidebar is forced collapsed (open=false, no toggle).
+  // On mobile, the AppSidebar is not rendered.
+  const sidebarOpen = isLarge ? undefined : false;
+
   return (
-    <SidebarProvider>
-      <AppSidebar />
+    <SidebarProvider open={sidebarOpen}>
+      {!isMobile && <AppSidebar />}
       <div className="flex h-screen w-full relative overflow-hidden">
         {/* Main Content Area */}
         <div
@@ -39,14 +54,31 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             isDesktop ? 'mr-2' : '',
           )}
         >
-          <div className="mx-auto flex h-full w-full max-w-480 flex-col relative [--app-player-height:4rem]">
-            <div className="md:hidden absolute top-4 left-4 z-20">
-              <SidebarTrigger className="bg-stone-900/50 backdrop-blur-sm border border-white/10 text-white hover:bg-stone-800" />
-            </div>
+          <div className="mx-auto flex h-full w-full max-w-480 flex-col relative">
             <div className="flex min-h-0 min-w-0 flex-1 overflow-y-auto w-full">
-              <main className="flex h-full min-h-0 w-full flex-col px-4">{children}</main>
+              <main
+                className={cn(
+                  'flex h-full min-h-0 w-full flex-col px-4',
+                  // On mobile, reserve space for player bar (h-16) + bottom nav (h-14) + gaps
+                  // On medium, reserve space for floating player bar
+                  isMobile ? 'pb-[8rem]' : !isLarge ? 'pb-[4.5rem]' : 'pb-0',
+                )}
+              >
+                {children}
+              </main>
             </div>
-            <div className="absolute p-2 bottom-2 left-0 right-0 z-[60] h-16 flex items-center justify-center max-w-[calc(100vw-2rem)] min-[800px]:max-w-250 mx-auto">
+            {/* Player Bar — floating rounded on mobile/medium, inline on large desktop */}
+            <div
+              className={cn(
+                'flex items-center justify-center z-[60]',
+                isMobile &&
+                  'fixed bottom-16 left-3 right-3 h-16 bg-stone-900/95 backdrop-blur-md rounded-lg border border-white/10 shadow-xl shadow-black/30',
+                !isMobile && !isLarge &&
+                  'absolute bottom-2 left-3 right-3 h-16 bg-stone-900/95 backdrop-blur-md rounded-lg border border-white/10 shadow-xl shadow-black/30',
+                isLarge &&
+                  'absolute bottom-2 left-0 right-0 h-16 py-1 px-2 max-w-[calc(100vw-2rem)] min-[800px]:max-w-250 mx-auto',
+              )}
+            >
               <AppPlayer />
             </div>
           </div>
@@ -124,6 +156,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
         )}
+
+        {/* Mobile Bottom Navigation — visible only on mobile (<768px) */}
+        {isMobile && <MobileBottomNav />}
       </div>
     </SidebarProvider>
   );

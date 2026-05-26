@@ -12,6 +12,8 @@ vi.mock('@tanstack/react-router', () => ({
       back: mockBack,
     },
   }),
+  useSearch: () => ({}),
+  useNavigate: () => vi.fn(),
 }));
 
 describe('PageHeader', () => {
@@ -23,8 +25,11 @@ describe('PageHeader', () => {
     it('renders title and description correctly', () => {
       customRender(<PageHeader title="Test Title" description="Test Description" />);
 
-      expect(screen.getByText('Test Title')).toBeInTheDocument();
-      expect(screen.getByText('Test Description')).toBeInTheDocument();
+      const titles = screen.getAllByText('Test Title');
+      expect(titles.length).toBeGreaterThanOrEqual(1);
+
+      const descriptions = screen.getAllByText('Test Description');
+      expect(descriptions.length).toBeGreaterThanOrEqual(1);
     });
 
     it('does not render description when not provided', () => {
@@ -39,19 +44,21 @@ describe('PageHeader', () => {
     it('renders actions when provided', () => {
       customRender(<PageHeader title="Test Title" actions={<button>Action Button</button>} />);
 
-      expect(screen.getByRole('button', { name: /Action Button/i })).toBeInTheDocument();
+      const actionButtons = screen.getAllByRole('button', { name: /Action Button/i });
+      expect(actionButtons.length).toBeGreaterThanOrEqual(1);
     });
   });
 
   describe('back button', () => {
-    it('shows back button and calls router.history.back() when clicked', async () => {
+    it('shows back button(s) and calls router.history.back() when clicked', async () => {
       const user = userEvent.setup();
       customRender(<PageHeader title="Test Title" showBackButton={true} />);
 
-      const backButton = screen.getByRole('button');
-      expect(backButton).toBeInTheDocument();
+      const backButtons = screen.getAllByRole('button', { name: /Go back/i });
+      expect(backButtons.length).toBeGreaterThanOrEqual(1);
 
-      await user.click(backButton);
+      // Click the first back button found
+      await user.click(backButtons[0]);
       expect(mockBack).toHaveBeenCalled();
     });
 
@@ -62,10 +69,53 @@ describe('PageHeader', () => {
         <PageHeader title="Test Title" showBackButton={true} onBackClick={onBackClick} />,
       );
 
-      const backButton = screen.getByRole('button');
+      const backButton = screen.getAllByRole('button', { name: /Go back/i })[0];
       await user.click(backButton);
       expect(onBackClick).toHaveBeenCalled();
       expect(mockBack).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mobile search toggle', () => {
+    it('renders open search button in collapsed state (no title, no expansion)', () => {
+      customRender(<PageHeader mobileSearchExpanded={false} />);
+
+      const openButtons = screen.getAllByRole('button', { name: /Open search/i });
+      expect(openButtons.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('calls onMobileSearchToggle when open search button is clicked', async () => {
+      const user = userEvent.setup();
+      const onToggle = vi.fn();
+      customRender(<PageHeader mobileSearchExpanded={false} onMobileSearchToggle={onToggle} />);
+
+      const openButton = screen.getAllByRole('button', { name: /Open search/i })[0];
+      await user.click(openButton);
+      expect(onToggle).toHaveBeenCalled();
+    });
+
+    it('renders close search button when mobile search is expanded', () => {
+      customRender(<PageHeader mobileSearchExpanded={true} />);
+
+      const closeButtons = screen.getAllByRole('button', { name: /Close search/i });
+      expect(closeButtons.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('calls onMobileSearchToggle when close button is clicked', async () => {
+      const user = userEvent.setup();
+      const onToggle = vi.fn();
+      customRender(<PageHeader mobileSearchExpanded={true} onMobileSearchToggle={onToggle} />);
+
+      const closeButton = screen.getAllByRole('button', { name: /Close search/i })[0];
+      await user.click(closeButton);
+      expect(onToggle).toHaveBeenCalled();
+    });
+
+    it('hides open search button when title is provided', () => {
+      customRender(<PageHeader title="Test Title" mobileSearchExpanded={false} />);
+
+      const openButton = screen.queryByRole('button', { name: /Open search/i });
+      expect(openButton).not.toBeInTheDocument();
     });
   });
 });

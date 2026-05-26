@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { MagnifyingGlassIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { useClickAway } from 'react-use';
+import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { type SearchSuggestionsResult } from '@repo/contracts';
@@ -15,18 +16,32 @@ interface SearchInputProps {
   className?: string;
   initialValue?: string;
   onSearch?: (query: string) => void;
+  onSearchComplete?: () => void;
   placeholder?: string;
   size?: 'default' | 'sm';
   hideDropdown?: boolean;
+  hideScopeToggle?: boolean;
+  mobile?: boolean;
+  mobileExpanded?: boolean;
+  onMobileToggle?: () => void;
+  autoFocus?: boolean;
+  onEscape?: () => void;
 }
 
 export function SearchInput({
   className,
   initialValue = '',
   onSearch,
+  onSearchComplete,
   placeholder,
   size = 'default',
   hideDropdown = false,
+  hideScopeToggle = false,
+  mobile = false,
+  mobileExpanded = false,
+  onMobileToggle,
+  autoFocus = false,
+  onEscape,
 }: SearchInputProps) {
   const [query, setQuery] = useState(initialValue);
   const searchParams = useSearch({ strict: false });
@@ -54,6 +69,17 @@ export function SearchInput({
   useEffect(() => {
     setQuery(initialValue);
   }, [initialValue]);
+
+  // Auto-focus the input when autoFocus is enabled (used in overlay mode)
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      // Small delay to allow the overlay animation to start before focusing
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -115,6 +141,7 @@ export function SearchInput({
         }),
       });
     }
+    onSearchComplete?.();
   };
 
   const handleClear = () => {
@@ -141,19 +168,51 @@ export function SearchInput({
     }
   };
 
+  // Mobile expanded state: auto-hide the scope toggle to save space on mobile
+  const effectiveHideScopeToggle = hideScopeToggle || (mobile && mobileExpanded);
+
   const showDropdown = !hideDropdown && isOpen && debouncedQuery.trim().length > 0;
   const showClearButton = query.length > 0 && !isFetching;
+
+  // Mobile collapsed state: render just the search icon button
+  if (mobile && !mobileExpanded) {
+    return (
+      <div ref={containerRef} className={cn('flex items-center gap-2', className)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 border border-white/10 bg-stone-900/50"
+          onClick={onMobileToggle}
+          aria-label="Open search"
+        >
+          <MagnifyingGlassIcon className="h-4 w-4" />
+        </Button>
+        {!hideScopeToggle && <SearchScopeToggle size="default" />}
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className={cn('flex items-center gap-2 w-full', className)}>
       <div className="relative flex-1">
-        <MagnifyingGlassIcon
-          className={cn(
-            'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
-            size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
-          )}
-          onClick={() => handleSearch()}
-        />
+        {mobile && mobileExpanded && (
+          <MagnifyingGlassIcon
+            className={cn(
+              'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
+              size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
+            )}
+            onClick={() => handleSearch()}
+          />
+        )}
+        {!mobile && (
+          <MagnifyingGlassIcon
+            className={cn(
+              'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
+              size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
+            )}
+            onClick={() => handleSearch()}
+          />
+        )}
         <Input
           ref={inputRef}
           value={query}
@@ -162,7 +221,17 @@ export function SearchInput({
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => {
+            handleKeyDown(e);
+            // Close on Escape — prefer onEscape callback, fallback to mobile toggle
+            if (e.key === 'Escape') {
+              if (onEscape) {
+                onEscape();
+              } else if (mobile) {
+                onMobileToggle?.();
+              }
+            }
+          }}
           placeholder={
             placeholder ||
             (currentScope === 'all' ? 'Search on Playr...' : 'Search in your library...')
@@ -170,6 +239,7 @@ export function SearchInput({
           className={cn(
             'pl-9 bg-stone-900/50 border-white/10 focus:bg-stone-900 transition-all',
             size === 'sm' ? 'h-8 text-xs pl-8' : 'h-10 text-sm',
+            mobileExpanded && 'bg-stone-900 border-white/20',
             // Zwiększamy prawy padding, jeśli wyświetla się krzyżyk lub spinner, by tekst na nie nie nachodził
             showClearButton || isFetching
               ? size === 'sm'
@@ -178,6 +248,7 @@ export function SearchInput({
               : size === 'sm'
                 ? 'pr-4'
                 : 'pr-4',
+            mobile && mobileExpanded && 'pl-9',
           )}
         />
 
@@ -296,7 +367,7 @@ export function SearchInput({
         )}
       </div>
 
-      <SearchScopeToggle />
+      {!effectiveHideScopeToggle && <SearchScopeToggle />}
     </div>
   );
 }
