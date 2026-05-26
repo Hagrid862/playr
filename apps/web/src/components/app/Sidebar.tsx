@@ -31,13 +31,17 @@ import {
 import { PlaylistSystemRole } from '@repo/db';
 import { useLibraryPlaylistPins } from '@/hooks/api/library-playlists/useLibraryPlaylistPins';
 import { useLogout } from '@/hooks/api/auth/useLogout';
-import { LibraryStorageUsageBar } from '@/components/app/LibraryStorageUsageBar';
-import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter, useLocation } from '@tanstack/react-router';
+import type { LibraryPlaylistPinRowSchema } from '@repo/contracts';
+import { z } from 'zod';
+
+type LibraryPlaylistPinRow = z.infer<typeof LibraryPlaylistPinRowSchema>;
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
   const router = useRouter();
   const navigate = useNavigate();
+  const location = useLocation();
   const { mutateAsync: logoutHook, isPending: logoutIsLoading } = useLogout();
   const { data: pinsResponse } = useLibraryPlaylistPins();
   const pins = pinsResponse?.data ?? [];
@@ -54,6 +58,35 @@ export function AppSidebar() {
     }
   };
 
+  const getPersistentLink = (moduleName: string, rootPath: string) => {
+    if (typeof window === 'undefined') return rootPath;
+    const lastVisited = sessionStorage.getItem(`last_visited_${moduleName}_route`);
+    
+    // Normalize paths for comparison (remove trailing slash)
+    const currentPath = location.pathname.replace(/\/$/, '');
+    const normalizedRoot = rootPath.replace(/\/$/, '');
+    const isAlreadyAtRoot = currentPath === normalizedRoot;
+    
+    // If we are currently active in this module, return the root path to allow resetting
+    if (location.pathname.startsWith(normalizedRoot) && !isAlreadyAtRoot) {
+      return rootPath;
+    }
+    
+    return lastVisited || rootPath;
+  };
+
+  const isModuleActive = (rootPath: string) => {
+    if (rootPath === '/app') {
+      return location.pathname === '/app' || location.pathname === '/app/';
+    }
+    return location.pathname.startsWith(rootPath);
+  };
+
+  const getLinkClassName = (rootPath: string) =>
+    isModuleActive(rootPath)
+      ? 'bg-accent text-primary'
+      : 'text-white hover:text-primary';
+
   return (
     <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader>
@@ -66,9 +99,10 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    to="/app/search"
+                    to={getPersistentLink('search', '/app/search')}
                     activeOptions={{ exact: false }}
-                    activeProps={{ 'data-active': 'true' }}
+                    activeProps={{ className: 'bg-accent text-primary' }}
+                    className={getLinkClassName('/app/search')}
                   >
                     <MagnifyingGlassIcon />
                     <span>Search</span>
@@ -78,9 +112,10 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    to="/app"
+                    to={getPersistentLink('home', '/app')}
                     activeOptions={{ exact: true }}
-                    activeProps={{ 'data-active': 'true' }}
+                    activeProps={{ className: 'bg-accent text-primary' }}
+                    className={getLinkClassName('/app')}
                   >
                     <HouseIcon />
                     <span>Home</span>
@@ -89,7 +124,12 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/new" activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to={getPersistentLink('new', '/app/new')}
+                    activeOptions={{ exact: true }}
+                    activeProps={{ className: 'bg-accent text-primary' }}
+                    className={getLinkClassName('/app/new')}
+                  >
                     <GridFourIcon />
                     <span>New</span>
                   </Link>
@@ -105,7 +145,11 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/library/overview" activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to={getPersistentLink('overview', '/app/library/overview')}
+                    activeOptions={{ exact: false }}
+                    className={getLinkClassName('/app/library/overview')}
+                  >
                     <BooksIcon />
                     <span>Overview</span>
                   </Link>
@@ -113,7 +157,11 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/library/artists" activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to={getPersistentLink('artists', '/app/library/artists')}
+                    activeOptions={{ exact: false }}
+                    className={getLinkClassName('/app/library/artists')}
+                  >
                     <MicrophoneStageIcon />
                     <span>Artists</span>
                   </Link>
@@ -121,7 +169,11 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/library/albums" activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to={getPersistentLink('albums', '/app/library/albums')}
+                    activeOptions={{ exact: false }}
+                    className={getLinkClassName('/app/library/albums')}
+                  >
                     <DiscIcon />
                     <span>Albums</span>
                   </Link>
@@ -129,7 +181,11 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/library/songs" activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to={getPersistentLink('songs', '/app/library/songs')}
+                    activeOptions={{ exact: false }}
+                    className={getLinkClassName('/app/library/songs')}
+                  >
                     <ListBulletsIcon />
                     <span>Songs</span>
                   </Link>
@@ -137,7 +193,11 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/library/genres" activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to={getPersistentLink('genres', '/app/library/genres')}
+                    activeOptions={{ exact: false }}
+                    className={getLinkClassName('/app/library/genres')}
+                  >
                     <MusicNotesIcon />
                     <span>Genres</span>
                   </Link>
@@ -154,16 +214,17 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    to="/app/playlists"
+                    to={getPersistentLink('playlists', '/app/playlists')}
                     activeOptions={{ exact: true }}
-                    activeProps={{ 'data-active': 'true' }}
+                    activeProps={{ className: 'bg-accent text-primary' }}
+                    className={getLinkClassName('/app/playlists')}
                   >
                     <SquaresFourIcon />
                     <span>All Playlists</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {pins.map((pin) => (
+              {pins.map((pin: LibraryPlaylistPinRow) => (
                 <SidebarMenuItem key={pin.id}>
                   <SidebarMenuButton
                     asChild
@@ -172,7 +233,8 @@ export function AppSidebar() {
                     <Link
                       to="/app/playlists/$playlistId"
                       params={{ playlistId: pin.playlist.id }}
-                      activeProps={{ 'data-active': 'true' }}
+                      activeProps={{ className: 'bg-accent text-primary' }}
+                      className="text-white hover:text-primary"
                     >
                       <span className="flex size-4 shrink-0 items-center justify-center overflow-hidden rounded bg-stone-800">
                         {pin.playlist.systemRole === PlaylistSystemRole.favorites ? (
@@ -198,7 +260,6 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <LibraryStorageUsageBar className="group-data-[collapsible=icon]:hidden" />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} disabled={logoutIsLoading}>
