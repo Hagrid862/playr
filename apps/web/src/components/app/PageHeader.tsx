@@ -111,29 +111,17 @@ export function PageHeader({
                 {actions}
               </>
             ) : (
-              /* ── Expanded: ← back arrow + search input ── */
+              /* ── Expanded: ← back arrow (search input is in the overlay) ── */
               showSearch && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={onMobileSearchToggle}
-                    aria-label="Close search"
-                    className="shrink-0"
-                  >
-                    <ArrowLeftIcon className="h-4 w-4" />
-                  </Button>
-                  <SearchInput
-                    mobile
-                    mobileExpanded
-                    hideScopeToggle
-                    hideDropdown={false}
-                    autoFocus
-                    onEscape={onMobileSearchToggle}
-                    onSearchComplete={onMobileSearchToggle}
-                    placeholder="Search something..."
-                  />
-                </>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onMobileSearchToggle}
+                  aria-label="Close search"
+                  className="shrink-0"
+                >
+                  <ArrowLeftIcon className="h-4 w-4" />
+                </Button>
               )
             )}
           </div>

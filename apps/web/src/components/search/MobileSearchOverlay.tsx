@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon } from '@phosphor-icons/react';
+import { SearchInput } from '@/components/search/SearchInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useCallback } from 'react';
 
@@ -39,21 +39,25 @@ export function MobileSearchOverlay({ isOpen, onClose }: MobileSearchOverlayProp
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="absolute inset-0 z-50 bg-stone-950 flex md:hidden"
+          className="absolute inset-0 z-50 bg-stone-950 flex flex-col md:hidden"
           aria-label="Search overlay"
         >
-          {/* Empty state / suggestions area */}
+          {/* Search input bar */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, delay: 0.1 }}
-            className="flex-1 flex items-center justify-center"
+            initial={{ y: -12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -12, opacity: 0 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
+            className="px-3 py-2 border-b border-white/10 shrink-0"
           >
-            <div className="flex flex-col items-center gap-3 text-muted-foreground">
-              <MagnifyingGlassIcon className="h-10 w-10 opacity-30" />
-              <span className="text-sm">Search something...</span>
-            </div>
+            <SearchInput
+              resultsInline
+              hideScopeToggle
+              autoFocus
+              onEscape={onClose}
+              onSearchComplete={onClose}
+              placeholder="Search something..."
+            />
           </motion.div>
         </motion.div>
       )}
