@@ -43,6 +43,11 @@ function PlaylistsEditActions() {
 function PlaylistsLayout() {
   const location = useLocation();
   const segments = location.pathname.split('/').filter(Boolean);
+  const isIndex =
+    segments.length === 3 &&
+    segments[0] === 'app' &&
+    segments[1] === 'library' &&
+    segments[2] === 'artists';
   const isCreate = segments.includes('create');
   const isEdit = segments.includes('edit');
   const playlistId =
@@ -71,6 +76,7 @@ function PlaylistsLayout() {
         title="Playlists"
         search={<CompactSearch category="playlist" />}
         actions={addPlaylistButton}
+        showBackButton={!isIndex}
       />
       <Outlet />
     </div>
