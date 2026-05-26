@@ -1,4 +1,8 @@
-import { type SearchResultItem, type SearchTrackResult } from '@repo/contracts';
+import {
+  type SearchResultItem,
+  type SearchTrackResult,
+  type SearchResultsData as SearchResultsResponseData,
+} from '@repo/contracts';
 import {
   MagnifyingGlassIcon,
   MusicNoteIcon,
@@ -11,9 +15,10 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { SearchViewType } from '@/stores/search-preferences.store';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
+import { Fragment } from 'react';
 
-export interface SearchResultsData {
-  data: any;
+export interface SearchResultsProps {
+  data: SearchResultsResponseData;
   viewType?: SearchViewType;
   isLibrarySearch?: boolean;
 }
@@ -24,7 +29,7 @@ function formatDuration(seconds: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-export function SearchResults({ data, viewType = 'grid' }: SearchResultsData) {
+export function SearchResults({ data, viewType = 'grid' }: SearchResultsProps) {
   const results = data?.results || [];
   const navigate = useNavigate();
   const { playTrack } = usePlayerStore();
@@ -124,10 +129,12 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsData) {
           <div className="text-lg font-semibold truncate group-hover:text-white transition-colors">
             {result.name}
           </div>
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
-            {result.type !== 'album' && <span className="capitalize">{result.type}</span>}
+          <div className="text-sm text-muted-foreground flex items-center gap-2 truncate">
+            {result.type !== 'album' && <span className="capitalize shrink-0">{result.type}</span>}
             {result.type === 'album' && (
-              <span className="capitalize">{result.albumType?.toLowerCase() || 'Album'}</span>
+              <span className="capitalize shrink-0">
+                {result.albumType?.toLowerCase() || 'Album'}
+              </span>
             )}
             {result.type === 'track' && result.explicit === true && (
               <span className="flex items-center justify-center size-3.5 bg-stone-500 text-[10px] font-bold text-stone-950 rounded-[2px] shrink-0">
@@ -136,31 +143,28 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsData) {
             )}
             {result.type === 'track' && result.duration && (
               <>
-                <span className="h-1 w-1 rounded-full bg-white/20" />
-                <span className="tabular-nums">{formatDuration(result.duration)}</span>
+                <span className="h-1 w-1 rounded-full bg-white/20 shrink-0" />
+                <span className="tabular-nums shrink-0">{formatDuration(result.duration)}</span>
               </>
             )}
-            {(result.type === 'track' || result.type === 'album') && result.authors.length > 0 && (
+            {(result.type === 'track' || result.type === 'album') && result.authors?.length > 0 && (
               <>
-                {(result.type === 'track' || result.type === 'album') &&
-                  result.authors.length > 0 &&
-                  result.authors.map((author) => {
-                    return (
-                      <>
-                        <span className="h-1 w-1 rounded-full bg-white/20" />
-                        <Link
-                          key={author.id}
-                          to="/app/library/artists/$id"
-                          params={{ id: author.id }}
-                          className="hover:text-white transition-colors cursor-pointer relative z-10"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {author.name}
-                        </Link>
-                      </>
-                    );
-                  })}
-                ;
+                <span className="h-1 w-1 rounded-full bg-white/20 shrink-0" />
+                <div className="flex items-center gap-1 truncate">
+                  {result.authors.map((author, idx) => (
+                    <Fragment key={author.id}>
+                      {idx > 0 && <span className="text-muted-foreground/60">, </span>}
+                      <Link
+                        to="/app/library/artists/$id"
+                        params={{ id: author.id }}
+                        className="hover:text-white transition-colors cursor-pointer relative z-10 truncate"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {author.name}
+                      </Link>
+                    </Fragment>
+                  ))}
+                </div>
               </>
             )}
           </div>
@@ -208,10 +212,12 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsData) {
           <div className="font-bold truncate group-hover:text-white transition-colors">
             {result.name}
           </div>
-          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
-            {result.type !== 'album' && <span className="capitalize">{result.type}</span>}
+          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5 min-w-0">
+            {result.type !== 'album' && <span className="capitalize shrink-0">{result.type}</span>}
             {result.type === 'album' && (
-              <span className="capitalize">{result.albumType?.toLowerCase() || 'Album'}</span>
+              <span className="capitalize shrink-0">
+                {result.albumType?.toLowerCase() || 'Album'}
+              </span>
             )}
             {result.type === 'track' && result.explicit === true && (
               <span className="flex items-center justify-center size-3.5 bg-stone-500 text-[10px] font-bold text-stone-950 rounded-[2px] shrink-0">
@@ -220,21 +226,28 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsData) {
             )}
             {result.type === 'track' && result.duration && (
               <>
-                <span className="h-1 w-1 rounded-full bg-white/20" />
-                <span className="tabular-nums">{formatDuration(result.duration)}</span>
+                <span className="h-1 w-1 rounded-full bg-white/20 shrink-0" />
+                <span className="tabular-nums shrink-0">{formatDuration(result.duration)}</span>
               </>
             )}
-            {(result.type === 'track' || result.type === 'album') && result.authors.length > 0 && (
+            {(result.type === 'track' || result.type === 'album') && result.authors?.length > 0 && (
               <>
-                <span className="h-1 w-1 rounded-full bg-white/20" />
-                <Link
-                  to="/app/library/artists/$id"
-                  params={{ id: result.authors[0]!.id }}
-                  className="hover:text-white transition-colors cursor-pointer truncate relative z-10"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {result.authors[0]!.name}
-                </Link>
+                <span className="h-1 w-1 rounded-full bg-white/20 shrink-0" />
+                <div className="flex items-center gap-1 truncate max-w-full">
+                  {result.authors.map((author, idx) => (
+                    <Fragment key={author.id}>
+                      {idx > 0 && <span className="text-muted-foreground/60">, </span>}
+                      <Link
+                        to="/app/library/artists/$id"
+                        params={{ id: author.id }}
+                        className="hover:text-white transition-colors cursor-pointer relative z-10 truncate"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {author.name}
+                      </Link>
+                    </Fragment>
+                  ))}
+                </div>
               </>
             )}
           </div>
@@ -256,36 +269,73 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsData) {
               'p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-6 transition-all transform shadow-lg hover:bg-white/10 hover:scale-[1.01] active:scale-[1.00] cursor-pointer',
             )}
           >
-            {/* ... (artwork rendering) ... */}
-            <div>
-              <div className="text-3xl font-bold">{topResult.name}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="inline-block px-2 py-0.5 bg-white/10 rounded text-xs uppercase font-medium tracking-wider">
+            <div
+              className={cn(
+                'h-24 w-24 bg-stone-800 overflow-hidden flex-shrink-0 aspect-square shadow-md',
+                topResult.type === 'artist' ? 'rounded-full' : 'rounded-lg',
+              )}
+            >
+              {topResult.coverUrl || topResult.avatarUrl ? (
+                <img
+                  src={topResult.coverUrl || topResult.avatarUrl || undefined}
+                  alt={topResult.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center">
+                  {topResult.type === 'artist' && (
+                    <MicrophoneStageIcon size={32} className="text-stone-600" />
+                  )}
+                  {topResult.type === 'album' && <DiscIcon size={32} className="text-stone-600" />}
+                  {topResult.type === 'track' && (
+                    <MusicNoteIcon size={32} className="text-stone-600" />
+                  )}
+                  {topResult.type === 'playlist' && (
+                    <PlaylistIcon size={32} className="text-stone-600" />
+                  )}
+                  {topResult.type === 'genre' && (
+                    <MagnifyingGlassIcon size={32} className="text-stone-600" />
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-3xl font-bold truncate">{topResult.name}</div>
+              <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground truncate">
+                <span className="inline-block px-2 py-0.5 bg-white/10 rounded text-xs uppercase font-medium tracking-wider text-white shrink-0">
                   {topResult.type === 'album'
                     ? topResult.albumType?.toLowerCase() || 'album'
                     : topResult.type}
                 </span>
                 {topResult.type === 'track' && topResult.duration && (
                   <>
-                    <span className="h-1 w-1 rounded-full bg-white/20" />
-                    <span className="text-sm text-muted-foreground tabular-nums">
+                    <span className="h-1 w-1 rounded-full bg-white/20 shrink-0" />
+                    <span className="tabular-nums shrink-0">
                       {formatDuration(topResult.duration)}
                     </span>
                   </>
                 )}
-                {topResult.authors.length > 0 && (
-                  <>
-                    <span className="h-1 w-1 rounded-full bg-white/20" />
-                    <Link
-                      to="/app/library/artists/$id"
-                      params={{ id: topResult.authors[0]!.id }}
-                      className="text-sm text-muted-foreground hover:text-white transition-colors relative z-10"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {topResult.authors[0]!.name}
-                    </Link>
-                  </>
-                )}
+                {(topResult.type === 'track' || topResult.type === 'album') &&
+                  topResult.authors?.length > 0 && (
+                    <>
+                      <span className="h-1 w-1 rounded-full bg-white/20 shrink-0" />
+                      <div className="flex items-center gap-1 truncate">
+                        {topResult.authors.map((author, idx) => (
+                          <Fragment key={author.id}>
+                            {idx > 0 && <span className="text-muted-foreground/60">, </span>}
+                            <Link
+                              to="/app/library/artists/$id"
+                              params={{ id: author.id }}
+                              className="hover:text-white transition-colors relative z-10 truncate"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {author.name}
+                            </Link>
+                          </Fragment>
+                        ))}
+                      </div>
+                    </>
+                  )}
               </div>
             </div>
           </div>
