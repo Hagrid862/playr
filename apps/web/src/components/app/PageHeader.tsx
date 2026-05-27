@@ -39,7 +39,7 @@ export function PageHeader({
   const showSearch = !hideSearch && !title;
 
   return (
-    <div className={cn('flex flex-col py-2', mobileSearchExpanded && 'max-md:hidden')}>
+    <div className={cn('flex flex-col py-2 relative z-10 bg-stone-950', mobileSearchExpanded && 'max-md:hidden')}>
       {/* ── Desktop layout ── */}
       <div className="hidden md:grid grid-cols-[1fr_2fr_1fr] items-center gap-4 px-4">
         {/* Left: Logo/Back Button */}

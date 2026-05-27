@@ -12,14 +12,14 @@ import { AppPlayer } from '../app/Player';
 import { Queue } from '../app/Queue';
 
 // Breakpoints for responsive sidebar behavior:
-// Mobile (<640px): sidebar hidden, bottom nav visible, fixed player bar
-// Medium (640-1199px): sidebar locked collapsed (icon-only), floating player bar
+// Mobile (≤640px): sidebar hidden, bottom nav visible, fixed player bar
+// Medium (641-1199px): sidebar locked collapsed (icon-only), floating player bar
 // Large (>=1200px): sidebar expandable/collapsible, full desktop player
-const MOBILE_BREAKPOINT = '(max-width: 639px)';
+const MOBILE_BREAKPOINT = '(max-width: 640px)';
 const LARGE_BREAKPOINT = '(min-width: 1200px)';
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
-  const { isQueueOpen, setQueueOpen, sidebarView } = usePlayerStore();
+  const { isQueueOpen, setQueueOpen, sidebarView, isPlayerExpanded } = usePlayerStore();
   const isDesktop = useMediaQuery('(min-width: 1500px)');
   const isMobile = useMediaQuery(MOBILE_BREAKPOINT);
   const isLarge = useMediaQuery(LARGE_BREAKPOINT);
@@ -61,7 +61,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                   'flex h-full min-h-0 w-full flex-col px-4',
                   // On mobile, reserve space for player bar (h-16) + bottom nav (h-14) + gaps
                   // On medium, reserve space for floating player bar
-                  isMobile ? 'pb-[8rem]' : !isLarge ? 'pb-[4.5rem]' : 'pb-0',
+                  // When player is expanded, collapsed bar is hidden → no padding needed
+                  isMobile && !isPlayerExpanded && 'pb-[8rem]',
+                  !isMobile && !isLarge && !isPlayerExpanded && 'pb-[4.5rem]',
                 )}
               >
                 {children}
@@ -70,14 +72,22 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             {/* Player Bar — floating rounded on mobile/medium, inline on large desktop */}
             <div
               className={cn(
-                'flex items-center justify-center z-[99999]',
+                'flex items-center justify-center',
                 isMobile &&
-                  'fixed bottom-16 left-3 right-3 h-16 bg-stone-900/95 backdrop-blur-md rounded-lg border border-white/10 shadow-xl shadow-black/30',
-                !isMobile && !isLarge &&
-                  'absolute bottom-2 left-3 right-3 h-16 bg-stone-900/95 backdrop-blur-md rounded-lg border border-white/10 shadow-xl shadow-black/30',
+                  'fixed bottom-16 left-3 right-3 h-16 bg-stone-900/95 backdrop-blur-md rounded-lg border border-white/10 shadow-xl shadow-black/30 cursor-pointer active:scale-[0.98] z-[99999]',
+                isMobile && isPlayerExpanded && 'opacity-0 pointer-events-none z-[-1]',
+                !isMobile &&
+                  !isLarge &&
+                  'absolute bottom-2 left-3 right-3 h-16 bg-stone-900/95 backdrop-blur-md rounded-lg border border-white/10 shadow-xl shadow-black/30 z-[99999]',
+                !isMobile && !isLarge && isPlayerExpanded && 'opacity-0 pointer-events-none z-[-1]',
                 isLarge &&
                   'absolute bottom-2 left-0 right-0 h-16 py-1 px-2 max-w-[calc(100vw-2rem)] min-[800px]:max-w-250 mx-auto',
               )}
+              onClick={() => {
+                if (isMobile) {
+                  usePlayerStore.setState({ isPlayerExpanded: true });
+                }
+              }}
             >
               <AppPlayer />
             </div>
@@ -157,8 +167,8 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           </Sheet>
         )}
 
-        {/* Mobile Bottom Navigation — visible only on mobile (<768px) */}
-        {isMobile && <MobileBottomNav />}
+        {/* Mobile Bottom Navigation — hidden when full-page player is open */}
+        {isMobile && !isPlayerExpanded && <MobileBottomNav />}
       </div>
     </SidebarProvider>
   );

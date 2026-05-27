@@ -96,7 +96,7 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
                 'active:scale-95 shrink-0 h-7 w-7 rounded-full bg-transparent',
                 isShuffled ? 'text-emerald-400' : 'text-white/40 hover:text-white',
               )}
-              onClick={toggleShuffle}
+              onClick={(e) => { e.stopPropagation(); toggleShuffle(); }}
             >
               <ShuffleIcon size={14} />
             </Button>
@@ -107,7 +107,7 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
                 'active:scale-95 shrink-0 h-7 w-7 rounded-full bg-transparent',
                 isRepeatEnabled ? 'text-emerald-400' : 'text-white/40 hover:text-white',
               )}
-              onClick={toggleRepeatMode}
+              onClick={(e) => { e.stopPropagation(); toggleRepeatMode(); }}
             >
               {repeatMode === 'one' ? <RepeatOnceIcon size={14} /> : <RepeatIcon size={14} />}
             </Button>
@@ -126,7 +126,7 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
               ? 'text-emerald-400 hover:text-emerald-300'
               : 'text-white/40 hover:text-white',
           )}
-          onClick={handleFavorite}
+          onClick={(e) => { e.stopPropagation(); void handleFavorite(); }}
         >
           <StarIcon size={16} weight={isFavorited ? 'fill' : 'regular'} />
         </Button>
@@ -137,7 +137,7 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
             size="icon"
             aria-label="Previous Track"
             className="active:scale-95 shrink-0 h-7 w-7 rounded-full text-white/60 hover:text-white bg-transparent"
-            onClick={previousTrack}
+            onClick={(e) => { e.stopPropagation(); previousTrack(); }}
           >
             <SkipBackIcon size={16} weight="fill" />
           </Button>
@@ -148,7 +148,7 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
           size="icon"
           variant="ghost"
           className="active:scale-95 shrink-0 h-8 w-8 rounded-full text-white hover:bg-white/10"
-          onClick={togglePlay}
+          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
         >
           {isPlaying ? (
             <PauseIcon size={18} weight="fill" />
@@ -162,7 +162,7 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
             size="icon"
             aria-label="Next Track"
             className="active:scale-95 shrink-0 h-7 w-7 rounded-full text-white/60 hover:text-white bg-transparent"
-            onClick={nextTrack}
+            onClick={(e) => { e.stopPropagation(); nextTrack(); }}
           >
             <SkipForwardIcon size={16} weight="fill" />
           </Button>

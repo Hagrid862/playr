@@ -95,9 +95,9 @@ export function AppSidebar() {
       : 'text-white hover:text-primary';
 
   // Sidebar always uses 'icon' collapsible mode.
-  // On large screens (>=1024px), the SidebarProvider allows toggling via SidebarTrigger.
-  // On medium screens (768-1023px), the SidebarProvider forces open=false, locking it collapsed.
-  // On mobile (<768px), the AppSidebar is not rendered at all.
+  // On large screens (>=1200px), the SidebarProvider allows toggling via SidebarTrigger.
+  // On medium screens (641-1199px), the SidebarProvider forces open=false, locking it collapsed.
+  // On mobile (≤640px), the AppSidebar is not rendered at all.
   const collapsible = 'icon' as const;
 
   return (
