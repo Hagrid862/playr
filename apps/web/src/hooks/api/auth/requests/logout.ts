@@ -6,5 +6,6 @@ export const logout = (data: LogoutRequest) => {
   return apiClient<LogoutResponse>('auth/logout', {
     method: 'POST',
     body: data,
+    allowRefresh: false,
   });
 };

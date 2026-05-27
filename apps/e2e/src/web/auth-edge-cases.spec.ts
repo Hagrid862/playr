@@ -217,4 +217,176 @@ test.describe("Auth Edge Cases", () => {
     // Should be redirected to login
     await expect(page).toHaveURL(/\/auth\/login/);
   });
+
+  test("should clean up local session and redirect even if server logout fails", async ({
+    page,
+  }) => {
+    // 1. Create a user first to have a valid session
+    const timestamp = Date.now();
+    const user = {
+      username: `logout_fail_${timestamp}`,
+      email: `logout_fail_${timestamp}@example.com`,
+      password: "Password123!",
+    };
+
+    await registrationPage.goto();
+    await registrationPage.fillForm({
+      username: user.username,
+      firstName: "Logout",
+      lastName: "Tester",
+      email: user.email,
+      password: user.password,
+      confirmPassword: user.password,
+    });
+    await registrationPage.selectGender("Male");
+    await registrationPage.selectBirthDate(new Date(1990, 5, 15));
+    await registrationPage.submit();
+    await registrationPage.expectSuccess();
+
+    // Retrieve OTP and verify
+    const otpCode = await getOtpFromMailhog(user.email);
+    expect(otpCode).not.toBeNull();
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await verifyEmailPage.clickVerify();
+
+    // Verify redirected to app
+    await expect(page).toHaveURL(/\/app/, { timeout: 15000 });
+
+    // 2. Intercept logout API and force it to return a 500 error
+    await page.route("**/auth/logout", async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Internal Server Error" }),
+      });
+    });
+
+    // 3. Trigger logout
+    await dashboardPage.logout();
+
+    // 4. Assert client still logs out and redirects to login
+    await expect(page).toHaveURL(/\/auth\/login/);
+
+    // 5. Try to navigate back to a protected route and verify we are redirected back to login
+    await page.goto("/app/library/overview");
+    await expect(page).toHaveURL(/\/auth\/login/);
+  });
+
+  test("should clean up local session and redirect when manual logout fails with 401 Unauthorized", async ({
+    page,
+  }) => {
+    // 1. Create a user first to have a valid session
+    const timestamp = Date.now();
+    const user = {
+      username: `logout_401_${timestamp}`,
+      email: `logout_401_${timestamp}@example.com`,
+      password: "Password123!",
+    };
+
+    await registrationPage.goto();
+    await registrationPage.fillForm({
+      username: user.username,
+      firstName: "Logout",
+      lastName: "Tester",
+      email: user.email,
+      password: user.password,
+      confirmPassword: user.password,
+    });
+    await registrationPage.selectGender("Male");
+    await registrationPage.selectBirthDate(new Date(1990, 5, 15));
+    await registrationPage.submit();
+    await registrationPage.expectSuccess();
+
+    // Retrieve OTP and verify
+    const otpCode = await getOtpFromMailhog(user.email);
+    expect(otpCode).not.toBeNull();
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await verifyEmailPage.clickVerify();
+
+    // Verify redirected to app
+    await expect(page).toHaveURL(/\/app/, { timeout: 15000 });
+
+    // 2. Intercept logout API and force it to return a 401 error
+    await page.route("**/auth/logout", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { message: "Session expired" } }),
+      });
+    });
+
+    // 3. Trigger logout
+    await dashboardPage.logout();
+
+    // 4. Assert client still logs out and redirects to login
+    await expect(page).toHaveURL(/\/auth\/login/);
+
+    // 5. Try to navigate back to a protected route and verify we are redirected back to login
+    await page.goto("/app/library/overview");
+    await expect(page).toHaveURL(/\/auth\/login/);
+  });
+
+  test("should automatically log out and redirect to login when token refresh fails with 401", async ({
+    page,
+  }) => {
+    // 1. Create a user first to have a valid session
+    const timestamp = Date.now();
+    const user = {
+      username: `refresh_fail_${timestamp}`,
+      email: `refresh_fail_${timestamp}@example.com`,
+      password: "Password123!",
+    };
+
+    await registrationPage.goto();
+    await registrationPage.fillForm({
+      username: user.username,
+      firstName: "Refresh",
+      lastName: "Tester",
+      email: user.email,
+      password: user.password,
+      confirmPassword: user.password,
+    });
+    await registrationPage.selectGender("Female");
+    await registrationPage.selectBirthDate(new Date(1990, 5, 15));
+    await registrationPage.submit();
+    await registrationPage.expectSuccess();
+
+    // Retrieve OTP and verify
+    const otpCode = await getOtpFromMailhog(user.email);
+    expect(otpCode).not.toBeNull();
+    await verifyEmailPage.fillOtpCode(otpCode!);
+    await verifyEmailPage.clickVerify();
+
+    // Verify redirected to app
+    await expect(page).toHaveURL(/\/app/, { timeout: 15000 });
+
+    // 2. Mock 401 response on any API fetch to '/library'
+    await page.route("**/library", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { message: "Unauthorized" } }),
+      });
+    });
+
+    // 3. Mock 401 response on token refresh endpoint
+    await page.route("**/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { message: "Session expired" } }),
+      });
+    });
+
+    // 4. Trigger the protected request by navigating to library overview
+    await dashboardPage.gotoLibraryOverview();
+
+    // 5. Assert we are automatically logged out and redirected to login page due to failed refresh
+    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 15000 });
+
+    // 6. Assert "Session expired" Toast error is shown
+    const toast = page.locator("[data-sonner-toast]").first();
+    await expect(toast).toBeVisible({ timeout: 10000 });
+    await expect(toast).toHaveText(/Session expired/i);
+  });
 });

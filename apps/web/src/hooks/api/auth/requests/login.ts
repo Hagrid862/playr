@@ -7,5 +7,6 @@ export const login = (data: LoginRequest) => {
     method: 'POST',
     body: data,
     zodSchema: LoginResponseSchema,
+    allowRefresh: false,
   });
 };

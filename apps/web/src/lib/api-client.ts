@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { ZodType } from 'zod';
 import { ApiError } from './api-error';
+import { toast } from 'sonner';
 
 /** Public configuration for API requests */
 export type ApiRequestConfig<T = unknown> = Omit<RequestInit, 'body'> & {
@@ -121,17 +122,29 @@ class ApiClient {
               _isRetry: true,
             });
           } else {
-            this.processQueue(new Error('Refresh failed'));
+            const refreshError = new ApiError(401, 'Unauthorized', {
+              error: { message: 'Session expired' },
+            });
+            this.processQueue(refreshError);
             if (useAuthStore.getState().isAuthenticated) {
               useAuthStore.getState().logout();
+              toast.error('Session expired');
             }
+            throw refreshError;
           }
         } catch (error) {
-          this.processQueue(error);
+          const refreshError =
+            error instanceof ApiError
+              ? error
+              : new ApiError(401, 'Unauthorized', {
+                  error: { message: error instanceof Error ? error.message : 'Session expired' },
+                });
+          this.processQueue(refreshError);
           if (useAuthStore.getState().isAuthenticated) {
             useAuthStore.getState().logout();
+            toast.error(refreshError.message);
           }
-          throw error;
+          throw refreshError;
         } finally {
           this.isRefreshing = false;
         }

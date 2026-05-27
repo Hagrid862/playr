@@ -7,5 +7,6 @@ export const forgotPassword = (data: ForgotPasswordRequest) => {
     method: 'POST',
     body: data,
     zodSchema: ForgotPasswordResponseSchema,
+    allowRefresh: false,
   });
 };

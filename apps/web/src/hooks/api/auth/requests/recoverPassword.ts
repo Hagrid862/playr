@@ -7,5 +7,6 @@ export const recoverPassword = (data: RecoverPasswordRequest) => {
     method: 'POST',
     body: data,
     zodSchema: RecoverPasswordResponseSchema,
+    allowRefresh: false,
   });
 };
