@@ -10,7 +10,7 @@ import { Outlet, createFileRoute, useLocation, useRouter } from '@tanstack/react
 import { useState } from 'react';
 import {
   type LibrarySearchQuery,
-  type LibrarySearchResultsData,
+  type SearchResultsData,
   type SearchCategory,
   type SearchOrderByField,
 } from '@repo/contracts';
@@ -65,7 +65,7 @@ function OverviewLayout() {
     enabled: !!searchQuery && searchQuery.length >= 3,
   });
 
-  const searchData = searchResponse?.data as LibrarySearchResultsData | undefined;
+  const searchData = searchResponse?.data as SearchResultsData | undefined;
 
   const handleFilterNavigate = (params: {
     search: (prev: LibrarySearchQuery) => LibrarySearchQuery;
@@ -153,7 +153,7 @@ function OverviewLayout() {
       );
     }
 
-    return <SearchResults data={searchData} viewType={viewType} isLibrarySearch={true} />;
+    return <SearchResults data={searchData as any} viewType={viewType} isLibrarySearch={true} />;
   };
 
   const isSearchActive = searchQuery && searchQuery.length >= 3;

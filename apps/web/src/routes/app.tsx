@@ -1,4 +1,5 @@
 import { PlaybackSync } from '@/components/app/PlaybackSync';
+import { PlayerFullPage } from '@/components/app/player/PlayerFullPage';
 import { SidebarLayout } from '@/components/layout/sidebar-layout';
 import { MobileSearchOverlay } from '@/components/search/MobileSearchOverlay';
 import { Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
@@ -53,6 +54,8 @@ function AppLayout() {
             isOpen={mobileSearchExpanded}
             onClose={handleMobileSearchClose}
           />
+          {/* Full-page Player overlay — slides up from bottom, header stays visible */}
+          <PlayerFullPage />
           <div className="overflow-y-auto h-full">
             <PlaybackSync />
             <Outlet />
