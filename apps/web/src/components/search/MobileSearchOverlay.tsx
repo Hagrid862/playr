@@ -50,14 +50,14 @@ export function MobileSearchOverlay({ isOpen, onClose }: MobileSearchOverlayProp
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -12, opacity: 0 }}
             transition={{ duration: 0.2, delay: 0.05 }}
-            className="flex items-center gap-2 px-3 py-2 shrink-0"
+            className="flex items-start gap-2 px-3 pt-3 pb-2 shrink-0"
           >
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={onClose}
               aria-label="Close search"
-              className="shrink-0"
+              className="shrink-0 mt-1"
             >
               <ArrowLeftIcon className="h-4 w-4" />
             </Button>
