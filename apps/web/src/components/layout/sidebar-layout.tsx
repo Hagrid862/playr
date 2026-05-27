@@ -12,10 +12,10 @@ import { AppPlayer } from '../app/Player';
 import { Queue } from '../app/Queue';
 
 // Breakpoints for responsive sidebar behavior:
-// Mobile (<768px): sidebar hidden, bottom nav visible
-// Medium (768-1199px): sidebar locked collapsed (icon-only), PlayerMobile with controls
+// Mobile (<640px): sidebar hidden, bottom nav visible, fixed player bar
+// Medium (640-1199px): sidebar locked collapsed (icon-only), floating player bar
 // Large (>=1200px): sidebar expandable/collapsible, full desktop player
-const MOBILE_BREAKPOINT = '(max-width: 767px)';
+const MOBILE_BREAKPOINT = '(max-width: 639px)';
 const LARGE_BREAKPOINT = '(min-width: 1200px)';
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {

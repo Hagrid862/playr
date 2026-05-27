@@ -111,8 +111,7 @@ export function PageHeader({
         </div>
       )}
 
-      {/* Separator - hidden on mobile */}
-      <Separator className="max-md:hidden mt-2" />
+      <Separator className="mt-2 mb-2" />
     </div>
   );
 }

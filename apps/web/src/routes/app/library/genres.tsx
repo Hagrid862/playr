@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import { CompactSearch } from '@/components/search/CompactSearch';
 import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
+import { SubHeader } from '@/components/app/SubHeader';
 
 export const Route = createFileRoute('/app/library/genres')({
   component: GenresLayout,
@@ -25,8 +26,6 @@ function GenresLayout() {
   usePersistentNavigation('genres', '/app/library/genres');
   const isMobile = useIsMobile();
   const location = useLocation();
-  const isRoot =
-    location.pathname === '/app/library/genres' || location.pathname === '/app/library/genres/';
 
   const genresQuery = useLibraryGenresInfinite({ limit: GENRE_LIST_PAGE_SIZE });
 
@@ -45,33 +44,34 @@ function GenresLayout() {
   const isLoading = genresQuery.isPending;
   const genresHasMore = genresQuery.hasNextPage === true;
 
+  // Mobile: SubHeader + content
   if (isMobile) {
-    if (isRoot) {
-      return (
-        <div className="flex flex-col gap-4 p-4 pb-40 max-md:pb-[max(10rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))]">
-          <div className="flex flex-col gap-1">
-            <Outlet />
-          </div>
+    return (
+      <div className="flex flex-col h-full w-full">
+        <SubHeader
+          title="Genres"
+          search={<CompactSearch category="genre" />}
+          showBackButton={true}
+        />
+        <div className="flex-1 overflow-y-auto p-4 pb-40 max-md:pb-[max(10rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))]">
+          <Outlet />
         </div>
-      );
-    }
-    return <Outlet />;
+      </div>
+    );
   }
 
+  // Desktop: SubHeader + sidebar (genre list) + content area
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden w-full h-full max-w-full">
-      <div className="flex min-h-0 flex-1 overflow-hidden items-stretch h-full w-full max-w-full">
+    <div className="flex flex-col h-full w-full">
+      <SubHeader
+        title="Genres"
+        search={<CompactSearch category="genre" />}
+        showBackButton={true}
+      />
+      <div className="flex min-h-0 flex-1 overflow-hidden items-stretch w-full max-w-full">
         <div className="flex w-64 shrink-0 flex-col border-r bg-card/50 backdrop-blur-sm h-full min-h-full">
           <div className="px-4 pb-3 pt-4 flex flex-col gap-2 shrink-0">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Genres</h1>
-              {!isLoading && genres.length > 0 ? (
-                <p className="mt-1 text-xs text-muted-foreground">{countsSubtitle}</p>
-              ) : null}
-            </div>
-            <div className="flex justify-start [&_div.box-border]:max-w-[224px] [&_div.absolute]:w-56 term-container">
-              <CompactSearch category="genre" />
-            </div>
+            <p className="text-xs text-muted-foreground">{countsSubtitle}</p>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-24 custom-scrollbar h-full">

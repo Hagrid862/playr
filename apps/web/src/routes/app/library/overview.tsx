@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SubHeader } from '@/components/app/SubHeader';
 import { CompactSearch } from '@/components/search/CompactSearch';
 import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
+import { LibraryNav } from '@/components/library/LibraryNav';
 
 export const Route = createFileRoute('/app/library/overview')({
   component: OverviewLayout,
@@ -180,6 +181,8 @@ function OverviewLayout() {
           </Select>
         ) : null}
       </SubHeader>
+
+      <LibraryNav />
 
       <div className="p-4 flex flex-col gap-4">
         {/* Page Content */}
