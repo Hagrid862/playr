@@ -32,111 +32,16 @@ import {
   UserIcon,
 } from '@phosphor-icons/react';
 import { AlbumType } from '@repo/db';
-import { useLibraryArtistAlbumsInfinite } from '@/hooks/api/library-artists/useLibraryArtistAlbumsInfinite';
+import { useLibraryArtistAlbums } from '@/hooks/api/library-artists/useLibraryArtistAlbums';
 import { useLibraryArtist } from '@/hooks/api/library-artists/useLibraryArtist';
-import { useInfiniteScrollFetch } from '@/hooks/useInfiniteScrollFetch';
-import { LIBRARY_SCROLL_CLEAR_PLAYER_CLASS } from '@/lib/app-player-layout';
-import { cn } from '@/lib/utils';
-import type { ZodAlbum } from '@repo/contracts';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { MediaCard } from '@/components/library/MediaCard';
 import { Spinner } from '@/components/ui/spinner';
-
-const SECTION_PAGE_SIZE = 20;
 
 export const Route = createFileRoute('/app/library/artists/$id/')({
   component: RouteComponent,
 });
-
-function ArtistAlbumTypeSection({
-  artistId,
-  title,
-  type,
-  placeholderIcon,
-  hideWhenEmpty,
-  emptyState,
-}: {
-  artistId: string;
-  title: string;
-  type: AlbumType;
-  placeholderIcon: ReactNode;
-  hideWhenEmpty?: boolean;
-  emptyState?: ReactNode;
-}) {
-  const albumsQuery = useLibraryArtistAlbumsInfinite({
-    artistId,
-    type,
-    limit: SECTION_PAGE_SIZE,
-  });
-
-  const albums = useMemo<ZodAlbum[]>(() => {
-    const pages = albumsQuery.data?.pages;
-    if (!pages?.length) return [];
-    return pages
-      .flatMap((page) => page.data?.items ?? [])
-      .map((item) => item.album)
-      .filter((album): album is ZodAlbum => !!album);
-  }, [albumsQuery.data]);
-
-  const sentinelRef = useInfiniteScrollFetch({
-    hasNextPage: albumsQuery.hasNextPage === true,
-    isFetchingNextPage: albumsQuery.isFetchingNextPage,
-    fetchNextPage: albumsQuery.fetchNextPage,
-  });
-
-  if (hideWhenEmpty && !albumsQuery.isPending && albums.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <h3 className="text-xl font-bold text-white/90">{title}</h3>
-
-      {albumsQuery.isPending ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex flex-col gap-3">
-              <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
-              <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
-              <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
-            </div>
-          ))}
-        </div>
-      ) : albums.length > 0 ? (
-        <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-            {albums.map((album) => (
-              <MediaCard
-                key={album.id}
-                id={album.id}
-                title={album.name}
-                subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
-                coverUrl={album.cover?.url ?? undefined}
-                link={`/app/library/albums/${album.id}`}
-                placeholderIcon={placeholderIcon}
-              />
-            ))}
-          </div>
-          {albumsQuery.isFetchingNextPage ? (
-            <div className="flex justify-center py-2">
-              <Spinner className="size-6 text-primary" />
-            </div>
-          ) : null}
-          <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
-        </>
-      ) : (
-        (emptyState ?? (
-          <div className="py-12 flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl bg-stone-900/10">
-            <p className="text-muted-foreground text-sm font-medium">
-              No {title.toLowerCase()} yet
-            </p>
-          </div>
-        ))
-      )}
-    </div>
-  );
-}
 
 function RouteComponent() {
   const { id } = Route.useParams();
@@ -147,6 +52,38 @@ function RouteComponent() {
   const artist = artistResponse?.data?.artist;
 
   const { mutateAsync: deleteArtist, isPending: isDeleting } = useDeleteLibraryArtist();
+  const { data: albumsData, isLoading: isAlbumsLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    10,
+    AlbumType.album,
+  );
+
+  const { data: epsData, isLoading: isEpsLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    10,
+    AlbumType.ep,
+  );
+
+  const { data: singlesData, isLoading: isSinglesLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    10,
+    AlbumType.single,
+  );
+
+  const { data: compilationsData, isLoading: isCompilationsLoading } = useLibraryArtistAlbums(
+    id,
+    1,
+    10,
+    AlbumType.compilation,
+  );
+
+  const albums = albumsData?.data?.items?.map((item) => item.album) || [];
+  const eps = epsData?.data?.items?.map((item) => item.album) || [];
+  const singles = singlesData?.data?.items?.map((item) => item.album) || [];
+  const compilations = compilationsData?.data?.items?.map((item) => item.album) || [];
 
   const handleDelete = async () => {
     try {
@@ -176,11 +113,11 @@ function RouteComponent() {
   }
 
   return (
-    <div className={cn('flex flex-col w-full min-h-full', LIBRARY_SCROLL_CLEAR_PLAYER_CLASS)}>
+    <div className="flex flex-col w-full min-h-full pb-8">
       {/* Banner Area */}
       <div className="relative w-full px-2 mt-4">
         {/* Banner with glass effect or premium stone look */}
-        <div className="h-64 w-full bg-stone-900/40 rounded-2xl shadow-sm border border-border/50 overflow-hidden relative group">
+        <div className="h-40 sm:h-48 md:h-64 w-full bg-stone-900/40 rounded-2xl shadow-sm border border-border/50 overflow-hidden relative group">
           {artist.banner?.url || artist.bannerId ? (
             <img
               src={artist.banner?.url || `/api/images/${artist.bannerId}`}
@@ -196,9 +133,9 @@ function RouteComponent() {
         </div>
 
         {/* Avatar & Quick Info */}
-        <div className="px-6 -mt-24 flex flex-col md:flex-row items-end gap-6 relative z-10">
+        <div className="px-4 sm:px-6 -mt-16 sm:-mt-20 md:-mt-24 flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6 relative z-10">
           {/* Avatar */}
-          <div className="size-44 p-0 rounded-full shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
+          <div className="size-28 sm:size-36 md:size-44 p-0 rounded-full shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
             {artist.avatar?.url || artist.avatarId ? (
               <img
                 src={artist.avatar?.url || `/api/images/${artist.avatarId}`}
@@ -210,33 +147,33 @@ function RouteComponent() {
             )}
           </div>
 
-          <div className="flex-1 pb-4">
+          <div className="flex-1 pb-4 text-center md:text-left">
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">
               {artist.isCommunity ? 'Community Artist' : 'Private Artist'}
             </p>
-            <h2 className="text-2xl font-bold text-white opacity-90">{artist.name}</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-white opacity-90">{artist.name}</h2>
           </div>
         </div>
       </div>
 
       {/* Actions & Content */}
-      <div className="px-2 mt-12 flex flex-col gap-8">
+      <div className="px-2 mt-8 md:mt-12 flex flex-col gap-6 md:gap-8">
         {/* Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           <Button
             size="lg"
-            className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
+            className="h-10 md:h-12 rounded-lg gap-2 px-4 md:px-8 text-sm md:text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
           >
             <PlayIcon weight="fill" size={20} /> Play
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="h-12 rounded-lg gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
+            className="h-10 md:h-12 rounded-lg gap-2 px-4 md:px-8 text-sm md:text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
           >
             <ShuffleIcon weight="bold" size={20} /> Shuffle
           </Button>
-          <div className="flex items-center gap-1 ml-2">
+          <div className="flex items-center gap-1 ml-auto md:ml-2">
             <Button
               variant="ghost"
               size="icon"
@@ -285,15 +222,53 @@ function RouteComponent() {
           </div>
         </div>
 
-        <Separator className="opacity-50" />
+        <Separator className="opacity-50 my-1 md:my-0" />
 
-        <ArtistAlbumTypeSection
-          artistId={id}
-          title="Albums"
-          type={AlbumType.album}
-          placeholderIcon={<DiscIcon className="size-1/2 text-stone-400" weight="duotone" />}
-          emptyState={
-            <div className="py-12 flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl bg-stone-900/10">
+        {/* Albums Section */}
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg md:text-xl font-bold text-white/90">Albums</h3>
+            {albums.length > 5 && (
+              <Button
+                variant="link"
+                className="text-muted-foreground hover:text-primary p-0 h-auto"
+              >
+                Show all
+              </Button>
+            )}
+          </div>
+
+          {isAlbumsLoading ? (
+            <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                  <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                  <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : albums.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+              {albums.map((album) => {
+                if (!album) return null;
+                return (
+                  <MediaCard
+                    key={album.id}
+                    id={album.id}
+                    title={album.name}
+                    subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                    coverUrl={album.cover?.url ?? undefined}
+                    link={`/app/library/albums/${album.id}`}
+                    placeholderIcon={
+                      <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
+                    }
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-8 md:py-12 flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl bg-stone-900/10">
               <p className="text-muted-foreground text-sm font-medium">No albums yet</p>
               <Button variant="link" asChild className="mt-2 h-auto p-0 text-primary">
                 <Link to="/app/library/artists/$id/add-content" params={{ id }}>
@@ -301,32 +276,152 @@ function RouteComponent() {
                 </Link>
               </Button>
             </div>
-          }
-        />
+          )}
+        </div>
 
-        <ArtistAlbumTypeSection
-          artistId={id}
-          title="EPs"
-          type={AlbumType.ep}
-          hideWhenEmpty
-          placeholderIcon={<MusicNotesIcon className="size-1/2 text-stone-400" weight="duotone" />}
-        />
+        {/* EPs Section */}
+        {(isEpsLoading || eps.length > 0) && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg md:text-xl font-bold text-white/90">EPs</h3>
+              {eps.length > 5 && (
+                <Button
+                  variant="link"
+                  className="text-muted-foreground hover:text-primary p-0 h-auto"
+                >
+                  Show all
+                </Button>
+              )}
+            </div>
 
-        <ArtistAlbumTypeSection
-          artistId={id}
-          title="Singles"
-          type={AlbumType.single}
-          hideWhenEmpty
-          placeholderIcon={<MusicNoteIcon className="size-1/2 text-stone-400" weight="duotone" />}
-        />
+            {isEpsLoading ? (
+              <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                    <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+                {eps.map((album) => {
+                  if (!album) return null;
+                  return (
+                    <MediaCard
+                      key={album.id}
+                      id={album.id}
+                      title={album.name}
+                      subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                      coverUrl={album.cover?.url ?? undefined}
+                      link={`/app/library/albums/${album.id}`}
+                      placeholderIcon={
+                        <MusicNotesIcon className="size-1/2 text-stone-400" weight="duotone" />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
-        <ArtistAlbumTypeSection
-          artistId={id}
-          title="Compilations"
-          type={AlbumType.compilation}
-          hideWhenEmpty
-          placeholderIcon={<ListBulletsIcon className="size-1/2 text-stone-400" weight="duotone" />}
-        />
+        {/* Singles Section */}
+        {(isSinglesLoading || singles.length > 0) && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg md:text-xl font-bold text-white/90">Singles</h3>
+              {singles.length > 5 && (
+                <Button
+                  variant="link"
+                  className="text-muted-foreground hover:text-primary p-0 h-auto"
+                >
+                  Show all
+                </Button>
+              )}
+            </div>
+
+            {isSinglesLoading ? (
+              <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                    <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+                {singles.map((album) => {
+                  if (!album) return null;
+                  return (
+                    <MediaCard
+                      key={album.id}
+                      id={album.id}
+                      title={album.name}
+                      subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                      coverUrl={album.cover?.url ?? undefined}
+                      link={`/app/library/albums/${album.id}`}
+                      placeholderIcon={
+                        <MusicNoteIcon className="size-1/2 text-stone-400" weight="duotone" />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Compilations Section */}
+        {(isCompilationsLoading || compilations.length > 0) && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg md:text-xl font-bold text-white/90">Compilations</h3>
+              {compilations.length > 5 && (
+                <Button
+                  variant="link"
+                  className="text-muted-foreground hover:text-primary p-0 h-auto"
+                >
+                  Show all
+                </Button>
+              )}
+            </div>
+
+            {isCompilationsLoading ? (
+              <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="aspect-square w-full rounded-xl bg-stone-800 animate-pulse" />
+                    <div className="h-4 w-3/4 rounded bg-stone-800 animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-stone-800 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 md:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+                {compilations.map((album) => {
+                  if (!album) return null;
+                  return (
+                    <MediaCard
+                      key={album.id}
+                      id={album.id}
+                      title={album.name}
+                      subtitle={album.releaseDate?.getFullYear().toString() ?? 'Unknown'}
+                      coverUrl={album.cover?.url ?? undefined}
+                      link={`/app/library/albums/${album.id}`}
+                      placeholderIcon={
+                        <ListBulletsIcon className="size-1/2 text-stone-400" weight="duotone" />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
