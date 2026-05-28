@@ -1,3 +1,4 @@
+import { bumpListenHistoryRefresh } from '@/lib/playback/listen-history-refresh';
 import { playbackTrackToQueueItem } from '@/lib/playback/playback-mappers';
 import { getOrderedNextQueue } from '@/lib/playback/queue/playback-queue';
 import type { PlaybackTrack, QueueItem } from '@repo/contracts';
@@ -75,6 +76,7 @@ export function createPlayerPlaybackActions(
       });
 
       flushPlaybackClaimAfterLocalMutation(get);
+      bumpListenHistoryRefresh();
     },
 
     playQueueItem: (queueId) => {
@@ -105,10 +107,11 @@ export function createPlayerPlaybackActions(
       });
 
       flushPlaybackClaimAfterLocalMutation(get);
+      bumpListenHistoryRefresh();
     },
 
     nextTrack: () => {
-      const { queue, currentTrack, addToHistory, repeatMode, isShuffled } = get();
+      const { queue, currentTrack, addToHistory, repeatMode, isShuffled, isPlaying } = get();
       if (!currentTrack) return;
 
       const ordered = getOrderedNextQueue(queue, isShuffled);
@@ -119,9 +122,10 @@ export function createPlayerPlaybackActions(
           currentTrack: next.track,
           queue: reindexQueuePositions(rest),
           currentTime: 0,
-          isPlaying: true,
+          isPlaying,
         });
         flushPlaybackClaimAfterLocalMutation(get);
+        bumpListenHistoryRefresh();
         return;
       }
 
@@ -151,19 +155,29 @@ export function createPlayerPlaybackActions(
           queue: reindexQueuePositions(tailQueue),
           history: [],
           currentTime: 0,
-          isPlaying: true,
+          isPlaying,
         });
         flushPlaybackClaimAfterLocalMutation(get);
+        bumpListenHistoryRefresh();
       }
     },
 
     previousTrack: () => {
-      const { currentTrack, currentTime, history, repeatMode, queue, isShuffled, addToHistory } =
-        get();
+      const {
+        currentTrack,
+        currentTime,
+        history,
+        repeatMode,
+        queue,
+        isShuffled,
+        addToHistory,
+        isPlaying,
+      } = get();
       if (!currentTrack) return;
 
       if (currentTime > 3) {
         set({ currentTime: 0 });
+        bumpListenHistoryRefresh();
         return;
       }
 
@@ -181,9 +195,10 @@ export function createPlayerPlaybackActions(
           currentTrack: prev.track,
           queue: newQueue,
           currentTime: 0,
-          isPlaying: true,
+          isPlaying,
         });
         flushPlaybackClaimAfterLocalMutation(get);
+        bumpListenHistoryRefresh();
         return;
       }
 
@@ -197,9 +212,10 @@ export function createPlayerPlaybackActions(
           currentTrack: last.track,
           queue: rest.map((q, i) => ({ ...q, position: i })),
           currentTime: 0,
-          isPlaying: true,
+          isPlaying,
         });
         flushPlaybackClaimAfterLocalMutation(get);
+        bumpListenHistoryRefresh();
       }
     },
   };

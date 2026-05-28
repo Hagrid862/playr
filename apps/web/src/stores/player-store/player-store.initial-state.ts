@@ -15,6 +15,7 @@ export const playerStorePlaybackInitialSlice: Pick<
   | 'repeatMode'
   | 'isShuffled'
   | 'playbackVersion'
+  | 'listenHistoryRefreshToken'
   | 'playbackFavorited'
   | 'playbackInLibrary'
   | 'activeDeviceId'
@@ -33,6 +34,7 @@ export const playerStorePlaybackInitialSlice: Pick<
   repeatMode: 'off',
   isShuffled: false,
   playbackVersion: 0,
+  listenHistoryRefreshToken: 0,
   playbackFavorited: 'not-set',
   playbackInLibrary: false,
   activeDeviceId: null,

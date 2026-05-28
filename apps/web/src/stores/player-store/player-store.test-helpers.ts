@@ -62,6 +62,7 @@ export function resetPlayerStore(): void {
     isQueueOpen: false,
     sidebarView: 'queue',
     playbackVersion: 0,
+    listenHistoryRefreshToken: 0,
     playbackFavorited: 'not-set',
     playbackInLibrary: false,
     activeDeviceId: null,

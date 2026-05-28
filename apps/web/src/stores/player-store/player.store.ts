@@ -31,6 +31,7 @@ const playerStoreInitialState: Pick<
   | 'repeatMode'
   | 'isShuffled'
   | 'playbackVersion'
+  | 'listenHistoryRefreshToken'
   | 'playbackFavorited'
   | 'playbackInLibrary'
   | 'activeDeviceId'
