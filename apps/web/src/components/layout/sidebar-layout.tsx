@@ -56,16 +56,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         >
           <div className="mx-auto flex h-full w-full max-w-480 flex-col relative">
             <div className="flex min-h-0 min-w-0 flex-1 overflow-y-auto w-full">
-              <main
-                className={cn(
-                  'flex h-full min-h-0 w-full flex-col px-4',
-                  // On mobile, reserve space for player bar (h-16) + bottom nav (h-14) + gaps
-                  // On medium, reserve space for floating player bar
-                  // When player is expanded, collapsed bar is hidden → no padding needed
-                  isMobile && !isPlayerExpanded && 'pb-[8rem]',
-                  !isMobile && !isLarge && !isPlayerExpanded && 'pb-[4.5rem]',
-                )}
-              >
+              <main className={cn('flex h-full min-h-0 w-full flex-col px-4')}>
                 {children}
               </main>
             </div>

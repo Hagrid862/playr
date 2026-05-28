@@ -5,6 +5,8 @@ import { MobileSearchOverlay } from '@/components/search/MobileSearchOverlay';
 import { Outlet, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { PageHeader } from '@/components/app/PageHeader.tsx';
+import { usePlayerStore } from '@/stores/player-store/player.store';
+import { cn } from '@/lib/utils';
 
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -26,6 +28,7 @@ function AppLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
   const [mobileSearchExpanded, setMobileSearchExpanded] = useState(false);
+  const { isPlayerExpanded } = usePlayerStore();
 
   const handleMobileSearchToggle = useCallback(() => {
     setMobileSearchExpanded((prev) => !prev);
@@ -57,8 +60,18 @@ function AppLayout() {
           {/* Full-page Player overlay — slides up from bottom, header stays visible */}
           <PlayerFullPage />
           <div className="overflow-y-auto h-full">
-            <PlaybackSync />
-            <Outlet />
+            <div
+              className={cn(
+                'min-h-full',
+                // Reserve space for player bar and bottom nav, plus extra "scroll further" room
+                // Mobile: Player (4rem) + Nav (3.5rem) + extra = 12rem (pb-48)
+                // Desktop: Player (4.5rem) + extra = 10rem (pb-40)
+                !isPlayerExpanded ? 'pb-48 md:pb-40' : 'pb-8',
+              )}
+            >
+              <PlaybackSync />
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>
