@@ -135,7 +135,7 @@ function RouteComponent() {
         {/* Avatar & Quick Info */}
         <div className="px-4 sm:px-6 -mt-16 sm:-mt-20 md:-mt-24 flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6 relative z-10">
           {/* Avatar */}
-          <div className="size-28 sm:size-36 md:size-44 p-0 rounded-full shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
+          <div className="size-32 sm:size-40 md:size-52 p-0 rounded-full shadow-2xl shadow-black shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-border">
             {artist.avatar?.url || artist.avatarId ? (
               <img
                 src={artist.avatar?.url || `/api/images/${artist.avatarId}`}
