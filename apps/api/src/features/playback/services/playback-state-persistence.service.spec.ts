@@ -1,6 +1,7 @@
 import {
   ConflictException,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import { playbackStateFixture, fixtureQueueItem } from '../test-utils/playback-state.fixture';
 import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
 import { PlaybackStatePersistenceService } from './playback-state-persistence.service';
+import { ListenHistoryService } from '../../listen-history/services/listen-history.service';
 
 /** Matches ioredis `Pipeline.exec()` result shape used by `PlaybackStatePersistenceService`. */
 type ExecResult = [Error | null, unknown][] | null;
@@ -43,6 +45,7 @@ describe('PlaybackStatePersistenceService', () => {
   let service: PlaybackStatePersistenceService;
   let redisMock: DeepMocked<Redis>;
   let connMock: DeepMocked<Redis>;
+  let listenHistoryServiceMock: DeepMocked<ListenHistoryService>;
 
   const userId = 'user-1';
   const initialState: Partial<PlaybackState> & Pick<PlaybackState, 'trackData'> = {
@@ -67,12 +70,17 @@ describe('PlaybackStatePersistenceService', () => {
 
     redisMock.duplicate.mockResolvedValue(connMock);
 
+    listenHistoryServiceMock = createMock<ListenHistoryService>();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlaybackStatePersistenceService,
         {
           provide: PLAYBACK_REDIS,
           useValue: redisMock,
+        },
+        {
+          provide: ListenHistoryService,
+          useValue: listenHistoryServiceMock,
         },
       ],
     }).compile();
@@ -194,6 +202,51 @@ describe('PlaybackStatePersistenceService', () => {
       expect(result.version).toBe(1);
       expect(connMock.multi).toHaveBeenCalledTimes(2);
       expect(connMock.unwatch).toHaveBeenCalled();
+    });
+
+    it('records listen history when creating state that starts playing', async () => {
+      connMock.get.mockResolvedValueOnce(null);
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(okExecResult),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+      listenHistoryServiceMock.recordListen.mockResolvedValueOnce(undefined);
+
+      const result = await service.createIfAbsent(userId, {
+        ...initialState,
+        isPlaying: true,
+      });
+
+      expect(result.isPlaying).toBe(true);
+      expect(listenHistoryServiceMock.recordListen).toHaveBeenCalledWith(userId, 'track-1', true);
+    });
+
+    it('logs when listen history recording fails during createIfAbsent', async () => {
+      const recordError = new Error('history write failed');
+      const loggerSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      listenHistoryServiceMock.recordListen.mockRejectedValueOnce(recordError);
+
+      connMock.get.mockResolvedValueOnce(null);
+      const multiMock: ChainableMultiMock = {
+        set: vi.fn(),
+        exec: vi.fn().mockResolvedValue(okExecResult),
+      };
+      connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+      await service.createIfAbsent(userId, {
+        ...initialState,
+        isPlaying: true,
+      });
+
+      await vi.waitFor(() => {
+        expect(loggerSpy).toHaveBeenCalledWith(
+          'Failed to record listen history: history write failed',
+          recordError.stack,
+        );
+      });
+
+      loggerSpy.mockRestore();
     });
   });
 
@@ -348,6 +401,272 @@ describe('PlaybackStatePersistenceService', () => {
       expect(result.version).toBe(2);
       expect(connMock.multi).toHaveBeenCalledTimes(2);
       expect(connMock.unwatch).toHaveBeenCalled();
+    });
+
+    describe('listen history recording and deduplication', () => {
+      it('should not record a new listen when resuming the same track with no timing drift', async () => {
+        const pausedState = playbackStateFixture({
+          userId,
+          isPlaying: false,
+          currentTime: 35,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(pausedState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          isPlaying: true,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).not.toHaveBeenCalled();
+      });
+
+      it('should not record a new listen when resuming the same track with slight drift (e.g. 2s)', async () => {
+        const pausedState = playbackStateFixture({
+          userId,
+          isPlaying: false,
+          currentTime: 35,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(pausedState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          isPlaying: true,
+          currentTime: 37,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).not.toHaveBeenCalled();
+      });
+
+      it('should record a new listen when resuming with large timing difference (e.g. >5s)', async () => {
+        const pausedState = playbackStateFixture({
+          userId,
+          isPlaying: false,
+          currentTime: 35,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(pausedState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        listenHistoryServiceMock.recordListen.mockResolvedValueOnce(undefined);
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          isPlaying: true,
+          currentTime: 42,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).toHaveBeenCalledWith(userId, 'track-1', true);
+      });
+
+      it('should record a new listen when track repeats (currentTime resets to <= 5)', async () => {
+        const playingState = playbackStateFixture({
+          userId,
+          isPlaying: true,
+          currentTime: 180,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(playingState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        listenHistoryServiceMock.recordListen.mockResolvedValueOnce(undefined);
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          currentTime: 0,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).toHaveBeenCalledWith(userId, 'track-1', true);
+      });
+
+      it('should record a new listen when resuming in the first 5 seconds of the song', async () => {
+        const pausedState = playbackStateFixture({
+          userId,
+          isPlaying: false,
+          currentTime: 2,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(pausedState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        listenHistoryServiceMock.recordListen.mockResolvedValueOnce(undefined);
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          isPlaying: true,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).toHaveBeenCalledWith(userId, 'track-1', true);
+      });
+
+      it('should not record a new listen when seeking during active playback', async () => {
+        const playingState = playbackStateFixture({
+          userId,
+          isPlaying: true,
+          currentTime: 35,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(playingState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          currentTime: 120,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).not.toHaveBeenCalled();
+      });
+
+      it('should not record a new listen when seeking while paused', async () => {
+        const pausedState = playbackStateFixture({
+          userId,
+          isPlaying: false,
+          currentTime: 35,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(pausedState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          currentTime: 120,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).not.toHaveBeenCalled();
+      });
+
+      it('should record a new listen when the track changes while playing', async () => {
+        const playingState = playbackStateFixture({
+          userId,
+          isPlaying: true,
+          currentTime: 35,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(playingState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        listenHistoryServiceMock.recordListen.mockResolvedValueOnce(undefined);
+
+        const newTrackData = {
+          id: 'track-2',
+          trackId: 'track-2',
+          title: 'Other Song',
+          artists: ['Other Artist'],
+          albumName: 'Other Album',
+          albumId: 'album-2',
+          albumArt: null,
+          duration: 240,
+          explicit: false,
+        };
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          trackData: newTrackData,
+          currentTime: 0,
+        }));
+
+        expect(listenHistoryServiceMock.recordListen).toHaveBeenCalledWith(userId, 'track-2', true);
+      });
+
+      it('logs when listen history recording fails after mutation', async () => {
+        const recordError = new Error('history write failed');
+        const loggerSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
+        const playingState = playbackStateFixture({
+          userId,
+          isPlaying: true,
+          currentTime: 35,
+          trackData: initialState.trackData,
+          version: 1,
+        });
+
+        connMock.get.mockResolvedValueOnce(JSON.stringify(playingState));
+        const multiMock: ChainableMultiMock = {
+          set: vi.fn(),
+          exec: vi.fn().mockResolvedValue(okExecResult),
+        };
+        connMock.multi.mockReturnValue(asRedisMulti(multiMock));
+
+        listenHistoryServiceMock.recordListen.mockRejectedValueOnce(recordError);
+
+        const newTrackData = {
+          id: 'track-2',
+          trackId: 'track-2',
+          title: 'Other Song',
+          artists: ['Other Artist'],
+          albumName: 'Other Album',
+          albumId: 'album-2',
+          albumArt: null,
+          duration: 240,
+          explicit: false,
+        };
+
+        await service.applyMutation(userId, 1, (curr) => ({
+          ...curr,
+          trackData: newTrackData,
+          currentTime: 0,
+        }));
+
+        await vi.waitFor(() => {
+          expect(loggerSpy).toHaveBeenCalledWith(
+            'Failed to record listen history: history write failed',
+            recordError.stack,
+          );
+        });
+
+        loggerSpy.mockRestore();
+      });
     });
   });
 
