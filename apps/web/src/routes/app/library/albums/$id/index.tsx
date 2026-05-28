@@ -164,8 +164,8 @@ function RouteComponent() {
   return (
     <div className="flex flex-col w-full min-h-full pb-8">
       {/* Header Area - No Banner, Restore Blurred Glow */}
-      <div className="relative w-full px-6 mt-8">
-        <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
+      <div className="relative w-full px-4 sm:px-6 mt-6 sm:mt-8">
+        <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
           {/* Cover Art with Blurred Glow Shadow */}
           <div className="relative shrink-0">
             {album.cover?.url && (
@@ -173,10 +173,10 @@ function RouteComponent() {
                 src={album.cover.url}
                 alt=""
                 aria-hidden="true"
-                className="absolute inset-0 size-48 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
+                className="absolute inset-0 size-36 sm:size-56 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
               />
             )}
-            <div className="relative size-48 p-0 rounded-lg shadow-xl shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-white/10">
+            <div className="relative size-36 sm:size-56 p-0 rounded-lg shadow-xl shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-white/10">
               {album.cover?.url ? (
                 <img src={album.cover.url} alt={album.name} className="size-full object-cover" />
               ) : (
@@ -186,8 +186,8 @@ function RouteComponent() {
           </div>
 
           {/* Quick Info */}
-          <div className="flex-1 pb-2">
-            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold">
+          <div className="flex-1 pb-2 text-center md:text-left">
+            <div className="mb-1 flex flex-wrap items-center justify-center md:justify-start gap-x-2 text-[10px] sm:text-xs font-semibold">
               <span className="text-primary tracking-widest uppercase">{typeLabel}</span>
               <span className="text-stone-500" aria-hidden="true">
                 -
@@ -202,10 +202,10 @@ function RouteComponent() {
                 </>
               ) : null}
             </div>
-            <h2 className="text-3xl font-bold text-white opacity-90 truncate max-w-2xl mb-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white opacity-90 truncate max-w-2xl mb-1">
               {album.name}
             </h2>
-            <div className="flex items-center gap-1.5 text-sm text-stone-400 font-medium">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 text-sm text-stone-400 font-medium">
               {album.artists && album.artists.length > 0 ? (
                 album.artists.map((artist, i) => (
                   <span key={artist.id} className="flex items-center">
@@ -236,12 +236,12 @@ function RouteComponent() {
       </div>
 
       {/* Actions & Content */}
-      <div className="px-6 mt-12 flex flex-col gap-8">
+      <div className="px-4 sm:px-6 mt-8 sm:mt-12 flex flex-col gap-6 sm:gap-8">
         {/* Unified Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button
             size="lg"
-            className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
+            className="h-10 sm:h-12 rounded-lg gap-1.5 sm:gap-2 px-5 sm:px-8 text-sm sm:text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
             disabled={
               !album.tracks?.some((t) => t.audioFiles?.some((f) => f.status === 'complete'))
             }
@@ -270,12 +270,12 @@ function RouteComponent() {
           <Button
             variant="outline"
             size="lg"
-            className="h-12 rounded-lg gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
+            className="h-10 sm:h-12 rounded-lg gap-1.5 sm:gap-2 px-5 sm:px-8 text-sm sm:text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
           >
-            <ShuffleIcon weight="bold" size={20} /> Shuffle
+            <ShuffleIcon weight="bold" size={18} className="sm:size-5" /> Shuffle
           </Button>
 
-          <div className="flex items-center gap-1 ml-2">
+          <div className="flex items-center gap-0.5 sm:gap-1 ml-auto md:ml-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -283,12 +283,12 @@ function RouteComponent() {
                   size="icon"
                   type="button"
                   disabled={favoritesActionDisabled}
-                  className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
+                  className="size-9 sm:size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
                   aria-label={favoriteTooltip}
                   onClick={() => void toggleAlbumFavorites()}
                 >
                   {isFavoritesMutating ? (
-                    <Spinner className="size-5 text-muted-foreground" />
+                    <Spinner className="size-4 sm:size-5 text-muted-foreground" />
                   ) : (
                     <AlbumFavoriteStarGlyph allInFavorites={allInFavorites} />
                   )}
@@ -302,9 +302,9 @@ function RouteComponent() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
+                  className="size-9 sm:size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
                 >
-                  <DotsThreeIcon size={24} weight="bold" />
+                  <DotsThreeIcon size={20} className="sm:size-6" weight="bold" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48">
