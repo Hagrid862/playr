@@ -24,12 +24,12 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container flex h-14 max-w-screen-2xl items-center px-4 mx-auto">
           {/* Logo */}
-          <div className="mr-6 flex items-center space-x-2">
-            <span className="text-xl font-bold text-primary">Playr</span>
+          <div className="mr-4 md:mr-6 flex items-center space-x-2">
+            <span className="text-xl md:text-2xl font-bold text-primary">Playr</span>
           </div>
 
-          {/* Navigation */}
-          <NavigationMenu>
+          {/* Navigation — hidden on mobile */}
+          <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Features</NavigationMenuTrigger>
@@ -126,16 +126,16 @@ export default function LandingPage() {
           </NavigationMenu>
 
           {/* Right side - Auth buttons */}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1.5 md:gap-2">
             <a
               href="/auth/login"
-              className="inline-flex h-9 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex h-8 md:h-9 items-center justify-center rounded-lg px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               Sign in
             </a>
             <a
               href="/auth/register"
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex h-8 md:h-9 items-center justify-center rounded-lg bg-primary px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Get Started
             </a>
@@ -143,17 +143,17 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero section placeholder */}
-      <main className="container mx-auto px-4 py-16">
+      {/* Hero section */}
+      <main className="container mx-auto px-4 py-12 sm:py-16 md:py-20 lg:py-24">
         <div className="text-center">
-          <h1 className="flex flex-row gap-4 items-center justify-center text-7xl font-bold mb-8">
-            <PlayCircleIcon className="fill-primary" weight="fill" />
+          <h1 className="flex flex-row gap-3 sm:gap-5 items-center justify-center text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-6 md:mb-10">
+            <PlayCircleIcon className="fill-primary size-10 sm:size-12 md:size-auto" weight="fill" />
             <span className="text-primary">Playr</span>
           </h1>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold tracking-tight">
             Your music, your way
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground">
+          <p className="mt-6 md:mt-8 text-lg sm:text-xl md:text-2xl text-muted-foreground">
             Stream your favorite songs, create playlists, and discover new music.
           </p>
         </div>
