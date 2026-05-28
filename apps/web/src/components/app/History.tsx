@@ -71,8 +71,17 @@ function HistoryListRow({
         layout: HISTORY_LAYOUT_TRANSITION,
       }}
       style={{ transformOrigin: 'top center' }}
-      className="group flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors cursor-pointer"
+      className="group flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors cursor-pointer outline-none focus-visible:bg-white/5 focus-visible:ring-1 focus-visible:ring-white/20"
       onClick={() => onPlay(item.track)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPlay(item.track);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Play ${item.track?.title || 'unknown track'} by ${item.track?.artists?.map((a) => (typeof a === 'string' ? a : a.name)).join(', ') || UNKNOWN_ARTIST_LABEL}`}
     >
       <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-stone-800">
         {item.track?.album?.cover?.url ? (

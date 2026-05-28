@@ -106,7 +106,9 @@ describe('History', () => {
     isLoading?: boolean;
     isFetching?: boolean;
     isFetchingNextPage?: boolean;
-    pages?: Array<{ data?: { items?: unknown[]; total?: number; page?: number; limit?: number } | null }>;
+    pages?: Array<{
+      data?: { items?: unknown[]; total?: number; page?: number; limit?: number } | null;
+    }>;
   };
 
   const buildQueryMock = (
@@ -129,18 +131,16 @@ describe('History', () => {
 
     return {
       data: {
-        pages:
-          pages ??
-          [
-            {
-              data: {
-                items,
-                total: items.length + (hasNext ? 20 : 0),
-                page: 1,
-                limit: 20,
-              },
+        pages: pages ?? [
+          {
+            data: {
+              items,
+              total: items.length + (hasNext ? 20 : 0),
+              page: 1,
+              limit: 20,
             },
-          ],
+          },
+        ],
       },
       fetchNextPage: mockFetchNextPage,
       hasNextPage: hasNext,
@@ -218,9 +218,7 @@ describe('History', () => {
     });
 
     it('renders skeleton placeholders when refetching an empty list', () => {
-      vi.mocked(useListenHistoryInfinite).mockReturnValue(
-        buildQueryMock([], { isFetching: true }),
-      );
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([], { isFetching: true }));
       customRender(<History isVisible={true} onBack={mockOnBack} />);
       expect(screen.getByRole('status', { name: 'Loading history' })).toBeInTheDocument();
     });
@@ -340,6 +338,43 @@ describe('History', () => {
         duration: 100,
         explicit: false,
       });
+    });
+
+    it('calls playTrack when a track receives Enter or Space key press', () => {
+      const item = {
+        id: 'hist-1',
+        listenedAt: '2026-05-27T10:00:00Z',
+        durationMs: 100,
+        completed: false,
+        track: {
+          id: '1',
+          title: 'Track 1',
+          trackId: '1',
+          artists: [mockArtist('artist-1', 'Artist 1')],
+          albumId: '1',
+          album: mockAlbum('1', 'Album 1', 'cover.jpg'),
+          duration: 100,
+          explicit: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          visibility: 'public',
+        },
+      };
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([item]));
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      const row = screen.getByRole('button', { name: /Play Track 1 by Artist 1/i });
+
+      // Enter key
+      fireEvent.keyDown(row, { key: 'Enter' });
+      expect(mockPlayTrack).toHaveBeenCalledTimes(1);
+
+      // Space key
+      fireEvent.keyDown(row, { key: ' ' });
+      expect(mockPlayTrack).toHaveBeenCalledTimes(2);
     });
 
     it('uses Cover art as img alt when albumArt is set but title is empty', () => {
@@ -674,9 +709,7 @@ describe('History', () => {
       vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([firstItem]));
       const { rerender } = customRender(<History isVisible={true} onBack={mockOnBack} />);
 
-      vi.mocked(useListenHistoryInfinite).mockReturnValue(
-        buildQueryMock([secondItem, firstItem]),
-      );
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([secondItem, firstItem]));
       rerender(<History isVisible={true} onBack={mockOnBack} />);
 
       expect(screen.getByText('New Head Track')).toBeInTheDocument();
@@ -942,7 +975,7 @@ describe('History', () => {
       vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock(mockItems));
 
       customRender(<History isVisible={true} onBack={mockOnBack} />);
-      
+
       const triggerBtn = screen.getByRole('button', { name: /clear/i });
       fireEvent.click(triggerBtn);
 
@@ -981,7 +1014,7 @@ describe('History', () => {
       vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock(mockItems));
 
       customRender(<History isVisible={true} onBack={mockOnBack} />);
-      
+
       fireEvent.click(screen.getByRole('button', { name: /clear/i }));
 
       fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
