@@ -207,6 +207,50 @@ describe('audio-metadata', () => {
       expect(parseReleaseDate('invalid-date', 2024)).toEqual(new Date(2024, 0, 1));
     });
 
+    it('falls back when given invalid date components in YYYY-MM-DD or YYYY-MM', () => {
+      // 2024-13-40 is invalid (month 13, day 40). With year=2024, should fall back to year fallback:
+      expect(parseReleaseDate('2024-13-40', 2024)).toEqual(new Date(2024, 0, 1));
+      // 2024-02-30 is invalid February day.
+      expect(parseReleaseDate('2024-02-30', 2024)).toEqual(new Date(2024, 0, 1));
+      // 2024-13 is invalid month for YYYY-MM.
+      expect(parseReleaseDate('2024-13', 2024)).toEqual(new Date(2024, 0, 1));
+    });
+
+    it('distinguishes between UTC and local timezone-designated strings in fallback parsing', () => {
+      // ISO timestamp with no timezone (local/unspecified)
+      const localResult = parseReleaseDate('2024-05-15T12:00:00');
+      const expectedLocal = new Date('2024-05-15T12:00:00');
+      expect(localResult?.getFullYear()).toBe(expectedLocal.getFullYear());
+      expect(localResult?.getMonth()).toBe(expectedLocal.getMonth());
+      expect(localResult?.getDate()).toBe(expectedLocal.getDate());
+
+      // ISO timestamp with Z timezone
+      const utcResultZ = parseReleaseDate('2024-05-15T12:00:00Z');
+      expect(utcResultZ?.getFullYear()).toBe(2024);
+      expect(utcResultZ?.getMonth()).toBe(4);
+      expect(utcResultZ?.getDate()).toBe(15);
+
+      // ISO timestamp with +HH:MM timezone offset
+      const utcResultOffset = parseReleaseDate('2024-05-15T12:00:00+02:00');
+      // The parsed date in UTC should be May 15, 2024
+      expect(utcResultOffset?.getFullYear()).toBe(2024);
+      expect(utcResultOffset?.getMonth()).toBe(4);
+      expect(utcResultOffset?.getDate()).toBe(15);
+
+      // Timestamp with space and offset, has ':' but no 'T'
+      const spaceOffsetResult = parseReleaseDate('2024-05-15 12:00:00+02:00');
+      expect(spaceOffsetResult?.getFullYear()).toBe(2024);
+      expect(spaceOffsetResult?.getMonth()).toBe(4);
+      expect(spaceOffsetResult?.getDate()).toBe(15);
+
+      // Date string with timezone offset but has no 'T' and no ':'
+      const textOffsetResult = parseReleaseDate('May 15, 2024 GMT+0200');
+      const expectedTextOffsetLocal = new Date('May 15, 2024 GMT+0200');
+      expect(textOffsetResult?.getFullYear()).toBe(expectedTextOffsetLocal.getFullYear());
+      expect(textOffsetResult?.getMonth()).toBe(expectedTextOffsetLocal.getMonth());
+      expect(textOffsetResult?.getDate()).toBe(expectedTextOffsetLocal.getDate());
+    });
+
     it('returns null if neither date nor year are provided', () => {
       expect(parseReleaseDate()).toBeNull();
       expect(parseReleaseDate(undefined, undefined)).toBeNull();

@@ -48,31 +48,50 @@ export function parseReleaseDate(dateStr?: string, year?: number): Date | null {
     const yyyymmdd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
     if (yyyymmdd) {
       const y = parseInt(yyyymmdd[1]!, 10);
-      const m = parseInt(yyyymmdd[2]!, 10) - 1; // month index is 0-based
+      const m = parseInt(yyyymmdd[2]!, 10);
       const d = parseInt(yyyymmdd[3]!, 10);
-      return new Date(y, m, d);
-    }
-    // 2. Matches YYYY-MM
-    const yyyymm = /^(\d{4})-(\d{2})$/.exec(trimmed);
-    if (yyyymm) {
-      const y = parseInt(yyyymm[1]!, 10);
-      const m = parseInt(yyyymm[2]!, 10) - 1;
-      return new Date(y, m, 1);
-    }
-    // 3. Matches YYYY
-    const yyyy = /^(\d{4})$/.exec(trimmed);
-    if (yyyy) {
-      const y = parseInt(yyyy[1]!, 10);
-      return new Date(y, 0, 1);
-    }
-    // 4. Fallback: Parse using native Date and construct local Date parameters
-    const parsed = new Date(trimmed);
-    if (!isNaN(parsed.getTime())) {
-      const isUtc = trimmed.endsWith('Z') || trimmed.includes('T');
-      if (isUtc) {
-        return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
+      // Validate components to avoid auto-normalizing invalid dates
+      if (
+        y >= 1000 &&
+        y <= 9999 &&
+        m >= 1 &&
+        m <= 12 &&
+        d >= 1 &&
+        d <= new Date(y, m, 0).getDate()
+      ) {
+        return new Date(y, m - 1, d);
+      }
+    } else {
+      // 2. Matches YYYY-MM
+      const yyyymm = /^(\d{4})-(\d{2})$/.exec(trimmed);
+      if (yyyymm) {
+        const y = parseInt(yyyymm[1]!, 10);
+        const m = parseInt(yyyymm[2]!, 10);
+        // Validate components to avoid auto-normalizing invalid dates
+        if (y >= 1000 && y <= 9999 && m >= 1 && m <= 12) {
+          return new Date(y, m - 1, 1);
+        }
       } else {
-        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+        // 3. Matches YYYY
+        const yyyy = /^(\d{4})$/.exec(trimmed);
+        if (yyyy) {
+          const y = parseInt(yyyy[1]!, 10);
+          return new Date(y, 0, 1);
+        } else {
+          // 4. Fallback: Parse using native Date and construct local Date parameters
+          const parsed = new Date(trimmed);
+          if (!isNaN(parsed.getTime())) {
+            const isUtc =
+              trimmed.endsWith('Z') ||
+              (/[+-]\d{2}(?::?\d{2})?$/.test(trimmed) &&
+                (/\dT\d/.test(trimmed) || trimmed.includes(':')));
+            if (isUtc) {
+              return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
+            } else {
+              return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+            }
+          }
+        }
       }
     }
   }
