@@ -14,6 +14,8 @@ import {
   MusicNotesIcon,
   PauseIcon,
   PlayIcon,
+  QueueIcon,
+  QuotesIcon,
   RepeatIcon,
   RepeatOnceIcon,
   ShuffleIcon,
@@ -61,6 +63,10 @@ export function PlayerFullPage() {
     setVolume,
     isPlayerExpanded,
     setPlayerExpanded,
+    isQueueOpen,
+    sidebarView,
+    setQueueOpen,
+    setSidebarView,
   } = usePlayerStore();
 
   const latestSeekTimeRef = useRef<number | null>(null);
@@ -264,6 +270,52 @@ export function PlayerFullPage() {
                 ? <RepeatOnceIcon className="w-[clamp(20px,5vw,24px)] h-[clamp(20px,5vw,24px)]" />
                 : <RepeatIcon className="w-[clamp(20px,5vw,24px)] h-[clamp(20px,5vw,24px)]" />
               }
+            </Button>
+          </div>
+
+          {/* Lyrics & Queue Buttons */}
+          <div className="flex items-center justify-center gap-3 px-6 pt-4 shrink-0">
+            <Button
+              variant="ghost"
+              aria-label="Lyrics"
+              className={cn(
+                'flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium border border-white/10 bg-white/5 backdrop-blur-sm transition-all active:scale-95',
+                isQueueOpen && sidebarView === 'lyrics'
+                  ? 'text-white bg-white/15 border-white/20'
+                  : 'text-white/60 hover:text-white hover:bg-white/10',
+              )}
+              onClick={() => {
+                if (isQueueOpen && sidebarView === 'lyrics') {
+                  setQueueOpen(false);
+                } else {
+                  setSidebarView('lyrics');
+                  setQueueOpen(true);
+                }
+              }}
+            >
+              <QuotesIcon size={18} />
+              Lyrics
+            </Button>
+            <Button
+              variant="ghost"
+              aria-label="Queue"
+              className={cn(
+                'flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium border border-white/10 bg-white/5 backdrop-blur-sm transition-all active:scale-95',
+                isQueueOpen && sidebarView === 'queue'
+                  ? 'text-white bg-white/15 border-white/20'
+                  : 'text-white/60 hover:text-white hover:bg-white/10',
+              )}
+              onClick={() => {
+                if (isQueueOpen && sidebarView === 'queue') {
+                  setQueueOpen(false);
+                } else {
+                  setSidebarView('queue');
+                  setQueueOpen(true);
+                }
+              }}
+            >
+              <QueueIcon size={18} />
+              Queue
             </Button>
           </div>
 
