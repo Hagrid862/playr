@@ -8,6 +8,7 @@ import { LibraryTracksModule } from './library-tracks/library-tracks.module';
 import { LibraryPlaylistsModule } from './library-playlists/library-playlists.module';
 import { LibraryModule } from './library/library.module';
 import { PlaybackModule } from './playback/playback.module';
+import { ListenHistoryModule } from './listen-history/listen-history.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PlaybackModule } from './playback/playback.module';
     LibraryPlaylistsModule,
     AudioProcessingModule,
     PlaybackModule,
+    ListenHistoryModule,
   ],
   controllers: [],
   providers: [],
