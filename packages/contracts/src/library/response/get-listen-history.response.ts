@@ -7,15 +7,15 @@ export const GetListenHistoryResponseSchema = createApiResponseSchema(
     items: z.array(
       z.object({
         id: z.string(),
-        listenedAt: z.string(),
+        listenedAt: z.string().datetime(),
         durationMs: z.number(),
         completed: z.boolean(),
         track: TrackSchema,
       }),
     ),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1),
   }),
 );
 
