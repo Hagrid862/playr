@@ -25,6 +25,7 @@ import { GetQueueStateHandler } from './queries/handlers/get-queue-state.handler
 import { PlaybackDeviceRegistryService } from './services/playback-device-registry.service';
 import { PlaybackLibraryFlagsService } from './services/playback-library-flags.service';
 import { PlaybackStatePersistenceService } from './services/playback-state-persistence.service';
+import { ListenHistoryModule } from '../listen-history/listen-history.module';
 import { PLAYBACK_REDIS } from './utils/playback-redis.constants';
 import { RedisProvider } from './utils/redis.provider';
 
@@ -51,7 +52,7 @@ export const CommandHandlers = [
 ];
 
 @Module({
-  imports: [AuthModule, CqrsModule],
+  imports: [AuthModule, CqrsModule, ListenHistoryModule],
   controllers: [],
   providers: [
     ...QueryHandlers,
