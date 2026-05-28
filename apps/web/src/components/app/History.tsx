@@ -4,7 +4,10 @@ import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { cn } from '@/lib/utils';
 import { useListenHistoryInfinite, useListenHistorySync } from '@/hooks/api/library';
 import { usePlayerStore } from '@/stores/player-store/player.store';
-import { detectNewHistoryHeadId } from '@/lib/playback/history-head-animation';
+import {
+  detectNewHistoryHeadId,
+  type HistoryHeadAnimationState,
+} from '@/lib/playback/history-head-animation';
 import {
   type ListenHistoryListItem,
   zodTrackToPlaybackTrack,
@@ -126,20 +129,19 @@ export function History({ isVisible, onBack }: HistoryProps) {
 
   const showInitialSkeleton = isLoading || (isFetching && historyItems.length === 0);
   const sentinelRef = React.useRef<HTMLDivElement>(null);
-  const hasSeenListRef = React.useRef(false);
-  const prevHeadIdRef = React.useRef<string | null>(null);
-  const headId = historyItems[0]?.id;
-  const newHeadListenId = detectNewHistoryHeadId(headId, {
-    hasSeenList: hasSeenListRef.current,
-    prevHeadId: prevHeadIdRef.current,
+  const [headAnimationState, setHeadAnimationState] = React.useState<HistoryHeadAnimationState>({
+    hasSeenList: false,
+    prevHeadId: null,
   });
+  const headId = historyItems[0]?.id;
+  const newHeadListenId = detectNewHistoryHeadId(headId, headAnimationState);
 
   React.useEffect(() => {
     if (historyItems.length === 0) return;
-    hasSeenListRef.current = true;
-    if (headId) {
-      prevHeadIdRef.current = headId;
-    }
+    setHeadAnimationState({
+      hasSeenList: true,
+      prevHeadId: headId ?? null,
+    });
   }, [headId, historyItems.length]);
 
   React.useEffect(() => {
