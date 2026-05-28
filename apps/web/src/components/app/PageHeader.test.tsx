@@ -94,21 +94,10 @@ describe('PageHeader', () => {
       expect(onToggle).toHaveBeenCalled();
     });
 
-    it('renders close search button when mobile search is expanded', () => {
-      customRender(<PageHeader mobileSearchExpanded={true} />);
-
-      const closeButtons = screen.getAllByRole('button', { name: /Close search/i });
-      expect(closeButtons.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('calls onMobileSearchToggle when close button is clicked', async () => {
-      const user = userEvent.setup();
-      const onToggle = vi.fn();
-      customRender(<PageHeader mobileSearchExpanded={true} onMobileSearchToggle={onToggle} />);
-
-      const closeButton = screen.getAllByRole('button', { name: /Close search/i })[0];
-      await user.click(closeButton);
-      expect(onToggle).toHaveBeenCalled();
+    it('applies hidden class on mobile when search is expanded', () => {
+      const { container } = customRender(<PageHeader mobileSearchExpanded={true} />);
+      const header = container.firstChild as HTMLElement;
+      expect(header.className).toContain('max-md:hidden');
     });
 
     it('hides open search button when title is provided', () => {
