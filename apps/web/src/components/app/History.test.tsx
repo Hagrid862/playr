@@ -16,12 +16,25 @@ const historyTestMocks = vi.hoisted(() => ({
   mockClearHistory: vi.fn(),
 }));
 
+const clearHistoryMockState = vi.hoisted(() => ({ isPending: false }));
+const motionMockState = vi.hoisted(() => ({ reducedMotion: false }));
+
 vi.mock('@/hooks/api/history/useClearListenHistory', () => ({
   useClearListenHistory: () => ({
     mutate: historyTestMocks.mockClearHistory,
-    isPending: false,
+    get isPending() {
+      return clearHistoryMockState.isPending;
+    },
   }),
 }));
+
+vi.mock('framer-motion', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('framer-motion')>();
+  return {
+    ...actual,
+    useReducedMotion: () => motionMockState.reducedMotion,
+  };
+});
 
 const emptyListenHistoryResponse = {
   success: true as const,
@@ -88,29 +101,55 @@ describe('History', () => {
 
   type ListenHistoryQueryResult = ReturnType<typeof useListenHistoryInfinite>;
 
+  type BuildQueryMockOptions = {
+    hasNext?: boolean;
+    isLoading?: boolean;
+    isFetching?: boolean;
+    isFetchingNextPage?: boolean;
+    pages?: Array<{ data?: { items?: unknown[]; total?: number; page?: number; limit?: number } | null }>;
+  };
+
   const buildQueryMock = (
     items: unknown[] = [],
-    hasNext = false,
+    hasNextOrOptions: boolean | BuildQueryMockOptions = false,
     loading = false,
-  ): ListenHistoryQueryResult =>
-    ({
+  ): ListenHistoryQueryResult => {
+    const options: BuildQueryMockOptions =
+      typeof hasNextOrOptions === 'boolean'
+        ? { hasNext: hasNextOrOptions, isLoading: loading }
+        : hasNextOrOptions;
+
+    const {
+      hasNext = false,
+      isLoading = false,
+      isFetching = false,
+      isFetchingNextPage = false,
+      pages,
+    } = options;
+
+    return {
       data: {
-        pages: [
-          {
-            data: {
-              items,
-              total: items.length + (hasNext ? 20 : 0),
-              page: 1,
-              limit: 20,
+        pages:
+          pages ??
+          [
+            {
+              data: {
+                items,
+                total: items.length + (hasNext ? 20 : 0),
+                page: 1,
+                limit: 20,
+              },
             },
-          },
-        ],
+          ],
       },
       fetchNextPage: mockFetchNextPage,
       hasNextPage: hasNext,
-      isLoading: loading,
+      isLoading,
+      isFetching,
+      isFetchingNextPage,
       isError: false,
-    }) as unknown as ListenHistoryQueryResult;
+    } as unknown as ListenHistoryQueryResult;
+  };
 
   const mockArtist = (id: string, name: string) => ({
     id,
@@ -161,6 +200,8 @@ describe('History', () => {
 
   beforeEach(() => {
     observerCallback = null;
+    clearHistoryMockState.isPending = false;
+    motionMockState.reducedMotion = false;
     vi.clearAllMocks();
     vi.useFakeTimers();
     historyTestMocks.mockGetListenHistory.mockResolvedValue(emptyListenHistoryResponse);
@@ -170,16 +211,40 @@ describe('History', () => {
 
   describe('loading state', () => {
     it('renders skeleton placeholders when query is loading', () => {
-      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([], false, true));
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([], { isLoading: true }));
       customRender(<History isVisible={true} onBack={mockOnBack} />);
       expect(screen.getByRole('status', { name: 'Loading history' })).toBeInTheDocument();
       expect(screen.queryByText('No listening history')).not.toBeInTheDocument();
+    });
+
+    it('renders skeleton placeholders when refetching an empty list', () => {
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock([], { isFetching: true }),
+      );
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+      expect(screen.getByRole('status', { name: 'Loading history' })).toBeInTheDocument();
     });
   });
 
   describe('empty state', () => {
     it('renders empty state when history is empty', () => {
       customRender(<History isVisible={true} onBack={mockOnBack} />);
+      expect(screen.getByText('No listening history')).toBeInTheDocument();
+    });
+
+    it('renders empty state when query data is undefined', () => {
+      vi.mocked(useListenHistoryInfinite).mockReturnValue({
+        data: undefined,
+        fetchNextPage: mockFetchNextPage,
+        hasNextPage: false,
+        isLoading: false,
+        isFetching: false,
+        isFetchingNextPage: false,
+        isError: false,
+      } as unknown as ListenHistoryQueryResult);
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
       expect(screen.getByText('No listening history')).toBeInTheDocument();
     });
   });
@@ -385,7 +450,9 @@ describe('History', () => {
         },
       }));
 
-      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock(mockItems, true));
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock(mockItems, { hasNext: true }),
+      );
 
       customRender(<History isVisible={true} onBack={mockOnBack} />);
 
@@ -399,6 +466,281 @@ describe('History', () => {
       );
 
       expect(mockFetchNextPage).toHaveBeenCalled();
+    });
+
+    it('does not fetch the next page while already fetching', () => {
+      const mockItems = [
+        {
+          id: 'hist-0',
+          listenedAt: new Date().toISOString(),
+          durationMs: 100,
+          completed: false,
+          track: {
+            id: 'track-0',
+            title: 'Track 0',
+            trackId: 'track-0',
+            artists: [mockArtist('artist-1', 'Artist')],
+            albumId: 'album-0',
+            album: mockAlbum('album-0', 'Album', 'cover.jpg'),
+            duration: 100,
+            explicit: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            visibility: 'public',
+          },
+        },
+      ];
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock(mockItems, { hasNext: true, isFetchingNextPage: true }),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      observerCallback!(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+
+      expect(mockFetchNextPage).not.toHaveBeenCalled();
+    });
+
+    it('does not fetch the next page when the sentinel is not intersecting', () => {
+      const mockItems = [
+        {
+          id: 'hist-0',
+          listenedAt: new Date().toISOString(),
+          durationMs: 100,
+          completed: false,
+          track: {
+            id: 'track-0',
+            title: 'Track 0',
+            trackId: 'track-0',
+            artists: [mockArtist('artist-1', 'Artist')],
+            albumId: 'album-0',
+            album: mockAlbum('album-0', 'Album', 'cover.jpg'),
+            duration: 100,
+            explicit: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            visibility: 'public',
+          },
+        },
+      ];
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock(mockItems, { hasNext: true }),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      observerCallback!(
+        [{ isIntersecting: false } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+
+      expect(mockFetchNextPage).not.toHaveBeenCalled();
+    });
+
+    it('renders pagination skeleton rows while fetching the next page', () => {
+      const mockItems = [
+        {
+          id: 'hist-0',
+          listenedAt: new Date().toISOString(),
+          durationMs: 100,
+          completed: false,
+          track: {
+            id: 'track-0',
+            title: 'Track 0',
+            trackId: 'track-0',
+            artists: [mockArtist('artist-1', 'Artist')],
+            albumId: 'album-0',
+            album: mockAlbum('album-0', 'Album', 'cover.jpg'),
+            duration: 100,
+            explicit: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            visibility: 'public',
+          },
+        },
+      ];
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock(mockItems, { hasNext: true, isFetchingNextPage: true }),
+      );
+
+      const { container } = customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      const paginationSkeleton = container.querySelector('.space-y-0\\.5.pt-1[aria-hidden]');
+      expect(paginationSkeleton).toBeInTheDocument();
+      expect(paginationSkeleton?.querySelectorAll('[aria-hidden].rounded-md').length).toBe(3);
+    });
+
+    it('deduplicates history items with the same id across pages', () => {
+      const item = {
+        id: 'hist-dup',
+        listenedAt: '2026-05-27T10:00:00Z',
+        durationMs: 100,
+        completed: false,
+        track: {
+          id: '1',
+          title: 'Duplicate Track',
+          trackId: '1',
+          artists: [mockArtist('artist-1', 'Artist')],
+          albumId: '1',
+          album: mockAlbum('1', 'Album', 'cover.jpg'),
+          duration: 100,
+          explicit: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          visibility: 'public',
+        },
+      };
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock([], {
+          pages: [
+            { data: { items: [item, { ...item }], total: 2, page: 1, limit: 20 } },
+            { data: { items: undefined, total: 0, page: 2, limit: 20 } },
+          ],
+        }),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      expect(screen.getAllByText('Duplicate Track')).toHaveLength(1);
+    });
+
+    it('formats string artist names on history rows', () => {
+      const item = {
+        id: 'hist-1',
+        listenedAt: '2026-05-27T10:00:00Z',
+        durationMs: 100,
+        completed: false,
+        track: {
+          id: '1',
+          title: 'String Artist Track',
+          trackId: '1',
+          artists: ['String Artist'],
+          albumId: '1',
+          album: mockAlbum('1', 'Album', null),
+          duration: 100,
+          explicit: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          visibility: 'public',
+        },
+      };
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([item]));
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      expect(screen.getByText('String Artist')).toBeInTheDocument();
+    });
+
+    it('marks a newly inserted head row for enter animation', () => {
+      const firstItem = {
+        id: 'hist-1',
+        listenedAt: '2026-05-27T10:00:00Z',
+        durationMs: 100,
+        completed: false,
+        track: {
+          id: '1',
+          title: 'First Track',
+          trackId: '1',
+          artists: [mockArtist('artist-1', 'Artist')],
+          albumId: '1',
+          album: mockAlbum('1', 'Album', null),
+          duration: 100,
+          explicit: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          visibility: 'public',
+        },
+      };
+      const secondItem = {
+        ...firstItem,
+        id: 'hist-2',
+        track: { ...firstItem.track, id: '2', title: 'New Head Track', trackId: '2' },
+      };
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([firstItem]));
+      const { rerender } = customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock([secondItem, firstItem]),
+      );
+      rerender(<History isVisible={true} onBack={mockOnBack} />);
+
+      expect(screen.getByText('New Head Track')).toBeInTheDocument();
+    });
+
+    it('respects reduced motion preferences on history rows', () => {
+      motionMockState.reducedMotion = true;
+
+      const item = {
+        id: 'hist-1',
+        listenedAt: '2026-05-27T10:00:00Z',
+        durationMs: 100,
+        completed: false,
+        track: {
+          id: '1',
+          title: 'Reduced Motion Track',
+          trackId: '1',
+          artists: [mockArtist('artist-1', 'Artist')],
+          albumId: '1',
+          album: mockAlbum('1', 'Album', null),
+          duration: 100,
+          explicit: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          visibility: 'public',
+        },
+      };
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([item]));
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      expect(screen.getByText('Reduced Motion Track')).toBeInTheDocument();
+    });
+
+    it('records head animation state when the newest entry has no id', () => {
+      const itemWithoutId = {
+        listenedAt: '2026-05-27T10:00:00Z',
+        durationMs: 100,
+        completed: false,
+        track: {
+          id: '1',
+          title: 'No Id Entry',
+          trackId: '1',
+          artists: [mockArtist('artist-1', 'Artist')],
+          albumId: '1',
+          album: mockAlbum('1', 'Album', null),
+          duration: 100,
+          explicit: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          visibility: 'public',
+        },
+      };
+
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock([itemWithoutId] as unknown[]),
+      );
+
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      expect(screen.getByText('No Id Entry')).toBeInTheDocument();
     });
   });
 
@@ -538,6 +880,40 @@ describe('History', () => {
       vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock(mockItems));
       customRender(<History isVisible={true} onBack={mockOnBack} />);
       expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument();
+    });
+
+    it('shows Clearing... on the confirm button while the mutation is pending', () => {
+      const mockItems = [
+        {
+          id: 'hist-1',
+          listenedAt: '2026-05-27T10:00:00Z',
+          durationMs: 100,
+          completed: false,
+          track: {
+            id: '1',
+            title: 'Track 1',
+            trackId: '1',
+            artists: [mockArtist('artist-1', 'Artist 1')],
+            albumId: '1',
+            album: mockAlbum('1', 'Album 1', 'cover.jpg'),
+            duration: 100,
+            explicit: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            visibility: 'public',
+          },
+        },
+      ];
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock(mockItems));
+
+      const { rerender } = customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /clear/i }));
+      clearHistoryMockState.isPending = true;
+      rerender(<History isVisible={true} onBack={mockOnBack} />);
+
+      expect(screen.getByRole('button', { name: 'Clearing...' })).toBeDisabled();
     });
 
     it('opens the popover and calls clearHistory when confirmed', () => {

@@ -70,6 +70,24 @@ describe('playback-mappers', () => {
       expect(result.artists?.[0]?.name).toBe('Artist');
       expect(result.album?.cover?.url).toBe('art.png');
     });
+
+    it('omits album when the playback track has no album id', () => {
+      const track = {
+        id: '1',
+        title: 'Title',
+        trackId: '1',
+        artists: ['Artist'],
+        albumName: 'Album',
+        albumId: '',
+        albumArt: 'art.png',
+        duration: 120,
+        explicit: false,
+      } as PlaybackTrack;
+
+      const result = playbackTrackToZodTrack(track);
+
+      expect(result.album).toBeUndefined();
+    });
   });
 
   describe('createOptimisticListenHistoryItem', () => {
