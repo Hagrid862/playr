@@ -77,6 +77,32 @@ describe('ListenHistoryService', () => {
       });
     });
 
+    it('bypasses cooldown lookup and always creates when bypassCooldown is true', async () => {
+      mockListenHistoryClient.create.mockResolvedValue({ id: 'lh-bypass' });
+
+      await service.recordListen(userId, trackId, true);
+
+      expect(mockListenHistoryClient.findFirst).not.toHaveBeenCalled();
+      expect(mockListenHistoryClient.create).toHaveBeenCalledWith({
+        data: {
+          userId,
+          trackId,
+          completed: false,
+        },
+      });
+    });
+
+    it('skips probabilistic cleanup when random draw is above threshold', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+      mockListenHistoryClient.findFirst.mockResolvedValue(null);
+      mockListenHistoryClient.create.mockResolvedValue({ id: 'lh-new' });
+
+      await service.recordListen(userId, trackId);
+
+      expect(mockListenHistoryClient.count).not.toHaveBeenCalled();
+      expect(mockListenHistoryClient.deleteMany).not.toHaveBeenCalled();
+    });
+
     it('skips duplicate inserts if the last track played matches and is within 30s cooldown', async () => {
       const thirtySecondsAgo = new Date(Date.now() - 10000); // 10 seconds ago
       mockListenHistoryClient.findFirst.mockResolvedValue({
