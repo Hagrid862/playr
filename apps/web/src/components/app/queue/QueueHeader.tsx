@@ -15,11 +15,12 @@ export function QueueHeader({ onShowHistory, onToggleQueue }: QueueHeaderProps) 
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           className="text-white/50 hover:text-white"
           onClick={onShowHistory}
           title="Show History"
         >
+          History
           <ClockCounterClockwiseIcon size={20} />
         </Button>
         <Button
