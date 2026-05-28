@@ -1,6 +1,7 @@
 import {
   extractCoverFromAudioFile,
   extractMetadataFromAudioFile,
+  parseReleaseDate,
   type ExtractedAudioMetadata,
 } from '@/lib/audio/audio-metadata';
 import { cleanFilenameToTitle } from '@/lib/audio/clean-audio-filename';
@@ -125,6 +126,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
               )[0] as string)
             : '';
 
+        const dateStr = results.find((r) => r.date)?.date;
         const year = results.find((r) => r.year)?.year;
 
         const suggestedArtistName = deriveConsistentMetadataArtistName(results);
@@ -133,7 +135,7 @@ export function useLibraryAlbumFromFilesForm(options?: UseLibraryAlbumFromFilesF
         setFormData((prev) => ({
           ...prev,
           name: prev.name || albumName,
-          releaseDate: prev.releaseDate ?? (year ? new Date(year, 0, 1) : null),
+          releaseDate: prev.releaseDate ?? parseReleaseDate(dateStr, year),
         }));
 
         setTracks((prev) =>

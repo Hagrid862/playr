@@ -1,7 +1,7 @@
 import { parseBlob, selectCover } from 'music-metadata';
 
 /**
- * Extracted metadata from an audio file (album, artist, title, track, disk, year).
+ * Extracted metadata from an audio file (album, artist, title, track, disk, year, date).
  */
 export interface ExtractedAudioMetadata {
   album?: string;
@@ -10,10 +10,11 @@ export interface ExtractedAudioMetadata {
   trackNo?: number;
   diskNo?: number;
   year?: number;
+  date?: string;
 }
 
 /**
- * Extracts common metadata (album, artist, title, track, disk, year) from an audio file.
+ * Extracts common metadata (album, artist, title, track, disk, year, date) from an audio file.
  */
 export async function extractMetadataFromAudioFile(
   file: File,
@@ -28,10 +29,60 @@ export async function extractMetadataFromAudioFile(
       trackNo: common.track?.no ?? undefined,
       diskNo: common.disk?.no ?? undefined,
       year: common.year,
+      date: common.date?.trim() || undefined,
     };
   } catch {
     return null;
   }
+}
+
+/**
+ * Parses a date string or year number into a Date object.
+ * Returns the Date in local time parameters to prevent off-by-one errors
+ * in timezone-sensitive browser environments (e.g. date pickers).
+ */
+export function parseReleaseDate(dateStr?: string, year?: number): Date | null {
+  if (dateStr) {
+    const trimmed = dateStr.trim();
+    // 1. Matches YYYY-MM-DD
+    const yyyymmdd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    if (yyyymmdd) {
+      const y = parseInt(yyyymmdd[1]!, 10);
+      const m = parseInt(yyyymmdd[2]!, 10) - 1; // month index is 0-based
+      const d = parseInt(yyyymmdd[3]!, 10);
+      return new Date(y, m, d);
+    }
+    // 2. Matches YYYY-MM
+    const yyyymm = /^(\d{4})-(\d{2})$/.exec(trimmed);
+    if (yyyymm) {
+      const y = parseInt(yyyymm[1]!, 10);
+      const m = parseInt(yyyymm[2]!, 10) - 1;
+      return new Date(y, m, 1);
+    }
+    // 3. Matches YYYY
+    const yyyy = /^(\d{4})$/.exec(trimmed);
+    if (yyyy) {
+      const y = parseInt(yyyy[1]!, 10);
+      return new Date(y, 0, 1);
+    }
+    // 4. Fallback: Parse using native Date and construct local Date parameters
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      const isUtc = trimmed.endsWith('Z') || trimmed.includes('T');
+      if (isUtc) {
+        return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
+      } else {
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      }
+    }
+  }
+
+  // Fallback to year if no date string
+  if (year !== undefined && !isNaN(year)) {
+    return new Date(year, 0, 1);
+  }
+
+  return null;
 }
 
 /**
