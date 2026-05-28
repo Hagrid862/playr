@@ -26,6 +26,7 @@ export function CompactSearch({
   const [debouncedQuery, setDebouncedQuery] = useState(query);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { searchScope } = useSearchPreferencesStore();
 
@@ -122,13 +123,21 @@ export function CompactSearch({
       >
         <MagnifyingGlassIcon
           className="size-4 shrink-0 text-muted-foreground hover:text-white transition-colors"
-          onClick={() => handleSearch()}
+          onClick={() => {
+            if (!isExpanded) {
+              setIsFocused(true);
+              // Use setTimeout to ensure the input is rendered before focusing
+              setTimeout(() => inputRef.current?.focus(), 0);
+            } else {
+              handleSearch();
+            }
+          }}
         />
 
         {isExpanded && (
           <input
             type="text"
-            autoFocus={isFocused}
+            ref={inputRef}
             placeholder={category === 'all' ? 'Search...' : `Search ${category}s...`}
             className="bg-transparent border-none outline-none text-xs text-foreground ml-2 w-full animate-in fade-in duration-200"
             value={query}
