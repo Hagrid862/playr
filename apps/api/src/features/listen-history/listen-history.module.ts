@@ -8,11 +8,7 @@ import { ClearListenHistoryHandler } from './commands/handlers/clear-listen-hist
 @Module({
   imports: [CqrsModule],
   controllers: [ListenHistoryController],
-  providers: [
-    ListenHistoryService,
-    GetListenHistoryHandler,
-    ClearListenHistoryHandler,
-  ],
+  providers: [ListenHistoryService, GetListenHistoryHandler, ClearListenHistoryHandler],
   exports: [ListenHistoryService],
 })
 export class ListenHistoryModule {}
