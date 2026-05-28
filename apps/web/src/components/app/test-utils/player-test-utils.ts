@@ -17,6 +17,7 @@ export function createPlayerStateMock(overrides: Partial<PlayerState> = {}): Pla
     repeatMode: 'off',
     isShuffled: false,
     playbackVersion: 0,
+    listenHistoryRefreshToken: 0,
     playbackFavorited: 'not-set',
     playbackInLibrary: false,
     activeDeviceId: null,
