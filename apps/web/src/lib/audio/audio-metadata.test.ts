@@ -7,7 +7,11 @@ vi.mock('music-metadata', () => ({
 
 import type { IPicture } from 'music-metadata';
 import { parseBlob, selectCover } from 'music-metadata';
-import { extractCoverFromAudioFile, extractMetadataFromAudioFile } from './audio-metadata';
+import {
+  extractCoverFromAudioFile,
+  extractMetadataFromAudioFile,
+  parseReleaseDate,
+} from './audio-metadata';
 
 describe('audio-metadata', () => {
   const createFile = (name = 'test.mp3') => new File(['audio'], name, { type: 'audio/mpeg' });
@@ -27,6 +31,7 @@ describe('audio-metadata', () => {
           track: { no: 1 },
           disk: { no: 1 },
           year: 1991,
+          date: ' 1991-09-24 ',
         },
       } as never);
 
@@ -39,6 +44,7 @@ describe('audio-metadata', () => {
         trackNo: 1,
         diskNo: 1,
         year: 1991,
+        date: '1991-09-24',
       });
     });
 
@@ -51,6 +57,7 @@ describe('audio-metadata', () => {
           track: undefined,
           disk: undefined,
           year: undefined,
+          date: undefined,
         },
       } as never);
 
@@ -63,6 +70,7 @@ describe('audio-metadata', () => {
         trackNo: undefined,
         diskNo: undefined,
         year: undefined,
+        date: undefined,
       });
     });
 
@@ -150,6 +158,58 @@ describe('audio-metadata', () => {
       const result = await extractCoverFromAudioFile(createFile());
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('parseReleaseDate', () => {
+    it('parses YYYY-MM-DD correctly', () => {
+      const result = parseReleaseDate('2024-05-15');
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getFullYear()).toBe(2024);
+      expect(result?.getMonth()).toBe(4); // 0-indexed May
+      expect(result?.getDate()).toBe(15);
+    });
+
+    it('parses YYYY-MM correctly', () => {
+      const result = parseReleaseDate('2024-05');
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getFullYear()).toBe(2024);
+      expect(result?.getMonth()).toBe(4);
+      expect(result?.getDate()).toBe(1);
+    });
+
+    it('parses YYYY correctly', () => {
+      const result = parseReleaseDate('2024');
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getFullYear()).toBe(2024);
+      expect(result?.getMonth()).toBe(0);
+      expect(result?.getDate()).toBe(1);
+    });
+
+    it('parses full UTC ISO timestamp correctly', () => {
+      const result = parseReleaseDate('2024-05-15T12:00:00Z');
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getFullYear()).toBe(2024);
+      expect(result?.getMonth()).toBe(4);
+      expect(result?.getDate()).toBe(15);
+    });
+
+    it('parses non-standard date strings successfully using native fallback', () => {
+      const result = parseReleaseDate('May 15, 2024');
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getFullYear()).toBe(2024);
+      expect(result?.getMonth()).toBe(4);
+      expect(result?.getDate()).toBe(15);
+    });
+
+    it('falls back to year number when date string is missing or invalid', () => {
+      expect(parseReleaseDate(undefined, 2024)).toEqual(new Date(2024, 0, 1));
+      expect(parseReleaseDate('invalid-date', 2024)).toEqual(new Date(2024, 0, 1));
+    });
+
+    it('returns null if neither date nor year are provided', () => {
+      expect(parseReleaseDate()).toBeNull();
+      expect(parseReleaseDate(undefined, undefined)).toBeNull();
     });
   });
 });

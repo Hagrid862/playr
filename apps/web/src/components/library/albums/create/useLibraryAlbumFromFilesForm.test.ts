@@ -9,10 +9,14 @@ import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLibraryAlbumFromFilesForm } from './useLibraryAlbumFromFilesForm';
 
-vi.mock('@/lib/audio/audio-metadata', () => ({
-  extractMetadataFromAudioFile: vi.fn(),
-  extractCoverFromAudioFile: vi.fn(),
-}));
+vi.mock('@/lib/audio/audio-metadata', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audio/audio-metadata')>();
+  return {
+    ...actual,
+    extractMetadataFromAudioFile: vi.fn(),
+    extractCoverFromAudioFile: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/audio/clean-audio-filename', () => ({
   cleanFilenameToTitle: vi.fn(),
@@ -148,6 +152,35 @@ describe('useLibraryAlbumFromFilesForm', () => {
 
       expect(result.current.selectedCoverTrackId).toBe(result.current.tracks[0]?.id);
       expect(result.current.selectedCoverFile).toBe(mockCover);
+    });
+
+    it('extracts full release date (month and day) when available in metadata', async () => {
+      vi.mocked(extractMetadataFromAudioFile).mockResolvedValueOnce({
+        title: 'Song 1',
+        artist: 'Artist A',
+        album: 'Best Album',
+        year: 2024,
+        date: '2024-05-15',
+        trackNo: 1,
+        diskNo: 1,
+      });
+
+      const { result } = customRenderHook(() => useLibraryAlbumFromFilesForm());
+      const file1 = createAudioFile('01_song.mp3');
+
+      act(() => {
+        result.current.addFiles(createFileList([file1]));
+      });
+
+      await waitFor(() => {
+        expect(result.current.isScanningMetadata).toBe(false);
+      });
+
+      expect(result.current.formData.name).toBe('Best Album');
+      expect(result.current.formData.releaseDate).toBeInstanceOf(Date);
+      expect(result.current.formData.releaseDate?.getFullYear()).toBe(2024);
+      expect(result.current.formData.releaseDate?.getMonth()).toBe(4); // May is index 4
+      expect(result.current.formData.releaseDate?.getDate()).toBe(15);
     });
 
     it('handles empty metadata responses', async () => {

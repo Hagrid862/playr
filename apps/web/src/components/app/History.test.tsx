@@ -375,6 +375,10 @@ describe('History', () => {
       // Space key
       fireEvent.keyDown(row, { key: ' ' });
       expect(mockPlayTrack).toHaveBeenCalledTimes(2);
+
+      // Other key should be ignored
+      fireEvent.keyDown(row, { key: 'a' });
+      expect(mockPlayTrack).toHaveBeenCalledTimes(2);
     });
 
     it('uses Cover art as img alt when albumArt is set but title is empty', () => {

@@ -12,10 +12,14 @@ import { useCreateTrackForm, validateWithZod } from './useCreateTrackForm';
 
 type SchemaType = z.infer<typeof CreateLibraryTrackRequestSchema>;
 
-vi.mock('@/lib/audio/audio-metadata', () => ({
-  extractMetadataFromAudioFile: vi.fn().mockResolvedValue(null),
-  extractCoverFromAudioFile: vi.fn().mockResolvedValue(null),
-}));
+vi.mock('@/lib/audio/audio-metadata', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audio/audio-metadata')>();
+  return {
+    ...actual,
+    extractMetadataFromAudioFile: vi.fn().mockResolvedValue(null),
+    extractCoverFromAudioFile: vi.fn().mockResolvedValue(null),
+  };
+});
 
 vi.mock('@repo/contracts', async () => {
   const actual = await vi.importActual<typeof import('@repo/contracts')>('@repo/contracts');
