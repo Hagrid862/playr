@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
 import { LibraryController } from './library.controller';
 import { GetLibraryQuery } from './queries/impl/get-library.query';
+import { GetLibraryStorageUsageQuery } from './queries/impl/get-library-storage-usage.query';
 
 describe('LibraryController', () => {
   let controller: LibraryController;
@@ -48,6 +49,25 @@ describe('LibraryController', () => {
       const result = await controller.getLibrary(userId);
 
       expect(queryBus.execute).toHaveBeenCalledWith(new GetLibraryQuery(userId));
+      expect(result).toBe(expectedResult);
+    });
+  });
+
+  describe('getStorageUsage', () => {
+    it('should execute GetLibraryStorageUsageQuery with user id', async () => {
+      const userId = 'user-123';
+      const expectedResult = {
+        usedBytes: 100,
+        limitBytes: 10_000,
+        remainingBytes: 9_900,
+        usedPercent: 1,
+        limitSource: 'default' as const,
+      };
+      queryBus.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.getStorageUsage(userId);
+
+      expect(queryBus.execute).toHaveBeenCalledWith(new GetLibraryStorageUsageQuery(userId));
       expect(result).toBe(expectedResult);
     });
   });

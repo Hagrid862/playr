@@ -1,8 +1,14 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
+import { LibraryStorageQuotaService } from '@/shared/services/library-storage-quota.service';
 import { StorageService } from '@/shared/services/storage.service';
 import { getQueueToken } from '@nestjs/bullmq';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AudioFileSchema } from '@repo/contracts';
 import { AccessRole, AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
@@ -24,6 +30,7 @@ describe('BulkUploadTrackAudioHandler', () => {
   let trackRepository: DeepMocked<TrackRepository>;
   let audioFileRepository: DeepMocked<AudioFileRepository>;
   let storageService: DeepMocked<StorageService>;
+  let storageQuotaService: DeepMocked<LibraryStorageQuotaService>;
   let processingQueue: DeepMocked<Queue>;
 
   const userId = 'user-123';
@@ -56,7 +63,11 @@ describe('BulkUploadTrackAudioHandler', () => {
     trackRepository = createMock<TrackRepository>();
     audioFileRepository = createMock<AudioFileRepository>();
     storageService = createMock<StorageService>();
+    storageQuotaService = createMock<LibraryStorageQuotaService>();
     processingQueue = createMock<Queue>();
+
+    storageQuotaService.estimateReservedProcessedBytes.mockReturnValue(0);
+    storageQuotaService.assertCanAddBytes.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -64,6 +75,7 @@ describe('BulkUploadTrackAudioHandler', () => {
         { provide: TrackRepository, useValue: trackRepository },
         { provide: AudioFileRepository, useValue: audioFileRepository },
         { provide: StorageService, useValue: storageService },
+        { provide: LibraryStorageQuotaService, useValue: storageQuotaService },
         { provide: getQueueToken('audio-processing'), useValue: processingQueue },
       ],
     }).compile();
@@ -280,11 +292,14 @@ describe('BulkUploadTrackAudioHandler', () => {
     it('should allow editor role', async () => {
       const file = createMockFile();
       const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
+      const ownerUserId = 'owner-user';
       const trackWithEditorAccess = trackWithAccessBuilder({
         id: trackId1,
         albumId,
-        userId,
-        role: AccessRole.editor,
+        access: [
+          { userId: ownerUserId, role: AccessRole.owner },
+          { userId, role: AccessRole.editor },
+        ],
       });
       trackRepository.getById.mockResolvedValue(trackWithEditorAccess);
       storageService.uploadFile.mockResolvedValue({ url: 'https://s3.url/file', key: 'key' });
@@ -303,6 +318,10 @@ describe('BulkUploadTrackAudioHandler', () => {
         trackId: trackId1,
         userId,
       });
+      expect(storageQuotaService.assertCanAddBytes).toHaveBeenCalledWith(
+        ownerUserId,
+        expect.any(Number),
+      );
     });
 
     it('should succeed when file size is exactly 100MB', async () => {
@@ -317,6 +336,26 @@ describe('BulkUploadTrackAudioHandler', () => {
       expect(result.audioFiles).toHaveLength(1);
       expect(storageService.uploadFile).toHaveBeenCalled();
       expect(audioFileRepository.create).toHaveBeenCalled();
+    });
+
+    it('should throw PayloadTooLargeException when storage quota pre-flight fails', async () => {
+      const command = new BulkUploadTrackAudioCommand(
+        albumId,
+        [trackId1],
+        [createMockFile()],
+        userId,
+      );
+      trackRepository.getById.mockResolvedValue(mockTrackWithAccess(trackId1, albumId));
+      storageQuotaService.assertCanAddBytes.mockRejectedValue(
+        new PayloadTooLargeException({
+          message: 'Storage quota exceeded',
+          usedBytes: 9_000,
+          limitBytes: 10_000,
+        }),
+      );
+
+      await expect(handler.execute(command)).rejects.toThrow(PayloadTooLargeException);
+      expect(storageService.uploadFile).not.toHaveBeenCalled();
     });
 
     it('should upload multiple files successfully', async () => {

@@ -1,8 +1,9 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
+import { LibraryStorageQuotaService } from '@/shared/services/library-storage-quota.service';
 import { StorageService } from '@/shared/services/storage.service';
 import { getQueueToken } from '@nestjs/bullmq';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccessRole, AudioFormat, FileBucket, ProcessingStatus } from '@repo/db';
 import { audioFileBuilder, trackWithAccessBuilder } from '@repo/testing/builders';
@@ -18,6 +19,7 @@ describe('UploadTrackAudioHandler', () => {
   let trackRepository: DeepMocked<TrackRepository>;
   let audioFileRepository: DeepMocked<AudioFileRepository>;
   let storageService: DeepMocked<StorageService>;
+  let storageQuotaService: DeepMocked<LibraryStorageQuotaService>;
   let processingQueue: DeepMocked<Queue>;
 
   const mockUserId = 'user-123';
@@ -27,7 +29,11 @@ describe('UploadTrackAudioHandler', () => {
     trackRepository = createMock<TrackRepository>();
     audioFileRepository = createMock<AudioFileRepository>();
     storageService = createMock<StorageService>();
+    storageQuotaService = createMock<LibraryStorageQuotaService>();
     processingQueue = createMock<Queue>();
+
+    storageQuotaService.estimateReservedProcessedBytes.mockReturnValue(0);
+    storageQuotaService.assertCanAddBytes.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,6 +41,7 @@ describe('UploadTrackAudioHandler', () => {
         { provide: TrackRepository, useValue: trackRepository },
         { provide: AudioFileRepository, useValue: audioFileRepository },
         { provide: StorageService, useValue: storageService },
+        { provide: LibraryStorageQuotaService, useValue: storageQuotaService },
         { provide: getQueueToken('audio-processing'), useValue: processingQueue },
       ],
     }).compile();
@@ -88,6 +95,20 @@ describe('UploadTrackAudioHandler', () => {
       await expect(handler.execute(mockCommand)).rejects.toThrow(ForbiddenException);
     });
 
+    it('should throw PayloadTooLargeException when storage quota is exceeded', async () => {
+      trackRepository.getById.mockResolvedValue(mockTrackWithOwnerAccess);
+      storageQuotaService.assertCanAddBytes.mockRejectedValue(
+        new PayloadTooLargeException({
+          message: 'Storage quota exceeded',
+          usedBytes: 9_000,
+          limitBytes: 10_000,
+        }),
+      );
+
+      await expect(handler.execute(mockCommand)).rejects.toThrow(PayloadTooLargeException);
+      expect(storageService.uploadFile).not.toHaveBeenCalled();
+    });
+
     it('should upload file, create audio file record, and dispatch job on success', async () => {
       trackRepository.getById.mockResolvedValue(mockTrackWithOwnerAccess);
 
@@ -125,6 +146,7 @@ describe('UploadTrackAudioHandler', () => {
         userId: mockUserId,
       });
 
+      expect(storageQuotaService.assertCanAddBytes).toHaveBeenCalledWith(mockUserId, mockFile.size);
       expect(result).toEqual({ audioFile: mockAudioFile });
     });
 
