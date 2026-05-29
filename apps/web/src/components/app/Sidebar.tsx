@@ -31,6 +31,7 @@ import {
 import { PlaylistSystemRole } from '@repo/db';
 import { useLibraryPlaylistPins } from '@/hooks/api/library-playlists/useLibraryPlaylistPins';
 import { useLogout } from '@/hooks/api/auth/useLogout';
+import { LibraryStorageUsageBar } from '@/components/app/LibraryStorageUsageBar';
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 
 export function AppSidebar() {
@@ -193,6 +194,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <LibraryStorageUsageBar className="group-data-[collapsible=icon]:hidden" />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} disabled={logoutIsLoading}>

@@ -7,6 +7,7 @@ import { useLibraryArtists } from '@/hooks/api/library-artists/useLibraryArtists
 import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
 import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
+import { getStorageQuotaErrorToastMessage } from '@/lib/storage-quota-error';
 import { useLibraryStore } from '@/stores/library.store';
 import type { ZodGenreInfer } from '@repo/contracts';
 import { CircleNotchIcon, PlusCircleIcon, UploadSimpleIcon } from '@phosphor-icons/react';
@@ -328,7 +329,7 @@ export function LibraryAlbumFromFilesForm({
         setPendingGenres([]);
         navigate({ to: '/app/library/albums/$id', params: { id: album.data.id } });
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create album';
+        const message = getStorageQuotaErrorToastMessage(error, 'Failed to create album');
         setSubmitError(message);
         toast.error(message);
       }
