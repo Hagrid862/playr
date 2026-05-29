@@ -28,6 +28,7 @@ export function userBuilder(overrides?: Partial<User>): User {
     avatarId: null,
     description: null,
     deletedAt: null,
+    storageQuotaBytes: null,
     ...overrides,
   };
 }

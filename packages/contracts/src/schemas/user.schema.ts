@@ -16,7 +16,7 @@ import {
 import { ImageSchema, type ZodImage } from "./image.schema";
 import { LibrarySchema, type ZodLibrary } from "./library.schema";
 
-export interface ZodUser extends Omit<User, "password"> {
+export interface ZodUser extends Omit<User, "password" | "storageQuotaBytes"> {
   library?: ZodLibrary | null;
   avatar?: ZodImage | null;
   artistProfile?: ZodArtistProfile | null;
