@@ -53,6 +53,8 @@ export function createPlayerStateMock(overrides: Partial<PlayerState> = {}): Pla
     toggleQueue: vi.fn(),
     setQueueOpen: vi.fn(),
     setSidebarView: vi.fn(),
+    isPlayerExpanded: false,
+    setPlayerExpanded: vi.fn(),
     ...overrides,
   };
 }

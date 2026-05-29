@@ -34,20 +34,28 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex items-center justify-between px-4 h-min mb-4">
+    <div data-testid="sub-header" className="flex items-center justify-between px-4 h-min mb-4">
       <div className="flex items-center gap-4 min-w-0">
         {showBackButton && (
-          <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0 h-7 w-7">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="shrink-0 h-7 w-7"
+            data-testid="sub-header-back"
+          >
             <ArrowLeftIcon size={16} />
           </Button>
         )}
         <div className="flex items-center gap-3 min-w-0">
           {typeof title === 'string' ? (
-            <h2 className="text-lg font-semibold text-stone-200 truncate">{title}</h2>
+            <h2 className="text-lg font-semibold text-stone-200 truncate" data-testid="sub-header-title">
+              {title}
+            </h2>
           ) : (
-            title
+            <div data-testid="sub-header-title-custom">{title}</div>
           )}
-          {search}
+          {search && <div data-testid="sub-header-search">{search}</div>}
         </div>
       </div>
 
@@ -55,6 +63,7 @@ export function SubHeader({
         className={cn('flex items-center gap-2', {
           'justify-content': actionsAlignment === 'space-between',
         })}
+        data-testid="sub-header-actions"
       >
         {actions}
         {children}
