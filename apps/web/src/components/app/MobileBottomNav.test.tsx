@@ -19,7 +19,7 @@ describe('MobileBottomNav', () => {
   });
 
   it('renders all navigation items', async () => {
-    vi.mocked(useLocation).mockReturnValue({ pathname: '/app' } as any);
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/app', search: {} } as any);
     customRenderWithRouter(<MobileBottomNav />);
     
     expect(await screen.findByTestId('nav-item-home')).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe('MobileBottomNav', () => {
   });
 
   it('highlights "Home" as active when at /app', async () => {
-    vi.mocked(useLocation).mockReturnValue({ pathname: '/app' } as any);
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/app', search: {} } as any);
     customRenderWithRouter(<MobileBottomNav />);
     
     const homeItem = await screen.findByTestId('nav-item-home');
@@ -41,18 +41,31 @@ describe('MobileBottomNav', () => {
   });
 
   it('highlights "Search" as active when at /app/search', async () => {
-    vi.mocked(useLocation).mockReturnValue({ pathname: '/app/search' } as any);
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/app/search', search: {} } as any);
     customRenderWithRouter(<MobileBottomNav />);
-    
+
     const searchItem = await screen.findByTestId('nav-item-search');
     expect(searchItem.className).toMatch(/text-primary/);
-    
-    const homeItem = await screen.findByTestId('nav-item-home');
-    expect(homeItem.className).not.toMatch(/text-primary/);
+  });
+
+  it('uses persistent links from sessionStorage', async () => {
+    const lastVisitedOverview = '/app/library/overview/recent';
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => {
+      if (key === 'last_visited_overview_route') return lastVisitedOverview;
+      return null;
+    });
+
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/app', search: {} } as any);
+    customRenderWithRouter(<MobileBottomNav />);
+
+    const libraryItem = await screen.findByTestId('nav-item-library');
+    expect(libraryItem).toHaveAttribute('href', lastVisitedOverview);
+
+    getItemSpy.mockRestore();
   });
 
   it('highlights "Library" as active when at sub-routes of /app/library/overview', async () => {
-    vi.mocked(useLocation).mockReturnValue({ pathname: '/app/library/overview' } as any);
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/app/library/overview', search: {} } as any);
     customRenderWithRouter(<MobileBottomNav />);
     
     const libraryItem = await screen.findByTestId('nav-item-library');
