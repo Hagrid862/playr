@@ -1,5 +1,10 @@
+import {
+  getTrackOwnerUserId,
+  LOSSLESS_FORMATS,
+} from '@/features/audio-processing/audio-processing.constants';
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
+import { LibraryStorageQuotaService } from '@/shared/services/library-storage-quota.service';
 import { StorageService } from '@/shared/services/storage.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -19,6 +24,7 @@ export class BulkUploadTrackAudioHandler implements ICommandHandler<BulkUploadTr
     private readonly trackRepository: TrackRepository,
     private readonly audioFileRepository: AudioFileRepository,
     private readonly storageService: StorageService,
+    private readonly storageQuotaService: LibraryStorageQuotaService,
     @InjectQueue('audio-processing')
     private readonly processingQueue: Queue,
   ) {}
@@ -42,15 +48,22 @@ export class BulkUploadTrackAudioHandler implements ICommandHandler<BulkUploadTr
       throw new BadRequestException('Maximum 50 files per bulk upload');
     }
 
-    const audioFiles: ZodAudioFileInfer[] = [];
+    for (let i = 0; i < files.length; i++) {
+      this.validateFile(files[i], i);
+    }
+
+    const tracks = await Promise.all(
+      trackIds.map((trackId) =>
+        this.trackRepository.getById(trackId, { include: { access: true } }),
+      ),
+    );
+
+    const additionalBytesByOwner = new Map<string, number>();
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const trackId = trackIds[i];
-
-      this.validateFile(file, i);
-
-      const track = await this.trackRepository.getById(trackId, { include: { access: true } });
+      const track = tracks[i];
 
       if (!track) {
         throw new NotFoundException(`Track ${trackId} not found`);
@@ -74,6 +87,34 @@ export class BulkUploadTrackAudioHandler implements ICommandHandler<BulkUploadTr
           `You do not have permission to upload audio for track ${trackId}`,
         );
       }
+
+      const ownerUserId = getTrackOwnerUserId(trackWithRelations.access);
+      if (!ownerUserId) {
+        throw new ForbiddenException(`Track ${trackId} has no owner`);
+      }
+
+      const format = this.mapMimeTypeToAudioFormat(file.mimetype, file.originalname);
+      const isLossless = LOSSLESS_FORMATS.includes(
+        format.toLowerCase() as (typeof LOSSLESS_FORMATS)[number],
+      );
+      const additionalBytes =
+        file.size + this.storageQuotaService.estimateReservedProcessedBytes(file.size, isLossless);
+
+      additionalBytesByOwner.set(
+        ownerUserId,
+        (additionalBytesByOwner.get(ownerUserId) ?? 0) + additionalBytes,
+      );
+    }
+
+    for (const [ownerUserId, additionalBytes] of additionalBytesByOwner) {
+      await this.storageQuotaService.assertCanAddBytes(ownerUserId, additionalBytes);
+    }
+
+    const audioFiles: ZodAudioFileInfer[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const trackId = trackIds[i];
 
       const format = this.mapMimeTypeToAudioFormat(file.mimetype, file.originalname);
       const fileExtension = file.originalname.split('.').pop();

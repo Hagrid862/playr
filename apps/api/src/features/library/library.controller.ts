@@ -7,7 +7,9 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateLibraryCommand } from './commands/impl/create-library.command';
 import { CreateLibraryResponseDto } from './dto/create-library.response.dto';
 import { GetLibraryResponseDto } from './dto/get-library.response.dto';
+import { GetLibraryStorageUsageResponseDto } from './dto/get-library-storage-usage.response.dto';
 import { GetLibraryQuery } from './queries/impl/get-library.query';
+import { GetLibraryStorageUsageQuery } from './queries/impl/get-library-storage-usage.query';
 
 @ApiTags('Library')
 @Controller('library')
@@ -64,5 +66,27 @@ export class LibraryController {
   })
   getLibrary(@CurrentUser('id') userId: string) {
     return this.queryBus.execute(new GetLibraryQuery(userId));
+  }
+
+  @Get('storage-usage')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get library audio storage usage and quota' })
+  @ApiResponse({
+    status: 200,
+    description: 'Storage usage retrieved successfully',
+    type: GetLibraryStorageUsageResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Library not found',
+    type: ApiErrorResponseDto,
+  })
+  getStorageUsage(@CurrentUser('id') userId: string) {
+    return this.queryBus.execute(new GetLibraryStorageUsageQuery(userId));
   }
 }

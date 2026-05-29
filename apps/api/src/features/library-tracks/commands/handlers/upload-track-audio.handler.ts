@@ -1,5 +1,10 @@
+import {
+  getTrackOwnerUserId,
+  LOSSLESS_FORMATS,
+} from '@/features/audio-processing/audio-processing.constants';
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
+import { LibraryStorageQuotaService } from '@/shared/services/library-storage-quota.service';
 import { StorageService } from '@/shared/services/storage.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -15,6 +20,7 @@ export class UploadTrackAudioHandler implements ICommandHandler<UploadTrackAudio
     private readonly trackRepository: TrackRepository,
     private readonly audioFileRepository: AudioFileRepository,
     private readonly storageService: StorageService,
+    private readonly storageQuotaService: LibraryStorageQuotaService,
     @InjectQueue('audio-processing')
     private readonly processingQueue: Queue,
   ) {}
@@ -40,8 +46,21 @@ export class UploadTrackAudioHandler implements ICommandHandler<UploadTrackAudio
       throw new ForbiddenException('You do not have permission to upload audio for this track');
     }
 
+    const ownerUserId = getTrackOwnerUserId(trackWithRelations.access);
+    if (!ownerUserId) {
+      throw new ForbiddenException('Track has no owner');
+    }
+
     // Determine format from mimetype or extension
     const format = this.mapMimeTypeToAudioFormat(file.mimetype, file.originalname);
+
+    const isLossless = LOSSLESS_FORMATS.includes(
+      format.toLowerCase() as (typeof LOSSLESS_FORMATS)[number],
+    );
+    await this.storageQuotaService.assertCanAddBytes(
+      ownerUserId,
+      file.size + this.storageQuotaService.estimateReservedProcessedBytes(file.size, isLossless),
+    );
 
     // Generate a unique key for the original file
     const fileExtension = file.originalname.split('.').pop();

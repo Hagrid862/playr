@@ -44,6 +44,20 @@ export class UserRepository {
     return row;
   }
 
+  /**
+   * Returns per-user storage quota override in bytes, or null when the env default applies.
+   */
+  async getStorageQuotaBytes(userId: string): Promise<bigint | null> {
+    const row = await this.prisma.client.user.findUnique({
+      where: { id: userId },
+      select: { storageQuotaBytes: true, deletedAt: true },
+    });
+    if (!row || row.deletedAt) {
+      return null;
+    }
+    return row.storageQuotaBytes;
+  }
+
   async getByUsername(username: string): Promise<User | null>;
   async getByUsername<T extends Prisma.UserInclude>(
     username: string,
