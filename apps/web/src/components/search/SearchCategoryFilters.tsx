@@ -19,7 +19,7 @@ export function SearchCategoryFilters({
   const categoriesToShow = lockedCategory ? [lockedCategory] : CATEGORIES;
 
   return (
-    <div className={className}>
+    <div className={className} data-testid="search-category-filters">
       {categoriesToShow.map((cat) => (
         <Button
           key={cat}
@@ -27,6 +27,7 @@ export function SearchCategoryFilters({
           onClick={() => !lockedCategory && onToggle(cat)}
           className="capitalize"
           disabled={!!lockedCategory}
+          data-testid={`category-filter-${cat}`}
         >
           {cat}s
         </Button>

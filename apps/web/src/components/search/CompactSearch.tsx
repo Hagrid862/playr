@@ -112,6 +112,7 @@ export function CompactSearch({
       className="relative z-50"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      data-testid="compact-search"
     >
       <div
         className={cn(
@@ -123,6 +124,7 @@ export function CompactSearch({
       >
         <MagnifyingGlassIcon
           className="size-4 shrink-0 text-muted-foreground hover:text-white transition-colors"
+          data-testid="compact-search-icon"
           onClick={() => {
             if (!isExpanded) {
               setIsFocused(true);
