@@ -9,3 +9,4 @@ export * from "./response/create-library.response";
 export * from "./response/get-library-albums.response";
 export * from "./response/get-library.response";
 export * from "./response/get-listen-history.response";
+export * from "./response/get-library-storage-usage.response";
