@@ -1,6 +1,7 @@
 import { ApiError } from '@/lib/api-error';
 import type { UploadLibraryArtistBannerResponse } from '@repo/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateLibraryArtistsInfinite } from '../invalidateLibraryInfiniteQueries';
 import { uploadLibraryArtistBanner } from './requests/uploadLibraryArtistBanner';
 
 export const useUploadLibraryArtistBanner = () => {
@@ -11,6 +12,7 @@ export const useUploadLibraryArtistBanner = () => {
     onSuccess: (response, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['library', 'artists'] });
       queryClient.invalidateQueries({ queryKey: ['library', 'artists', id] });
+      void invalidateLibraryArtistsInfinite(queryClient);
 
       if (response.data) {
         queryClient.fetchQuery({ queryKey: ['library', 'artists', id] });
