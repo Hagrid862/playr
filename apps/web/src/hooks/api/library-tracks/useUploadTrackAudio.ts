@@ -1,3 +1,4 @@
+import { libraryStorageUsageQueryKey } from '@/hooks/api/library/useLibraryStorageUsage';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { uploadTrackAudio } from './requests/uploadTrackAudio';
 import { UploadTrackAudioResponse } from '@repo/contracts';
@@ -16,6 +17,7 @@ export const useUploadTrackAudio = () => {
       queryClient.invalidateQueries({
         queryKey: ['library', 'tracks', trackId],
       });
+      queryClient.invalidateQueries({ queryKey: libraryStorageUsageQueryKey });
     },
   });
 };

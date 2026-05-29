@@ -1,3 +1,4 @@
+import { libraryStorageUsageQueryKey } from '@/hooks/api/library/useLibraryStorageUsage';
 import type {
   BulkCreateLibraryTracksResponse,
   BulkUploadTrackAudioResponse,
@@ -26,6 +27,7 @@ export const useBulkCreateLibraryTracks = () => {
       queryClient.invalidateQueries({
         queryKey: ['library', 'albums'],
       });
+      queryClient.invalidateQueries({ queryKey: libraryStorageUsageQueryKey });
     },
   });
 };
