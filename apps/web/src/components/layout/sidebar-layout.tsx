@@ -39,7 +39,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             isDesktop ? 'mr-2' : '',
           )}
         >
-          <div className="mx-auto flex h-full w-full max-w-480 flex-col relative">
+          <div
+            className="mx-auto flex h-full w-full max-w-480 flex-col relative [--app-player-height:4rem]"
+          >
             <div className="md:hidden absolute top-4 left-4 z-20">
               <SidebarTrigger className="bg-stone-900/50 backdrop-blur-sm border border-white/10 text-white hover:bg-stone-800" />
             </div>
