@@ -2,18 +2,19 @@ import { AudioFileRepository } from '@/shared/repositories/audio-file.repository
 import { TrackRepository } from '@/shared/repositories/track.repository';
 import { StorageService } from '@/shared/services/storage.service';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger, NotFoundException } from '@nestjs/common';
+import { Logger, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { FileBucket, ProcessingStatus } from '@repo/db';
 import { Job } from 'bullmq';
 import * as fs from 'fs/promises';
 import * as mm from 'music-metadata';
 import * as os from 'os';
 import * as path from 'path';
+import { LibraryStorageQuotaService } from '@/shared/services/library-storage-quota.service';
 import {
+  getTrackOwnerUserId,
+  getTranscodePresetsForSource,
   LOSSLESS_FORMATS,
-  LOSSLESS_QUALITY_PRESET,
   TEMP_DIR_PREFIX,
-  TRANSCRIPTION_QUALITIES,
   WAVEFORM_POINTS,
 } from './audio-processing.constants';
 import { canUserUpdateTrackDuration } from './audio-processing.utils';
@@ -48,6 +49,7 @@ export class AudioProcessingWorker extends WorkerHost {
     private readonly storageService: StorageService,
     private readonly transcodeService: AudioTranscodeService,
     private readonly waveformService: WaveformService,
+    private readonly storageQuotaService: LibraryStorageQuotaService,
   ) {
     super();
   }
@@ -116,10 +118,14 @@ export class AudioProcessingWorker extends WorkerHost {
       const isLossless = LOSSLESS_FORMATS.includes(
         originalFile.format.toLowerCase() as (typeof LOSSLESS_FORMATS)[number],
       );
-      const qualities = [...TRANSCRIPTION_QUALITIES];
-      if (isLossless) {
-        qualities.push(LOSSLESS_QUALITY_PRESET);
-      }
+      const qualities = getTranscodePresetsForSource(isLossless);
+
+      const trackForOwner = await this.trackRepository.getById(trackId, {
+        include: { access: true },
+      });
+      const ownerUserId = getTrackOwnerUserId(
+        (trackForOwner as { access?: { userId: string; role: string }[] } | null)?.access,
+      );
 
       for (const q of qualities) {
         if (originalFile.format === q.format && originalFile.quality === q.quality) {
@@ -129,6 +135,21 @@ export class AudioProcessingWorker extends WorkerHost {
           const outputPath = path.join(tempDir, `output_${q.quality}_${q.format}.${q.format}`);
           await this.transcodeService.transcode(inputPath, outputPath, q.format, q.bitrate);
           const outputBuffer = await fs.readFile(outputPath);
+
+          if (q.countsTowardStorageQuota && ownerUserId) {
+            try {
+              await this.storageQuotaService.assertCanAddBytes(ownerUserId, outputBuffer.length);
+            } catch (error) {
+              if (error instanceof PayloadTooLargeException) {
+                this.logger.warn(
+                  `[${jobId}] Skipping countable transcode ${q.quality} ${q.format} — storage quota exceeded`,
+                  { audioFileId, trackId, ownerUserId },
+                );
+                continue;
+              }
+              throw error;
+            }
+          }
           const key = `tracks/${trackId}/processed/${q.quality}/${Date.now()}.${q.format}`;
           const { url } = await this.storageService.uploadFile(
             outputBuffer,

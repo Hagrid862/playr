@@ -39,6 +39,13 @@ export const envSchema = z.object({
     .int()
     .positive()
     .default(1000 * 60 * 60 * 24 * 30),
+
+  /** Default per-user library audio storage cap (bytes). Overridden by User.storageQuotaBytes when set. */
+  LIBRARY_STORAGE_QUOTA_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(5 * 1024 * 1024 * 1024),
 });
 
 export type Env = z.infer<typeof envSchema>;
