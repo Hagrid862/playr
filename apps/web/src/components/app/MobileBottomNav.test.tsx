@@ -49,9 +49,33 @@ describe('MobileBottomNav', () => {
   });
 
   it('uses persistent links from sessionStorage', async () => {
-    const lastVisitedOverview = '/app/library/overview/recent';
+    const lastVisitedNew = '/app/new/trending';
     const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => {
-      if (key === 'last_visited_overview_route') return lastVisitedOverview;
+      if (key === 'last_visited_new_route') return lastVisitedNew;
+      return null;
+    });
+
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/app', search: {} } as any);
+    customRenderWithRouter(<MobileBottomNav />);
+
+    const newItem = await screen.findByTestId('nav-item-new');
+    expect(newItem).toHaveAttribute('href', lastVisitedNew);
+
+    getItemSpy.mockRestore();
+  });
+
+  it('highlights "Library" as active when at sub-routes of /app/library', async () => {
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/app/library/artists/123', search: {} } as any);
+    customRenderWithRouter(<MobileBottomNav />);
+    
+    const libraryItem = await screen.findByTestId('nav-item-library');
+    expect(libraryItem.className).toMatch(/text-primary/);
+  });
+
+  it('uses persistent library link from sessionStorage', async () => {
+    const lastVisitedLibrary = '/app/library/artists/456';
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => {
+      if (key === 'last_visited_library_route') return lastVisitedLibrary;
       return null;
     });
 
@@ -59,16 +83,8 @@ describe('MobileBottomNav', () => {
     customRenderWithRouter(<MobileBottomNav />);
 
     const libraryItem = await screen.findByTestId('nav-item-library');
-    expect(libraryItem).toHaveAttribute('href', lastVisitedOverview);
+    expect(libraryItem).toHaveAttribute('href', lastVisitedLibrary);
 
     getItemSpy.mockRestore();
-  });
-
-  it('highlights "Library" as active when at sub-routes of /app/library/overview', async () => {
-    vi.mocked(useLocation).mockReturnValue({ pathname: '/app/library/overview', search: {} } as any);
-    customRenderWithRouter(<MobileBottomNav />);
-    
-    const libraryItem = await screen.findByTestId('nav-item-library');
-    expect(libraryItem.className).toMatch(/text-primary/);
   });
 });

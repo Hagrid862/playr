@@ -2,10 +2,23 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { HouseIcon, GridFourIcon, BooksIcon, SquaresFourIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
+import { useEffect } from 'react';
 
 export function MobileBottomNav() {
   const location = useLocation();
   const { lastSearch } = useSearchPreferencesStore();
+
+  // Track the last visited library sub-route specifically for mobile navigation
+  useEffect(() => {
+    if (location.pathname.startsWith('/app/library')) {
+      const normalizedPath = location.pathname.replace(/\/$/, '');
+      if (normalizedPath === '/app/library/overview') {
+        sessionStorage.removeItem('last_visited_library_route');
+      } else {
+        sessionStorage.setItem('last_visited_library_route', location.pathname);
+      }
+    }
+  }, [location.pathname]);
 
   const getPersistentLink = (moduleName: string, rootPath: string) => {
     if (typeof window === 'undefined') return rootPath;
@@ -18,7 +31,12 @@ export function MobileBottomNav() {
 
     // If we are currently active in this module, return the root path ONLY if we are NOT already at root
     // This allows clicking the icon to reset to the module root.
-    if (location.pathname.startsWith(normalizedRoot) && !isAlreadyAtRoot) {
+    // For library on mobile, we consider the whole /app/library as being "in the module"
+    const isActiveModule = moduleName === 'library' 
+      ? location.pathname.startsWith('/app/library')
+      : location.pathname.startsWith(normalizedRoot);
+
+    if (isActiveModule && !isAlreadyAtRoot) {
       return rootPath;
     }
 
@@ -39,8 +57,8 @@ export function MobileBottomNav() {
       label: 'New',
     },
     {
-      to: getPersistentLink('overview', '/app/library/overview'),
-      root: '/app/library/overview',
+      to: getPersistentLink('library', '/app/library/overview'),
+      root: '/app/library',
       icon: <BooksIcon className="size-5" />,
       label: 'Library',
     },
