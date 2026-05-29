@@ -1,8 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import {
-  emitFavoriteStateSync,
-} from '@/lib/playback/sync/playback-sync';
+import { emitFavoriteStateSync } from '@/lib/playback/sync/playback-sync';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import {
@@ -68,7 +66,7 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
         {/* Track Cover */}
         <div className="h-9 w-9 shrink-0 bg-stone-800 rounded-md flex items-center justify-center overflow-hidden border border-white/10 shadow-md">
           {coverUrl ? (
-            <img src={coverUrl} alt="" className="size-full object-cover" />
+            <img src={coverUrl} alt="" className="size-full object-cover" role="presentation" />
           ) : (
             <MusicNotesIcon size={16} className="text-stone-500" />
           )}
@@ -76,13 +74,23 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
 
         {/* Track Info */}
         <div className="flex-1 min-w-0">
-          <div className="text-white font-semibold text-[12px] leading-tight truncate">
+          <div className="text-white font-semibold text-[13px] leading-tight truncate">
             {trackTitle}
           </div>
-          <div className="text-white/50 text-[10px] tabular-nums font-medium leading-tight">
-            {formatTime(currentTime)}{' '}
-            <span className="text-white/30">/</span>{' '}
-            {formatTimeLeft(currentTime, duration)}
+          <div className="text-white/50 text-[11px] tabular-nums font-medium leading-tight truncate">
+            {compact ? (
+              <>
+                {currentTrack?.artists?.join(', ')}
+                <span className="mx-1 text-white/30">•</span>
+                {formatTime(currentTime)} <span className="text-white/30">/</span>{' '}
+                {formatTimeLeft(currentTime, duration)}
+              </>
+            ) : (
+              <>
+                {formatTime(currentTime)} <span className="text-white/30">/</span>{' '}
+                {formatTimeLeft(currentTime, duration)}
+              </>
+            )}
           </div>
         </div>
 
@@ -96,7 +104,10 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
                 'active:scale-95 shrink-0 h-7 w-7 rounded-full bg-transparent',
                 isShuffled ? 'text-emerald-400' : 'text-white/40 hover:text-white',
               )}
-              onClick={(e) => { e.stopPropagation(); toggleShuffle(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleShuffle();
+              }}
             >
               <ShuffleIcon size={14} />
             </Button>
@@ -107,7 +118,10 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
                 'active:scale-95 shrink-0 h-7 w-7 rounded-full bg-transparent',
                 isRepeatEnabled ? 'text-emerald-400' : 'text-white/40 hover:text-white',
               )}
-              onClick={(e) => { e.stopPropagation(); toggleRepeatMode(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleRepeatMode();
+              }}
             >
               {repeatMode === 'one' ? <RepeatOnceIcon size={14} /> : <RepeatIcon size={14} />}
             </Button>
@@ -122,11 +136,12 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
           disabled={!currentTrack || playbackVersion === 0}
           className={cn(
             'active:scale-95 shrink-0 h-8 w-8 rounded-full',
-            isFavorited
-              ? 'text-emerald-400 hover:text-emerald-300'
-              : 'text-white/40 hover:text-white',
+            isFavorited ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/40 hover:text-white',
           )}
-          onClick={(e) => { e.stopPropagation(); void handleFavorite(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            void handleFavorite();
+          }}
         >
           <StarIcon size={16} weight={isFavorited ? 'fill' : 'regular'} />
         </Button>
@@ -137,7 +152,10 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
             size="icon"
             aria-label="Previous Track"
             className="active:scale-95 shrink-0 h-7 w-7 rounded-full text-white/60 hover:text-white bg-transparent"
-            onClick={(e) => { e.stopPropagation(); previousTrack(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              previousTrack();
+            }}
           >
             <SkipBackIcon size={16} weight="fill" />
           </Button>
@@ -147,8 +165,12 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
         <Button
           size="icon"
           variant="ghost"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
           className="active:scale-95 shrink-0 h-8 w-8 rounded-full text-white hover:bg-white/10"
-          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlay();
+          }}
         >
           {isPlaying ? (
             <PauseIcon size={18} weight="fill" />
@@ -162,21 +184,27 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
             size="icon"
             aria-label="Next Track"
             className="active:scale-95 shrink-0 h-7 w-7 rounded-full text-white/60 hover:text-white bg-transparent"
-            onClick={(e) => { e.stopPropagation(); nextTrack(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              nextTrack();
+            }}
           >
             <SkipForwardIcon size={16} weight="fill" />
           </Button>
         )}
       </div>
 
-      {/* Progress Slider */}
-      <Slider
-        value={currentTime}
-        max={duration || 100}
-        showThumb={false}
-        onChange={(newTime) => setCurrentTime(newTime)}
-        className="w-full"
-      />
+      {/* Progress Slider (Hidden on mobile) */}
+      {!compact && (
+        <Slider
+          value={currentTime}
+          max={duration || 100}
+          step={1}
+          showThumb={false}
+          onChange={(newTime) => setCurrentTime(newTime)}
+          className="w-full"
+        />
+      )}
     </div>
   );
 }
