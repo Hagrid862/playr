@@ -308,26 +308,22 @@ export function SearchInput({
     >
       <div className={cn('flex items-center gap-2 w-full', resultsInline && 'shrink-0')}>
         <div className="relative flex-1">
-          {mobile && mobileExpanded && (
-            <MagnifyingGlassIcon
+          {(mobile && mobileExpanded || !mobile) && (
+            <button
+              type="button"
+              onClick={() => handleSearch()}
+              aria-label="Search"
               className={cn(
-                'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
+                'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors z-10 outline-none focus-visible:text-white',
                 size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
               )}
-              onClick={() => handleSearch()}
-            />
-          )}
-          {!mobile && (
-            <MagnifyingGlassIcon
-              className={cn(
-                'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
-                size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
-              )}
-              onClick={() => handleSearch()}
-            />
+            >
+              <MagnifyingGlassIcon className="h-full w-full" />
+            </button>
           )}
           <Input
             ref={inputRef}
+            data-testid="search-input-field"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -366,13 +362,18 @@ export function SearchInput({
 
           {/* Clear button */}
           {showClearButton && (
-            <XIcon
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear search"
               className={cn(
-                'absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
+                'absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors z-10 outline-none focus-visible:text-white',
                 size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
               )}
-              onClick={handleClear}
-            />
+              data-testid="search-input-clear"
+            >
+              <XIcon className="h-full w-full" />
+            </button>
           )}
 
           {isFetching && (
@@ -386,7 +387,10 @@ export function SearchInput({
 
           {/* Floating dropdown (desktop only) */}
           {showDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-stone-900 border border-white/10 shadow-2xl rounded-lg z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div
+              data-testid="search-input-dropdown"
+              className="absolute top-full left-0 right-0 mt-2 bg-stone-900 border border-white/10 shadow-2xl rounded-lg z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            >
               <div className="p-2 min-h-[40px]">{renderSuggestions()}</div>
             </div>
           )}
@@ -397,7 +401,12 @@ export function SearchInput({
 
       {/* Inline results (mobile overlay) */}
       {showInlineResults && (
-        <div className="flex-1 overflow-y-auto gap-2 mt-2">{renderSuggestions()}</div>
+        <div
+          data-testid="search-input-inline-results"
+          className="flex-1 overflow-y-auto gap-2 mt-2"
+        >
+          {renderSuggestions()}
+        </div>
       )}
     </div>
   );

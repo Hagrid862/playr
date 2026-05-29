@@ -1,7 +1,8 @@
 import {
   type SearchResultItem,
   type SearchTrackResult,
-  type SearchResultsData as SearchResultsResponseData,
+  type SearchResultsData,
+  type SearchResultsResponse,
 } from '@repo/contracts';
 import {
   MagnifyingGlassIcon,
@@ -17,8 +18,12 @@ import { usePlayerStore } from '@/stores/player-store/player.store';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { Fragment } from 'react';
 
+export type { SearchResultsData, SearchResultsResponse };
+
 export interface SearchResultsProps {
-  data: SearchResultsResponseData;
+  data: {
+    results: SearchResultItem[];
+  } | null | undefined;
   viewType?: SearchViewType;
   isLibrarySearch?: boolean;
 }
@@ -36,7 +41,7 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsProps) {
 
   if (results.length === 0) {
     return (
-      <div className="p-12 text-center">
+      <div className="p-12 text-center" data-testid="search-results-empty">
         <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-stone-700 mb-4" />
         <p className="text-lg font-medium">No results found</p>
         <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>
@@ -98,6 +103,7 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsProps) {
     return (
       <div
         key={`${result.type}-${result.id}`}
+        data-testid={`search-result-row-${result.id}`}
         onClick={() => handleItemClick(result)}
         className={cn(
           'group flex items-center gap-4 p-4 rounded-xl transition-all active:scale-[1] cursor-pointer hover:bg-stone-900/40 hover:scale-[1.01]',
@@ -177,6 +183,7 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsProps) {
     return (
       <div
         key={`${result.type}-${result.id}`}
+        data-testid={`search-result-grid-${result.id}`}
         onClick={() => handleItemClick(result)}
         className={cn(
           'group relative p-2 rounded-lg overflow-hidden transition-all duration-150 transform h-full hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer',
@@ -257,13 +264,14 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" data-testid="search-results">
       {topResult && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" data-testid="search-results-best-match">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Best Match
           </h3>
           <div
+            data-testid="search-result-best-match-card"
             onClick={() => handleItemClick(topResult)}
             className={cn(
               'p-6 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-6 transition-all transform shadow-lg hover:bg-white/10 hover:scale-[1.01] active:scale-[1.00] cursor-pointer',
@@ -343,7 +351,7 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsProps) {
       )}
 
       {remainingResults.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" data-testid="search-results-remaining">
           {topResult && (
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               More Results

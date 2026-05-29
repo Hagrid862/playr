@@ -34,6 +34,7 @@ export function SearchScopeToggle({ className, size = 'default' }: SearchScopeTo
   return (
     <TooltipProvider>
       <div
+        data-testid="search-scope-toggle"
         className={cn(
           'flex items-center bg-stone-900 border border-white/10 rounded-lg p-1',
           sizeClasses.container,
@@ -45,6 +46,7 @@ export function SearchScopeToggle({ className, size = 'default' }: SearchScopeTo
             <Button
               variant="ghost"
               size={sizeClasses.btnSize}
+              data-testid="scope-toggle-all"
               className={cn(
                 'rounded-lg opacity-50 cursor-not-allowed',
                 sizeClasses.button,
@@ -63,8 +65,9 @@ export function SearchScopeToggle({ className, size = 'default' }: SearchScopeTo
             <Button
               variant="secondary"
               size={sizeClasses.btnSize}
+              data-testid="scope-toggle-library"
               className={cn('rounded-lg', sizeClasses.button)}
-              disabled
+              aria-pressed="true"
             >
               <BooksIcon size={sizeClasses.icon} weight="fill" />
             </Button>
