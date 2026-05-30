@@ -1,9 +1,11 @@
 import { useLibraryAlbumsInfinite } from '@/hooks/api/library-albums/useLibraryAlbumsInfinite';
 import { UNKNOWN_ALBUM_LABEL, UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
+import type { GetLibraryAlbumsResponse, ZodAlbum } from '@repo/contracts';
 import { albumBuilder, artistBuilder } from '@repo/testing';
 import { customRender } from '@repo/testing/web';
 import { screen, within } from '@testing-library/react';
 import { AlbumSystemKind, AlbumType } from '@repo/db';
+import type { InfiniteData } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlbumsListPage } from './AlbumsListPage';
 
@@ -37,29 +39,95 @@ vi.mock('@/components/library/albums/AlbumLibraryContextMenu', () => ({
 
 const mockFetchNextPage = vi.fn().mockResolvedValue(undefined);
 
+const defaultPageMeta = {
+  timestamp: '2026-01-01T00:00:00.000Z',
+  requestId: 'req-test',
+  path: '/library/albums',
+} as const;
+
+function zodAlbum(overrides: Partial<ZodAlbum> = {}): ZodAlbum {
+  return { ...albumBuilder(), ...overrides };
+}
+
+function toLibraryAlbumItem(album: ZodAlbum): GetLibraryAlbumsResponse['data']['items'][number] {
+  return {
+    id: `library-album-${album.id}`,
+    libraryId: album.libraryId ?? 'library-test',
+    albumId: album.id,
+    createdAt: album.createdAt,
+    updatedAt: album.updatedAt,
+    deletedAt: album.deletedAt,
+    album,
+  };
+}
+
+function buildAlbumPage(albums: ZodAlbum[], page = 1, limit = 50): GetLibraryAlbumsResponse {
+  return {
+    success: true,
+    data: {
+      items: albums.map(toLibraryAlbumItem),
+      total: albums.length,
+      page,
+      limit,
+    },
+    error: null,
+    meta: defaultPageMeta,
+  };
+}
+
+/** Page shape the list flattener must tolerate at runtime (missing `data`). */
+type AlbumsInfinitePage =
+  | GetLibraryAlbumsResponse
+  | {
+      success: true;
+      data: undefined;
+      error: null;
+      meta: typeof defaultPageMeta;
+    };
+
+function buildAlbumPageMissingData(): AlbumsInfinitePage {
+  return {
+    success: true,
+    data: undefined,
+    error: null,
+    meta: defaultPageMeta,
+  };
+}
+
+type AlbumsInfiniteQueryFields = Pick<
+  ReturnType<typeof useLibraryAlbumsInfinite>,
+  'isPending' | 'hasNextPage' | 'isFetchingNextPage' | 'fetchNextPage'
+> & {
+  data?: InfiniteData<AlbumsInfinitePage>;
+};
+
+function asAlbumsInfiniteQueryResult(
+  value: AlbumsInfiniteQueryFields,
+): ReturnType<typeof useLibraryAlbumsInfinite> {
+  return value as unknown as ReturnType<typeof useLibraryAlbumsInfinite>;
+}
+
 function buildInfiniteMock(
-  albums: ReturnType<typeof albumBuilder>[],
+  albums: ZodAlbum[],
   options: {
     hasNext?: boolean;
     isPending?: boolean;
     isFetchingNextPage?: boolean;
-    pages?: { data: { items: { album?: ReturnType<typeof albumBuilder> }[] } }[];
+    infiniteData?: InfiniteData<AlbumsInfinitePage>;
   } = {},
-) {
-  const items = albums.map((album) => ({ album }));
-  return {
-    data: options.pages ?? {
-      pages: [
-        {
-          data: { items, total: albums.length, page: 1, limit: 50 },
-        },
-      ],
-    },
+): ReturnType<typeof useLibraryAlbumsInfinite> {
+  return asAlbumsInfiniteQueryResult({
+    data:
+      options.infiniteData ??
+      ({
+        pages: [buildAlbumPage(albums)],
+        pageParams: [1],
+      } satisfies InfiniteData<AlbumsInfinitePage>),
     isPending: options.isPending ?? false,
     hasNextPage: options.hasNext ?? false,
     isFetchingNextPage: options.isFetchingNextPage ?? false,
     fetchNextPage: mockFetchNextPage,
-  };
+  });
 }
 
 describe('AlbumsListPage', () => {
@@ -71,7 +139,7 @@ describe('AlbumsListPage', () => {
 
   it('renders albums from infinite query pages', () => {
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
-      buildInfiniteMock([albumBuilder({ name: 'First Album' })]) as never,
+      buildInfiniteMock([zodAlbum({ name: 'First Album' })]),
     );
 
     customRender(<AlbumsListPage />);
@@ -81,7 +149,7 @@ describe('AlbumsListPage', () => {
 
   it('fetches the next page when the sentinel intersects', () => {
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
-      buildInfiniteMock([albumBuilder({ name: 'First Album' })], { hasNext: true }) as never,
+      buildInfiniteMock([zodAlbum({ name: 'First Album' })], { hasNext: true }),
     );
 
     customRender(<AlbumsListPage />);
@@ -96,9 +164,7 @@ describe('AlbumsListPage', () => {
   });
 
   it('renders a loading state while albums are pending', () => {
-    vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
-      buildInfiniteMock([], { isPending: true }) as never,
-    );
+    vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(buildInfiniteMock([], { isPending: true }));
 
     customRender(<AlbumsListPage />);
 
@@ -106,7 +172,7 @@ describe('AlbumsListPage', () => {
   });
 
   it('renders an empty state when there are no albums', () => {
-    vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(buildInfiniteMock([]) as never);
+    vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(buildInfiniteMock([]));
 
     customRender(<AlbumsListPage />);
 
@@ -116,7 +182,9 @@ describe('AlbumsListPage', () => {
 
   it('renders an empty state when query pages are empty', () => {
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
-      buildInfiniteMock([], { pages: { pages: [] } }) as never,
+      buildInfiniteMock([], {
+        infiniteData: { pages: [], pageParams: [] },
+      }),
     );
 
     customRender(<AlbumsListPage />);
@@ -125,19 +193,31 @@ describe('AlbumsListPage', () => {
   });
 
   it('flattens albums from multiple pages and skips missing album payloads', () => {
-    const firstAlbum = albumBuilder({ name: 'Page One Album' });
-    const secondAlbum = albumBuilder({ name: 'Page Two Album' });
+    const firstAlbum = zodAlbum({ name: 'Page One Album' });
+    const secondAlbum = zodAlbum({ name: 'Page Two Album' });
 
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
       buildInfiniteMock([], {
-        pages: {
+        infiniteData: {
           pages: [
-            { data: { items: [{ album: firstAlbum }, { album: undefined }] } },
-            { data: undefined },
-            { data: { items: [{ album: secondAlbum }] } },
+            {
+              ...buildAlbumPage([firstAlbum]),
+              data: {
+                items: [
+                  toLibraryAlbumItem(firstAlbum),
+                  { ...toLibraryAlbumItem(firstAlbum), album: undefined },
+                ],
+                total: 2,
+                page: 1,
+                limit: 50,
+              },
+            },
+            buildAlbumPageMissingData(),
+            buildAlbumPage([secondAlbum], 2),
           ],
+          pageParams: [1, 2, 3],
         },
-      }) as never,
+      }),
     );
 
     customRender(<AlbumsListPage />);
@@ -147,19 +227,19 @@ describe('AlbumsListPage', () => {
   });
 
   it('sorts unknown-bucket albums after regular albums', () => {
-    const regularAlbum = albumBuilder({
+    const regularAlbum = zodAlbum({
       name: 'Regular Album',
       systemKind: AlbumSystemKind.none,
       type: AlbumType.album,
     });
-    const unknownBucketAlbum = albumBuilder({
+    const unknownBucketAlbum = zodAlbum({
       name: 'Internal Unknown Name',
       systemKind: AlbumSystemKind.unknown_bucket,
       type: AlbumType.album,
     });
 
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
-      buildInfiniteMock([unknownBucketAlbum, regularAlbum]) as never,
+      buildInfiniteMock([unknownBucketAlbum, regularAlbum]),
     );
 
     customRender(<AlbumsListPage />);
@@ -170,19 +250,19 @@ describe('AlbumsListPage', () => {
   });
 
   it('keeps relative order among unknown-bucket albums', () => {
-    const firstUnknown = albumBuilder({
+    const firstUnknown = zodAlbum({
       name: 'First Unknown',
       systemKind: AlbumSystemKind.unknown_bucket,
       type: AlbumType.album,
     });
-    const secondUnknown = albumBuilder({
+    const secondUnknown = zodAlbum({
       name: 'Second Unknown',
       systemKind: AlbumSystemKind.unknown_bucket,
       type: AlbumType.album,
     });
 
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
-      buildInfiniteMock([firstUnknown, secondUnknown]) as never,
+      buildInfiniteMock([firstUnknown, secondUnknown]),
     );
 
     customRender(<AlbumsListPage />);
@@ -194,12 +274,12 @@ describe('AlbumsListPage', () => {
   it('renders artist names in the subtitle when present', () => {
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
       buildInfiniteMock([
-        albumBuilder({
+        zodAlbum({
           name: 'Collaboration',
           type: AlbumType.album,
           artists: [artistBuilder({ name: 'Artist One' }), artistBuilder({ name: 'Artist Two' })],
         }),
-      ]) as never,
+      ]),
     );
 
     customRender(<AlbumsListPage />);
@@ -212,12 +292,12 @@ describe('AlbumsListPage', () => {
   it('uses the unknown artist label when an album has no artists', () => {
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
       buildInfiniteMock([
-        albumBuilder({
+        zodAlbum({
           name: 'Solo Release',
           type: AlbumType.album,
           artists: [],
         }),
-      ]) as never,
+      ]),
     );
 
     customRender(<AlbumsListPage />);
@@ -229,10 +309,10 @@ describe('AlbumsListPage', () => {
 
   it('shows a spinner while fetching the next page', () => {
     vi.mocked(useLibraryAlbumsInfinite).mockReturnValue(
-      buildInfiniteMock([albumBuilder({ name: 'Paged Album' })], {
+      buildInfiniteMock([zodAlbum({ name: 'Paged Album' })], {
         hasNext: true,
         isFetchingNextPage: true,
-      }) as never,
+      }),
     );
 
     customRender(<AlbumsListPage />);

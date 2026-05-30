@@ -1,9 +1,11 @@
 import { useLibraryArtistsInfinite } from '@/hooks/api/library-artists/useLibraryArtistsInfinite';
+import type { GetLibraryArtistsResponseDto, ZodArtist } from '@repo/contracts';
 import { artistBuilder } from '@repo/testing';
 import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Visibility } from '@repo/db';
+import type { InfiniteData } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArtistsListPage } from './ArtistsListPage';
 
@@ -34,28 +36,101 @@ vi.mock('@/components/library/MediaCard', () => ({
 const mockFetchNextPage = vi.fn().mockResolvedValue(undefined);
 const mockRefetch = vi.fn().mockResolvedValue({});
 
+const defaultPageMeta = {
+  timestamp: '2026-01-01T00:00:00.000Z',
+  requestId: 'req-test',
+  path: '/library/artists',
+} as const;
+
+function zodArtist(overrides: Partial<ZodArtist> = {}): ZodArtist {
+  return { ...artistBuilder(), ...overrides };
+}
+
+function toLibraryArtistItem(
+  artist: ZodArtist,
+): GetLibraryArtistsResponseDto['data']['items'][number] {
+  return {
+    id: `library-artist-${artist.id}`,
+    libraryId: 'library-test',
+    artistId: artist.id,
+    createdAt: artist.createdAt,
+    updatedAt: artist.updatedAt,
+    deletedAt: artist.deletedAt,
+    artist,
+  };
+}
+
+function buildArtistPage(artists: ZodArtist[], page = 1, limit = 50): GetLibraryArtistsResponseDto {
+  return {
+    success: true,
+    data: {
+      items: artists.map(toLibraryArtistItem),
+      total: artists.length,
+      page,
+      limit,
+    },
+    error: null,
+    meta: defaultPageMeta,
+  };
+}
+
+/** Page shape the list flattener must tolerate at runtime (missing `data`). */
+type ArtistsInfinitePage =
+  | GetLibraryArtistsResponseDto
+  | {
+      success: true;
+      data: undefined;
+      error: null;
+      meta: typeof defaultPageMeta;
+    };
+
+function buildArtistPageMissingData(): ArtistsInfinitePage {
+  return {
+    success: true,
+    data: undefined,
+    error: null,
+    meta: defaultPageMeta,
+  };
+}
+
+type ArtistsInfiniteQueryFields = Pick<
+  ReturnType<typeof useLibraryArtistsInfinite>,
+  | 'isPending'
+  | 'isError'
+  | 'error'
+  | 'hasNextPage'
+  | 'isFetchingNextPage'
+  | 'fetchNextPage'
+  | 'refetch'
+> & {
+  data?: InfiniteData<ArtistsInfinitePage>;
+};
+
+function asArtistsInfiniteQueryResult(
+  value: ArtistsInfiniteQueryFields,
+): ReturnType<typeof useLibraryArtistsInfinite> {
+  return value as unknown as ReturnType<typeof useLibraryArtistsInfinite>;
+}
+
 function buildInfiniteMock(
-  artists: ReturnType<typeof artistBuilder>[],
+  artists: ZodArtist[],
   options: {
     hasNext?: boolean;
     isPending?: boolean;
     isError?: boolean;
-    error?: Error;
+    error?: Error | { name: string; message: string };
     isFetchingNextPage?: boolean;
-    pages?: { data: { items: { artist?: ReturnType<typeof artistBuilder> }[] } }[];
+    infiniteData?: InfiniteData<ArtistsInfinitePage>;
   } = {},
-) {
-  const items = artists.map((artist) => ({ artist }));
-  return {
+): ReturnType<typeof useLibraryArtistsInfinite> {
+  return asArtistsInfiniteQueryResult({
     data: options.isError
       ? undefined
-      : (options.pages ?? {
-          pages: [
-            {
-              data: { items, total: artists.length, page: 1, limit: 50 },
-            },
-          ],
-        }),
+      : (options.infiniteData ??
+        ({
+          pages: [buildArtistPage(artists)],
+          pageParams: [1],
+        } satisfies InfiniteData<ArtistsInfinitePage>)),
     isPending: options.isPending ?? false,
     isError: options.isError ?? false,
     error: options.error ?? null,
@@ -63,7 +138,7 @@ function buildInfiniteMock(
     isFetchingNextPage: options.isFetchingNextPage ?? false,
     fetchNextPage: mockFetchNextPage,
     refetch: mockRefetch,
-  };
+  });
 }
 
 describe('ArtistsListPage', () => {
@@ -75,10 +150,7 @@ describe('ArtistsListPage', () => {
 
   it('renders artists from infinite query pages', () => {
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
-      buildInfiniteMock([
-        artistBuilder({ name: 'Alpha' }),
-        artistBuilder({ name: 'Beta' }),
-      ]) as never,
+      buildInfiniteMock([zodArtist({ name: 'Alpha' }), zodArtist({ name: 'Beta' })]),
     );
 
     customRender(<ArtistsListPage />);
@@ -89,7 +161,7 @@ describe('ArtistsListPage', () => {
 
   it('fetches the next page when the sentinel intersects', () => {
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
-      buildInfiniteMock([artistBuilder({ name: 'Alpha' })], { hasNext: true }) as never,
+      buildInfiniteMock([zodArtist({ name: 'Alpha' })], { hasNext: true }),
     );
 
     customRender(<ArtistsListPage />);
@@ -105,7 +177,7 @@ describe('ArtistsListPage', () => {
 
   it('renders a loading state while artists are pending', () => {
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
-      buildInfiniteMock([], { isPending: true }) as never,
+      buildInfiniteMock([], { isPending: true }),
     );
 
     customRender(<ArtistsListPage />);
@@ -119,7 +191,7 @@ describe('ArtistsListPage', () => {
       buildInfiniteMock([], {
         isError: true,
         error: new Error('Network request failed'),
-      }) as never,
+      }),
     );
 
     customRender(<ArtistsListPage />);
@@ -137,7 +209,7 @@ describe('ArtistsListPage', () => {
       buildInfiniteMock([], {
         isError: true,
         error: { name: 'Error', message: 'Network request failed' },
-      }) as never,
+      }),
     );
 
     customRender(<ArtistsListPage />);
@@ -147,7 +219,7 @@ describe('ArtistsListPage', () => {
   });
 
   it('renders an empty state when there are no artists', () => {
-    vi.mocked(useLibraryArtistsInfinite).mockReturnValue(buildInfiniteMock([]) as never);
+    vi.mocked(useLibraryArtistsInfinite).mockReturnValue(buildInfiniteMock([]));
 
     customRender(<ArtistsListPage />);
 
@@ -157,7 +229,9 @@ describe('ArtistsListPage', () => {
 
   it('renders an empty state when query pages are empty', () => {
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
-      buildInfiniteMock([], { pages: { pages: [] } }) as never,
+      buildInfiniteMock([], {
+        infiniteData: { pages: [], pageParams: [] },
+      }),
     );
 
     customRender(<ArtistsListPage />);
@@ -166,19 +240,31 @@ describe('ArtistsListPage', () => {
   });
 
   it('flattens artists from multiple pages and skips missing artist payloads', () => {
-    const firstArtist = artistBuilder({ name: 'Page One Artist' });
-    const secondArtist = artistBuilder({ name: 'Page Two Artist' });
+    const firstArtist = zodArtist({ name: 'Page One Artist' });
+    const secondArtist = zodArtist({ name: 'Page Two Artist' });
 
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
       buildInfiniteMock([], {
-        pages: {
+        infiniteData: {
           pages: [
-            { data: { items: [{ artist: firstArtist }, { artist: undefined }] } },
-            { data: undefined },
-            { data: { items: [{ artist: secondArtist }] } },
+            {
+              ...buildArtistPage([firstArtist]),
+              data: {
+                items: [
+                  toLibraryArtistItem(firstArtist),
+                  { ...toLibraryArtistItem(firstArtist), artist: undefined },
+                ],
+                total: 2,
+                page: 1,
+                limit: 50,
+              },
+            },
+            buildArtistPageMissingData(),
+            buildArtistPage([secondArtist], 2),
           ],
+          pageParams: [1, 2, 3],
         },
-      }) as never,
+      }),
     );
 
     customRender(<ArtistsListPage />);
@@ -190,17 +276,17 @@ describe('ArtistsListPage', () => {
   it('renders community and private artist subtitles', () => {
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
       buildInfiniteMock([
-        artistBuilder({
+        zodArtist({
           name: 'Community Star',
           visibility: Visibility.community,
           isCommunity: true,
         }),
-        artistBuilder({
+        zodArtist({
           name: 'Private Act',
           visibility: Visibility.private,
           isCommunity: false,
         }),
-      ]) as never,
+      ]),
     );
 
     customRender(<ArtistsListPage />);
@@ -211,10 +297,10 @@ describe('ArtistsListPage', () => {
 
   it('shows a spinner while fetching the next page', () => {
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
-      buildInfiniteMock([artistBuilder({ name: 'Paged Artist' })], {
+      buildInfiniteMock([zodArtist({ name: 'Paged Artist' })], {
         hasNext: true,
         isFetchingNextPage: true,
-      }) as never,
+      }),
     );
 
     customRender(<ArtistsListPage />);

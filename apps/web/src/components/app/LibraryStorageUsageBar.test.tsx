@@ -1,7 +1,14 @@
-import type { GetLibraryStorageUsageResponse } from '@repo/contracts';
+import { ApiFailureResponseSchema, type GetLibraryStorageUsageResponse } from '@repo/contracts';
 import { render, screen } from '@testing-library/react';
+import type { z } from 'zod';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LibraryStorageUsageBar } from './LibraryStorageUsageBar';
+
+type ApiFailureResponse = z.infer<typeof ApiFailureResponseSchema>;
+type StorageUsageQueryData = GetLibraryStorageUsageResponse | ApiFailureResponse;
+type MalformedSuccessUsageData = Omit<GetLibraryStorageUsageResponse, 'data'> & {
+  data: undefined;
+};
 
 const authState = { isAuthenticated: true };
 
@@ -34,8 +41,26 @@ const successUsageData: GetLibraryStorageUsageResponse = {
   },
 };
 
+const failedUsageData: ApiFailureResponse = {
+  success: false,
+  data: null,
+  error: { statusCode: 500, message: 'Failed to load storage usage' },
+  meta: {
+    timestamp: '2026-01-01T00:00:00.000Z',
+    requestId: 'req-2',
+    path: '/library/storage-usage',
+  },
+};
+
+const missingPayloadUsageData: MalformedSuccessUsageData = {
+  ...successUsageData,
+  data: undefined,
+};
+
 function mockStorageUsageQuery(
-  overrides: Partial<ReturnType<typeof useLibraryStorageUsage>> = {},
+  overrides: Partial<Omit<ReturnType<typeof useLibraryStorageUsage>, 'data'>> & {
+    data?: StorageUsageQueryData | MalformedSuccessUsageData;
+  } = {},
 ): ReturnType<typeof useLibraryStorageUsage> {
   return {
     data: successUsageData,
@@ -95,11 +120,7 @@ describe('LibraryStorageUsageBar', () => {
   it('returns null when the usage response is unsuccessful', () => {
     mockUseLibraryStorageUsage.mockReturnValue(
       mockStorageUsageQuery({
-        data: {
-          ...successUsageData,
-          success: false,
-          data: undefined,
-        },
+        data: failedUsageData,
       }),
     );
 
@@ -111,10 +132,7 @@ describe('LibraryStorageUsageBar', () => {
   it('returns null when usage payload is missing', () => {
     mockUseLibraryStorageUsage.mockReturnValue(
       mockStorageUsageQuery({
-        data: {
-          ...successUsageData,
-          data: undefined,
-        },
+        data: missingPayloadUsageData,
       }),
     );
 
