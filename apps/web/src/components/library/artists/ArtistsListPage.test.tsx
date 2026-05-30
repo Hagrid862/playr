@@ -110,9 +110,7 @@ describe('ArtistsListPage', () => {
     customRender(<ArtistsListPage />);
 
     expect(screen.getByText('No artists found')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Your private library is empty/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Your private library is empty/i)).toBeInTheDocument();
   });
 
   it('renders an empty state when query pages are empty', () => {

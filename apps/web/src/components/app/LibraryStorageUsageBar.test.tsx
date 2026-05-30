@@ -63,9 +63,7 @@ describe('LibraryStorageUsageBar', () => {
 
   it('returns null when the user is not authenticated', () => {
     authState.isAuthenticated = false;
-    mockUseLibraryStorageUsage.mockReturnValue(
-      mockStorageUsageQuery({ isLoading: true }),
-    );
+    mockUseLibraryStorageUsage.mockReturnValue(mockStorageUsageQuery({ isLoading: true }));
 
     const { container } = render(<LibraryStorageUsageBar />);
 

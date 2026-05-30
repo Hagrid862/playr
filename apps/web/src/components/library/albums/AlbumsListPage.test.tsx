@@ -111,9 +111,7 @@ describe('AlbumsListPage', () => {
     customRender(<AlbumsListPage />);
 
     expect(screen.getByText('No albums found')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Your private library is empty/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Your private library is empty/i)).toBeInTheDocument();
   });
 
   it('renders an empty state when query pages are empty', () => {
@@ -199,10 +197,7 @@ describe('AlbumsListPage', () => {
         albumBuilder({
           name: 'Collaboration',
           type: AlbumType.album,
-          artists: [
-            artistBuilder({ name: 'Artist One' }),
-            artistBuilder({ name: 'Artist Two' }),
-          ],
+          artists: [artistBuilder({ name: 'Artist One' }), artistBuilder({ name: 'Artist Two' })],
         }),
       ]) as never,
     );
