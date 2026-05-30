@@ -43,13 +43,17 @@ export function SubHeader({
             onClick={handleBack}
             className="shrink-0 h-7 w-7"
             data-testid="sub-header-back"
+            aria-label="Go back"
           >
             <ArrowLeftIcon size={16} />
           </Button>
         )}
         <div className="flex items-center gap-3 min-w-0">
           {typeof title === 'string' ? (
-            <h2 className="text-lg font-semibold text-stone-200 truncate" data-testid="sub-header-title">
+            <h2
+              className="text-lg font-semibold text-stone-200 truncate"
+              data-testid="sub-header-title"
+            >
               {title}
             </h2>
           ) : (

@@ -71,6 +71,7 @@ export function CompactSearch({
 
   useClickAway(containerRef, () => {
     setIsFocused(false);
+    setIsHovered(false);
   });
 
   const handleSearch = (overrideQuery?: string) => {
@@ -104,7 +105,7 @@ export function CompactSearch({
     }
   };
 
-  const showDropdown = !hideDropdown && isExpanded && debouncedQuery.trim().length > 0;
+  const showDropdown = !hideDropdown && isFocused && debouncedQuery.trim().length > 0;
 
   return (
     <div
@@ -189,7 +190,7 @@ export function CompactSearch({
                             query: result.name,
                             filters: {
                               ...prev.filters,
-                              type: result.type,
+                              categories: [result.type],
                               visibility: currentScope === 'library' ? 'private' : 'public',
                             },
                           }),

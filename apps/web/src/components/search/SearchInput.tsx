@@ -57,9 +57,7 @@ export function SearchInput({
   const currentScope = searchScope;
 
   useEffect(() => {
-    if ((searchParams as any)?.query) {
-      setQuery((searchParams as any).query);
-    }
+    setQuery(((searchParams as any)?.query ?? '') as string);
   }, [(searchParams as any)?.query]);
 
   useEffect(() => {
@@ -308,7 +306,7 @@ export function SearchInput({
     >
       <div className={cn('flex items-center gap-2 w-full', resultsInline && 'shrink-0')}>
         <div className="relative flex-1">
-          {(mobile && mobileExpanded || !mobile) && (
+          {((mobile && mobileExpanded) || !mobile) && (
             <button
               type="button"
               onClick={() => handleSearch()}

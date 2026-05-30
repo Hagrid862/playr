@@ -613,7 +613,7 @@ export class SearchService {
         FROM "playlists" p
                JOIN "libraries" l ON p."libraryId" = l.id
                LEFT JOIN "images" cover ON p."coverId" = cover.id
-        WHERE ${Prisma.join(playlistConditions, ' AND ')} AND p."isPublic" = false
+        WHERE ${Prisma.join(playlistConditions, ' AND ')}
       `);
       needsUnionAll = true;
     }

@@ -21,9 +21,12 @@ import { Fragment } from 'react';
 export type { SearchResultsData, SearchResultsResponse };
 
 export interface SearchResultsProps {
-  data: {
-    results: SearchResultItem[];
-  } | null | undefined;
+  data:
+    | {
+        results: SearchResultItem[];
+      }
+    | null
+    | undefined;
   viewType?: SearchViewType;
   isLibrarySearch?: boolean;
 }
@@ -84,7 +87,7 @@ export function SearchResults({ data, viewType = 'grid' }: SearchResultsProps) {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               deletedAt: null,
-              artists: trackResult.authors.map((a) => ({ id: a.id, name: a.name })),
+              artists: (trackResult.authors ?? []).map((a) => ({ id: a.id, name: a.name })),
               album: trackResult.coverUrl
                 ? {
                     id: trackResult.albumId ?? '',
