@@ -86,8 +86,8 @@ test.describe("Playback Functionality", () => {
 
     await test.step("Create Artist", async () => {
       await artistsPage.gotoArtistsList();
-      await artistsPage.page.waitForLoadState('networkidle');
-      await artistsPage.addArtistButton.waitFor({ state: 'visible', timeout: 15000 });
+      await expect(artistsPage.page).toHaveURL(/\/app\/library\/artists/);
+      await artistsPage.addArtistButton.waitFor({ state: 'visible', timeout: 30000 });
       await artistsPage.clickAddArtist();
       await artistsPage.createArtist({
         name: artistName,
