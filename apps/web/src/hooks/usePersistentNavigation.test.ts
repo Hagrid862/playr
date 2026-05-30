@@ -101,7 +101,10 @@ describe('usePersistentNavigation', () => {
 
       customRenderHook(() => usePersistentNavigation('artists', '/app/library/artists'));
 
-      expect(setItemSpy).toHaveBeenCalledWith('last_visited_artists_route', '/app/library/artists/42');
+      expect(setItemSpy).toHaveBeenCalledWith(
+        'last_visited_artists_route',
+        '/app/library/artists/42',
+      );
     });
   });
 

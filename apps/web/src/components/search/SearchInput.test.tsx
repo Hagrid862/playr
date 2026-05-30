@@ -31,7 +31,7 @@ describe('SearchInput', () => {
     vi.clearAllMocks();
     vi.mocked(useNavigate).mockReturnValue(mockNavigate);
     vi.mocked(useSearch).mockReturnValue({});
-    
+
     (useSearchSuggestions as any).mockReturnValue({
       data: { data: { results: [] } },
       isLoading: false,
@@ -58,7 +58,7 @@ describe('SearchInput', () => {
   it('updates query value when typing', async () => {
     customRenderWithRouter(<SearchInput />);
     const input = await screen.findByTestId('search-input-field');
-    
+
     fireEvent.change(input, { target: { value: 'test query' } });
     expect(input).toHaveValue('test query');
   });
@@ -71,24 +71,27 @@ describe('SearchInput', () => {
   it('clears input when clear button is clicked', async () => {
     customRenderWithRouter(<SearchInput initialValue="some text" />);
     const clearButton = await screen.findByTestId('search-input-clear');
-    
+
     fireEvent.click(clearButton);
-    
+
     expect(await screen.findByTestId('search-input-field')).toHaveValue('');
   });
 
   it('fetches suggestions after debounce when typing at least 3 chars', async () => {
     customRenderWithRouter(<SearchInput />);
     const input = await screen.findByTestId('search-input-field');
-    
+
     fireEvent.change(input, { target: { value: 'abc' } });
-    
-    await waitFor(() => {
-      expect(useSearchSuggestions).toHaveBeenCalledWith(
-        expect.objectContaining({ query: 'abc' }),
-        expect.objectContaining({ enabled: true })
-      );
-    }, { timeout: 2000 });
+
+    await waitFor(
+      () => {
+        expect(useSearchSuggestions).toHaveBeenCalledWith(
+          expect.objectContaining({ query: 'abc' }),
+          expect.objectContaining({ enabled: true }),
+        );
+      },
+      { timeout: 2000 },
+    );
   });
 
   it('shows dropdown results on desktop', async () => {
@@ -99,12 +102,12 @@ describe('SearchInput', () => {
       isFetching: false,
       error: null,
     });
-    
+
     customRenderWithRouter(<SearchInput />);
     const input = await screen.findByTestId('search-input-field');
-    
+
     fireEvent.change(input, { target: { value: 'abc' } });
-    
+
     expect(await screen.findByTestId('search-input-dropdown')).toBeInTheDocument();
     expect(await screen.findByText('Artist A')).toBeInTheDocument();
   });
@@ -117,12 +120,12 @@ describe('SearchInput', () => {
       isFetching: false,
       error: null,
     });
-    
+
     customRenderWithRouter(<SearchInput resultsInline />);
     const input = await screen.findByTestId('search-input-field');
-    
+
     fireEvent.change(input, { target: { value: 'abc' } });
-    
+
     expect(await screen.findByTestId('search-input-inline-results')).toBeInTheDocument();
     expect(screen.queryByTestId('search-input-dropdown')).not.toBeInTheDocument();
     expect(await screen.findByText('Artist A')).toBeInTheDocument();
@@ -131,24 +134,26 @@ describe('SearchInput', () => {
   it('navigates to search page on Enter', async () => {
     customRenderWithRouter(<SearchInput />);
     const input = await screen.findByTestId('search-input-field');
-    
+
     fireEvent.change(input, { target: { value: 'my search' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    
-    expect(mockNavigate).toHaveBeenCalledWith(expect.objectContaining({
-      to: '/app/search',
-      search: expect.any(Function)
-    }));
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: '/app/search',
+        search: expect.any(Function),
+      }),
+    );
   });
 
   it('calls onSearch callback if provided instead of navigating', async () => {
     const onSearch = vi.fn();
     customRenderWithRouter(<SearchInput onSearch={onSearch} />);
     const input = await screen.findByTestId('search-input-field');
-    
+
     fireEvent.change(input, { target: { value: 'my search' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    
+
     expect(onSearch).toHaveBeenCalledWith('my search');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
@@ -157,9 +162,9 @@ describe('SearchInput', () => {
     const onEscape = vi.fn();
     customRenderWithRouter(<SearchInput onEscape={onEscape} />);
     const input = await screen.findByTestId('search-input-field');
-    
+
     fireEvent.keyDown(input, { key: 'Escape' });
-    
+
     expect(onEscape).toHaveBeenCalled();
   });
 
@@ -202,9 +207,7 @@ describe('SearchInput', () => {
 
   it('calls onMobileToggle on Escape when mobile and no onEscape provided', async () => {
     const onMobileToggle = vi.fn();
-    customRenderWithRouter(
-      <SearchInput mobile mobileExpanded onMobileToggle={onMobileToggle} />,
-    );
+    customRenderWithRouter(<SearchInput mobile mobileExpanded onMobileToggle={onMobileToggle} />);
 
     const input = await screen.findByTestId('search-input-field');
     fireEvent.keyDown(input, { key: 'Escape' });
@@ -299,9 +302,7 @@ describe('SearchInput', () => {
       error: null,
     });
 
-    customRenderWithRouter(
-      <SearchInput onSearch={onSearch} onSearchComplete={onSearchComplete} />,
-    );
+    customRenderWithRouter(<SearchInput onSearch={onSearch} onSearchComplete={onSearchComplete} />);
     const input = await screen.findByTestId('search-input-field');
 
     fireEvent.change(input, { target: { value: 'abc' } });

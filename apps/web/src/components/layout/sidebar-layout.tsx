@@ -54,9 +54,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                 !isPlayerExpanded && 'pb-36 md:pb-0',
               )}
             >
-              <main className="flex h-full min-h-0 w-full flex-col px-4">
-                {children}
-              </main>
+              <main className="flex h-full min-h-0 w-full flex-col px-4">{children}</main>
             </div>
             {/* Player Bar — floating rounded on mobile/medium, inline on large desktop */}
             <div

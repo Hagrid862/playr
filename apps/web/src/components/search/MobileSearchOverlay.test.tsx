@@ -47,43 +47,43 @@ describe('MobileSearchOverlay', () => {
 
   it('calls onClose when back button is clicked', () => {
     customRender(<MobileSearchOverlay isOpen={true} onClose={onClose} />);
-    
+
     const closeButton = screen.getByLabelText('Close search');
     fireEvent.click(closeButton);
-    
+
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('calls onClose when Escape key is pressed', () => {
     customRender(<MobileSearchOverlay isOpen={true} onClose={onClose} />);
-    
+
     fireEvent.keyDown(document, { key: 'Escape' });
-    
+
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('locks body scroll when open and restores it when closed', () => {
     const { rerender } = customRender(<MobileSearchOverlay isOpen={true} onClose={onClose} />);
-    
+
     expect(document.body.style.overflow).toBe('hidden');
-    
+
     rerender(<MobileSearchOverlay isOpen={false} onClose={onClose} />);
-    
+
     expect(document.body.style.overflow).toBe('');
   });
 
   it('removes event listener on unmount', () => {
     const removeSpy = vi.spyOn(document, 'removeEventListener');
     const { unmount } = customRender(<MobileSearchOverlay isOpen={true} onClose={onClose} />);
-    
+
     unmount();
-    
+
     expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
   });
 
   it('passes correct props to SearchInput', () => {
     customRender(<MobileSearchOverlay isOpen={true} onClose={onClose} />);
-    
+
     expect(SearchInput).toHaveBeenCalled();
     const props = vi.mocked(SearchInput).mock.calls[0][0];
     expect(props).toMatchObject({

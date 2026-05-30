@@ -53,10 +53,7 @@ function AppLayout() {
         />
         <div className="flex-1 relative">
           {/* Mobile full-screen search overlay — covers the page content area */}
-          <MobileSearchOverlay
-            isOpen={mobileSearchExpanded}
-            onClose={handleMobileSearchClose}
-          />
+          <MobileSearchOverlay isOpen={mobileSearchExpanded} onClose={handleMobileSearchClose} />
           {/* Full-page Player overlay — slides up from bottom, header stays visible */}
           <PlayerFullPage />
           <div className="overflow-y-auto h-full">

@@ -8,7 +8,12 @@ export const Route = createFileRoute('/app/library/genres/')({
 });
 
 function RouteComponent() {
-  const { data: genresResponse, isLoading, error, isError } = useLibraryGenres({ page: 1, limit: 100 });
+  const {
+    data: genresResponse,
+    isLoading,
+    error,
+    isError,
+  } = useLibraryGenres({ page: 1, limit: 100 });
   const genres = genresResponse?.data?.items || [];
 
   if (isLoading) {

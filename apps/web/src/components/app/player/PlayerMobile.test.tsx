@@ -304,9 +304,13 @@ describe('PlayerMobile', () => {
         <PlayerMobile formatTime={formatTime} formatTimeLeft={formatTimeLeft} compact={true} />,
       );
 
-      expect(screen.getByText((content) => content.includes('Artist Alpha, Artist Beta'))).toBeInTheDocument();
+      expect(
+        screen.getByText((content) => content.includes('Artist Alpha, Artist Beta')),
+      ).toBeInTheDocument();
       // Use a more flexible matcher since the text is broken up by spans and spaces
-      expect(screen.getByText((content) => content.includes('0:45') && content.includes('-2:15'))).toBeInTheDocument();
+      expect(
+        screen.getByText((content) => content.includes('0:45') && content.includes('-2:15')),
+      ).toBeInTheDocument();
     });
   });
 

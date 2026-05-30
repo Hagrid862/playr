@@ -68,17 +68,17 @@ export function AppSidebar() {
   const getPersistentLink = (moduleName: string, rootPath: string) => {
     if (typeof window === 'undefined') return rootPath;
     const lastVisited = sessionStorage.getItem(`last_visited_${moduleName}_route`);
-    
+
     // Normalize paths for comparison (remove trailing slash)
     const currentPath = location.pathname.replace(/\/$/, '');
     const normalizedRoot = rootPath.replace(/\/$/, '');
     const isAlreadyAtRoot = currentPath === normalizedRoot;
-    
+
     // If we are currently active in this module, return the root path to allow resetting
     if (location.pathname.startsWith(normalizedRoot) && !isAlreadyAtRoot) {
       return rootPath;
     }
-    
+
     return lastVisited || rootPath;
   };
 
@@ -90,9 +90,7 @@ export function AppSidebar() {
   };
 
   const getLinkClassName = (rootPath: string) =>
-    isModuleActive(rootPath)
-      ? 'bg-accent text-primary'
-      : 'text-white hover:text-primary';
+    isModuleActive(rootPath) ? 'bg-accent text-primary' : 'text-white hover:text-primary';
 
   // Sidebar always uses 'icon' collapsible mode.
   // On large screens (>=1200px), the SidebarProvider allows toggling via SidebarTrigger.
@@ -102,9 +100,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible={collapsible} variant="floating">
-      <SidebarHeader>
-        {isLargeScreen && <SidebarTrigger />}
-      </SidebarHeader>
+      <SidebarHeader>{isLargeScreen && <SidebarTrigger />}</SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>

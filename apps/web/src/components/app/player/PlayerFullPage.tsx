@@ -166,7 +166,9 @@ export function PlayerFullPage() {
                 <h1 className="text-white font-bold leading-tight truncate text-[clamp(1.25rem,4vw,1.5rem)]">
                   {trackTitle}
                 </h1>
-                <p className="text-white/40 font-medium truncate mt-1.5 text-[clamp(0.875rem,2.5vw,1rem)]">{trackArtist}</p>
+                <p className="text-white/40 font-medium truncate mt-1.5 text-[clamp(0.875rem,2.5vw,1rem)]">
+                  {trackArtist}
+                </p>
               </div>
               <Button
                 size="icon"
@@ -181,7 +183,10 @@ export function PlayerFullPage() {
                 )}
                 onClick={handleFavorite}
               >
-                <StarIcon className="w-[clamp(22px,5vw,28px)] h-[clamp(22px,5vw,28px)]" weight={isFavorited ? 'fill' : 'regular'} />
+                <StarIcon
+                  className="w-[clamp(22px,5vw,28px)] h-[clamp(22px,5vw,28px)]"
+                  weight={isFavorited ? 'fill' : 'regular'}
+                />
               </Button>
             </div>
 
@@ -232,7 +237,10 @@ export function PlayerFullPage() {
               className="rounded-full bg-white/5 hover:bg-white/10 text-white active:scale-95 transition-all h-[clamp(3rem,7vw,3.5rem)] w-[clamp(3rem,7vw,3.5rem)]"
               onClick={previousTrack}
             >
-              <SkipBackIcon className="w-[clamp(24px,6vw,30px)] h-[clamp(24px,6vw,30px)]" weight="fill" />
+              <SkipBackIcon
+                className="w-[clamp(24px,6vw,30px)] h-[clamp(24px,6vw,30px)]"
+                weight="fill"
+              />
             </Button>
 
             <Button
@@ -242,9 +250,15 @@ export function PlayerFullPage() {
               onClick={togglePlay}
             >
               {isPlaying ? (
-                <PauseIcon className="w-[clamp(30px,8vw,38px)] h-[clamp(30px,8vw,38px)]" weight="fill" />
+                <PauseIcon
+                  className="w-[clamp(30px,8vw,38px)] h-[clamp(30px,8vw,38px)]"
+                  weight="fill"
+                />
               ) : (
-                <PlayIcon className="w-[clamp(30px,8vw,38px)] h-[clamp(30px,8vw,38px)] ml-[clamp(0.25rem,0.3vw,0.375rem)]" weight="fill" />
+                <PlayIcon
+                  className="w-[clamp(30px,8vw,38px)] h-[clamp(30px,8vw,38px)] ml-[clamp(0.25rem,0.3vw,0.375rem)]"
+                  weight="fill"
+                />
               )}
             </Button>
 
@@ -254,7 +268,10 @@ export function PlayerFullPage() {
               className="rounded-full bg-white/5 hover:bg-white/10 text-white active:scale-95 transition-all h-[clamp(3rem,7vw,3.5rem)] w-[clamp(3rem,7vw,3.5rem)]"
               onClick={nextTrack}
             >
-              <SkipForwardIcon className="w-[clamp(24px,6vw,30px)] h-[clamp(24px,6vw,30px)]" weight="fill" />
+              <SkipForwardIcon
+                className="w-[clamp(24px,6vw,30px)] h-[clamp(24px,6vw,30px)]"
+                weight="fill"
+              />
             </Button>
 
             <Button
@@ -266,10 +283,11 @@ export function PlayerFullPage() {
               )}
               onClick={toggleRepeatMode}
             >
-              {repeatMode === 'one'
-                ? <RepeatOnceIcon className="w-[clamp(20px,5vw,24px)] h-[clamp(20px,5vw,24px)]" />
-                : <RepeatIcon className="w-[clamp(20px,5vw,24px)] h-[clamp(20px,5vw,24px)]" />
-              }
+              {repeatMode === 'one' ? (
+                <RepeatOnceIcon className="w-[clamp(20px,5vw,24px)] h-[clamp(20px,5vw,24px)]" />
+              ) : (
+                <RepeatIcon className="w-[clamp(20px,5vw,24px)] h-[clamp(20px,5vw,24px)]" />
+              )}
             </Button>
           </div>
 

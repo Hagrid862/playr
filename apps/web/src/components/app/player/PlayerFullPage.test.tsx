@@ -105,9 +105,7 @@ describe('PlayerFullPage', () => {
     });
 
     it('does not render content when isPlayerExpanded is false', () => {
-      vi.mocked(usePlayerStore).mockReturnValue(
-        buildState({ isPlayerExpanded: false }),
-      );
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ isPlayerExpanded: false }));
 
       customRender(<PlayerFullPage />);
       expect(screen.queryByText('Now Playing')).not.toBeInTheDocument();
@@ -150,9 +148,7 @@ describe('PlayerFullPage', () => {
     });
 
     it('renders default title when no track', () => {
-      vi.mocked(usePlayerStore).mockReturnValue(
-        buildState({ currentTrack: null }),
-      );
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ currentTrack: null }));
 
       customRender(<PlayerFullPage />);
       expect(screen.getByText('No track selected')).toBeInTheDocument();
@@ -588,18 +584,14 @@ describe('PlayerFullPage', () => {
     it('sets body overflow to hidden when expanded', () => {
       expect(document.body.style.overflow).not.toBe('hidden');
 
-      vi.mocked(usePlayerStore).mockReturnValue(
-        buildState({ isPlayerExpanded: true }),
-      );
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ isPlayerExpanded: true }));
 
       customRender(<PlayerFullPage />);
       expect(document.body.style.overflow).toBe('hidden');
     });
 
     it('clears body overflow when not expanded', () => {
-      vi.mocked(usePlayerStore).mockReturnValue(
-        buildState({ isPlayerExpanded: false }),
-      );
+      vi.mocked(usePlayerStore).mockReturnValue(buildState({ isPlayerExpanded: false }));
 
       customRender(<PlayerFullPage />);
       expect(document.body.style.overflow).toBe('');

@@ -25,11 +25,7 @@ describe('SearchFilters', () => {
 
   it('renders only requested sections', () => {
     customRender(
-      <SearchFilters
-        search={baseSearch}
-        navigate={navigate}
-        visibleSections={['general']}
-      />,
+      <SearchFilters search={baseSearch} navigate={navigate} visibleSections={['general']} />,
     );
 
     expect(screen.getByTestId('filter-section-general')).toBeInTheDocument();

@@ -21,7 +21,7 @@ describe('MobileBottomNav', () => {
   it('renders all navigation items', async () => {
     vi.mocked(useLocation).mockReturnValue({ pathname: '/app', search: {} } as any);
     customRenderWithRouter(<MobileBottomNav />);
-    
+
     expect(await screen.findByTestId('nav-item-home')).toBeInTheDocument();
     expect(await screen.findByTestId('nav-item-new')).toBeInTheDocument();
     expect(await screen.findByTestId('nav-item-library')).toBeInTheDocument();
@@ -32,10 +32,10 @@ describe('MobileBottomNav', () => {
   it('highlights "Home" as active when at /app', async () => {
     vi.mocked(useLocation).mockReturnValue({ pathname: '/app', search: {} } as any);
     customRenderWithRouter(<MobileBottomNav />);
-    
+
     const homeItem = await screen.findByTestId('nav-item-home');
     expect(homeItem.className).toMatch(/text-primary/);
-    
+
     const searchItem = await screen.findByTestId('nav-item-search');
     expect(searchItem.className).not.toMatch(/text-primary/);
   });
@@ -65,9 +65,12 @@ describe('MobileBottomNav', () => {
   });
 
   it('highlights "Library" as active when at sub-routes of /app/library', async () => {
-    vi.mocked(useLocation).mockReturnValue({ pathname: '/app/library/artists/123', search: {} } as any);
+    vi.mocked(useLocation).mockReturnValue({
+      pathname: '/app/library/artists/123',
+      search: {},
+    } as any);
     customRenderWithRouter(<MobileBottomNav />);
-    
+
     const libraryItem = await screen.findByTestId('nav-item-library');
     expect(libraryItem.className).toMatch(/text-primary/);
   });

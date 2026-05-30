@@ -136,7 +136,9 @@ export function PlayerMobile({ formatTime, formatTimeLeft, compact = true }: Pla
           disabled={!currentTrack || playbackVersion === 0}
           className={cn(
             'active:scale-95 shrink-0 h-8 w-8 rounded-full',
-            isFavorited ? 'text-emerald-400 hover:text-emerald-300' : 'text-white/40 hover:text-white',
+            isFavorited
+              ? 'text-emerald-400 hover:text-emerald-300'
+              : 'text-white/40 hover:text-white',
           )}
           onClick={(e) => {
             e.stopPropagation();

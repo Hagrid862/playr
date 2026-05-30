@@ -1,5 +1,11 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { HouseIcon, GridFourIcon, BooksIcon, SquaresFourIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
+import {
+  HouseIcon,
+  GridFourIcon,
+  BooksIcon,
+  SquaresFourIcon,
+  MagnifyingGlassIcon,
+} from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { useEffect } from 'react';
@@ -32,9 +38,10 @@ export function MobileBottomNav() {
     // If we are currently active in this module, return the root path ONLY if we are NOT already at root
     // This allows clicking the icon to reset to the module root.
     // For library on mobile, we consider the whole /app/library as being "in the module"
-    const isActiveModule = moduleName === 'library' 
-      ? location.pathname.startsWith('/app/library')
-      : location.pathname.startsWith(normalizedRoot);
+    const isActiveModule =
+      moduleName === 'library'
+        ? location.pathname.startsWith('/app/library')
+        : location.pathname.startsWith(normalizedRoot);
 
     if (isActiveModule && !isAlreadyAtRoot) {
       return rootPath;
@@ -73,9 +80,10 @@ export function MobileBottomNav() {
       root: '/app/search',
       icon: <MagnifyingGlassIcon className="size-5" />,
       label: 'Search',
-      search: location.pathname.startsWith('/app/search') && Object.keys(location.search || {}).length > 0
-        ? {}
-        : lastSearch || {},
+      search:
+        location.pathname.startsWith('/app/search') && Object.keys(location.search || {}).length > 0
+          ? {}
+          : lastSearch || {},
     },
   ];
 
@@ -100,9 +108,7 @@ export function MobileBottomNav() {
             data-testid={`nav-item-${item.label.toLowerCase()}`}
             className={cn(
               'flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors',
-              isActive(item.root)
-                ? 'text-primary'
-                : 'text-white/70 hover:text-white',
+              isActive(item.root) ? 'text-primary' : 'text-white/70 hover:text-white',
             )}
           >
             {item.icon}

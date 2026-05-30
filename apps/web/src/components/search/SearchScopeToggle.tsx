@@ -47,10 +47,7 @@ export function SearchScopeToggle({ className, size = 'default' }: SearchScopeTo
               variant="ghost"
               size={sizeClasses.btnSize}
               data-testid="scope-toggle-all"
-              className={cn(
-                'rounded-lg opacity-50 cursor-not-allowed',
-                sizeClasses.button,
-              )}
+              className={cn('rounded-lg opacity-50 cursor-not-allowed', sizeClasses.button)}
             >
               <GlobeIcon size={sizeClasses.icon} />
             </Button>

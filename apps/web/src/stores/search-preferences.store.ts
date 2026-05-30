@@ -35,10 +35,7 @@ export const createSearchPreferencesStore: StateCreator<SearchPreferencesState> 
       if (!trimmed) return state;
 
       return {
-        searchHistory: [
-          trimmed,
-          ...state.searchHistory.filter((q) => q !== trimmed),
-        ].slice(0, 10),
+        searchHistory: [trimmed, ...state.searchHistory.filter((q) => q !== trimmed)].slice(0, 10),
       };
     }),
   clearHistory: () => set({ searchHistory: [] }),

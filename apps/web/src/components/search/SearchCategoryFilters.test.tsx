@@ -12,25 +12,23 @@ describe('SearchCategoryFilters', () => {
   });
 
   it('renders all categories when not locked', () => {
-    customRender(
-      <SearchCategoryFilters selectedCategories={[]} onToggle={onToggle} />
-    );
-    
+    customRender(<SearchCategoryFilters selectedCategories={[]} onToggle={onToggle} />);
+
     const categories: SearchCategory[] = ['artist', 'album', 'track', 'playlist', 'genre'];
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       expect(screen.getByTestId(`category-filter-${cat}`)).toBeInTheDocument();
     });
   });
 
   it('renders only the locked category when provided', () => {
     customRender(
-      <SearchCategoryFilters 
-        selectedCategories={['artist']} 
-        onToggle={onToggle} 
-        lockedCategory="artist" 
-      />
+      <SearchCategoryFilters
+        selectedCategories={['artist']}
+        onToggle={onToggle}
+        lockedCategory="artist"
+      />,
     );
-    
+
     expect(screen.getByTestId('category-filter-artist')).toBeInTheDocument();
     expect(screen.queryByTestId('category-filter-album')).not.toBeInTheDocument();
     expect(screen.queryByTestId('category-filter-track')).not.toBeInTheDocument();
@@ -38,16 +36,13 @@ describe('SearchCategoryFilters', () => {
 
   it('highlights selected categories', () => {
     customRender(
-      <SearchCategoryFilters 
-        selectedCategories={['artist', 'track']} 
-        onToggle={onToggle} 
-      />
+      <SearchCategoryFilters selectedCategories={['artist', 'track']} onToggle={onToggle} />,
     );
-    
+
     const artistButton = screen.getByTestId('category-filter-artist');
     const trackButton = screen.getByTestId('category-filter-track');
     const albumButton = screen.getByTestId('category-filter-album');
-    
+
     // Check for variant-related classes or just text content if variant is hard to check directly
     // Usually buttons with 'secondary' variant have different classes than 'outline'
     expect(artistButton.className).toMatch(/bg-secondary/);
@@ -56,27 +51,25 @@ describe('SearchCategoryFilters', () => {
   });
 
   it('calls onToggle when a category is clicked', () => {
-    customRender(
-      <SearchCategoryFilters selectedCategories={[]} onToggle={onToggle} />
-    );
-    
+    customRender(<SearchCategoryFilters selectedCategories={[]} onToggle={onToggle} />);
+
     fireEvent.click(screen.getByTestId('category-filter-album'));
-    
+
     expect(onToggle).toHaveBeenCalledWith('album');
   });
 
   it('disables buttons when category is locked', () => {
     customRender(
-      <SearchCategoryFilters 
-        selectedCategories={['artist']} 
-        onToggle={onToggle} 
-        lockedCategory="artist" 
-      />
+      <SearchCategoryFilters
+        selectedCategories={['artist']}
+        onToggle={onToggle}
+        lockedCategory="artist"
+      />,
     );
-    
+
     const artistButton = screen.getByTestId('category-filter-artist');
     expect(artistButton).toBeDisabled();
-    
+
     fireEvent.click(artistButton);
     expect(onToggle).not.toHaveBeenCalled();
   });
@@ -95,12 +88,7 @@ describe('SearchCategoryFilters', () => {
   });
 
   it('calls onToggle when an already selected category is clicked (deselection)', () => {
-    customRender(
-      <SearchCategoryFilters
-        selectedCategories={['album']}
-        onToggle={onToggle}
-      />,
-    );
+    customRender(<SearchCategoryFilters selectedCategories={['album']} onToggle={onToggle} />);
 
     fireEvent.click(screen.getByTestId('category-filter-album'));
 
@@ -108,9 +96,7 @@ describe('SearchCategoryFilters', () => {
   });
 
   it('displays pluralized category names', () => {
-    customRender(
-      <SearchCategoryFilters selectedCategories={[]} onToggle={onToggle} />,
-    );
+    customRender(<SearchCategoryFilters selectedCategories={[]} onToggle={onToggle} />);
 
     expect(screen.getByText('artists')).toBeInTheDocument();
     expect(screen.getByText('albums')).toBeInTheDocument();

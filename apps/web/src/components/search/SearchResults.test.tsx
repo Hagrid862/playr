@@ -29,7 +29,14 @@ describe('SearchResults', () => {
     results: [
       { id: '1', type: 'artist', name: 'Top Artist', score: 0.9, visibility: 'public' },
       { id: '2', type: 'album', name: 'Other Album', score: 0.5, visibility: 'public' },
-      { id: '3', type: 'track', name: 'Other Track', score: 0.4, visibility: 'public', authors: [] },
+      {
+        id: '3',
+        type: 'track',
+        name: 'Other Track',
+        score: 0.4,
+        visibility: 'public',
+        authors: [],
+      },
     ],
   };
 
@@ -40,7 +47,7 @@ describe('SearchResults', () => {
 
   it('identifies and renders Best Match when score >= 0.65', async () => {
     customRenderWithRouter(<SearchResults data={mockData as any} />);
-    
+
     expect(await screen.findByTestId('search-results-best-match')).toBeInTheDocument();
     // Best match name is in a large font
     const bestMatch = await screen.findByTestId('search-results-best-match');
@@ -55,12 +62,12 @@ describe('SearchResults', () => {
         { id: '2', type: 'album', name: 'Album B', score: 0.4, visibility: 'public' },
       ],
     };
-    
+
     customRenderWithRouter(<SearchResults data={lowScoreData as any} />);
-    
+
     expect(screen.queryByTestId('search-results-best-match')).not.toBeInTheDocument();
     expect(await screen.findByTestId('search-results-remaining')).toBeInTheDocument();
-    
+
     // Use findByTestId because there are multiple Artist A (one for desktop, one for mobile)
     expect(await screen.findByTestId('search-result-grid-1')).toHaveTextContent('Artist A');
     expect(await screen.findByTestId('search-result-grid-2')).toHaveTextContent('Album B');
@@ -68,7 +75,7 @@ describe('SearchResults', () => {
 
   it('renders in grid view by default', async () => {
     customRenderWithRouter(<SearchResults data={mockData as any} />);
-    
+
     // Remaining results should be in grid (for desktop)
     expect(await screen.findByTestId('search-result-grid-2')).toBeInTheDocument();
     expect(await screen.findByTestId('search-result-grid-3')).toBeInTheDocument();
@@ -76,7 +83,7 @@ describe('SearchResults', () => {
 
   it('renders in row view when viewType is "row"', async () => {
     customRenderWithRouter(<SearchResults data={mockData as any} viewType="row" />);
-    
+
     // Remaining results should be in row (for desktop)
     // Both desktop and mobile use search-result-row-X when viewType is row
     const rows = await screen.findAllByTestId(/search-result-row-/);
@@ -85,10 +92,10 @@ describe('SearchResults', () => {
 
   it('navigates to artist page when artist result is clicked', async () => {
     customRenderWithRouter(<SearchResults data={mockData as any} />);
-    
+
     const bestMatchCard = await screen.findByTestId('search-result-best-match-card');
     fireEvent.click(bestMatchCard);
-    
+
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/app/library/artists/$id',
       params: { id: '1' },
@@ -98,25 +105,25 @@ describe('SearchResults', () => {
   it('plays track when track result is clicked', async () => {
     const trackData = {
       results: [
-        { 
-          id: 't1', 
-          type: 'track', 
-          name: 'Track A', 
-          score: 0.5, 
+        {
+          id: 't1',
+          type: 'track',
+          name: 'Track A',
+          score: 0.5,
           visibility: 'public',
           authors: [{ id: 'a1', name: 'Author X' }],
           duration: 180,
-          albumId: 'al1'
+          albumId: 'al1',
         },
       ],
     };
-    
+
     customRenderWithRouter(<SearchResults data={trackData as any} />);
-    
+
     // Pick the grid item (desktop)
     const trackItem = await screen.findByTestId('search-result-grid-t1');
     fireEvent.click(trackItem);
-    
+
     expect(playTrack).toHaveBeenCalled();
     const playedTrack = playTrack.mock.calls[0][0];
     expect(playedTrack.id).toBe('t1');
@@ -125,15 +132,13 @@ describe('SearchResults', () => {
 
   it('navigates to album page when album result is clicked', async () => {
     const albumData = {
-      results: [
-        { id: 'al1', type: 'album', name: 'Album A', score: 0.5, visibility: 'public' },
-      ],
+      results: [{ id: 'al1', type: 'album', name: 'Album A', score: 0.5, visibility: 'public' }],
     };
     customRenderWithRouter(<SearchResults data={albumData as any} />);
-    
+
     const albumItem = await screen.findByTestId('search-result-grid-al1');
     fireEvent.click(albumItem);
-    
+
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/app/library/albums/$id',
       params: { id: 'al1' },
@@ -142,15 +147,13 @@ describe('SearchResults', () => {
 
   it('navigates to genre page when genre result is clicked', async () => {
     const genreData = {
-      results: [
-        { id: 'g1', type: 'genre', name: 'Rock', score: 0.5, visibility: 'public' },
-      ],
+      results: [{ id: 'g1', type: 'genre', name: 'Rock', score: 0.5, visibility: 'public' }],
     };
     customRenderWithRouter(<SearchResults data={genreData as any} />);
-    
+
     const genreItem = await screen.findByTestId('search-result-grid-g1');
     fireEvent.click(genreItem);
-    
+
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/app/library/genres/$genreId',
       params: { genreId: 'g1' },
@@ -164,10 +167,10 @@ describe('SearchResults', () => {
       ],
     };
     customRenderWithRouter(<SearchResults data={playlistData as any} />);
-    
+
     const playlistItem = await screen.findByTestId('search-result-grid-p1');
     fireEvent.click(playlistItem);
-    
+
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/app/playlists/$playlistId',
       params: { playlistId: 'p1' },
@@ -177,19 +180,19 @@ describe('SearchResults', () => {
   it('renders explicit badge for explicit tracks', async () => {
     const explicitTrackData = {
       results: [
-        { 
-          id: 't1', 
-          type: 'track', 
-          name: 'Explicit Track', 
-          score: 0.5, 
+        {
+          id: 't1',
+          type: 'track',
+          name: 'Explicit Track',
+          score: 0.5,
           explicit: true,
           visibility: 'public',
-          authors: [] 
+          authors: [],
         },
       ],
     };
     customRenderWithRouter(<SearchResults data={explicitTrackData as any} />);
-    
+
     const trackItem = await screen.findByTestId('search-result-grid-t1');
     expect(trackItem).toHaveTextContent('E');
   });
@@ -197,19 +200,19 @@ describe('SearchResults', () => {
   it('formats duration correctly', async () => {
     const trackData = {
       results: [
-        { 
-          id: 't1', 
-          type: 'track', 
-          name: 'Track A', 
-          score: 0.5, 
+        {
+          id: 't1',
+          type: 'track',
+          name: 'Track A',
+          score: 0.5,
           duration: 125, // 2:05
           visibility: 'public',
-          authors: [] 
+          authors: [],
         },
       ],
     };
     customRenderWithRouter(<SearchResults data={trackData as any} />);
-    
+
     const trackItem = await screen.findByTestId('search-result-grid-t1');
     expect(trackItem).toHaveTextContent('2:05');
   });
@@ -217,25 +220,25 @@ describe('SearchResults', () => {
   it('renders author names and links', async () => {
     const trackData = {
       results: [
-        { 
-          id: 't1', 
-          type: 'track', 
-          name: 'Track A', 
-          score: 0.5, 
+        {
+          id: 't1',
+          type: 'track',
+          name: 'Track A',
+          score: 0.5,
           visibility: 'public',
           authors: [
             { id: 'a1', name: 'Author One' },
-            { id: 'a2', name: 'Author Two' }
-          ] 
+            { id: 'a2', name: 'Author Two' },
+          ],
         },
       ],
     };
     customRenderWithRouter(<SearchResults data={trackData as any} />);
-    
+
     const trackItem = await screen.findByTestId('search-result-grid-t1');
     expect(trackItem).toHaveTextContent('Author One');
     expect(trackItem).toHaveTextContent('Author Two');
-    
+
     const authorLink = within(trackItem).getByText('Author One');
     expect(authorLink).toHaveAttribute('href', '/app/library/artists/a1');
   });
@@ -243,24 +246,24 @@ describe('SearchResults', () => {
   it('stops propagation when author link is clicked', async () => {
     const trackData = {
       results: [
-        { 
-          id: 't1', 
-          type: 'track', 
-          name: 'Track A', 
+        {
+          id: 't1',
+          type: 'track',
+          name: 'Track A',
           score: 0.9, // Best match
           visibility: 'public',
           authors: [{ id: 'a1', name: 'Author One' }],
-          albumId: 'al1'
+          albumId: 'al1',
         },
       ],
     };
     customRenderWithRouter(<SearchResults data={trackData as any} />);
-    
+
     const authorLink = await screen.findByText('Author One');
     fireEvent.click(authorLink);
-    
+
     // playTrack should NOT be called because propagation was stopped
-    // Wait, playTrack is called in handleItemClick. 
+    // Wait, playTrack is called in handleItemClick.
     // If propagation is stopped, handleItemClick of the card should NOT be called.
     expect(playTrack).not.toHaveBeenCalled();
     // mockNavigate is NOT called by handleItemClick for tracks (it calls playTrack)

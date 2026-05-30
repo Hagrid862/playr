@@ -48,22 +48,28 @@ describe('SubHeader', () => {
 
   it('calls onBackClick if provided instead of default back navigation', async () => {
     const onBackClick = vi.fn();
-    customRenderWithRouter(<SubHeader title="Title" showBackButton={true} onBackClick={onBackClick} />);
+    customRenderWithRouter(
+      <SubHeader title="Title" showBackButton={true} onBackClick={onBackClick} />,
+    );
     const backButton = await screen.findByTestId('sub-header-back');
     fireEvent.click(backButton);
-    
+
     expect(onBackClick).toHaveBeenCalled();
     expect(mockBack).not.toHaveBeenCalled();
   });
 
   it('renders search element if provided', async () => {
-    customRenderWithRouter(<SubHeader title="Title" search={<div data-testid="search-box">Search</div>} />);
+    customRenderWithRouter(
+      <SubHeader title="Title" search={<div data-testid="search-box">Search</div>} />,
+    );
     expect(await screen.findByTestId('search-box')).toBeInTheDocument();
     expect(await screen.findByTestId('sub-header-search')).toBeInTheDocument();
   });
 
   it('renders actions if provided', async () => {
-    customRenderWithRouter(<SubHeader title="Title" actions={<button data-testid="action-btn">Action</button>} />);
+    customRenderWithRouter(
+      <SubHeader title="Title" actions={<button data-testid="action-btn">Action</button>} />,
+    );
     expect(await screen.findByTestId('action-btn')).toBeInTheDocument();
   });
 });

@@ -63,11 +63,7 @@ function GenresLayout() {
   // Desktop: SubHeader + sidebar (genre list) + content area
   return (
     <div className="flex flex-col h-full w-full">
-      <SubHeader
-        title="Genres"
-        search={<CompactSearch category="genre" />}
-        showBackButton={true}
-      />
+      <SubHeader title="Genres" search={<CompactSearch category="genre" />} showBackButton={true} />
       <div className="flex min-h-0 flex-1 overflow-hidden items-stretch w-full max-w-full">
         <div className="flex w-64 shrink-0 flex-col border-r bg-card/50 backdrop-blur-sm h-full min-h-full">
           <div className="px-4 pb-3 pt-4 flex flex-col gap-2 shrink-0">

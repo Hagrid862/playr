@@ -147,7 +147,10 @@ export default function LandingPage() {
       <main className="container mx-auto px-4 py-12 sm:py-16 md:py-20 lg:py-24">
         <div className="text-center">
           <h1 className="flex flex-row gap-3 sm:gap-5 items-center justify-center text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-6 md:mb-10">
-            <PlayCircleIcon className="fill-primary size-10 sm:size-12 md:size-auto" weight="fill" />
+            <PlayCircleIcon
+              className="fill-primary size-10 sm:size-12 md:size-auto"
+              weight="fill"
+            />
             <span className="text-primary">Playr</span>
           </h1>
           <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold tracking-tight">
