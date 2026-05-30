@@ -32,7 +32,7 @@ export class LibraryArtistsPage {
     this.page = page;
 
     // Artists list
-    this.addArtistButton = page.getByRole("link", { name: "Add Artist" });
+    this.addArtistButton = page.getByRole("link", { name: "Add Content" });
     this.emptyStateHeading = page.getByRole("heading", {
       name: "No artists found",
     });

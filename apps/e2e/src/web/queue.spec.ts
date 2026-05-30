@@ -108,13 +108,26 @@ test.describe("Queue Management", () => {
     await verifyEmailPage.clickVerify();
 
     // 4. Should redirect to the dashboard after email verification
+    console.log("Navigating to dashboard...");
     await expect(page).toHaveURL(/\/app/);
 
+    console.log("Going to library overview...");
     await dashboardPage.gotoLibraryOverview();
+    
+    console.log("Creating library...");
     await dashboardPage.createLibrary();
 
+    console.log("Going to artists list...");
     await artistsPage.gotoArtistsList();
+    
+    console.log("Waiting for add artist button...");
+    await expect(artistsPage.page).toHaveURL(/\/app\/library\/artists/);
+    await artistsPage.addArtistButton.waitFor({ state: 'visible', timeout: 30000 });
+    
+    console.log("Clicking add artist...");
     await artistsPage.clickAddArtist();
+    
+    console.log("Creating artist...");
     await artistsPage.createArtist({ name: artistName });
 
     const audioPath = path.resolve(
