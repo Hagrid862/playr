@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/app/PageHeader';
+import { TrackAudioStatusIcon } from '@/components/library/TrackAudioStatusIcon';
 import { AddToPlaylistSubmenu } from '@/components/playlists/AddToPlaylistSubmenu';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +41,6 @@ import {
   PlayIcon,
   QueueIcon,
   TrashIcon,
-  WarningIcon,
 } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -430,15 +430,11 @@ function LibrarySongsVirtualList({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          {isProcessing ? (
-                            <Spinner className="size-4 shrink-0" aria-label="Processing" />
-                          ) : isFailed ? (
-                            <WarningIcon
-                              className="size-4 shrink-0 text-amber-500"
-                              weight="fill"
-                              aria-label="Processing failed"
-                            />
-                          ) : null}
+                          <TrackAudioStatusIcon
+                            isProcessing={isProcessing}
+                            isFailed={isFailed}
+                            iconClassName="shrink-0"
+                          />
                           <span className="line-clamp-2 font-semibold text-foreground">
                             {track.title}
                           </span>
@@ -547,15 +543,11 @@ function LibrarySongsVirtualList({
                       </TableCell>
                       <TableCell className="overflow-hidden px-3 py-2 align-middle">
                         <div className="flex min-w-0 items-center gap-2">
-                          {isProcessing ? (
-                            <Spinner className="size-4 shrink-0" aria-label="Processing" />
-                          ) : isFailed ? (
-                            <WarningIcon
-                              className="size-4 shrink-0 text-amber-500"
-                              weight="fill"
-                              aria-label="Processing failed"
-                            />
-                          ) : null}
+                          <TrackAudioStatusIcon
+                            isProcessing={isProcessing}
+                            isFailed={isFailed}
+                            iconClassName="shrink-0"
+                          />
                           <span className="min-w-0 truncate font-medium">{track.title}</span>
                         </div>
                       </TableCell>
