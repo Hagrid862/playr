@@ -128,7 +128,9 @@ function ArtistAlbumTypeSection({
       ) : (
         (emptyState ?? (
           <div className="py-12 flex flex-col items-center justify-center border border-dashed border-border/40 rounded-2xl bg-stone-900/10">
-            <p className="text-muted-foreground text-sm font-medium">No {title.toLowerCase()} yet</p>
+            <p className="text-muted-foreground text-sm font-medium">
+              No {title.toLowerCase()} yet
+            </p>
           </div>
         ))
       )}
@@ -323,9 +325,7 @@ function RouteComponent() {
           title="Compilations"
           type={AlbumType.compilation}
           hideWhenEmpty
-          placeholderIcon={
-            <ListBulletsIcon className="size-1/2 text-stone-400" weight="duotone" />
-          }
+          placeholderIcon={<ListBulletsIcon className="size-1/2 text-stone-400" weight="duotone" />}
         />
       </div>
 

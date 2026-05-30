@@ -8,10 +8,7 @@ export function invalidateLibraryAlbumsInfinite(queryClient: QueryClient) {
   return queryClient.invalidateQueries({ queryKey: ['library', 'albums', 'infinite'] });
 }
 
-export function invalidateLibraryArtistAlbumsInfinite(
-  queryClient: QueryClient,
-  artistId?: string,
-) {
+export function invalidateLibraryArtistAlbumsInfinite(queryClient: QueryClient, artistId?: string) {
   if (artistId) {
     return queryClient.invalidateQueries({
       queryKey: ['library', 'artists', artistId, 'albums', 'infinite'],

@@ -1,10 +1,5 @@
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   TRACK_AUDIO_FAILED_TOOLTIP,
   TRACK_AUDIO_PROCESSING_TOOLTIP,

@@ -45,11 +45,7 @@ describe('useInfiniteScrollFetch', () => {
 
   it('calls fetchNextPage when sentinel intersects and more pages exist', () => {
     render(
-      <ScrollHarness
-        hasNextPage
-        isFetchingNextPage={false}
-        fetchNextPage={mockFetchNextPage}
-      />,
+      <ScrollHarness hasNextPage isFetchingNextPage={false} fetchNextPage={mockFetchNextPage} />,
     );
 
     expect(observerCallback).toBeDefined();
@@ -62,9 +58,7 @@ describe('useInfiniteScrollFetch', () => {
   });
 
   it('does not fetch when already fetching next page', () => {
-    render(
-      <ScrollHarness hasNextPage isFetchingNextPage fetchNextPage={mockFetchNextPage} />,
-    );
+    render(<ScrollHarness hasNextPage isFetchingNextPage fetchNextPage={mockFetchNextPage} />);
 
     observerCallback!(
       [{ isIntersecting: true } as IntersectionObserverEntry],
@@ -93,11 +87,7 @@ describe('useInfiniteScrollFetch', () => {
 
   it('does not fetch when sentinel is not intersecting', () => {
     render(
-      <ScrollHarness
-        hasNextPage
-        isFetchingNextPage={false}
-        fetchNextPage={mockFetchNextPage}
-      />,
+      <ScrollHarness hasNextPage isFetchingNextPage={false} fetchNextPage={mockFetchNextPage} />,
     );
 
     observerCallback!(

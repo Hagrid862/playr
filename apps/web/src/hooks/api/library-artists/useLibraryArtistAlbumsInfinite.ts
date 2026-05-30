@@ -20,11 +20,7 @@ type ArtistAlbumsInfiniteKey = readonly [
   string,
 ];
 
-export const useLibraryArtistAlbumsInfinite = ({
-  artistId,
-  type,
-  limit = 20,
-}: Params) => {
+export const useLibraryArtistAlbumsInfinite = ({ artistId, type, limit = 20 }: Params) => {
   const typeKey = type ?? 'all';
 
   return useInfiniteQuery<

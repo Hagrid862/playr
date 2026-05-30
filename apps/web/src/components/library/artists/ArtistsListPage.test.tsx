@@ -55,7 +55,10 @@ describe('ArtistsListPage', () => {
 
   it('renders artists from infinite query pages', () => {
     vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
-      buildInfiniteMock([artistBuilder({ name: 'Alpha' }), artistBuilder({ name: 'Beta' })]) as never,
+      buildInfiniteMock([
+        artistBuilder({ name: 'Alpha' }),
+        artistBuilder({ name: 'Beta' }),
+      ]) as never,
     );
 
     customRender(<ArtistsListPage />);
