@@ -21,6 +21,21 @@ export type StorageQuotaExceededDetails = {
   limitBytes: number;
 };
 
+/** Upper bound for quota values used in JS number arithmetic (2^53 - 1). */
+const MAX_SAFE_STORAGE_QUOTA_BYTES = BigInt(Number.MAX_SAFE_INTEGER);
+
+/**
+ * Converts `User.storageQuotaBytes` (PostgreSQL BIGINT) to a JS number for quota checks.
+ * Values outside [0, Number.MAX_SAFE_INTEGER] are not representable safely and are ignored
+ * so callers fall back to `LIBRARY_STORAGE_QUOTA_BYTES`.
+ */
+function resolveStorageQuotaOverrideBytes(override: bigint): number | null {
+  if (override < 0n || override > MAX_SAFE_STORAGE_QUOTA_BYTES) {
+    return null;
+  }
+  return Number(override);
+}
+
 @Injectable()
 export class LibraryStorageQuotaService {
   constructor(
@@ -36,14 +51,20 @@ export class LibraryStorageQuotaService {
   async getLimitBytes(userId: string): Promise<number> {
     const override = await this.userRepository.getStorageQuotaBytes(userId);
     if (override != null) {
-      return Number(override);
+      const resolved = resolveStorageQuotaOverrideBytes(override);
+      if (resolved != null) {
+        return resolved;
+      }
     }
     return this.getDefaultLimitBytes();
   }
 
   async getLimitSource(userId: string): Promise<StorageQuotaLimitSource> {
     const override = await this.userRepository.getStorageQuotaBytes(userId);
-    return override != null ? 'override' : 'default';
+    if (override != null && resolveStorageQuotaOverrideBytes(override) != null) {
+      return 'override';
+    }
+    return 'default';
   }
 
   async getUsageBytes(ownerUserId: string): Promise<number> {

@@ -1,4 +1,5 @@
 import { MediaCard } from '@/components/library/MediaCard';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useLibraryArtistsInfinite } from '@/hooks/api/library-artists/useLibraryArtistsInfinite';
 import { useInfiniteScrollFetch } from '@/hooks/useInfiniteScrollFetch';
@@ -33,6 +34,20 @@ export function ArtistsListPage() {
       <div className="flex h-[400px] flex-col items-center justify-center gap-4">
         <Spinner className="size-8 text-primary" />
         <p className="text-muted-foreground animate-pulse">Fetching your artists...</p>
+      </div>
+    );
+  }
+
+  if (artistsQuery.isError) {
+    const errorMessage =
+      artistsQuery.error instanceof Error ? artistsQuery.error.message : 'Could not load artists';
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 rounded-2xl p-12 text-center">
+        <h3 className="text-xl font-semibold text-white">Could not load artists</h3>
+        <p className="max-w-md text-sm text-destructive">{errorMessage}</p>
+        <Button type="button" variant="outline" onClick={() => void artistsQuery.refetch()}>
+          Try again
+        </Button>
       </div>
     );
   }

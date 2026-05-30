@@ -2,6 +2,7 @@ import { useLibraryArtistsInfinite } from '@/hooks/api/library-artists/useLibrar
 import { artistBuilder } from '@repo/testing';
 import { customRender } from '@repo/testing/web';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Visibility } from '@repo/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArtistsListPage } from './ArtistsListPage';
@@ -31,29 +32,37 @@ vi.mock('@/components/library/MediaCard', () => ({
 }));
 
 const mockFetchNextPage = vi.fn().mockResolvedValue(undefined);
+const mockRefetch = vi.fn().mockResolvedValue({});
 
 function buildInfiniteMock(
   artists: ReturnType<typeof artistBuilder>[],
   options: {
     hasNext?: boolean;
     isPending?: boolean;
+    isError?: boolean;
+    error?: Error;
     isFetchingNextPage?: boolean;
     pages?: { data: { items: { artist?: ReturnType<typeof artistBuilder> }[] } }[];
   } = {},
 ) {
   const items = artists.map((artist) => ({ artist }));
   return {
-    data: options.pages ?? {
-      pages: [
-        {
-          data: { items, total: artists.length, page: 1, limit: 50 },
-        },
-      ],
-    },
+    data: options.isError
+      ? undefined
+      : (options.pages ?? {
+          pages: [
+            {
+              data: { items, total: artists.length, page: 1, limit: 50 },
+            },
+          ],
+        }),
     isPending: options.isPending ?? false,
+    isError: options.isError ?? false,
+    error: options.error ?? null,
     hasNextPage: options.hasNext ?? false,
     isFetchingNextPage: options.isFetchingNextPage ?? false,
     fetchNextPage: mockFetchNextPage,
+    refetch: mockRefetch,
   };
 }
 
@@ -102,6 +111,39 @@ describe('ArtistsListPage', () => {
     customRender(<ArtistsListPage />);
 
     expect(screen.getByText('Fetching your artists...')).toBeInTheDocument();
+  });
+
+  it('renders an error state with message and retry when the query fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
+      buildInfiniteMock([], {
+        isError: true,
+        error: new Error('Network request failed'),
+      }) as never,
+    );
+
+    customRender(<ArtistsListPage />);
+
+    expect(screen.getByText('Could not load artists')).toBeInTheDocument();
+    expect(screen.getByText('Network request failed')).toBeInTheDocument();
+    expect(screen.queryByText('No artists found')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders an error state with fallback message when the query fails with a non-Error object', () => {
+    vi.mocked(useLibraryArtistsInfinite).mockReturnValue(
+      buildInfiniteMock([], {
+        isError: true,
+        error: { name: 'Error', message: 'Network request failed' },
+      }) as never,
+    );
+
+    customRender(<ArtistsListPage />);
+
+    expect(screen.getAllByText('Could not load artists')).toHaveLength(2);
+    expect(screen.queryByText('No artists found')).not.toBeInTheDocument();
   });
 
   it('renders an empty state when there are no artists', () => {

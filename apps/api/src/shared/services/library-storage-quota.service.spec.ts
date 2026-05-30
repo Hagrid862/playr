@@ -63,6 +63,37 @@ describe('LibraryStorageQuotaService', () => {
     expect(usage.usedPercent).toBe(80);
   });
 
+  it('accepts override at Number.MAX_SAFE_INTEGER', async () => {
+    const maxSafe = BigInt(Number.MAX_SAFE_INTEGER);
+    userRepository.getStorageQuotaBytes.mockResolvedValue(maxSafe);
+    audioFileRepository.sumCountableBytesByOwnerUserId.mockResolvedValue(0);
+
+    const usage = await service.getUsage('user-1');
+
+    expect(usage.limitBytes).toBe(Number.MAX_SAFE_INTEGER);
+    expect(usage.limitSource).toBe('override');
+  });
+
+  it('falls back to env default when override exceeds safe integer range', async () => {
+    userRepository.getStorageQuotaBytes.mockResolvedValue(BigInt(Number.MAX_SAFE_INTEGER) + 1n);
+    audioFileRepository.sumCountableBytesByOwnerUserId.mockResolvedValue(100);
+
+    const usage = await service.getUsage('user-1');
+
+    expect(usage.limitBytes).toBe(10_000);
+    expect(usage.limitSource).toBe('default');
+  });
+
+  it('falls back to env default when override is negative', async () => {
+    userRepository.getStorageQuotaBytes.mockResolvedValue(-1n);
+    audioFileRepository.sumCountableBytesByOwnerUserId.mockResolvedValue(100);
+
+    const usage = await service.getUsage('user-1');
+
+    expect(usage.limitBytes).toBe(10_000);
+    expect(usage.limitSource).toBe('default');
+  });
+
   it('throws PayloadTooLargeException when quota would be exceeded', async () => {
     userRepository.getStorageQuotaBytes.mockResolvedValue(null);
     audioFileRepository.sumCountableBytesByOwnerUserId.mockResolvedValue(9_500);
