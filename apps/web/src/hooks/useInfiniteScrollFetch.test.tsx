@@ -17,16 +17,29 @@ function ScrollHarness({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
+  enabled = true,
+  attachSentinel = true,
+  rootMargin,
 }: {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   fetchNextPage: () => Promise<unknown>;
+  enabled?: boolean;
+  attachSentinel?: boolean;
+  rootMargin?: string;
 }) {
   const sentinelRef = useInfiniteScrollFetch({
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
+    enabled,
+    rootMargin,
   });
+
+  if (!attachSentinel) {
+    return null;
+  }
+
   return <div ref={sentinelRef} data-testid="sentinel" />;
 }
 
@@ -94,6 +107,44 @@ describe('useInfiniteScrollFetch', () => {
       [{ isIntersecting: false } as IntersectionObserverEntry],
       {} as IntersectionObserver,
     );
+
+    expect(mockFetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('does not observe when disabled', () => {
+    render(
+      <ScrollHarness
+        hasNextPage
+        isFetchingNextPage={false}
+        fetchNextPage={mockFetchNextPage}
+        enabled={false}
+      />,
+    );
+
+    expect(observerCallback).toBeNull();
+    expect(mockFetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('does not observe when the sentinel element is missing', () => {
+    render(
+      <ScrollHarness
+        hasNextPage
+        isFetchingNextPage={false}
+        fetchNextPage={mockFetchNextPage}
+        attachSentinel={false}
+      />,
+    );
+
+    expect(observerCallback).toBeNull();
+    expect(mockFetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch when the observer reports no intersecting entry', () => {
+    render(
+      <ScrollHarness hasNextPage isFetchingNextPage={false} fetchNextPage={mockFetchNextPage} />,
+    );
+
+    observerCallback!([], {} as IntersectionObserver);
 
     expect(mockFetchNextPage).not.toHaveBeenCalled();
   });
