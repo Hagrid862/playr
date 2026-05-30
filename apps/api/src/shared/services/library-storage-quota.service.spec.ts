@@ -1,3 +1,4 @@
+import { estimateReservedProcessedBytes } from '@/features/audio-processing/audio-processing.constants';
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { UserRepository } from '@/shared/repositories/user.repository';
 import { PayloadTooLargeException } from '@nestjs/common';
@@ -68,6 +69,40 @@ describe('LibraryStorageQuotaService', () => {
 
     await expect(service.assertCanAddBytes('user-1', 600)).rejects.toBeInstanceOf(
       PayloadTooLargeException,
+    );
+  });
+
+  it('allows zero or negative additional bytes without checking usage', async () => {
+    await expect(service.assertCanAddBytes('user-1', 0)).resolves.toBeUndefined();
+    await expect(service.assertCanAddBytes('user-1', -100)).resolves.toBeUndefined();
+
+    expect(audioFileRepository.sumCountableBytesByOwnerUserId).not.toHaveBeenCalled();
+    expect(userRepository.getStorageQuotaBytes).not.toHaveBeenCalled();
+  });
+
+  it('allows additional bytes when quota is not exceeded', async () => {
+    userRepository.getStorageQuotaBytes.mockResolvedValue(null);
+    audioFileRepository.sumCountableBytesByOwnerUserId.mockResolvedValue(1_000);
+
+    await expect(service.assertCanAddBytes('user-1', 500)).resolves.toBeUndefined();
+  });
+
+  it('reports zero used percent when limit bytes is zero', async () => {
+    userRepository.getStorageQuotaBytes.mockResolvedValue(BigInt(0));
+    audioFileRepository.sumCountableBytesByOwnerUserId.mockResolvedValue(0);
+
+    const usage = await service.getUsage('user-1');
+
+    expect(usage.usedPercent).toBe(0);
+    expect(usage.remainingBytes).toBe(0);
+  });
+
+  it('delegates reserved processed byte estimates to audio processing constants', () => {
+    expect(service.estimateReservedProcessedBytes(1_000_000, false)).toBe(
+      estimateReservedProcessedBytes(1_000_000, false),
+    );
+    expect(service.estimateReservedProcessedBytes(1_000_000, true)).toBe(
+      estimateReservedProcessedBytes(1_000_000, true),
     );
   });
 });

@@ -95,6 +95,18 @@ describe('UploadTrackAudioHandler', () => {
       await expect(handler.execute(mockCommand)).rejects.toThrow(ForbiddenException);
     });
 
+    it('should throw ForbiddenException when track has no owner', async () => {
+      const trackWithEditorOnly = trackWithAccessBuilder({
+        id: mockTrackId,
+        access: [{ userId: mockUserId, role: AccessRole.editor }],
+      });
+      trackRepository.getById.mockResolvedValue(trackWithEditorOnly);
+
+      await expect(handler.execute(mockCommand)).rejects.toThrow(ForbiddenException);
+      await expect(handler.execute(mockCommand)).rejects.toThrow('Track has no owner');
+      expect(storageService.uploadFile).not.toHaveBeenCalled();
+    });
+
     it('should throw PayloadTooLargeException when storage quota is exceeded', async () => {
       trackRepository.getById.mockResolvedValue(mockTrackWithOwnerAccess);
       storageQuotaService.assertCanAddBytes.mockRejectedValue(

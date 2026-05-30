@@ -106,6 +106,53 @@ describe('UserRepository', () => {
     });
   });
 
+  describe('getStorageQuotaBytes', () => {
+    it('returns storage quota override when user exists', async () => {
+      mockPrismaClient.user.findUnique.mockResolvedValue({
+        storageQuotaBytes: BigInt(5_000),
+        deletedAt: null,
+      });
+
+      const result = await repository.getStorageQuotaBytes('user-1');
+
+      expect(result).toBe(BigInt(5_000));
+      expect(mockPrismaClient.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        select: { storageQuotaBytes: true, deletedAt: true },
+      });
+    });
+
+    it('returns null when user has no override', async () => {
+      mockPrismaClient.user.findUnique.mockResolvedValue({
+        storageQuotaBytes: null,
+        deletedAt: null,
+      });
+
+      const result = await repository.getStorageQuotaBytes('user-1');
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when user not found', async () => {
+      mockPrismaClient.user.findUnique.mockResolvedValue(null);
+
+      const result = await repository.getStorageQuotaBytes('non-existent');
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when user is soft-deleted', async () => {
+      mockPrismaClient.user.findUnique.mockResolvedValue({
+        storageQuotaBytes: BigInt(5_000),
+        deletedAt: new Date('2024-01-02'),
+      });
+
+      const result = await repository.getStorageQuotaBytes('user-1');
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('getByUsername', () => {
     it('should return user by username without include', async () => {
       mockPrismaClient.user.findUnique.mockResolvedValue(mockUser);

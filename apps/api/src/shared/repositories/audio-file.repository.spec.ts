@@ -1,3 +1,4 @@
+import { buildOwnerScopedCountableAudioFileWhere } from '@/features/audio-processing/audio-processing.storage-quota';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AudioFileRepository } from './audio-file.repository';
 import { PrismaService } from '../services/prisma.service';
@@ -9,6 +10,20 @@ import {
   Prisma,
   ProcessingStatus,
 } from '@repo/db';
+
+type AudioFileSizeSumAggregateResult = {
+  _sum: {
+    size: number | null;
+  };
+};
+
+type AudioFileWithTrackDeletedAt = AudioFile & {
+  track: { deletedAt: Date | null };
+};
+
+const toSizeSumAggregate = (size: number | null): AudioFileSizeSumAggregateResult => ({
+  _sum: { size },
+});
 
 describe('AudioFileRepository', () => {
   let repository: AudioFileRepository;
@@ -26,6 +41,7 @@ describe('AudioFileRepository', () => {
       delete: vi.fn(),
       deleteMany: vi.fn(),
       count: vi.fn(),
+      aggregate: vi.fn(),
     },
     $transaction: vi.fn(),
   });
@@ -70,10 +86,11 @@ describe('AudioFileRepository', () => {
 
   describe('getById', () => {
     it('should return audio file by id without include', async () => {
-      const audioFileWithTrack = { ...mockAudioFile, track: { deletedAt: null } };
-      mockPrismaClient.audioFile.findUnique.mockResolvedValue(
-        audioFileWithTrack as unknown as AudioFile,
-      );
+      const audioFileWithTrack: AudioFileWithTrackDeletedAt = {
+        ...mockAudioFile,
+        track: { deletedAt: null },
+      };
+      mockPrismaClient.audioFile.findUnique.mockResolvedValue(audioFileWithTrack);
 
       const result = await repository.getById('audio-1');
 
@@ -344,6 +361,28 @@ describe('AudioFileRepository', () => {
       const result = await repository.exists('audio-1');
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('sumCountableBytesByOwnerUserId', () => {
+    it('sums countable audio file bytes for the track owner', async () => {
+      mockPrismaClient.audioFile.aggregate.mockResolvedValue(toSizeSumAggregate(5_000_000));
+
+      const result = await repository.sumCountableBytesByOwnerUserId('user-1');
+
+      expect(result).toBe(5_000_000);
+      expect(mockPrismaClient.audioFile.aggregate).toHaveBeenCalledWith({
+        _sum: { size: true },
+        where: buildOwnerScopedCountableAudioFileWhere('user-1'),
+      });
+    });
+
+    it('returns zero when aggregate sum is null', async () => {
+      mockPrismaClient.audioFile.aggregate.mockResolvedValue(toSizeSumAggregate(null));
+
+      const result = await repository.sumCountableBytesByOwnerUserId('user-1');
+
+      expect(result).toBe(0);
     });
   });
 

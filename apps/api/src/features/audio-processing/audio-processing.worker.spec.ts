@@ -504,6 +504,49 @@ describe('AudioProcessingWorker', () => {
       ).toBe(true);
     });
 
+    it('should log transcode failure when storage preflight throws a non-quota error', async () => {
+      const quotaCheckError = new Error('Quota service unavailable');
+
+      audioFileRepository.getById.mockResolvedValue(
+        audioFileBuilder({
+          id: 'af-123',
+          format: AudioFormat.mp3,
+          key: 'path/to/original.mp3',
+        }),
+      );
+      storageService.getFile.mockResolvedValue(Buffer.from('input'));
+      trackRepository.getById.mockResolvedValue(
+        trackWithAccessBuilder({
+          id: 'tr-123',
+          duration: 0,
+          userId: 'user-123',
+          role: AccessRole.owner,
+        }),
+      );
+      storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
+      storageQuotaService.assertCanAddBytes
+        .mockRejectedValueOnce(quotaCheckError)
+        .mockResolvedValue(undefined);
+
+      const loggerSpy = vi.spyOn(Logger.prototype, 'error');
+
+      await worker.process(mockJob);
+
+      expect(storageQuotaService.assertCanAddBytes).toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to transcode to low mp3'),
+        expect.objectContaining({
+          error: quotaCheckError,
+          audioFileId: 'af-123',
+          trackId: 'tr-123',
+          quality: AudioQuality.low,
+          format: AudioFormat.mp3,
+        }),
+      );
+
+      loggerSpy.mockRestore();
+    });
+
     it('should log warning if temp dir cleanup fails', async () => {
       audioFileRepository.getById.mockResolvedValue(
         audioFileBuilder({

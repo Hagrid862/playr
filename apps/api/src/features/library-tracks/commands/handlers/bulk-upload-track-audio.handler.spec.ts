@@ -289,6 +289,25 @@ describe('BulkUploadTrackAudioHandler', () => {
       );
     });
 
+    it('should throw ForbiddenException when track has no owner', async () => {
+      const command = new BulkUploadTrackAudioCommand(
+        albumId,
+        [trackId1],
+        [createMockFile()],
+        userId,
+      );
+      const trackWithEditorOnly = trackWithAccessBuilder({
+        id: trackId1,
+        albumId,
+        access: [{ userId, role: AccessRole.editor }],
+      });
+      trackRepository.getById.mockResolvedValue(trackWithEditorOnly);
+
+      await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
+      await expect(handler.execute(command)).rejects.toThrow(`Track ${trackId1} has no owner`);
+      expect(storageService.uploadFile).not.toHaveBeenCalled();
+    });
+
     it('should allow editor role', async () => {
       const file = createMockFile();
       const command = new BulkUploadTrackAudioCommand(albumId, [trackId1], [file], userId);
