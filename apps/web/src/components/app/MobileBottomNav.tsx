@@ -48,9 +48,20 @@ export function MobileBottomNav() {
     }
 
     return lastVisited || rootPath;
-  };
+    };
 
-  const navItems = [
+    const getSearchLink = () => {
+    const isAlreadyAtRoot = location.pathname.replace(/\/$/, '') === '/app/search';
+
+    return {
+      to: '/app/search',
+      search: isAlreadyAtRoot && Object.keys(location.search || {}).length > 0
+        ? {}
+        : lastSearch || {},
+    };
+    };
+
+    const navItems = [
     {
       to: getPersistentLink('home', '/app'),
       root: '/app',
@@ -76,16 +87,12 @@ export function MobileBottomNav() {
       label: 'Playlists',
     },
     {
-      to: '/app/search',
+      ...getSearchLink(),
       root: '/app/search',
       icon: <MagnifyingGlassIcon className="size-5" />,
       label: 'Search',
-      search:
-        location.pathname.startsWith('/app/search') && Object.keys(location.search || {}).length > 0
-          ? {}
-          : lastSearch || {},
     },
-  ];
+    ];
 
   const isActive = (rootPath: string) => {
     if (rootPath === '/app') {

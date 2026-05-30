@@ -82,6 +82,17 @@ export function AppSidebar() {
     return lastVisited || rootPath;
   };
 
+  const getSearchLink = () => {
+    const isAlreadyAtRoot = location.pathname.replace(/\/$/, '') === '/app/search';
+
+    return {
+      to: '/app/search',
+      search: isAlreadyAtRoot && Object.keys(location.search).length > 0
+        ? {}
+        : lastSearch || {},
+    };
+  };
+
   const isModuleActive = (rootPath: string) => {
     if (rootPath === '/app') {
       return location.pathname === '/app' || location.pathname === '/app/';
@@ -108,13 +119,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    to="/app/search"
-                    search={
-                      location.pathname.startsWith('/app/search') &&
-                      Object.keys(location.search).length > 0
-                        ? {}
-                        : lastSearch || {}
-                    }
+                    {...getSearchLink()}
                     activeOptions={{ exact: false }}
                     activeProps={{ className: 'bg-accent text-primary' }}
                     className={getLinkClassName('/app/search')}
