@@ -1,4 +1,5 @@
 import { CheckTrackAccess } from '@/common/decorators/check-track-access.decorator';
+import { BypassResponseInterceptor } from '@/common/decorators/bypass-interceptor.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { ApiErrorResponseDto } from '@/common/dto/api-error.response.dto';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
@@ -235,6 +236,7 @@ export class LibraryTracksController {
     return this.commandBus.execute(new UploadTrackAudioCommand(id, userId, file));
   }
 
+  @BypassResponseInterceptor()
   @Get(':id/stream')
   @UseGuards(JwtAuthGuard, TrackAccessGuard)
   @CheckTrackAccess('id')
