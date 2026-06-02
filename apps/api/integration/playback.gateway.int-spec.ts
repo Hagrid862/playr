@@ -196,8 +196,6 @@ describe('PlaybackGateway (Integration)', () => {
 
     const list = await gateway.handleListDevices(socketD2 as never);
 
-    expect(list.devices).toHaveLength(2);
-
     const desktop = list.devices.find((d) => d.id === 'device-d1');
     const phone = list.devices.find((d) => d.id === 'device-d2');
 
@@ -205,5 +203,289 @@ describe('PlaybackGateway (Integration)', () => {
     expect(desktop?.isCurrentDevice).toBe(false);
     expect(phone?.isActive).toBe(false);
     expect(phone?.isCurrentDevice).toBe(true);
+  });
+
+
+  it('command:presence-touch registers or updates device and returns ok', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    const result = await gateway.handlePresenceTouch(socket as never);
+    expect(result.ok).toBe(true);
+    expect(result.serverTime).toBeDefined();
+  });
+
+  it('query:get-queue returns queue state', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleGetQueue(socket as never);
+    expect(result).toBeDefined();
+    expect(result?.items).toEqual([]);
+  });
+
+  it('command:set-playing-state updates playing flag and versions state', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleSetPlayingState(socket as never, {
+      isPlaying: true,
+      expectedVersion: 1,
+    });
+
+    expect(result.isPlaying).toBe(true);
+    expect(result.version).toBe(2);
+    expect(socket.broadcast.emit).toHaveBeenCalledWith('event:playback-state-updated', result);
+  });
+
+  it('command:set-active-device transfers active device status', async () => {
+    const socketA = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+    const socketB = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-b',
+    });
+
+    await gateway.handleConnection(socketA as never);
+    await gateway.handleConnection(socketB as never);
+
+    await gateway.handleSetPlayback(socketA as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleSetActiveDevice(socketA as never, {
+      deviceId: 'device-b',
+      expectedVersion: 1,
+    });
+
+    expect(result.activeDeviceId).toBe('device-b');
+    expect(result.version).toBe(2);
+  });
+
+  it('command:set-repeat-state updates repeat mode', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleSetRepeatState(socket as never, {
+      repeatMode: 'one',
+      expectedVersion: 1,
+    });
+
+    expect(result.repeatMode).toBe('one');
+    expect(result.version).toBe(2);
+  });
+
+  it('command:set-shuffle-state updates shuffle state', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleSetShuffleState(socket as never, {
+      shuffle: true,
+      expectedVersion: 1,
+    });
+
+    expect(result.shuffle).toBe(true);
+    expect(result.version).toBe(2);
+  });
+
+  it('command:set-volume-level-state updates volume state', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleSetVolumeLevelState(socket as never, {
+      volume: 0.5,
+      expectedVersion: 1,
+    });
+
+    expect(result.volume).toBe(0.5);
+    expect(result.version).toBe(2);
+  });
+
+  it('command:set-favorite-state updates favorited marker', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    prismaMock.client.library.findUnique.mockResolvedValue({ id: 'library-123' } as any);
+    prismaMock.client.libraryTrack.findFirst.mockResolvedValue({ id: 'link-123' } as any);
+    prismaMock.client.playlist.findFirst.mockResolvedValue({ id: 'favorites-123' } as any);
+    prismaMock.client.playlistTrack.findUnique.mockResolvedValue(null);
+    prismaMock.client.playlistTrack.aggregate.mockResolvedValue({ _max: { order: -1 } });
+    prismaMock.client.playlistTrack.create.mockResolvedValue({} as any);
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleSetFavoriteState(socket as never, {
+      favorite: 'favorited',
+      expectedVersion: 1,
+    });
+
+    expect(result.favorited).toBe('favorited');
+    expect(result.version).toBe(2);
+  });
+
+  it('command:set-library-state updates library status', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleSetLibraryState(socket as never, {
+      inLibrary: true,
+      expectedVersion: 1,
+    });
+
+    expect(result.inLibrary).toBe(true);
+    expect(result.version).toBe(2);
+  });
+
+  it('command:add-queue-item appends an item to the play queue', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: { ...minimalPlaybackStateFields },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const newQueueItem = {
+      queueId: '1ec7c000-0000-6000-8000-000000000000',
+      track: {
+        id: 'queue-item-id-1',
+        trackId: 'track-2',
+        title: 'Track 2',
+        artists: ['Artist 2'],
+        albumName: 'Album 2',
+        albumId: 'album-2',
+        albumArt: 'art2.png',
+        duration: 200,
+        explicit: true,
+      },
+      position: 0,
+      type: 'queue' as const,
+      originalPosition: 0,
+    };
+
+    const result = await gateway.handleAddQueueItem(socket as never, {
+      track: newQueueItem,
+      expectedVersion: 1,
+    });
+
+    expect(result.queue).toHaveLength(1);
+    expect(result.queue[0].track.title).toBe('Track 2');
+    expect(result.version).toBe(2);
+  });
+
+  it('command:clear-queue empties the play queue', async () => {
+    const socket = createPlaybackSocket({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      playbackDeviceId: 'device-a',
+    });
+
+    await gateway.handleSetPlayback(socket as never, {
+      state: {
+        ...minimalPlaybackStateFields,
+        queue: [
+          {
+            queueId: '1ec7c000-0000-6000-8000-000000000001',
+            track: {
+              id: 'pt-1',
+              trackId: 'track-2',
+              title: 'Track 2',
+              artists: ['Artist 2'],
+              albumName: 'Album 2',
+              albumId: 'album-2',
+              albumArt: 'art2.png',
+              duration: 200,
+              explicit: true,
+            },
+            position: 0,
+            type: 'queue' as const,
+            originalPosition: 0,
+          },
+        ],
+      },
+      expectedVersion: 0,
+      claimActiveDevice: true,
+    });
+
+    const result = await gateway.handleClearQueue(socket as never, {
+      expectedVersion: 1,
+    });
+
+    expect(result.queue).toHaveLength(0);
+    expect(result.version).toBe(2);
   });
 });

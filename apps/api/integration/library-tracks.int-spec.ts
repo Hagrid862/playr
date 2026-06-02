@@ -246,7 +246,7 @@ describe('LibraryTracksController (Integration)', () => {
 
     it('should return 404 if no processed audio file found', async () => {
       const authHeader = await getAuthHeader();
-      prismaMock.client.user.findFirst.mockResolvedValue(mockUser);
+      prismaMock.client.track.findFirst.mockResolvedValue(mockTrack);
       prismaMock.client.audioFile.findMany.mockResolvedValue([]);
 
       await request(app.getHttpServer())
