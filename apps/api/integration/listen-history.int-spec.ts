@@ -53,7 +53,7 @@ describe('ListenHistoryController (Integration)', () => {
         genres: [],
       };
 
-      const mockHistoryItems = [
+      const mockHistoryItems: any[] = [
         {
           id: 'lh-1',
           userId: 'user-123',

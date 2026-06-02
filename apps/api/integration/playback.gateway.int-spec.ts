@@ -205,7 +205,6 @@ describe('PlaybackGateway (Integration)', () => {
     expect(phone?.isCurrentDevice).toBe(true);
   });
 
-
   it('command:presence-touch registers or updates device and returns ok', async () => {
     const socket = createPlaybackSocket({
       userId: USER_ID,
@@ -366,7 +365,13 @@ describe('PlaybackGateway (Integration)', () => {
     prismaMock.client.libraryTrack.findFirst.mockResolvedValue({ id: 'link-123' } as any);
     prismaMock.client.playlist.findFirst.mockResolvedValue({ id: 'favorites-123' } as any);
     prismaMock.client.playlistTrack.findUnique.mockResolvedValue(null);
-    prismaMock.client.playlistTrack.aggregate.mockResolvedValue({ _max: { order: -1 } });
+    prismaMock.client.playlistTrack.aggregate.mockResolvedValue({
+      _max: { order: -1 },
+      _count: undefined,
+      _sum: undefined,
+      _avg: undefined,
+      _min: undefined,
+    });
     prismaMock.client.playlistTrack.create.mockResolvedValue({} as any);
 
     await gateway.handleSetPlayback(socket as never, {
@@ -440,6 +445,7 @@ describe('PlaybackGateway (Integration)', () => {
     const result = await gateway.handleAddQueueItem(socket as never, {
       track: newQueueItem,
       expectedVersion: 1,
+      position: null,
     });
 
     expect(result.queue).toHaveLength(1);

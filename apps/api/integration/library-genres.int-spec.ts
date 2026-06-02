@@ -96,10 +96,7 @@ describe('LibraryGenresController (Integration)', () => {
     });
 
     it('should return 401 if unauthorized', async () => {
-      await request(app.getHttpServer())
-        .post('/library/genres')
-        .send({ name: 'Jazz' })
-        .expect(401);
+      await request(app.getHttpServer()).post('/library/genres').send({ name: 'Jazz' }).expect(401);
     });
   });
 
@@ -107,7 +104,13 @@ describe('LibraryGenresController (Integration)', () => {
     it('should return paginated genres (200)', async () => {
       const authHeader = await getAuthHeader();
       const genres = [
-        mockGenre({ id: 'g1', name: 'Rock', slug: 'rock', kind: GenreKind.system, libraryId: null }),
+        mockGenre({
+          id: 'g1',
+          name: 'Rock',
+          slug: 'rock',
+          kind: GenreKind.system,
+          libraryId: null,
+        }),
         mockGenre({ id: 'g2', name: 'Jazz', slug: 'jazz' }),
       ];
 

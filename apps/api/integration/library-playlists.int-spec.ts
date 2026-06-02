@@ -18,6 +18,10 @@ function mockPlaylist(overrides: Partial<Playlist> = {}): Playlist {
     systemRole: null,
     coverId: null,
     libraryId: 'library-123',
+    artistId: null,
+    description: null,
+    isPublic: false,
+    isCollaborative: false,
     deletedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -159,7 +163,7 @@ describe('LibraryPlaylistsController & LibraryPlaylistPinsController (Integratio
 
         prismaMock.client.playlist.findFirst.mockResolvedValue(playlist);
         prismaMock.client.playlistTrack.count.mockResolvedValue(1);
-        prismaMock.client.playlistTrack.findMany.mockResolvedValue([
+        const mockPlaylistTracks: any[] = [
           {
             id: 'pt-1',
             playlistId: playlist.id,
@@ -179,7 +183,8 @@ describe('LibraryPlaylistsController & LibraryPlaylistPinsController (Integratio
               genres: [],
             },
           },
-        ]);
+        ];
+        prismaMock.client.playlistTrack.findMany.mockResolvedValue(mockPlaylistTracks);
 
         const response = await request(app.getHttpServer())
           .get(`/library/playlists/${playlist.id}`)
@@ -214,13 +219,14 @@ describe('LibraryPlaylistsController & LibraryPlaylistPinsController (Integratio
           .mockResolvedValueOnce(playlist) // find active playlist
           .mockResolvedValueOnce(null); // name available for rename
         prismaMock.client.playlist.update.mockResolvedValue(updated);
-        prismaMock.client.playlist.findMany.mockResolvedValue([
+        const mockPlaylistsWithCovers: any[] = [
           {
             ...updated,
             cover: null,
             _count: { tracks: 5 },
           },
-        ]);
+        ];
+        prismaMock.client.playlist.findMany.mockResolvedValue(mockPlaylistsWithCovers);
         prismaMock.client.playlistSidebarPin.findMany.mockResolvedValue([]);
 
         const response = await request(app.getHttpServer())
@@ -260,7 +266,10 @@ describe('LibraryPlaylistsController & LibraryPlaylistPinsController (Integratio
         const authHeader = await getAuthHeader();
         const playlist = mockPlaylist();
         const mockFile = Buffer.from('image-data');
-        const mockCover: Image = imageBuilder({ id: 'img-1', url: 'https://cdn.example.com/cover.webp' });
+        const mockCover: Image = imageBuilder({
+          id: 'img-1',
+          url: 'https://cdn.example.com/cover.webp',
+        });
 
         prismaMock.client.playlist.findFirst.mockResolvedValue(playlist);
         imageServiceMock.validateImage.mockResolvedValue(true);
@@ -325,7 +334,13 @@ describe('LibraryPlaylistsController & LibraryPlaylistPinsController (Integratio
         prismaMock.client.playlist.findFirst.mockResolvedValue(playlist);
         prismaMock.client.track.count.mockResolvedValue(1); // track assignable
         prismaMock.client.playlistTrack.findUnique.mockResolvedValue(null);
-        prismaMock.client.playlistTrack.aggregate.mockResolvedValue({ _max: { order: 0 } });
+        prismaMock.client.playlistTrack.aggregate.mockResolvedValue({
+          _max: { order: 0 },
+          _count: undefined,
+          _sum: undefined,
+          _avg: undefined,
+          _min: undefined,
+        });
         prismaMock.client.playlistTrack.create.mockResolvedValue({} as any);
 
         const response = await request(app.getHttpServer())
@@ -372,7 +387,13 @@ describe('LibraryPlaylistsController & LibraryPlaylistPinsController (Integratio
         prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
         prismaMock.client.playlist.findFirst.mockResolvedValue(playlist);
         prismaMock.client.playlistSidebarPin.findFirst.mockResolvedValue(null); // not pinned yet
-        prismaMock.client.playlistSidebarPin.aggregate.mockResolvedValue({ _max: { order: -1 } });
+        prismaMock.client.playlistSidebarPin.aggregate.mockResolvedValue({
+          _max: { order: -1 },
+          _count: undefined,
+          _sum: undefined,
+          _avg: undefined,
+          _min: undefined,
+        });
         prismaMock.client.playlistSidebarPin.create.mockResolvedValue(pin);
 
         const response = await request(app.getHttpServer())
