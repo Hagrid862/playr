@@ -39,7 +39,7 @@ describe('LibraryGenresController (Integration)', () => {
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     setupJwtAuthPrismaMocks(prismaMock);
   });
 
@@ -133,6 +133,7 @@ describe('LibraryGenresController (Integration)', () => {
       const authHeader = await getAuthHeader();
       const genre = mockGenre();
 
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.genre.findFirst.mockResolvedValue(genre);
 
       const response = await request(app.getHttpServer())
@@ -147,6 +148,7 @@ describe('LibraryGenresController (Integration)', () => {
     it('should return 404 if genre not found', async () => {
       const authHeader = await getAuthHeader();
 
+      prismaMock.client.library.findUnique.mockResolvedValue(mockLibrary);
       prismaMock.client.genre.findFirst.mockResolvedValue(null);
 
       await request(app.getHttpServer())
