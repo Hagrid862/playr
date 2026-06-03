@@ -326,4 +326,28 @@ test.describe("Queue Management", () => {
 
     await newContext.close();
   });
+
+  test("should remove track from queue", async () => {
+    await playTrackFromAlbum(page, playerPage, track1);
+
+    const track2Card = await getUniqueAlbumTrackCard(page, track2);
+    await track2Card.click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Add to Queue" }).click();
+
+    await page.getByRole("button", { name: "Queue", exact: true }).click();
+    await queuePage.expectTrackInQueue(track2);
+
+    const queueRows = queuePage.nextUpList.locator("div.group");
+    const countBefore = await queueRows.count();
+    expect(countBefore).toBeGreaterThan(0);
+
+    const queueRow = queueRows
+      .filter({ has: page.getByText(track2, { exact: true }) })
+      .first();
+    await queueRow.hover();
+    await queueRow.locator("button").last().click({ force: true });
+
+    await expect(queueRows).toHaveCount(countBefore - 1, { timeout: 10000 });
+    await page.keyboard.press("Escape");
+  });
 });

@@ -27,6 +27,8 @@ test.describe("Playback Functionality", () => {
   const artistName = `Playback Artist ${timestamp}`;
   const albumName = `Playback Album ${timestamp}`;
   const trackName = `Playback Track ${timestamp}`;
+  const initialTrackName = "Initial Track";
+  let albumId: string;
 
   test.describe.configure({ mode: "serial", timeout: 120_000 });
 
@@ -133,7 +135,7 @@ test.describe("Playback Functionality", () => {
     await test.step("Add Track", async () => {
       await expect(page).toHaveURL(/\/app\/library\/albums\/[^/]+/);
       const albumUrl = page.url().split("?")[0];
-      const albumId = albumUrl.split("/").filter(Boolean).pop();
+      albumId = albumUrl.split("/").filter(Boolean).pop()!;
       expect(albumId).toBeTruthy();
 
       await page.goto(`/app/library/albums/${albumId}/add-content`);
@@ -211,15 +213,102 @@ test.describe("Playback Functionality", () => {
   });
 
   test("should check audio quality menu", async () => {
-    // We only check that the quality menu opens and "Auto" is available.
-    // Specific qualities might be disabled depending on backend processing latency.
     await playerPage.moreActionsButton.click();
     await playerPage.audioQualityMenuTrigger.click();
     await expect(
       page.getByRole("menuitemcheckbox", { name: "Auto" }),
     ).toBeVisible();
-    // Close menu
     await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
+  });
+
+  test("should toggle shuffle and repeat", async () => {
+    await page.goto(`/app/library/albums/${albumId}`);
+    const trackRow = page
+      .locator("div.group.cursor-pointer")
+      .filter({ hasText: initialTrackName });
+    await trackRow.click();
+
+    await playerPage.toggleShuffle();
+    await expect(playerPage.shuffleButton).toHaveClass(/text-emerald-500/);
+
+    await playerPage.toggleRepeat();
+    await expect(playerPage.repeatButton).toHaveClass(/text-emerald-500/);
+  });
+
+  test("should skip between tracks", async () => {
+    await page.goto(`/app/library/albums/${albumId}`);
+    await expect(page.getByText(trackName)).toBeVisible({ timeout: 30000 });
+
+    const initialRow = page
+      .locator("div.group.cursor-pointer")
+      .filter({ hasText: initialTrackName });
+    await initialRow.click();
+    await expect(playerPage.trackTitle).toHaveText(initialTrackName, {
+      timeout: 10000,
+    });
+
+    await playerPage.skipForward();
+    await expect(playerPage.trackTitle).not.toHaveText(initialTrackName, {
+      timeout: 15000,
+    });
+
+    const afterSkip = await playerPage.trackTitle.textContent();
+    await playerPage.skipBackward();
+    await expect(playerPage.trackTitle).toHaveText(initialTrackName, {
+      timeout: 10000,
+    });
+    expect(afterSkip).not.toBe(initialTrackName);
+  });
+
+  test("should seek within track", async () => {
+    await page.goto(`/app/library/albums/${albumId}`);
+    const trackRow = page
+      .locator("div.group.cursor-pointer")
+      .filter({ hasText: initialTrackName });
+    await trackRow.click();
+    await playerPage.expectPlaying(initialTrackName);
+
+    const before = Number(
+      (await playerPage.progressSlider.getAttribute("aria-valuenow")) ?? "0",
+    );
+    await playerPage.seek(75);
+    await expect
+      .poll(async () =>
+        Number(
+          (await playerPage.progressSlider.getAttribute("aria-valuenow")) ??
+            "0",
+        ),
+      )
+      .toBeGreaterThan(before);
+  });
+
+  test("should open audio quality menu and select when enabled", async () => {
+    await playerPage.moreActionsButton.click();
+    await playerPage.audioQualityMenuTrigger.click();
+    await expect(
+      page.getByRole("menuitemcheckbox", { name: "Auto" }),
+    ).toBeVisible();
+    const highOption = page.getByRole("menuitemcheckbox", { name: "High" });
+    if (await highOption.isVisible()) {
+      await highOption.click({ force: true });
+    }
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Escape");
+  });
+
+  test("should favorite track from player", async () => {
+    await page.goto(`/app/library/albums/${albumId}`);
+    const trackRow = page
+      .locator("div.group.cursor-pointer")
+      .filter({ hasText: initialTrackName });
+    await trackRow.click();
+
+    const favButton = page.getByRole("button", {
+      name: "Favorite",
+      exact: true,
+    });
+    await favButton.click();
+    await expect(favButton).toBeVisible();
   });
 });

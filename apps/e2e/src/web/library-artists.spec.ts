@@ -191,6 +191,15 @@ test.describe("Library Artist CRUD Workflow", () => {
     await expect(heartButton).toBeVisible();
   });
 
+  test("should show play and shuffle on artist detail", async () => {
+    const name = `E2E Artist ${timestamp}`;
+    await artistsPage.gotoArtistsList();
+    await artistsPage.clickArtistCard(name);
+    await artistsPage.expectArtistDetailPage(name);
+    await expect(artistsPage.playButton).toBeVisible();
+    await expect(artistsPage.shuffleButton).toBeVisible();
+  });
+
   test("should validate max length for description", async () => {
     const name = `E2E Artist ${timestamp}`;
     await artistsPage.gotoArtistsList();

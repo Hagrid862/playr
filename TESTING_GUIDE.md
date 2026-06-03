@@ -89,8 +89,36 @@ describe('AuthController (e2e)', () => {
 
 Playwright tests organized by app in subdirectories: `web/`, `admin/`, `artist/`, `api/`. Each maps to a Playwright project in `playwright.config.ts` with its own base URL.
 
+**Prerequisites:** Docker Compose stack running (web ~3000, API ~8000, MailHog ~8025). Do not use `pnpm dev` for E2E.
+
+**Shared helpers:**
+
+- `apps/e2e/src/web/fixtures/authenticated-user.helper.ts` — `createVerifiedUser()` (register + MailHog OTP + verify)
+- `apps/e2e/src/web/fixtures/authenticated-user.fixture.ts` — `test.extend` with `verifiedUser` for specs that only need a logged-in session
+- `apps/e2e/src/web/fixtures/library-content.helper.ts` — `ensureLibraryReady()`, `createArtist()`, `createAlbumWithTrack()`, etc.
+- `apps/e2e/src/web/test-data.helper.ts` — unique names, `TEST_AUDIO_PATH`, `TEST_IMAGE_PATH`
+
+**Web specs (`apps/e2e/src/web/`):**
+
+| File                                                           | Coverage                               |
+| -------------------------------------------------------------- | -------------------------------------- |
+| `auth.spec.ts`, `registration.spec.ts`, `verify-email.spec.ts` | Auth lifecycle                         |
+| `auth-edge-cases.spec.ts`, `password-reset.spec.ts`            | Session edge cases, password reset     |
+| `library.spec.ts`, `navigation.spec.ts`                        | Library bootstrap, sidebar navigation  |
+| `library-artists.spec.ts`                                      | Artist CRUD, detail controls           |
+| `library-albums.spec.ts`                                       | Album list, create, play, edit, delete |
+| `library-songs.spec.ts`                                        | Songs table, play, edit, delete        |
+| `library-genres.spec.ts`                                       | Genre list and detail                  |
+| `playlists.spec.ts`                                            | Playlists CRUD, pin, favorites         |
+| `playback.spec.ts`, `queue.spec.ts`                            | Player, queue, sync                    |
+| `listen-history.spec.ts`                                       | Listen history panel                   |
+| `smoke.spec.ts`                                                | Landing, placeholders                  |
+
+**API smoke (`apps/e2e/src/api/health.spec.ts`):** `GET /health`
+
 - CI: one worker, two retries, forbids `.only`
 - Local: four workers, no retries
+- Upload-heavy suites use `test.describe.configure({ mode: 'serial' })` and 120s timeouts
 
 ## Coverage
 

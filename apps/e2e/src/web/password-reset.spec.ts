@@ -1,56 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { ForgotPasswordPage } from "./forgot-password.po";
 import { LoginPage } from "./login.po";
-import { RegistrationPage } from "./registration.po";
-import { VerifyEmailPage } from "./verify-email.po";
 import { DashboardPage } from "./dashboard.po";
+import { createVerifiedUser } from "./fixtures/authenticated-user.helper";
 import { getOtpFromMailhog } from "./mailhog.helper";
-
-interface VerifiedUser {
-  username: string;
-  email: string;
-  password: string;
-}
-
-async function createVerifiedUser(
-  page: Page,
-  username: string,
-  email: string,
-  password: string,
-): Promise<VerifiedUser> {
-  const registrationPage = new RegistrationPage(page);
-  const verifyEmailPage = new VerifyEmailPage(page);
-  const dashboardPage = new DashboardPage(page);
-
-  await registrationPage.goto();
-  await registrationPage.fillForm({
-    username,
-    firstName: "Test",
-    lastName: "User",
-    email,
-    password,
-    confirmPassword: password,
-  });
-  await registrationPage.selectGender("Male");
-  await registrationPage.selectBirthDate(new Date(1990, 5, 15));
-  await expect(registrationPage.submitButton).toBeEnabled({ timeout: 10000 });
-  await registrationPage.submit();
-  await registrationPage.expectSuccess();
-
-  await expect(page).toHaveURL(/\/auth\/verify-email/, { timeout: 15000 });
-  const otpCode = await getOtpFromMailhog(email);
-  expect(otpCode).not.toBeNull();
-
-  await verifyEmailPage.fillOtpCode(otpCode!);
-  await expect(verifyEmailPage.verifyButton).toBeEnabled();
-  await verifyEmailPage.clickVerify();
-  await expect(page).toHaveURL(/\/app/);
-
-  await dashboardPage.logout();
-  await expect(page).toHaveURL(/\/auth\/login/);
-
-  return { username, email, password };
-}
 
 test.describe("Password Reset Workflow", () => {
   let forgotPasswordPage: ForgotPasswordPage;
@@ -70,13 +23,10 @@ test.describe("Password Reset Workflow", () => {
   test("should reset password via full flow and login with new password", async ({
     page,
   }) => {
-    const t = Date.now();
-    const user = await createVerifiedUser(
-      page,
-      `reset_user_${t}`,
-      `reset_${t}@example.com`,
-      "OriginalPass123!",
-    );
+    const user = await createVerifiedUser(page, {
+      prefix: "reset_user",
+      logoutAfter: true,
+    });
     const newPassword = "NewPass456!";
 
     // ─── 1. Navigate to forgot password ────────────────────────
@@ -124,13 +74,10 @@ test.describe("Password Reset Workflow", () => {
   });
 
   test("should validate recover password form fields", async ({ page }) => {
-    const t = Date.now();
-    const user = await createVerifiedUser(
-      page,
-      `validate_user_${t}`,
-      `validate_${t}@example.com`,
-      "OriginalPass123!",
-    );
+    const user = await createVerifiedUser(page, {
+      prefix: "validate_user",
+      logoutAfter: true,
+    });
 
     await forgotPasswordPage.goto();
     await forgotPasswordPage.fillEmail(user.email);
@@ -154,13 +101,10 @@ test.describe("Password Reset Workflow", () => {
   test("should allow going back from recover to forgot card", async ({
     page,
   }) => {
-    const t = Date.now();
-    const user = await createVerifiedUser(
-      page,
-      `goback_user_${t}`,
-      `goback_${t}@example.com`,
-      "OriginalPass123!",
-    );
+    const user = await createVerifiedUser(page, {
+      prefix: "goback_user",
+      logoutAfter: true,
+    });
 
     await forgotPasswordPage.goto();
     await forgotPasswordPage.fillEmail(user.email);
@@ -179,13 +123,10 @@ test.describe("Password Reset Workflow", () => {
   });
 
   test("should resend reset code", async ({ page }) => {
-    const t = Date.now();
-    const user = await createVerifiedUser(
-      page,
-      `resend_user_${t}`,
-      `resend_${t}@example.com`,
-      "OriginalPass123!",
-    );
+    const user = await createVerifiedUser(page, {
+      prefix: "resend_user",
+      logoutAfter: true,
+    });
 
     await forgotPasswordPage.goto();
     await forgotPasswordPage.fillEmail(user.email);
@@ -201,13 +142,10 @@ test.describe("Password Reset Workflow", () => {
   });
 
   test("should show error for invalid reset code", async ({ page }) => {
-    const t = Date.now();
-    const user = await createVerifiedUser(
-      page,
-      `invalid_user_${t}`,
-      `invalid_${t}@example.com`,
-      "OriginalPass123!",
-    );
+    const user = await createVerifiedUser(page, {
+      prefix: "invalid_user",
+      logoutAfter: true,
+    });
 
     await forgotPasswordPage.goto();
     await forgotPasswordPage.fillEmail(user.email);

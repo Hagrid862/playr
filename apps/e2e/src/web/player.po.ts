@@ -11,6 +11,7 @@ export class PlayerPage {
   readonly volumeSlider: Locator;
   readonly progressSlider: Locator;
   readonly moreActionsButton: Locator;
+  readonly favoriteButton: Locator;
   readonly trackTitle: Locator;
   readonly trackArtist: Locator;
   readonly audioQualityMenuTrigger: Locator;
@@ -37,6 +38,10 @@ export class PlayerPage {
 
     this.moreActionsButton = page.getByRole("button", {
       name: "More Player Actions",
+    });
+    this.favoriteButton = page.getByRole("button", {
+      name: "Favorite",
+      exact: true,
     });
     this.volumeButton = page.getByRole("button", { name: "Volume" });
     this.volumeSlider = page.locator('div[role="slider"]').last();
