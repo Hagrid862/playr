@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 
 export function ThemeToggle() {
   const { setTheme } = useTheme();
@@ -27,7 +28,16 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-stone-900 border-white/10 text-white">
-        <DropdownMenuItem onClick={() => setTheme('light')}>Light</DropdownMenuItem>
+        <Popover>
+          <PopoverContent>
+            <p>Currently not implemented</p>
+          </PopoverContent>
+          <PopoverTrigger>
+            <DropdownMenuItem disabled={true} onClick={() => setTheme('light')}>
+              Light
+            </DropdownMenuItem>
+          </PopoverTrigger>
+        </Popover>
         <DropdownMenuItem onClick={() => setTheme('dark')}>Dark</DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')}>System</DropdownMenuItem>
       </DropdownMenuContent>
