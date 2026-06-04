@@ -44,7 +44,7 @@ describe('ThemeToggle', () => {
 
   it('calls setTheme when items are clicked', async () => {
     customRender(<ThemeToggle />);
-    
+
     // Check menu items exist
     expect(screen.getByText('Light')).toBeInTheDocument();
     expect(screen.getByText('Dark')).toBeInTheDocument();
