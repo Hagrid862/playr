@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 import { TooltipProvider } from './components/ui/tooltip';
 import { useAuthStore } from './stores/auth.store';
+import { ThemeProvider } from 'next-themes';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -77,9 +78,11 @@ if (rootElement && !rootElement.innerHTML) {
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Root />
-        </TooltipProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <TooltipProvider>
+            <Root />
+          </TooltipProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </StrictMode>,
   );

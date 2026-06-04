@@ -6,6 +6,7 @@ import { PlayrLogo } from './PlayrLogo';
 import { Button } from '@/components/ui/button';
 import { ArrowLeftIcon } from '@phosphor-icons/react';
 import { useRouter } from '@tanstack/react-router';
+import { ThemeToggle } from './ThemeToggle';
 
 export function PageHeader({
   actions,
@@ -70,7 +71,10 @@ export function PageHeader({
         </div>
 
         {/* Right: global actions */}
-        <div className="flex justify-end items-center gap-2">{actions}</div>
+        <div className="flex justify-end items-center gap-2">
+          {actions}
+          <ThemeToggle />
+        </div>
       </div>
 
       {/* ── Mobile layout: hidden when search overlay is open ── */}
@@ -107,6 +111,7 @@ export function PageHeader({
                 <SearchInput mobile mobileExpanded={false} onMobileToggle={onMobileSearchToggle} />
               )}
               {actions}
+              <ThemeToggle />
             </div>
           </div>
         </div>
