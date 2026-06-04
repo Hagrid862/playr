@@ -37,7 +37,7 @@ test.describe("Library Songs Workflow", () => {
   });
 
   test.afterAll(async () => {
-    await page.close();
+    if (page) await page.close();
   });
 
   test("should list uploaded tracks on songs page", async () => {
@@ -71,7 +71,9 @@ test.describe("Library Songs Workflow", () => {
     await songsPage.gotoSongsList();
     await songsPage.deleteTrackFromContextMenu(editedTrackName);
     await expect(
-      page.getByRole("row").filter({ hasText: editedTrackName }),
+      songsPage.songsTable
+        .getByRole("row")
+        .filter({ hasText: editedTrackName }),
     ).not.toBeVisible({ timeout: 10000 });
   });
 });

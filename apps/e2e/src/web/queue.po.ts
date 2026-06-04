@@ -29,6 +29,10 @@ export class QueuePage {
       .locator("div.group")
       .filter({ has: this.page.getByText(title, { exact: true }) })
       .first();
+    await expect(
+      row,
+      `Expected queue row for "${title}" in Next Up`,
+    ).toBeVisible({ timeout: 10000 });
     await row.hover();
     await row.locator("button").last().click();
   }

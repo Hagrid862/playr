@@ -9,7 +9,19 @@ export async function waitForAuthStorage(page: Page): Promise<void> {
           const request = indexedDB.open("keyval-store");
           request.onsuccess = () => {
             const db = request.result;
-            const tx = db.transaction("keyval", "readonly");
+            if (!db.objectStoreNames.contains("keyval")) {
+              db.close();
+              resolve(false);
+              return;
+            }
+            let tx: IDBTransaction;
+            try {
+              tx = db.transaction("keyval", "readonly");
+            } catch {
+              db.close();
+              resolve(false);
+              return;
+            }
             const store = tx.objectStore("keyval");
             const getReq = store.get("auth-storage");
             getReq.onsuccess = () => {

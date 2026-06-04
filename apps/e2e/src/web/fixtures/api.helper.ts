@@ -40,7 +40,19 @@ async function browserApi<T>(
           const request = indexedDB.open("keyval-store");
           request.onsuccess = () => {
             const db = request.result;
-            const tx = db.transaction("keyval", "readonly");
+            if (!db.objectStoreNames.contains("keyval")) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            let tx: IDBTransaction;
+            try {
+              tx = db.transaction("keyval", "readonly");
+            } catch {
+              db.close();
+              resolve(null);
+              return;
+            }
             const getReq = tx.objectStore("keyval").get("auth-storage");
             getReq.onsuccess = () => {
               db.close();

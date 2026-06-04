@@ -60,6 +60,10 @@ test.describe("Navigation Flow", () => {
     await expect(page).toHaveURL(/\/app\/library\/overview/, {
       timeout: 15000,
     });
-    await expect(dashboardPage.sidebar).toBeVisible({ timeout: 15000 });
+    if (isMobile) {
+      await expect(sidebarTrigger).toBeVisible({ timeout: 15000 });
+    } else {
+      await expect(dashboardPage.sidebar).toBeVisible({ timeout: 15000 });
+    }
   });
 });

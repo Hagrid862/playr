@@ -46,7 +46,7 @@ test.describe("Listen History Workflow", () => {
   });
 
   test.afterAll(async () => {
-    await page.close();
+    if (page) await page.close();
   });
 
   test("should show played track in history", async () => {

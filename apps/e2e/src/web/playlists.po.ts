@@ -93,18 +93,20 @@ export class PlaylistsPage {
     await this.page.getByRole("button", { name: "Shuffle" }).click();
   }
 
+  private playlistDetailActionsButton() {
+    return this.page
+      .locator("div.flex.items-center.gap-1.ml-2")
+      .getByRole("button");
+  }
+
   async openEditFromMenu() {
-    await this.page.getByRole("button", { name: /more/i }).click();
-    await this.page.getByRole("menuitem", { name: "Edit playlist" }).click();
+    await this.playlistDetailActionsButton().click();
+    await this.page.getByRole("menuitem", { name: "Edit" }).click();
     await expect(this.page).toHaveURL(/\/edit/, { timeout: 10000 });
   }
 
   async deletePlaylistFromDetail() {
-    const menuButton = this.page
-      .locator("button")
-      .filter({ has: this.page.locator("svg") })
-      .last();
-    await menuButton.click();
+    await this.playlistDetailActionsButton().click();
     await this.page.getByRole("menuitem", { name: /delete/i }).click();
     const dialog = this.page.getByRole("dialog");
     await expect(dialog).toBeVisible();

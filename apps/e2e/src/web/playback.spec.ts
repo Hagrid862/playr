@@ -291,7 +291,8 @@ test.describe("Playback Functionality", () => {
     ).toBeVisible();
     const highOption = page.getByRole("menuitemcheckbox", { name: "High" });
     if (await highOption.isVisible()) {
-      await highOption.click({ force: true });
+      await expect(highOption).toBeEnabled();
+      await highOption.click();
     }
     await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
@@ -309,6 +310,6 @@ test.describe("Playback Functionality", () => {
       exact: true,
     });
     await favButton.click();
-    await expect(favButton).toBeVisible();
+    await expect(favButton).toHaveClass(/text-emerald/);
   });
 });

@@ -9,7 +9,7 @@ test.describe("Library Management Workflow", () => {
     await dashboardPage.gotoLibraryOverview();
 
     const libraryNotCreated = page.getByText(
-      "You don't have a private library yet.",
+      /You don't have a private library yet\.?/i,
     );
     const libraryCreated = page.getByText("Your Private Library");
     await expect(libraryNotCreated.or(libraryCreated)).toBeVisible({

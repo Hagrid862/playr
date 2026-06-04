@@ -29,7 +29,13 @@ export function uniqueUsername(prefix: string): string {
 }
 
 export function uniqueEmail(prefix: string): string {
-  return `${prefix}_${uniqueSuffix()}@example.com`;
+  const sanitized =
+    prefix
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]/g, "")
+      .slice(0, 32) || "user";
+  return `${sanitized}_${uniqueSuffix()}@example.com`;
 }
 
 export function uniqueLabel(prefix: string): string {

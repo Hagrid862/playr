@@ -96,12 +96,7 @@ test.describe("Playlists Workflow", () => {
     await playlistsPage.gotoPlaylistsList();
     await playlistsPage.openPlaylistCard(playlistName);
 
-    await page
-      .locator("div.flex.items-center.gap-1.ml-2")
-      .getByRole("button")
-      .last()
-      .click();
-    await page.getByRole("menuitem", { name: "Edit" }).click();
+    await playlistsPage.openEditFromMenu();
     await expect(page).toHaveURL(/\/edit/);
 
     const titleInput = page.getByLabel("Title");
@@ -125,7 +120,7 @@ test.describe("Playlists Workflow", () => {
     });
 
     await playerPage.favoriteButton.click();
-    await page.waitForTimeout(1000);
+    await expect(playerPage.favoriteButton).toHaveClass(/text-emerald/);
 
     await playlistsPage.gotoPlaylistsList();
     await playlistsPage.openPlaylistCard("Favorite songs");

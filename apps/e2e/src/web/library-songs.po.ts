@@ -1,29 +1,35 @@
-import { type Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 
 export class LibrarySongsPage {
   readonly page: Page;
+  readonly songsTable: Locator;
 
   constructor(page: Page) {
     this.page = page;
+    this.songsTable = page.getByRole("table");
   }
 
   async gotoSongsList() {
     await this.page.goto("/app/library/songs");
   }
 
+  private trackRow(title: string) {
+    return this.songsTable.getByRole("row").filter({ hasText: title });
+  }
+
   async expectTrackVisible(title: string) {
-    await expect(this.page.getByText(title).first()).toBeVisible({
+    await expect(this.trackRow(title).first()).toBeVisible({
       timeout: 15000,
     });
   }
 
   async playTrackFromRow(title: string) {
-    const row = this.page.getByRole("row").filter({ hasText: title });
+    const row = this.trackRow(title);
     await row.click();
   }
 
   async openTrackContextMenu(title: string) {
-    const row = this.page.getByRole("row").filter({ hasText: title });
+    const row = this.trackRow(title);
     await row.click({ button: "right" });
   }
 

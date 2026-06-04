@@ -170,7 +170,9 @@ export async function addSecondTrackToAlbum(
   trackName: string,
 ): Promise<void> {
   await page.goto(`/app/library/albums/${albumId}/add-content`);
-  await page.setInputFiles('input[type="file"]', TEST_AUDIO_PATH);
+  await page
+    .locator('input[type="file"][accept="audio/*"]')
+    .setInputFiles(TEST_AUDIO_PATH);
   await page.waitForTimeout(500);
   await expect(
     page.getByText(

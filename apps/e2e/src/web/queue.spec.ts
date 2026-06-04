@@ -341,11 +341,7 @@ test.describe("Queue Management", () => {
     const countBefore = await queueRows.count();
     expect(countBefore).toBeGreaterThan(0);
 
-    const queueRow = queueRows
-      .filter({ has: page.getByText(track2, { exact: true }) })
-      .first();
-    await queueRow.hover();
-    await queueRow.locator("button").last().click({ force: true });
+    await queuePage.removeTrackFromQueueByTitle(track2);
 
     await expect(queueRows).toHaveCount(countBefore - 1, { timeout: 10000 });
     await page.keyboard.press("Escape");
