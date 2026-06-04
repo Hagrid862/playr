@@ -24,6 +24,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@phosphor-icons/react', () => ({
   DiscIcon: () => <div data-testid="disc-icon" />,
+  UsersThreeIcon: () => <div data-testid="users-icon" />,
   PlaylistIcon: () => <div data-testid="playlist-icon" />,
   MusicNotesIcon: () => <div data-testid="music-notes-icon" />,
   PlayIcon: () => <div data-testid="play-icon" />,
@@ -134,6 +135,15 @@ describe('Home', () => {
     fireEvent.click(songTitle);
 
     expect(mockPlayTrack).toHaveBeenCalled();
+  });
+
+  it('renders loading skeletons', async () => {
+    vi.mocked(useLibraryAlbums).mockReturnValue({ isLoading: true } as any);
+
+    customRender(<Home />);
+    // Should have multiple skeletons for the loading section
+    const skeletons = document.querySelectorAll('.animate-pulse');
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('hides sections when they are empty', () => {
