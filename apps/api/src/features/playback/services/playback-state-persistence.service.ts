@@ -16,6 +16,7 @@ import {
 } from '@repo/contracts';
 import { Redis } from 'ioredis';
 import { PLAYBACK_REDIS } from '../utils/playback-redis.constants';
+import { ListenHistoryService } from '../../listen-history/services/listen-history.service';
 
 const ATOMIC_SET_MAX_ATTEMPTS = 8;
 
@@ -57,7 +58,10 @@ export type PurgeDeletedLibraryTrackResult =
 export class PlaybackStatePersistenceService {
   private readonly logger = new Logger(PlaybackStatePersistenceService.name);
 
-  constructor(@Inject(PLAYBACK_REDIS) private readonly redis: Redis) {}
+  constructor(
+    @Inject(PLAYBACK_REDIS) private readonly redis: Redis,
+    private readonly listenHistoryService: ListenHistoryService,
+  ) {}
 
   /**
    * First write only: key must be absent. Merges defaults + partial payload, version 1.
@@ -123,6 +127,14 @@ export class PlaybackStatePersistenceService {
           const jitter = Math.floor(Math.random() * Math.min(base, 50));
           await sleep(base + jitter);
           continue;
+        }
+
+        if (firstState.isPlaying && firstState.trackData?.trackId) {
+          this.listenHistoryService
+            .recordListen(userId, firstState.trackData.trackId, true)
+            .catch((err) => {
+              this.logger.error(`Failed to record listen history: ${err.message}`, err.stack);
+            });
         }
 
         return firstState;
@@ -225,6 +237,46 @@ export class PlaybackStatePersistenceService {
           const jitter = Math.floor(Math.random() * Math.min(base, 50));
           await sleep(base + jitter);
           continue;
+        }
+
+        const becamePlaying = next.isPlaying && !parsed.isPlaying;
+        const trackChangedWhilePlaying =
+          next.isPlaying &&
+          parsed.isPlaying &&
+          next.trackData?.trackId !== parsed.trackData?.trackId;
+
+        if (next.trackData?.trackId) {
+          const isSameTrack = next.trackData.trackId === parsed.trackData?.trackId;
+          const isWithinStartThreshold = next.currentTime <= 5;
+
+          // A repeat/restart is when the song is playing, remains the same track, but jumps back to the start from further in
+          const isRepeat =
+            next.isPlaying &&
+            parsed.isPlaying &&
+            isSameTrack &&
+            isWithinStartThreshold &&
+            parsed.currentTime > 5;
+
+          let shouldRecord = trackChangedWhilePlaying || isRepeat;
+
+          if (becamePlaying) {
+            const isWithinDriftWindow = Math.abs(next.currentTime - parsed.currentTime) <= 5;
+
+            // A resume is when it is the same track, NOT in the first 5 seconds, and within the 5s drift window
+            const isResume = isSameTrack && !isWithinStartThreshold && isWithinDriftWindow;
+
+            if (!isResume) {
+              shouldRecord = true;
+            }
+          }
+
+          if (shouldRecord) {
+            this.listenHistoryService
+              .recordListen(userId, next.trackData.trackId, true)
+              .catch((err) => {
+                this.logger.error(`Failed to record listen history: ${err.message}`, err.stack);
+              });
+          }
         }
 
         return next;

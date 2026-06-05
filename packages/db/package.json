@@ -16,7 +16,7 @@
     "build": "tsup",
     "check-types": "tsc --noEmit",
     "prisma:generate": "prisma generate && pnpm build",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate": "printf '\\n' | prisma migrate dev",
     "prisma:reset": "prisma migrate reset --force",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"

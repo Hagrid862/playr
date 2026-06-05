@@ -92,12 +92,11 @@ export function QueueNextUp({
         {nextUp.length === 0 ? (
           <motion.div
             key="empty-queue"
-            initial={{ opacity: 0, scale: 0.98, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{
               opacity: 0,
               scale: 0.98,
-              filter: 'blur(4px)',
               transition: { duration: 0.2 },
             }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -108,12 +107,11 @@ export function QueueNextUp({
         ) : (
           <motion.div
             key={isShuffled ? 'shuffled-list' : 'unshuffled-list'}
-            initial={{ opacity: 0, scale: 0.98, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{
               opacity: 0,
               scale: 0.98,
-              filter: 'blur(4px)',
               transition: { duration: 0.2 },
             }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}

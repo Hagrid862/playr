@@ -1,6 +1,6 @@
 import { type ListenHistory } from "@repo/db";
 import z from "zod";
-import { zodDateTime } from "../utils/zod-datetime";
+import { zodDateTime, zodDateTimeNullable } from "../utils/zod-datetime";
 
 export const ListenHistorySchema = z.object({
   id: z.string(),
@@ -11,6 +11,7 @@ export const ListenHistorySchema = z.object({
   trackId: z.string(),
   createdAt: zodDateTime(),
   updatedAt: zodDateTime(),
+  deletedAt: zodDateTimeNullable(),
 }) satisfies z.ZodType<ListenHistory>;
 
 export type ZodListenHistory = z.infer<typeof ListenHistorySchema>;

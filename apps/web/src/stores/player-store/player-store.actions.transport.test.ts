@@ -72,6 +72,28 @@ describe('player-store.actions.transport', () => {
       expect(getState().isPlaying).toBe(true);
     });
 
+    it('bumps listen history refresh when resuming near the start of a track', () => {
+      getState().playTrack(createTrack('1'));
+      getState().pause();
+      getState().setCurrentTime(5);
+      const tokenBefore = getState().listenHistoryRefreshToken;
+
+      getState().resume();
+
+      expect(getState().listenHistoryRefreshToken).toBe(tokenBefore + 1);
+    });
+
+    it('does not bump listen history refresh when resuming after the first few seconds', () => {
+      getState().playTrack(createTrack('1'));
+      getState().pause();
+      getState().setCurrentTime(6);
+      const tokenBefore = getState().listenHistoryRefreshToken;
+
+      getState().resume();
+
+      expect(getState().listenHistoryRefreshToken).toBe(tokenBefore);
+    });
+
     it('resumes only if there is a current track', () => {
       getState().resume();
       expect(getState().isPlaying).toBe(false);
@@ -86,6 +108,30 @@ describe('player-store.actions.transport', () => {
       expect(getState().isPlaying).toBe(false);
       getState().togglePlay();
       expect(getState().isPlaying).toBe(true);
+    });
+
+    it('bumps listen history refresh when toggling play near the start of a track', () => {
+      getState().playTrack(createTrack('1'));
+      getState().togglePlay();
+      getState().setCurrentTime(4);
+      const tokenBefore = getState().listenHistoryRefreshToken;
+
+      getState().togglePlay();
+
+      expect(getState().isPlaying).toBe(true);
+      expect(getState().listenHistoryRefreshToken).toBe(tokenBefore + 1);
+    });
+
+    it('does not bump listen history refresh when toggling play after the first few seconds', () => {
+      getState().playTrack(createTrack('1'));
+      getState().togglePlay();
+      getState().setCurrentTime(6);
+      const tokenBefore = getState().listenHistoryRefreshToken;
+
+      getState().togglePlay();
+
+      expect(getState().isPlaying).toBe(true);
+      expect(getState().listenHistoryRefreshToken).toBe(tokenBefore);
     });
   });
 });

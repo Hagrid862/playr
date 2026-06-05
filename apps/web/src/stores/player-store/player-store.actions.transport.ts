@@ -1,3 +1,4 @@
+import { bumpListenHistoryRefresh } from '@/lib/playback/listen-history-refresh';
 import {
   afterLocalPlaybackMutation,
   syncPlayingStateToServer,
@@ -27,18 +28,24 @@ export function createPlayerTransportActions(
       syncPlayingStateToServer(false);
     },
     resume: () => {
-      const { currentTrack, activeDeviceId, localPlaybackDeviceId } = get();
+      const { currentTrack, activeDeviceId, localPlaybackDeviceId, currentTime } = get();
       set({ isPlaying: currentTrack !== null });
       if (currentTrack) {
         syncPlayingStateToServer(shouldClaimActiveDevice(activeDeviceId, localPlaybackDeviceId));
+        if (currentTime <= 5) {
+          bumpListenHistoryRefresh();
+        }
       }
     },
     togglePlay: () => {
-      const { isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId } = get();
+      const { isPlaying, currentTrack, activeDeviceId, localPlaybackDeviceId, currentTime } = get();
       const nextIsPlaying = !isPlaying && !!currentTrack;
       set({ isPlaying: nextIsPlaying });
       if (nextIsPlaying) {
         syncPlayingStateToServer(shouldClaimActiveDevice(activeDeviceId, localPlaybackDeviceId));
+        if (currentTime <= 5) {
+          bumpListenHistoryRefresh();
+        }
         return;
       }
       syncPlayingStateToServer(false);

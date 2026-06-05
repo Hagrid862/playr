@@ -26,6 +26,8 @@ export interface PlayerState {
   isShuffled: boolean;
 
   playbackVersion: number;
+  /** Incremented on play/pause, skip, and seek so open History can refetch. */
+  listenHistoryRefreshToken: number;
   playbackFavorited: 'favorited' | 'disliked' | 'not-set';
   playbackInLibrary: boolean;
   activeDeviceId: string | null;

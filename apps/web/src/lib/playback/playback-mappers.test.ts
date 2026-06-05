@@ -2,7 +2,12 @@ import type { PlaybackTrack, ZodTrack } from '@repo/contracts';
 import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { albumBuilder, artistBuilder, imageBuilder, trackBuilder } from '@repo/testing/builders';
 import { describe, expect, it, vi } from 'vitest';
-import { playbackTrackToQueueItem, zodTrackToPlaybackTrack } from './playback-mappers';
+import {
+  createOptimisticListenHistoryItem,
+  playbackTrackToQueueItem,
+  playbackTrackToZodTrack,
+  zodTrackToPlaybackTrack,
+} from './playback-mappers';
 
 vi.mock('uuid', () => ({
   v6: () => 'test-uuid-v6',
@@ -41,6 +46,69 @@ describe('playback-mappers', () => {
 
       const result = playbackTrackToQueueItem(track as PlaybackTrack);
       expect(result.track.artists).toEqual([]);
+    });
+  });
+
+  describe('playbackTrackToZodTrack', () => {
+    it('maps PlaybackTrack to a ZodTrack-shaped listen history track', () => {
+      const now = new Date('2026-05-27T12:00:00Z');
+      const track: PlaybackTrack = {
+        id: '1',
+        title: 'Title',
+        trackId: '1',
+        artists: ['Artist'],
+        albumName: 'Album',
+        albumId: 'album-1',
+        albumArt: 'art.png',
+        duration: 120,
+        explicit: false,
+      };
+
+      const result = playbackTrackToZodTrack(track, now);
+
+      expect(result.createdAt).toBe(now);
+      expect(result.artists?.[0]?.name).toBe('Artist');
+      expect(result.album?.cover?.url).toBe('art.png');
+    });
+
+    it('omits album when the playback track has no album id', () => {
+      const track = {
+        id: '1',
+        title: 'Title',
+        trackId: '1',
+        artists: ['Artist'],
+        albumName: 'Album',
+        albumId: '',
+        albumArt: 'art.png',
+        duration: 120,
+        explicit: false,
+      } as PlaybackTrack;
+
+      const result = playbackTrackToZodTrack(track);
+
+      expect(result.album).toBeUndefined();
+    });
+  });
+
+  describe('createOptimisticListenHistoryItem', () => {
+    it('returns a listen history list item', () => {
+      const track: PlaybackTrack = {
+        id: '1',
+        title: 'Title',
+        trackId: '1',
+        artists: ['Artist'],
+        albumName: 'Album',
+        albumId: 'album-1',
+        albumArt: null,
+        duration: 120,
+        explicit: false,
+      };
+
+      const result = createOptimisticListenHistoryItem(track, 'optimistic-1');
+
+      expect(result.id).toBe('optimistic-1');
+      expect(result.track.id).toBe('1');
+      expect(result.completed).toBe(false);
     });
   });
 
