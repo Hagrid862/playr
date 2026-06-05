@@ -24,12 +24,17 @@ export class QueuePage {
     await track.click();
   }
 
-  async removeTrackFromQueue(index: number) {
-    const track = this.nextUpList
-      .locator('[data-testid="queue-item"]')
-      .nth(index);
-    await track.hover();
-    await track.locator('button[aria-label="Remove from queue"]').click();
+  async removeTrackFromQueueByTitle(title: string) {
+    const row = this.nextUpList
+      .locator("div.group")
+      .filter({ has: this.page.getByText(title, { exact: true }) })
+      .first();
+    await expect(
+      row,
+      `Expected queue row for "${title}" in Next Up`,
+    ).toBeVisible({ timeout: 10000 });
+    await row.hover();
+    await row.locator("button").last().click();
   }
 
   async expectTrackInQueue(title: string) {

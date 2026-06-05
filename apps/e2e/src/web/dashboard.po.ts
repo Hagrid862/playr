@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect } from "@playwright/test";
+import { waitForAuthStorage } from "./fixtures/auth-storage.helper";
 
 export class DashboardPage {
   readonly page: Page;
@@ -22,8 +23,13 @@ export class DashboardPage {
   }
 
   async gotoLibraryOverview() {
-    await this.libraryOverviewLink.click();
-    await expect(this.page).toHaveURL(/\/app\/library\/overview/);
+    await waitForAuthStorage(this.page);
+    await this.page.goto("/app/library/overview", {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(this.page).toHaveURL(/\/app\/library\/overview/, {
+      timeout: 15000,
+    });
   }
 
   async createLibrary() {

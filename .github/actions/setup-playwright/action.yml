@@ -1,0 +1,20 @@
+name: Setup Playwright for CI
+description: Cache Playwright browsers and install Chromium on cache miss
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Playwright browsers
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-chromium
+
+    - name: Install Playwright Chromium
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      timeout-minutes: 15
+      env:
+        DEBUG: pw:install
+      run: pnpm --filter @repo/e2e run ci:install-browsers

@@ -45,10 +45,17 @@ export class LibraryArtistsPage {
     });
     this.createArtistCancelButton = page.getByRole("link", { name: "Cancel" });
 
-    // Artist detail
+    // Artist detail — hero actions (avoid player bar "Play")
+    const artistHeroActions = page.locator("div.px-2.mt-12").first();
     this.artistDetailName = page.locator("h2.text-2xl.font-bold");
-    this.playButton = page.getByRole("button", { name: "Play" });
-    this.shuffleButton = page.getByRole("button", { name: "Shuffle" });
+    this.playButton = artistHeroActions.getByRole("button", {
+      name: "Play",
+      exact: true,
+    });
+    this.shuffleButton = artistHeroActions.getByRole("button", {
+      name: "Shuffle",
+      exact: true,
+    });
     // The menu trigger in detail page
     this.moreOptionsButton = page.getByRole("button", { name: "More options" });
 

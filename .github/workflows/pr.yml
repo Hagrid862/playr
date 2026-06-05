@@ -494,6 +494,7 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     needs: docker-build
     env:
       IMAGE_TAG: ci
@@ -536,8 +537,8 @@ jobs:
         with:
           name: build-outputs
 
-      - name: Install Playwright browsers
-        run: pnpm --filter @repo/e2e exec playwright install chromium --with-deps
+      - name: Setup Playwright
+        uses: ./.github/actions/setup-playwright
 
       - name: Debug - List Artifacts
         run: ls -R apps/api/dist apps/web/dist || echo "Artifacts missing"
