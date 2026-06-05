@@ -592,8 +592,14 @@ describe('LibraryAlbumsController (Integration)', () => {
       const authHeader = await getAuthHeader();
 
       prismaMock.client.user.findUnique.mockResolvedValue(mockUser);
-      prismaMock.client.album.findFirst.mockResolvedValue({ id: mockAlbum.id });
-      prismaMock.client.audioFile.aggregate.mockResolvedValue({ _sum: { size: 0 } });
+      prismaMock.client.album.findFirst.mockResolvedValue(mockAlbum);
+      prismaMock.client.audioFile.aggregate.mockResolvedValue({
+        _sum: { size: 0 },
+        _count: undefined,
+        _avg: undefined,
+        _min: undefined,
+        _max: undefined,
+      });
 
       prismaMock.client.track.findUnique
         .mockResolvedValueOnce(mockTrackWithAccess)
