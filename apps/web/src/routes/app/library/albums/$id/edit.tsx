@@ -14,6 +14,7 @@ import { useUpdateLibraryTrack } from '@/hooks/api/library-tracks/useUpdateLibra
 import type { UpdateLibraryAlbumRequest } from '@repo/contracts';
 import { AlbumSystemKind } from '@repo/db';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { getStorageQuotaErrorToastMessage } from '@/lib/storage-quota-error';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -111,7 +112,7 @@ function EditAlbumComponent() {
         navigate({ to: '/app/library/albums/$id', params: { id } });
       } catch (error) {
         console.error('Failed to update album:', error);
-        const message = error instanceof Error ? error.message : 'Failed to save';
+        const message = getStorageQuotaErrorToastMessage(error, 'Failed to save');
         toast.error(message);
       } finally {
         setIsSaving(false);

@@ -25,6 +25,7 @@ import { GenreResolutionService } from './genres/genre-resolution.service';
 import { HashingService } from './services/hashing.service';
 import { ImageService } from './services/image.service';
 import { PrismaService } from './services/prisma.service';
+import { LibraryStorageQuotaService } from './services/library-storage-quota.service';
 import { StorageService } from './services/storage.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
 import { MailService } from '@/shared/services/mail.service';
@@ -41,6 +42,7 @@ import { MailService } from '@/shared/services/mail.service';
     ImageService,
     HashingService,
     StorageService,
+    LibraryStorageQuotaService,
     MailService,
     GenreNormalizationService,
     GenreResolutionService,
@@ -73,6 +75,7 @@ import { MailService } from '@/shared/services/mail.service';
     UnitOfWorkService,
     ImageService,
     StorageService,
+    LibraryStorageQuotaService,
     MailService,
     GenreNormalizationService,
     GenreResolutionService,

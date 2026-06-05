@@ -9,6 +9,7 @@ import {
   Prisma,
   ProcessingStatus,
 } from '@repo/db';
+import { buildOwnerScopedCountableAudioFileWhere } from '@/features/audio-processing/audio-processing.storage-quota';
 import { PrismaService } from '../services/prisma.service';
 function mergeIncludeForAudioFileGetById(
   include?: Prisma.AudioFileInclude,
@@ -175,6 +176,17 @@ export class AudioFileRepository {
     return await this.prisma.client.audioFile.count({
       where: filter,
     });
+  }
+
+  /**
+   * Sum of byte sizes for audio files that count toward the track owner's storage quota.
+   */
+  async sumCountableBytesByOwnerUserId(ownerUserId: string): Promise<number> {
+    const result = await this.prisma.client.audioFile.aggregate({
+      _sum: { size: true },
+      where: buildOwnerScopedCountableAudioFileWhere(ownerUserId),
+    });
+    return result._sum.size ?? 0;
   }
 
   // ─────────────────────────────────────────────────────────────

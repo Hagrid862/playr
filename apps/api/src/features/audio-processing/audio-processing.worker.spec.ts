@@ -1,7 +1,8 @@
 import { AudioFileRepository } from '@/shared/repositories/audio-file.repository';
 import { TrackRepository } from '@/shared/repositories/track.repository';
+import { LibraryStorageQuotaService } from '@/shared/services/library-storage-quota.service';
 import { StorageService } from '@/shared/services/storage.service';
-import { Logger, NotFoundException } from '@nestjs/common';
+import { Logger, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccessRole, AudioFormat, AudioQuality, ProcessingStatus } from '@repo/db';
 import { audioFileBuilder, trackWithAccessBuilder } from '@repo/testing/builders';
@@ -29,6 +30,7 @@ describe('AudioProcessingWorker', () => {
   let storageService: DeepMocked<StorageService>;
   let transcodeService: DeepMocked<AudioTranscodeService>;
   let waveformService: DeepMocked<WaveformService>;
+  let storageQuotaService: DeepMocked<LibraryStorageQuotaService>;
 
   beforeEach(async () => {
     audioFileRepository = createMock<AudioFileRepository>();
@@ -36,6 +38,9 @@ describe('AudioProcessingWorker', () => {
     storageService = createMock<StorageService>();
     transcodeService = createMock<AudioTranscodeService>();
     waveformService = createMock<WaveformService>();
+    storageQuotaService = createMock<LibraryStorageQuotaService>();
+
+    storageQuotaService.assertCanAddBytes.mockResolvedValue(undefined);
 
     transcodeService.getMimeType.mockImplementation((format: AudioFormat) => {
       const mime: Record<string, string> = {
@@ -58,6 +63,7 @@ describe('AudioProcessingWorker', () => {
         { provide: StorageService, useValue: storageService },
         { provide: AudioTranscodeService, useValue: transcodeService },
         { provide: WaveformService, useValue: waveformService },
+        { provide: LibraryStorageQuotaService, useValue: storageQuotaService },
       ],
     }).compile();
 
@@ -270,9 +276,16 @@ describe('AudioProcessingWorker', () => {
           numberOfChannels: 2,
         },
       } as mm.IAudioMetadata);
+      trackRepository.getById.mockResolvedValue(
+        trackWithAccessBuilder({
+          id: 'tr-123',
+          userId: 'user-123',
+          role: AccessRole.owner,
+        }),
+      );
+      storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
 
       await worker.process(mockJob);
-      expect(trackRepository.getById).not.toHaveBeenCalled();
       expect(trackRepository.update).not.toHaveBeenCalled();
     });
 
@@ -450,6 +463,88 @@ describe('AudioProcessingWorker', () => {
       await worker.process(mockJob);
 
       expect(trackRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should skip countable transcodes when storage quota is exceeded but still create fallbacks', async () => {
+      audioFileRepository.getById.mockResolvedValue(
+        audioFileBuilder({
+          id: 'af-123',
+          format: AudioFormat.mp3,
+          key: 'path/to/original.mp3',
+        }),
+      );
+      storageService.getFile.mockResolvedValue(Buffer.from('input'));
+      trackRepository.getById.mockResolvedValue(
+        trackWithAccessBuilder({
+          id: 'tr-123',
+          duration: 0,
+          userId: 'user-123',
+          role: AccessRole.owner,
+        }),
+      );
+      storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
+      storageQuotaService.assertCanAddBytes.mockRejectedValue(
+        new PayloadTooLargeException({
+          message: 'Storage quota exceeded',
+          usedBytes: 9_000,
+          limitBytes: 10_000,
+        }),
+      );
+
+      await worker.process(mockJob);
+
+      const createCalls = audioFileRepository.create.mock.calls;
+      expect(createCalls.length).toBe(2);
+      expect(
+        createCalls.every(
+          (call) =>
+            (call[0].quality === AudioQuality.standard && call[0].format === AudioFormat.mp3) ||
+            (call[0].quality === AudioQuality.high && call[0].format === AudioFormat.mp3),
+        ),
+      ).toBe(true);
+    });
+
+    it('should log transcode failure when storage preflight throws a non-quota error', async () => {
+      const quotaCheckError = new Error('Quota service unavailable');
+
+      audioFileRepository.getById.mockResolvedValue(
+        audioFileBuilder({
+          id: 'af-123',
+          format: AudioFormat.mp3,
+          key: 'path/to/original.mp3',
+        }),
+      );
+      storageService.getFile.mockResolvedValue(Buffer.from('input'));
+      trackRepository.getById.mockResolvedValue(
+        trackWithAccessBuilder({
+          id: 'tr-123',
+          duration: 0,
+          userId: 'user-123',
+          role: AccessRole.owner,
+        }),
+      );
+      storageService.uploadFile.mockResolvedValue({ url: 'url', key: 'key' });
+      storageQuotaService.assertCanAddBytes
+        .mockRejectedValueOnce(quotaCheckError)
+        .mockResolvedValue(undefined);
+
+      const loggerSpy = vi.spyOn(Logger.prototype, 'error');
+
+      await worker.process(mockJob);
+
+      expect(storageQuotaService.assertCanAddBytes).toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to transcode to low mp3'),
+        expect.objectContaining({
+          error: quotaCheckError,
+          audioFileId: 'af-123',
+          trackId: 'tr-123',
+          quality: AudioQuality.low,
+          format: AudioFormat.mp3,
+        }),
+      );
+
+      loggerSpy.mockRestore();
     });
 
     it('should log warning if temp dir cleanup fails', async () => {

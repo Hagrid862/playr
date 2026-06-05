@@ -43,6 +43,7 @@ describe('envSchema', () => {
       MAIL_PORT: 1025,
       MAIL_FROM: 'noreply@playr.com',
       THROTTLE_ENABLED: true,
+      LIBRARY_STORAGE_QUOTA_BYTES: 5 * 1024 * 1024 * 1024,
     });
   });
 

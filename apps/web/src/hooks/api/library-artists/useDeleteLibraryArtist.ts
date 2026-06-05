@@ -2,6 +2,10 @@ import { ApiError } from '@/lib/api-error';
 import { useLibraryStore } from '@/stores/library.store';
 import type { DeleteLibraryArtistResponse } from '@repo/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  invalidateLibraryArtistAlbumsInfinite,
+  invalidateLibraryArtistsInfinite,
+} from '../invalidateLibraryInfiniteQueries';
 import { deleteLibraryArtist } from './requests/deleteLibraryArtist';
 
 export const useDeleteLibraryArtist = () => {
@@ -13,6 +17,8 @@ export const useDeleteLibraryArtist = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['library', 'artists'] });
       queryClient.invalidateQueries({ queryKey: ['library', 'artists', id] });
+      void invalidateLibraryArtistsInfinite(queryClient);
+      void invalidateLibraryArtistAlbumsInfinite(queryClient, id);
 
       removePrivateArtist(id);
     },

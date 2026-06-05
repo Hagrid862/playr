@@ -1,6 +1,10 @@
 import { ApiError } from '@/lib/api-error';
 import type { UploadLibraryAlbumCoverResponse } from '@repo/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  invalidateLibraryAlbumsInfinite,
+  invalidateLibraryArtistAlbumsInfinite,
+} from '../invalidateLibraryInfiniteQueries';
 import { uploadLibraryAlbumCover } from './requests/uploadLibraryAlbumCover';
 
 export const useUploadLibraryAlbumCover = () => {
@@ -11,6 +15,8 @@ export const useUploadLibraryAlbumCover = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['library', 'albums', id] });
       queryClient.invalidateQueries({ queryKey: ['library', 'albums'] });
+      void invalidateLibraryAlbumsInfinite(queryClient);
+      void invalidateLibraryArtistAlbumsInfinite(queryClient);
     },
   });
 };

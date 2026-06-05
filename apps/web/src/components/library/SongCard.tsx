@@ -4,10 +4,10 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Spinner } from '@/components/ui/spinner';
+import { TrackAudioStatusIcon } from '@/components/library/TrackAudioStatusIcon';
 import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { cn } from '@/lib/utils';
-import { PencilIcon, PlayIcon, QueueIcon, TrashIcon, WarningIcon } from '@phosphor-icons/react';
+import { PencilIcon, PlayIcon, QueueIcon, TrashIcon } from '@phosphor-icons/react';
 import type { ZodArtist } from '@repo/contracts';
 
 interface SongCardProps {
@@ -74,14 +74,11 @@ export function SongCard({
           onClick={isDisabled ? undefined : onClick}
         >
           <div className="text-center text-sm font-bold text-stone-500 group-hover:text-primary transition-colors flex justify-center items-center">
-            {isProcessing ? (
-              <Spinner className="size-4 mx-auto" aria-label="Processing" />
-            ) : isFailed ? (
-              <WarningIcon
-                className="mx-auto text-amber-500"
-                size={16}
-                weight="fill"
-                aria-label="Processing failed"
+            {isProcessing || isFailed ? (
+              <TrackAudioStatusIcon
+                isProcessing={isProcessing}
+                isFailed={isFailed}
+                iconClassName="mx-auto"
               />
             ) : isActive && isPlaying ? (
               <div className="flex items-end gap-0.5 h-3">

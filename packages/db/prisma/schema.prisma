@@ -22,6 +22,8 @@ model User {
   description String? @db.Text
   password    String
 
+  storageQuotaBytes BigInt?
+
   library Library? @relation("UserLibrary")
 
   avatarId String? @unique
@@ -553,10 +555,10 @@ model ArtistFollow {
 // -----------------------------------------------------------
 
 model ListenHistory {
-  id         String   @id @default(cuid())
-  listenedAt DateTime @default(now())
-  durationMs Int      @default(0)
-  completed  Boolean  @default(false)
+  id         String    @id @default(cuid())
+  listenedAt DateTime  @default(now())
+  durationMs Int       @default(0)
+  completed  Boolean   @default(false)
   deletedAt  DateTime?
 
   userId String

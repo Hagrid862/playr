@@ -14,6 +14,7 @@ import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
 import { useCreateLibraryGenre } from '@/hooks/api/library-genres/useCreateLibraryGenre';
 import { useBulkCreateLibraryTracks } from '@/hooks/api/library-tracks/useBulkCreateLibraryTracks';
 import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
+import { getStorageQuotaErrorToastMessage } from '@/lib/storage-quota-error';
 import type { BulkTrackItem } from '@/lib/types/library';
 import type { ZodAlbumInfer, ZodGenreInfer } from '@repo/contracts';
 import { CircleNotchIcon, DiscIcon, InfoIcon, UploadSimpleIcon } from '@phosphor-icons/react';
@@ -111,8 +112,12 @@ function AddContentTracksWorkspace({ album }: { album: ZodAlbumInfer }) {
         navigate({ to: '/app/library/albums/$id', params: { id: album.id } });
       } catch (error) {
         console.error(error);
-        setSubmitError('Failed to upload tracks. Please try again.');
-        toast.error('Failed to upload tracks. Please try again.');
+        const message = getStorageQuotaErrorToastMessage(
+          error,
+          'Failed to upload tracks. Please try again.',
+        );
+        setSubmitError(message);
+        toast.error(message);
         throw error;
       }
     },
