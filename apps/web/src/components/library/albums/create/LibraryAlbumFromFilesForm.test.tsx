@@ -49,10 +49,14 @@ vi.mock('@/hooks/api/library-artists/requests/checkLibraryArtistNameAvailability
   checkLibraryArtistNameAvailability: vi.fn(),
 }));
 
-vi.mock('@/lib/audio/audio-metadata', () => ({
-  extractMetadataFromAudioFile: vi.fn(),
-  extractCoverFromAudioFile: vi.fn(),
-}));
+vi.mock('@/lib/audio/audio-metadata', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audio/audio-metadata')>();
+  return {
+    ...actual,
+    extractMetadataFromAudioFile: vi.fn(),
+    extractCoverFromAudioFile: vi.fn(),
+  };
+});
 
 const createAlbumIsPending = vi.hoisted(() => ({ current: false }));
 const uploadCoverIsPending = vi.hoisted(() => ({ current: false }));

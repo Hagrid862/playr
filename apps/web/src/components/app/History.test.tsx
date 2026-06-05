@@ -210,17 +210,45 @@ describe('History', () => {
   });
 
   describe('loading state', () => {
-    it('renders skeleton placeholders when query is loading', () => {
+    it('renders loading text when query is loading', () => {
       vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([], { isLoading: true }));
       customRender(<History isVisible={true} onBack={mockOnBack} />);
       expect(screen.getByRole('status', { name: 'Loading history' })).toBeInTheDocument();
       expect(screen.queryByText('No listening history')).not.toBeInTheDocument();
     });
 
-    it('renders skeleton placeholders when refetching an empty list', () => {
-      vi.mocked(useListenHistoryInfinite).mockReturnValue(buildQueryMock([], { isFetching: true }));
+    it('renders loading text on initial fetch while isFetching with no data yet', () => {
+      vi.mocked(useListenHistoryInfinite).mockReturnValue({
+        data: undefined,
+        fetchNextPage: mockFetchNextPage,
+        hasNextPage: false,
+        isLoading: false,
+        isFetching: true,
+        isFetchingNextPage: false,
+        isError: false,
+      } as unknown as ListenHistoryQueryResult);
+
       customRender(<History isVisible={true} onBack={mockOnBack} />);
+
       expect(screen.getByRole('status', { name: 'Loading history' })).toBeInTheDocument();
+      expect(screen.queryByText('No listening history')).not.toBeInTheDocument();
+    });
+
+    it('does not render loading text when refetching after being loaded once', () => {
+      // Simulate loaded once state by first rendering with isLoading: false
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock([], { isLoading: false, isFetching: false }),
+      );
+      const { rerender } = customRender(<History isVisible={true} onBack={mockOnBack} />);
+
+      // Now mock the background refetch (isFetching: true)
+      vi.mocked(useListenHistoryInfinite).mockReturnValue(
+        buildQueryMock([], { isLoading: false, isFetching: true }),
+      );
+      rerender(<History isVisible={true} onBack={mockOnBack} />);
+
+      expect(screen.queryByRole('status', { name: 'Loading history' })).not.toBeInTheDocument();
+      expect(screen.getByText('No listening history')).toBeInTheDocument();
     });
   });
 
@@ -374,6 +402,10 @@ describe('History', () => {
 
       // Space key
       fireEvent.keyDown(row, { key: ' ' });
+      expect(mockPlayTrack).toHaveBeenCalledTimes(2);
+
+      // Other key should be ignored
+      fireEvent.keyDown(row, { key: 'a' });
       expect(mockPlayTrack).toHaveBeenCalledTimes(2);
     });
 
@@ -579,7 +611,7 @@ describe('History', () => {
       expect(mockFetchNextPage).not.toHaveBeenCalled();
     });
 
-    it('renders pagination skeleton rows while fetching the next page', () => {
+    it('renders pagination loading text while fetching the next page', () => {
       const mockItems = [
         {
           id: 'hist-0',
@@ -607,11 +639,10 @@ describe('History', () => {
         buildQueryMock(mockItems, { hasNext: true, isFetchingNextPage: true }),
       );
 
-      const { container } = customRender(<History isVisible={true} onBack={mockOnBack} />);
+      customRender(<History isVisible={true} onBack={mockOnBack} />);
 
-      const paginationSkeleton = container.querySelector('.space-y-0\\.5.pt-1[aria-hidden]');
-      expect(paginationSkeleton).toBeInTheDocument();
-      expect(paginationSkeleton?.querySelectorAll('[aria-hidden].rounded-md').length).toBe(3);
+      expect(screen.getByRole('status', { name: 'Loading next page' })).toBeInTheDocument();
+      expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
 
     it('deduplicates history items with the same id across pages', () => {

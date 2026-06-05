@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { cn } from '@/lib/utils';
 import { useListenHistoryInfinite, useListenHistorySync } from '@/hooks/api/library';
@@ -23,30 +22,6 @@ const LISTEN_HISTORY_PAGE_LIMIT = 20;
 
 const HISTORY_ROW_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] } as const;
 const HISTORY_LAYOUT_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] } as const;
-
-const HISTORY_SKELETON_CLASS = 'bg-white/10';
-
-function HistoryListRowSkeleton() {
-  return (
-    <div className="flex items-center gap-3 p-2 rounded-md" aria-hidden>
-      <Skeleton className={cn('h-10 w-10 shrink-0 rounded', HISTORY_SKELETON_CLASS)} />
-      <div className="flex-1 min-w-0 space-y-2">
-        <Skeleton className={cn('h-4 w-[58%] max-w-xs', HISTORY_SKELETON_CLASS)} />
-        <Skeleton className={cn('h-3 w-[36%] max-w-[10rem]', HISTORY_SKELETON_CLASS)} />
-      </div>
-    </div>
-  );
-}
-
-function HistoryListSkeleton({ count }: { count: number }) {
-  return (
-    <div className="space-y-0.5" role="status" aria-label="Loading history">
-      {Array.from({ length: count }, (_, i) => (
-        <HistoryListRowSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
 
 function HistoryListRow({
   item,
@@ -136,7 +111,16 @@ export function History({ isVisible, onBack }: HistoryProps) {
     });
   }, [data]);
 
-  const showInitialSkeleton = isLoading || (isFetching && historyItems.length === 0);
+  const [hasLoadedOnce, setHasLoadedOnce] = React.useState(false);
+
+  React.useEffect(() => {
+    if (data !== undefined && !isLoading) {
+      setHasLoadedOnce(true);
+    }
+  }, [data, isLoading]);
+
+  const showInitialSkeleton =
+    !hasLoadedOnce && (isLoading || (isFetching && historyItems.length === 0));
   const sentinelRef = React.useRef<HTMLDivElement>(null);
   const [headAnimationState, setHeadAnimationState] = React.useState<HistoryHeadAnimationState>({
     hasSeenList: false,
@@ -260,7 +244,13 @@ export function History({ isVisible, onBack }: HistoryProps) {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {showInitialSkeleton ? (
-          <HistoryListSkeleton count={LISTEN_HISTORY_PAGE_LIMIT} />
+          <div
+            className="text-sm text-white/30 italic text-center py-8"
+            role="status"
+            aria-label="Loading history"
+          >
+            Loading...
+          </div>
         ) : historyItems.length === 0 ? (
           <div className="text-sm text-white/30 italic text-center py-8">No listening history</div>
         ) : (
@@ -277,10 +267,12 @@ export function History({ isVisible, onBack }: HistoryProps) {
             </AnimatePresence>
             {hasNextPage && <div ref={sentinelRef} className="h-4" />}
             {isFetchingNextPage && (
-              <div className="space-y-0.5 pt-1" aria-hidden>
-                {Array.from({ length: 3 }, (_, i) => (
-                  <HistoryListRowSkeleton key={i} />
-                ))}
+              <div
+                className="text-sm text-white/30 italic text-center py-2"
+                role="status"
+                aria-label="Loading next page"
+              >
+                Loading...
               </div>
             )}
           </div>

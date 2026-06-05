@@ -7,9 +7,13 @@ import { act, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBulkTrackUpload } from './useBulkTrackUpload';
 
-vi.mock('@/lib/audio/audio-metadata', () => ({
-  extractCoverFromAudioFile: vi.fn(),
-}));
+vi.mock('@/lib/audio/audio-metadata', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audio/audio-metadata')>();
+  return {
+    ...actual,
+    extractCoverFromAudioFile: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/audio/clean-audio-filename', () => ({
   cleanFilenameToTitle: vi.fn((name) => name.replace('.mp3', '')),

@@ -8,9 +8,13 @@ import { act, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditAlbumTracks } from './useEditAlbumTracks';
 
-vi.mock('@/lib/audio/audio-metadata', () => ({
-  extractMetadataFromAudioFile: vi.fn(),
-}));
+vi.mock('@/lib/audio/audio-metadata', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audio/audio-metadata')>();
+  return {
+    ...actual,
+    extractMetadataFromAudioFile: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/audio/clean-audio-filename', () => ({
   cleanFilenameToTitle: vi.fn((name: string) => name.replace(/\.mp3$/i, '')),
