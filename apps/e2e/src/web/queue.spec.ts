@@ -113,20 +113,23 @@ test.describe("Queue Management", () => {
 
     console.log("Going to library overview...");
     await dashboardPage.gotoLibraryOverview();
-    
+
     console.log("Creating library...");
     await dashboardPage.createLibrary();
 
     console.log("Going to artists list...");
     await artistsPage.gotoArtistsList();
-    
+
     console.log("Waiting for add artist button...");
     await expect(artistsPage.page).toHaveURL(/\/app\/library\/artists/);
-    await artistsPage.addArtistButton.waitFor({ state: 'visible', timeout: 30000 });
-    
+    await artistsPage.addArtistButton.waitFor({
+      state: "visible",
+      timeout: 30000,
+    });
+
     console.log("Clicking add artist...");
     await artistsPage.clickAddArtist();
-    
+
     console.log("Creating artist...");
     await artistsPage.createArtist({ name: artistName });
 

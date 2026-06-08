@@ -125,7 +125,10 @@ test.describe("Library Artist CRUD Workflow", () => {
     // Wait for the URL to be correct instead of brittle networkidle
     await expect(artistsPage.page).toHaveURL(/\/app\/library\/artists/);
     // Ensure the add content button is visible and interactive
-    await artistsPage.addArtistButton.waitFor({ state: 'visible', timeout: 30000 });
+    await artistsPage.addArtistButton.waitFor({
+      state: "visible",
+      timeout: 30000,
+    });
     await artistsPage.clickAddArtist();
 
     await expect(artistsPage.artistNameInput).toBeVisible();
