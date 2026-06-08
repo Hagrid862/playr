@@ -31,11 +31,7 @@ function ScrollToTop() {
 
   useEffect(() => {
     const action = actionRef.current;
-    if (
-      action === 'BACK' ||
-      action === 'FORWARD' ||
-      action === 'GO'
-    ) {
+    if (action === 'BACK' || action === 'FORWARD' || action === 'GO') {
       return;
     }
     window.scrollTo(0, 0);
