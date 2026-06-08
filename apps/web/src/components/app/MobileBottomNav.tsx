@@ -48,20 +48,19 @@ export function MobileBottomNav() {
     }
 
     return lastVisited || rootPath;
-    };
+  };
 
-    const getSearchLink = () => {
+  const getSearchLink = () => {
     const isAlreadyAtRoot = location.pathname.replace(/\/$/, '') === '/app/search';
 
     return {
       to: '/app/search',
-      search: isAlreadyAtRoot && Object.keys(location.search || {}).length > 0
-        ? {}
-        : lastSearch || {},
+      search:
+        isAlreadyAtRoot && Object.keys(location.search || {}).length > 0 ? {} : lastSearch || {},
     };
-    };
+  };
 
-    const navItems = [
+  const navItems = [
     {
       to: getPersistentLink('home', '/app'),
       root: '/app',
@@ -92,7 +91,7 @@ export function MobileBottomNav() {
       icon: <MagnifyingGlassIcon className="size-5" />,
       label: 'Search',
     },
-    ];
+  ];
 
   const isActive = (rootPath: string) => {
     if (rootPath === '/app') {

@@ -87,9 +87,7 @@ export function AppSidebar() {
 
     return {
       to: '/app/search',
-      search: isAlreadyAtRoot && Object.keys(location.search).length > 0
-        ? {}
-        : lastSearch || {},
+      search: isAlreadyAtRoot && Object.keys(location.search).length > 0 ? {} : lastSearch || {},
     };
   };
 
