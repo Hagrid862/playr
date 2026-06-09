@@ -1,6 +1,6 @@
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { Test, TestingModule } from '@nestjs/testing';
-import { createPrismaClient } from '@repo/db';
+import { createPrismaClient, createExtendedPrismaClient } from '@repo/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   TRANSACTION_CONTEXT,
@@ -14,6 +14,7 @@ vi.mock('@repo/db', async () => {
   return {
     ...actual,
     createPrismaClient: vi.fn(),
+    createExtendedPrismaClient: vi.fn(),
   };
 });
 
@@ -21,6 +22,7 @@ describe('PrismaService', () => {
   let service: PrismaService;
   let transactionContext: DeepMocked<ITransactionContext>;
   let mockPrismaClient: any;
+  let mockExtendedPrismaClient: any;
   const originalEnv = process.env;
 
   beforeEach(async () => {
@@ -34,7 +36,13 @@ describe('PrismaService', () => {
       $transaction: vi.fn().mockImplementation((cb) => cb('mock-tx')),
     };
 
+    mockExtendedPrismaClient = {
+      $connect: vi.fn().mockResolvedValue(undefined),
+      $disconnect: vi.fn().mockResolvedValue(undefined),
+    };
+
     (createPrismaClient as any).mockReturnValue(mockPrismaClient);
+    (createExtendedPrismaClient as any).mockReturnValue(mockExtendedPrismaClient);
     transactionContext = createMock<ITransactionContext>();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -61,21 +69,24 @@ describe('PrismaService', () => {
     );
   });
 
-  it('should call createPrismaClient with DATABASE_URL', () => {
+  it('should call createPrismaClient and createExtendedPrismaClient with DATABASE_URL', () => {
     expect(createPrismaClient).toHaveBeenCalledWith(process.env.DATABASE_URL);
+    expect(createExtendedPrismaClient).toHaveBeenCalledWith(process.env.DATABASE_URL);
   });
 
   describe('onModuleInit', () => {
-    it('should call prisma.$connect', async () => {
+    it('should call prisma.$connect on both clients', async () => {
       await service.onModuleInit();
       expect(mockPrismaClient.$connect).toHaveBeenCalled();
+      expect(mockExtendedPrismaClient.$connect).toHaveBeenCalled();
     });
   });
 
   describe('onModuleDestroy', () => {
-    it('should call prisma.$disconnect', async () => {
+    it('should call prisma.$disconnect on both clients', async () => {
       await service.onModuleDestroy();
       expect(mockPrismaClient.$disconnect).toHaveBeenCalled();
+      expect(mockExtendedPrismaClient.$disconnect).toHaveBeenCalled();
     });
   });
 
@@ -93,6 +104,12 @@ describe('PrismaService', () => {
 
       expect(service.client).toBe(mockPrismaClient);
       expect(transactionContext.getTransactionalClient).toHaveBeenCalled();
+    });
+  });
+
+  describe('extended', () => {
+    it('should return the extended prisma client', () => {
+      expect(service.extended).toBe(mockExtendedPrismaClient);
     });
   });
 

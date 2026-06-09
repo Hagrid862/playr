@@ -189,10 +189,6 @@ export class SearchService {
       `);
     }
 
-    if (queryParts.length === 0) {
-      queryParts.push(Prisma.sql`SELECT NULL as id, NULL as name, NULL as type, NULL as visibility, NULL as "albumType", 0 as score WHERE 1=0`);
-    }
-
     const combinedQuery = Prisma.join(queryParts, '');
 
     const results = await this.prisma.extended.$queryRaw<RawSearchResult[]>`
