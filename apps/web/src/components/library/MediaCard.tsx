@@ -80,7 +80,19 @@ export function MediaCard({
         {content}
       </Link>
     ) : (
-      <div key={id} onClick={onClick} className={className}>
+      <div
+        key={id}
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === ' ') e.preventDefault();
+            onClick?.(e as unknown as React.MouseEvent);
+          }
+        }}
+        className={className}
+      >
         {content}
       </div>
     );

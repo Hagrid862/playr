@@ -110,7 +110,7 @@ export function MobileBottomNav() {
           <Link
             key={item.label}
             to={item.to}
-            search={item.search}
+            search={'search' in item ? item.search : {}}
             data-testid={`nav-item-${item.label.toLowerCase()}`}
             className={cn(
               'flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors',

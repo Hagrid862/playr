@@ -174,7 +174,9 @@ export function Home() {
                   onClick={() =>
                     navigate({ to: '/app/library/albums/$id', params: { id: item.albumId } })
                   }
-                  placeholderIcon={<DiscIcon className="size-1/2 text-stone-400" weight="duotone" />}
+                  placeholderIcon={
+                    <DiscIcon className="size-1/2 text-stone-400" weight="duotone" />
+                  }
                   subtitle={
                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                       {artists.map((a, idx) => (
