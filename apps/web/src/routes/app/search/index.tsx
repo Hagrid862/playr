@@ -38,6 +38,8 @@ import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchCategoryFilters } from '@/components/search/SearchCategoryFilters';
 import { SubHeader } from '@/components/app/SubHeader';
+import { cn } from '@/lib/utils.ts';
+import { usePlayerStore } from '@/stores/player-store/player.store.ts';
 
 export const Route = createFileRoute('/app/search/')({
   component: SearchPage,
@@ -93,6 +95,7 @@ function SearchPage() {
   const isLibrarySearch = search.filters?.visibility === 'private';
   const globalResults = useSearch(search, { enabled: !isLibrarySearch && !!search.query });
   const libraryResults = useLibrarySearch(search, { enabled: isLibrarySearch && !!search.query });
+  const { isPlayerExpanded } = usePlayerStore();
 
   const { data: response, isLoading, error } = isLibrarySearch ? libraryResults : globalResults;
   const data = (response as SearchResultsResponse)?.data;
@@ -176,38 +179,102 @@ function SearchPage() {
                   Filters
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-xl">
-                <DialogHeader className="px-6 pt-6">
+              <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0 gap-0">
+                <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b border-white/5">
                   <DialogTitle>Search Filters</DialogTitle>
                 </DialogHeader>
-                <div className="p-6 space-y-8">
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">Categories</h4>
-                    <SearchCategoryFilters
-                      selectedCategories={(search.filters?.categories as SearchCategory[]) ?? []}
-                      onToggle={toggleCategory}
-                      className="flex flex-wrap gap-2"
-                    />
-                  </div>
-                  <div className="pt-6 border-t border-white/5 space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Additional Filters
-                    </h4>
-                    <SearchFilters search={search} navigate={navigate} />
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-8 touch-pan-y">
+                  <div className={cn('space-y-8', !isPlayerExpanded ? 'pb-48' : 'pb-8')}>
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">Categories</h4>
+                      <SearchCategoryFilters
+                        selectedCategories={(search.filters?.categories as SearchCategory[]) ?? []}
+                        onToggle={toggleCategory}
+                        className="flex flex-wrap gap-2"
+                      />
+                    </div>
+
+                    <div className="pt-6 border-t border-white/5 space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">
+                        Additional Filters
+                      </h4>
+                      <SearchFilters search={search} navigate={navigate} />
+                    </div>
+
+                    {/* Mobile-only: Sort  controls */}
+                    <div className="md:hidden pt-6 border-t border-white/5 space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">Sort </h4>
+
+                      {/* Sort controls */}
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={search.orderBy?.field || 'relevance'}
+                          onValueChange={(val) =>
+                            navigate({
+                              search: (prev: SearchQuery) =>
+                                ({
+                                  ...prev,
+                                  orderBy: {
+                                    field: val as SearchOrderByField,
+                                    direction: prev.orderBy?.direction || 'asc',
+                                  },
+                                }) as SearchQuery,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="flex-1 bg-stone-900 border-white/10 h-9 text-xs rounded-lg">
+                            <SelectValue placeholder="Sort by" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="relevance">Relevance</SelectItem>
+                            <SelectItem value="name">Name</SelectItem>
+                            <SelectItem value="createdAt">Date Added</SelectItem>
+                            <SelectItem value="releaseDate">Release Date</SelectItem>
+                            <SelectItem value="duration">Duration</SelectItem>
+                            <SelectItem value="listenedCount">Listened</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 rounded-lg border-white/10 shrink-0"
+                          onClick={() =>
+                            navigate({
+                              search: (prev: SearchQuery) =>
+                                ({
+                                  ...prev,
+                                  orderBy: {
+                                    field: (prev.orderBy?.field ||
+                                      'relevance') as SearchOrderByField,
+                                    direction: prev.orderBy?.direction === 'asc' ? 'desc' : 'asc',
+                                  },
+                                }) as SearchQuery,
+                            })
+                          }
+                        >
+                          {search.orderBy?.direction === 'desc' ? (
+                            <SortDescendingIcon size={16} />
+                          ) : (
+                            <SortAscendingIcon size={16} />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
 
-            <div className="h-4 w-px bg-white/10 mx-1" />
+            <div className="h-4 w-px bg-white/10 mx-1 hidden md:block" />
 
             <SearchCategoryFilters
               selectedCategories={(search.filters?.categories as SearchCategory[]) ?? []}
               onToggle={toggleCategory}
-              className="flex items-center gap-2"
+              className="hidden md:flex items-center gap-2"
             />
 
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="hidden md:flex items-center gap-2 ml-auto">
               <div className="hidden sm:flex items-center gap-1 bg-stone-900 border border-white/10 rounded-xl p-1 h-9">
                 <Button
                   variant={viewType === 'row' ? 'secondary' : 'ghost'}
@@ -283,12 +350,10 @@ function SearchPage() {
                 )}
               </Button>
             </div>
-
-            {/* Filters dialog handled above */}
           </div>
         }
       />
-      <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+      <div className="flex-1 p-4 flex flex-col gap-4">
         <div className="flex-1">
           {isLoading ? (
             viewType === 'grid' ? (

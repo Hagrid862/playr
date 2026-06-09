@@ -9,9 +9,10 @@ import { useEffect } from 'react';
 interface SearchScopeToggleProps {
   className?: string;
   lockedScope?: SearchScope;
+  size?: 'default' | 'sm' | 'md';
 }
 
-export function SearchScopeToggle({ className }: SearchScopeToggleProps) {
+export function SearchScopeToggle({ className, size = 'default' }: SearchScopeToggleProps) {
   const { setSearchScope } = useSearchPreferencesStore();
 
   useEffect(() => {
@@ -23,11 +24,20 @@ export function SearchScopeToggle({ className }: SearchScopeToggleProps) {
   // const currentScope = 'library'; // Forced to library for now
   // const isLocked = true; // Always locked for now
 
+  const sizeClasses =
+    size === 'sm'
+      ? { container: 'h-7', button: 'h-5 w-7', icon: 14, btnSize: 'icon-xs' as const }
+      : size === 'md'
+        ? { container: 'h-8', button: 'h-6 w-8', icon: 15, btnSize: 'icon-xs' as const }
+        : { container: 'h-10', button: 'h-8 w-10', icon: 18, btnSize: 'sm' as const };
+
   return (
     <TooltipProvider>
       <div
+        data-testid="search-scope-toggle"
         className={cn(
-          'flex items-center bg-stone-900 border border-white/10 rounded-lg p-1 h-10',
+          'flex items-center bg-stone-900 border border-white/10 rounded-lg p-1',
+          sizeClasses.container,
           className,
         )}
       >
@@ -35,10 +45,11 @@ export function SearchScopeToggle({ className }: SearchScopeToggleProps) {
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
-              size="sm"
-              className={cn('h-8 w-10 rounded-lg opacity-50 cursor-not-allowed')}
+              size={sizeClasses.btnSize}
+              data-testid="scope-toggle-all"
+              className={cn('rounded-lg opacity-50 cursor-not-allowed', sizeClasses.button)}
             >
-              <GlobeIcon size={18} />
+              <GlobeIcon size={sizeClasses.icon} />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-64 text-sm">
@@ -48,8 +59,14 @@ export function SearchScopeToggle({ className }: SearchScopeToggleProps) {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="secondary" size="sm" className={cn('h-8 w-10 rounded-lg')} disabled>
-              <BooksIcon size={18} weight="fill" />
+            <Button
+              variant="secondary"
+              size={sizeClasses.btnSize}
+              data-testid="scope-toggle-library"
+              className={cn('rounded-lg', sizeClasses.button)}
+              aria-pressed="true"
+            >
+              <BooksIcon size={sizeClasses.icon} weight="fill" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Search Library</TooltipContent>

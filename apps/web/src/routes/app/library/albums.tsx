@@ -43,7 +43,7 @@ function AlbumLayout() {
       <SubHeader
         title={title}
         search={<CompactSearch category="album" />}
-        showBackButton={!isIndex}
+        showBackButton={true}
         actions={
           <>
             {isIndex && (

@@ -32,7 +32,7 @@ export class LibraryArtistsPage {
     this.page = page;
 
     // Artists list
-    this.addArtistButton = page.getByRole("link", { name: "Add Artist" });
+    this.addArtistButton = page.getByRole("link", { name: "Add Content" });
     this.emptyStateHeading = page.getByRole("heading", {
       name: "No artists found",
     });
@@ -45,17 +45,10 @@ export class LibraryArtistsPage {
     });
     this.createArtistCancelButton = page.getByRole("link", { name: "Cancel" });
 
-    // Artist detail — hero actions (avoid player bar "Play")
-    const artistHeroActions = page.locator("div.px-2.mt-12").first();
-    this.artistDetailName = page.locator("h2.text-2xl.font-bold");
-    this.playButton = artistHeroActions.getByRole("button", {
-      name: "Play",
-      exact: true,
-    });
-    this.shuffleButton = artistHeroActions.getByRole("button", {
-      name: "Shuffle",
-      exact: true,
-    });
+    // Artist detail
+    this.artistDetailName = page.locator("h2.text-xl.md\\:text-2xl.font-bold");
+    this.playButton = page.getByRole("button", { name: "Play" });
+    this.shuffleButton = page.getByRole("button", { name: "Shuffle" });
     // The menu trigger in detail page
     this.moreOptionsButton = page.getByRole("button", { name: "More options" });
 

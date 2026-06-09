@@ -25,15 +25,19 @@ export function SearchFilters({
   const isSectionVisible = (section: FilterSection) => visibleSections.includes(section);
 
   return (
-    <div className="p-6 bg-stone-900/50 border border-white/10 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in slide-in-from-top-2 duration-200 w-min-xl">
+    <div
+      data-testid="search-filters"
+      className="p-6 bg-stone-900/50 border border-white/10 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in slide-in-from-top-2 duration-200 w-min-xl"
+    >
       {/* General Filter */}
       {isSectionVisible('general') && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3" data-testid="filter-section-general">
           <span className="text-xs font-semibold uppercase text-muted-foreground">General</span>
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Checkbox
                 id="verified-only"
+                data-testid="filter-checkbox-verified"
                 checked={
                   !!(
                     search.filters?.artist?.verified ||
@@ -72,6 +76,7 @@ export function SearchFilters({
             <div className="flex items-center gap-2">
               <Checkbox
                 id="no-explicit"
+                data-testid="filter-checkbox-explicit"
                 checked={search.filters?.track?.explicit === false}
                 onCheckedChange={(checked) =>
                   navigate({
@@ -100,7 +105,7 @@ export function SearchFilters({
       {/* Track Filters */}
       {isSectionVisible('track') &&
         (!search.filters?.categories || search.filters.categories.includes('track')) && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3" data-testid="filter-section-track">
             <span className="text-xs font-semibold uppercase text-muted-foreground">
               Track Filters
             </span>
@@ -134,11 +139,12 @@ export function SearchFilters({
       {/* Album Filters */}
       {isSectionVisible('album') &&
         (!search.filters?.categories || search.filters.categories.includes('album')) && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3" data-testid="filter-section-album">
             <span className="text-xs font-semibold uppercase text-muted-foreground">
               Album Type
             </span>
             <Select
+              data-testid="filter-select-album-type"
               value={search.filters?.album?.type || 'none'}
               onValueChange={(val) =>
                 navigate({

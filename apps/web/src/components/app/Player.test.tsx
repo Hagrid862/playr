@@ -1,4 +1,4 @@
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { emitCurrentTimeSync, isPlaybackSyncConnected } from '@/lib/playback/sync/playback-sync';
 import { usePlayerStore } from '@/stores/player-store/player.store';
 import type { PlaybackTrack } from '@repo/contracts';
@@ -24,8 +24,8 @@ function playbackTrackStub(id: string): PlaybackTrack {
   };
 }
 
-vi.mock('@/hooks/use-mobile', () => ({
-  useIsMobile: vi.fn(),
+vi.mock('@/hooks/use-media-query', () => ({
+  useMediaQuery: vi.fn(),
 }));
 
 vi.mock('@/lib/playback/sync/playback-sync', () => ({
@@ -100,15 +100,21 @@ describe('AppPlayer', () => {
   });
 
   describe('layout', () => {
-    it('renders mobile version when isMobile is true', () => {
-      vi.mocked(useIsMobile).mockReturnValue(true);
+    it('renders mobile version when isLargeScreen is false', () => {
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return false;
+        return true;
+      });
       customRender(<AppPlayer />);
       expect(screen.getByTestId('player-mobile')).toBeInTheDocument();
       expect(screen.queryByTestId('player-controls')).not.toBeInTheDocument();
     });
 
-    it('renders desktop version when isMobile is false', () => {
-      vi.mocked(useIsMobile).mockReturnValue(false);
+    it('renders desktop version when isLargeScreen is true', () => {
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       customRender(<AppPlayer />);
       expect(screen.getByTestId('player-controls')).toBeInTheDocument();
       expect(screen.getByTestId('player-track-info')).toBeInTheDocument();
@@ -119,14 +125,20 @@ describe('AppPlayer', () => {
 
   describe('seek', () => {
     it('handles seek and updates audio currentTime', () => {
-      vi.mocked(useIsMobile).mockReturnValue(false);
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       customRender(<AppPlayer />);
       fireEvent.click(screen.getByText('Seek'));
       expect(mockAudioRef.current.currentTime).toBe(42);
     });
 
     it('handles seek when audioRef is null', () => {
-      vi.mocked(useIsMobile).mockReturnValue(false);
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       const nullRefMock: ReturnType<typeof usePlayerAudio> = {
         ...mockUsePlayerAudio,
         audioRef: {
@@ -147,7 +159,10 @@ describe('AppPlayer', () => {
     });
 
     it('emits sync on seek commit when connected', () => {
-      vi.mocked(useIsMobile).mockReturnValue(false);
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       customRender(<AppPlayer />);
       fireEvent.click(screen.getByText('Commit Seek'));
       expect(emitCurrentTimeSync).toHaveBeenCalledWith(42);
@@ -155,7 +170,10 @@ describe('AppPlayer', () => {
 
     it('does not emit sync on seek commit when disconnected', () => {
       vi.mocked(isPlaybackSyncConnected).mockReturnValue(false);
-      vi.mocked(useIsMobile).mockReturnValue(false);
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       customRender(<AppPlayer />);
       fireEvent.click(screen.getByText('Commit Seek'));
       expect(emitCurrentTimeSync).not.toHaveBeenCalled();
@@ -165,7 +183,10 @@ describe('AppPlayer', () => {
       vi.mocked(usePlayerStore).mockReturnValue(
         createPlayerStateMock({ currentTrack: null, playbackVersion: 1 }),
       );
-      vi.mocked(useIsMobile).mockReturnValue(false);
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       customRender(<AppPlayer />);
       fireEvent.click(screen.getByText('Commit Seek'));
       expect(emitCurrentTimeSync).not.toHaveBeenCalled();
@@ -178,7 +199,10 @@ describe('AppPlayer', () => {
           playbackVersion: 0,
         }),
       );
-      vi.mocked(useIsMobile).mockReturnValue(false);
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       customRender(<AppPlayer />);
       fireEvent.click(screen.getByText('Commit Seek'));
       expect(emitCurrentTimeSync).not.toHaveBeenCalled();
@@ -187,7 +211,10 @@ describe('AppPlayer', () => {
 
   describe('audio element', () => {
     it('passes handlers to audio element', () => {
-      vi.mocked(useIsMobile).mockReturnValue(false);
+      vi.mocked(useMediaQuery).mockImplementation((query) => {
+        if (query.includes('1200px')) return true;
+        return false;
+      });
       const { container } = customRender(<AppPlayer />);
       const audioEl = container.querySelector('audio');
 

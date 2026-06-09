@@ -9,6 +9,7 @@ import { LibraryTracksModule } from './library-tracks/library-tracks.module';
 import { LibraryPlaylistsModule } from './library-playlists/library-playlists.module';
 import { LibraryModule } from './library/library.module';
 import { PlaybackModule } from './playback/playback.module';
+import { ListenHistoryModule } from '@/features/listen-history/listen-history.module';
 
 @Module({
   imports: [

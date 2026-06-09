@@ -35,8 +35,12 @@ import { Link, useNavigate, useRouter, useLocation } from '@tanstack/react-route
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import type { LibraryPlaylistPinRowSchema } from '@repo/contracts';
 import { z } from 'zod';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 type LibraryPlaylistPinRow = z.infer<typeof LibraryPlaylistPinRowSchema>;
+
+// Large screen breakpoint - sidebar can be expanded/collapsed
+const LARGE_BREAKPOINT = '(min-width: 1200px)';
 
 export function AppSidebar() {
   const { logout } = useAuthStore();
@@ -47,6 +51,7 @@ export function AppSidebar() {
   const { data: pinsResponse } = useLibraryPlaylistPins();
   const pins = pinsResponse?.data ?? [];
   const { lastSearch } = useSearchPreferencesStore();
+  const isLargeScreen = useMediaQuery(LARGE_BREAKPOINT);
 
   const handleLogout = async () => {
     try {
@@ -63,18 +68,27 @@ export function AppSidebar() {
   const getPersistentLink = (moduleName: string, rootPath: string) => {
     if (typeof window === 'undefined') return rootPath;
     const lastVisited = sessionStorage.getItem(`last_visited_${moduleName}_route`);
-    
+
     // Normalize paths for comparison (remove trailing slash)
     const currentPath = location.pathname.replace(/\/$/, '');
     const normalizedRoot = rootPath.replace(/\/$/, '');
     const isAlreadyAtRoot = currentPath === normalizedRoot;
-    
+
     // If we are currently active in this module, return the root path to allow resetting
     if (location.pathname.startsWith(normalizedRoot) && !isAlreadyAtRoot) {
       return rootPath;
     }
-    
+
     return lastVisited || rootPath;
+  };
+
+  const getSearchLink = () => {
+    const isAlreadyAtRoot = location.pathname.replace(/\/$/, '') === '/app/search';
+
+    return {
+      to: '/app/search',
+      search: isAlreadyAtRoot && Object.keys(location.search).length > 0 ? {} : lastSearch || {},
+    };
   };
 
   const isModuleActive = (rootPath: string) => {
@@ -85,15 +99,17 @@ export function AppSidebar() {
   };
 
   const getLinkClassName = (rootPath: string) =>
-    isModuleActive(rootPath)
-      ? 'bg-accent text-primary'
-      : 'text-white hover:text-primary';
+    isModuleActive(rootPath) ? 'bg-accent text-primary' : 'text-white hover:text-primary';
+
+  // Sidebar always uses 'icon' collapsible mode.
+  // On large screens (>=1200px), the SidebarProvider allows toggling via SidebarTrigger.
+  // On medium screens (641-1199px), the SidebarProvider forces open=false, locking it collapsed.
+  // On mobile (≤640px), the AppSidebar is not rendered at all.
+  const collapsible = 'icon' as const;
 
   return (
-    <Sidebar collapsible="icon" variant="floating">
-      <SidebarHeader>
-        <SidebarTrigger />
-      </SidebarHeader>
+    <Sidebar collapsible={collapsible} variant="floating">
+      <SidebarHeader>{isLargeScreen && <SidebarTrigger />}</SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -101,13 +117,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    to="/app/search"
-                    search={
-                      location.pathname.startsWith('/app/search') &&
-                      Object.keys(location.search).length > 0
-                        ? {}
-                        : lastSearch || {}
-                    }
+                    {...getSearchLink()}
                     activeOptions={{ exact: false }}
                     activeProps={{ className: 'bg-accent text-primary' }}
                     className={getLinkClassName('/app/search')}

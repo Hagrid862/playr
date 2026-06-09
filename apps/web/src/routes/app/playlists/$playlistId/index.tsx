@@ -27,7 +27,10 @@ import { Spinner } from '@/components/ui/spinner';
 import {
   useDeleteLibraryPlaylist,
   useLibraryPlaylistDetail,
+  useLibraryPlaylistPins,
+  usePinPlaylist,
   useSortPlaylistTracks,
+  useUnpinPlaylist,
 } from '@/hooks/api/library-playlists';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
@@ -39,6 +42,8 @@ import {
   PencilIcon,
   PlaylistIcon,
   PlayIcon,
+  PushPinIcon,
+  PushPinSlashIcon,
   ShareIcon,
   ShuffleIcon,
   TrashIcon,
@@ -60,11 +65,18 @@ function RouteComponent() {
   const { data, isLoading } = useLibraryPlaylistDetail(playlistId, { page: 1, limit: 200 });
   const { mutateAsync: deletePlaylist, isPending: isDeleting } = useDeleteLibraryPlaylist();
   const { mutateAsync: sortPlaylistTracks, isPending: isSorting } = useSortPlaylistTracks();
+  const { mutateAsync: pinPlaylist, isPending: isPinning } = usePinPlaylist();
+  const { mutateAsync: unpinPlaylist, isPending: isUnpinning } = useUnpinPlaylist();
+  const { data: pinsResponse } = useLibraryPlaylistPins();
   const { playTrack, addToQueue, playNext } = usePlayerStore();
 
   const detail = data?.data;
   const rows = detail?.tracks ?? [];
   const tracks = rows.map((r) => r.track);
+
+  const pins = pinsResponse?.data ?? [];
+  const currentPin = pins.find((pin) => pin.playlist.id === playlistId);
+  const isPinned = !!currentPin;
 
   const handleDelete = async () => {
     if (detail?.systemRole === PlaylistSystemRole.favorites) return;
@@ -108,6 +120,24 @@ function RouteComponent() {
     (t) => !t.audioFiles?.some((f) => f.status === 'pending' || f.status === 'processing'),
   );
 
+  const handlePin = async () => {
+    if (isPinned && currentPin) {
+      try {
+        await unpinPlaylist(currentPin.id);
+        toast.success('Unpinned from sidebar');
+      } catch {
+        toast.error('Could not unpin playlist');
+      }
+    } else {
+      try {
+        await pinPlaylist({ playlistId });
+        toast.success('Pinned to sidebar');
+      } catch {
+        toast.error('Could not pin playlist');
+      }
+    }
+  };
+
   if (isLoading || !detail) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
@@ -123,18 +153,18 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col w-full min-h-full pb-8">
-      <div className="relative w-full px-6 mt-8">
-        <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
+      <div className="relative w-full px-4 sm:px-6 mt-6 sm:mt-8">
+        <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
           <div className="relative shrink-0">
             {showBlurGlow && (
               <img
                 src={coverUrl}
                 alt=""
                 aria-hidden="true"
-                className="absolute inset-0 size-48 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
+                className="absolute inset-0 size-36 sm:size-56 rounded-2xl object-cover blur-lg opacity-35 scale-100 translate-y-4 saturate-150 pointer-events-none"
               />
             )}
-            <div className="relative size-48 p-0 rounded-lg shadow-xl shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-white/10">
+            <div className="relative size-36 sm:size-56 p-0 rounded-lg shadow-xl shrink-0 overflow-hidden bg-stone-800 flex items-center justify-center border border-white/10">
               {detail.systemRole === PlaylistSystemRole.favorites ? (
                 <FavoritesPlaylistCover />
               ) : coverUrl ? (
@@ -145,8 +175,8 @@ function RouteComponent() {
             </div>
           </div>
 
-          <div className="flex-1 pb-2">
-            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold">
+          <div className="flex-1 pb-2 text-center md:text-left">
+            <div className="mb-1 flex flex-wrap items-center justify-center md:justify-start gap-x-2 text-[10px] sm:text-xs font-semibold">
               <span className="text-primary tracking-widest uppercase">Playlist</span>
               <span className="text-stone-500" aria-hidden="true">
                 -
@@ -155,18 +185,18 @@ function RouteComponent() {
                 {detail.totalTracks} {detail.totalTracks === 1 ? 'song' : 'songs'}
               </span>
             </div>
-            <h2 className="text-3xl font-bold text-white opacity-90 truncate max-w-2xl mb-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white opacity-90 truncate max-w-2xl mb-1">
               {detail.name}
             </h2>
           </div>
         </div>
       </div>
 
-      <div className="px-6 mt-12 flex flex-col gap-8">
-        <div className="flex items-center gap-3">
+      <div className="px-4 sm:px-6 mt-8 sm:mt-12 flex flex-col gap-6 sm:gap-8">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button
             size="lg"
-            className="h-12 rounded-lg gap-2 px-8 text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
+            className="h-10 sm:h-12 rounded-lg gap-1.5 sm:gap-2 px-5 sm:px-8 text-sm sm:text-base font-bold shadow-md hover:shadow-primary/20 active:shadow-primary/35 active:scale-98 transition-all bg-primary text-primary-foreground"
             disabled={playableTracks.length === 0}
             onClick={() => {
               const mapped = playableTracks.map((t) => zodTrackToPlaybackTrack(t));
@@ -174,12 +204,12 @@ function RouteComponent() {
               if (first) playTrack(first, mapped);
             }}
           >
-            <PlayIcon weight="fill" size={20} /> Play
+            <PlayIcon weight="fill" size={18} className="sm:size-5" /> Play
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="h-12 rounded-lg gap-2 px-8 text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
+            className="h-10 sm:h-12 rounded-lg gap-1.5 sm:gap-2 px-5 sm:px-8 text-sm sm:text-base font-bold border-border bg-stone-900/20 backdrop-blur-md hover:bg-stone-800/40 active:scale-98 transition-all"
             disabled={playableTracks.length === 0}
             onClick={() => {
               const shuffled = [...playableTracks].sort(() => Math.random() - 0.5);
@@ -188,19 +218,33 @@ function RouteComponent() {
               if (first) playTrack(first, mapped);
             }}
           >
-            <ShuffleIcon weight="bold" size={20} /> Shuffle
+            <ShuffleIcon weight="bold" size={18} className="sm:size-5" /> Shuffle
           </Button>
 
-          {detail.systemRole !== PlaylistSystemRole.favorites ? (
-            <div className="flex items-center gap-1 ml-2">
+          <div className="flex items-center gap-0.5 sm:gap-1 ml-auto md:ml-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden sm:inline-flex size-9 sm:size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
+              aria-label={isPinned ? 'Unpin from sidebar' : 'Pin to sidebar'}
+              disabled={isPinning || isUnpinning}
+              onClick={() => void handlePin()}
+            >
+              {isPinned ? (
+                <PushPinIcon size={20} className="sm:size-5" weight="fill" />
+              ) : (
+                <PushPinSlashIcon size={20} className="sm:size-5" />
+              )}
+            </Button>
+            {detail.systemRole !== PlaylistSystemRole.favorites ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
+                    className="size-9 sm:size-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-98 transition-all"
                   >
-                    <DotsThreeIcon size={24} weight="bold" />
+                    <DotsThreeIcon size={20} className="sm:size-6" weight="bold" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56">
@@ -236,8 +280,8 @@ function RouteComponent() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
 
         <Separator className="opacity-50" />

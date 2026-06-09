@@ -39,6 +39,7 @@ const playerStoreInitialState: Pick<
   | 'playbackDevices'
   | 'isQueueOpen'
   | 'sidebarView'
+  | 'isPlayerExpanded'
 > = {
   ...playerStorePlaybackInitialSlice,
   ...playerStorePersistedDefaults,

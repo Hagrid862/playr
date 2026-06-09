@@ -66,7 +66,7 @@ function ArtistsLayout() {
             </Link>
           </Button>
         }
-        showBackButton={!isIndex}
+        showBackButton={true}
       />
       <Outlet />
     </div>

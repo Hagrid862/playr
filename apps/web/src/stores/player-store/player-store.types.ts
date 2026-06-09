@@ -68,4 +68,7 @@ export interface PlayerState {
   toggleQueue: () => void;
   setQueueOpen: (isOpen: boolean) => void;
   setSidebarView: (view: 'queue' | 'lyrics') => void;
+
+  isPlayerExpanded: boolean;
+  setPlayerExpanded: (expanded: boolean) => void;
 }

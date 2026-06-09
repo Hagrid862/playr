@@ -10,7 +10,7 @@ import { Outlet, createFileRoute, useLocation, useRouter } from '@tanstack/react
 import { useState } from 'react';
 import {
   type LibrarySearchQuery,
-  type LibrarySearchResultsData,
+  type SearchResultsData,
   type SearchCategory,
   type SearchOrderByField,
 } from '@repo/contracts';
@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SubHeader } from '@/components/app/SubHeader';
 import { CompactSearch } from '@/components/search/CompactSearch';
 import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
+import { LibraryNav } from '@/components/library/LibraryNav';
 
 export const Route = createFileRoute('/app/library/overview')({
   component: OverviewLayout,
@@ -64,7 +65,7 @@ function OverviewLayout() {
     enabled: !!searchQuery && searchQuery.length >= 3,
   });
 
-  const searchData = searchResponse?.data as LibrarySearchResultsData | undefined;
+  const searchData = searchResponse?.data as SearchResultsData | undefined;
 
   const handleFilterNavigate = (params: {
     search: (prev: LibrarySearchQuery) => LibrarySearchQuery;
@@ -152,7 +153,7 @@ function OverviewLayout() {
       );
     }
 
-    return <SearchResults data={searchData} viewType={viewType} isLibrarySearch={true} />;
+    return <SearchResults data={searchData as any} viewType={viewType} isLibrarySearch={true} />;
   };
 
   const isSearchActive = searchQuery && searchQuery.length >= 3;
@@ -180,6 +181,8 @@ function OverviewLayout() {
           </Select>
         ) : null}
       </SubHeader>
+
+      <LibraryNav />
 
       <div className="p-4 flex flex-col gap-4">
         {/* Page Content */}

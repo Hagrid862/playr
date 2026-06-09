@@ -7,7 +7,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { useLibrarySearch } from '@/hooks/api/search/useLibrarySearch';
-import { SearchResults, SearchResultsData } from '@/components/search/SearchResults';
+import { SearchResults } from '@/components/search/SearchResults';
 import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { type LibrarySearchQuery } from '@repo/contracts';
@@ -45,7 +45,7 @@ function RouteComponent() {
     enabled: !!searchQuery && searchQuery.length >= 3,
   });
 
-  const searchData = (searchResponse as SearchResultsData)?.data;
+  const searchData = (searchResponse as any)?.data;
 
   const handleFilterNavigate = (params: {
     search: (prev: LibrarySearchQuery) => LibrarySearchQuery;

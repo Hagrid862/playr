@@ -1,4 +1,5 @@
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
 import { SearchInput } from '../search/SearchInput';
 import { PlayrLogo } from './PlayrLogo';
@@ -13,6 +14,8 @@ export function PageHeader({
   description,
   showBackButton,
   onBackClick,
+  mobileSearchExpanded = false,
+  onMobileSearchToggle,
 }: {
   actions?: ReactNode;
   hideSearch?: boolean;
@@ -20,6 +23,8 @@ export function PageHeader({
   description?: string;
   showBackButton?: boolean;
   onBackClick?: () => void;
+  mobileSearchExpanded?: boolean;
+  onMobileSearchToggle?: () => void;
 }) {
   const router = useRouter();
 
@@ -31,9 +36,17 @@ export function PageHeader({
     }
   };
 
+  const showSearch = !hideSearch && !title;
+
   return (
-    <div className="flex flex-col gap-2 py-2">
-      <div className="grid grid-cols-[1fr_2fr_1fr] items-center gap-4 px-4">
+    <div
+      className={cn(
+        'flex flex-col py-2 relative z-10 bg-stone-950',
+        mobileSearchExpanded && 'max-md:hidden',
+      )}
+    >
+      {/* ── Desktop layout ── */}
+      <div className="hidden md:grid grid-cols-[1fr_2fr_1fr] items-center gap-4 px-4">
         {/* Left: Logo/Back Button */}
         <div className="flex items-center gap-2">
           {showBackButton && (
@@ -41,7 +54,7 @@ export function PageHeader({
               <ArrowLeftIcon />
             </Button>
           )}
-          <PlayrLogo className="text-emerald-500" />
+          <PlayrLogo className="text-emerald-500 shrink-0" />
         </div>
 
         {/* Center: Search / Title */}
@@ -52,14 +65,54 @@ export function PageHeader({
               {description && <p className="text-xs text-muted-foreground">{description}</p>}
             </div>
           ) : (
-            !hideSearch && <SearchInput />
+            showSearch && <SearchInput />
           )}
         </div>
 
         {/* Right: global actions */}
         <div className="flex justify-end items-center gap-2">{actions}</div>
       </div>
-      <Separator />
+
+      {/* ── Mobile layout: hidden when search overlay is open ── */}
+      {!mobileSearchExpanded && (
+        <div className="md:hidden flex flex-col">
+          <div className="flex items-center gap-2 px-4 min-h-10">
+            {/* Left side */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {showBackButton && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={handleBack}
+                  aria-label="Go back"
+                  className="shrink-0"
+                >
+                  <ArrowLeftIcon />
+                </Button>
+              )}
+              <PlayrLogo className="text-emerald-500 shrink-0" />
+              {title && (
+                <div className="truncate min-w-0">
+                  <h1 className="text-lg font-bold truncate">{title}</h1>
+                  {description && (
+                    <p className="text-xs text-muted-foreground truncate">{description}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right side */}
+            <div className="flex items-center gap-1 shrink-0">
+              {showSearch && (
+                <SearchInput mobile mobileExpanded={false} onMobileToggle={onMobileSearchToggle} />
+              )}
+              {actions}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Separator className="mt-2 mb-2" />
     </div>
   );
 }

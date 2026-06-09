@@ -98,11 +98,7 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   it('should handle all categories', async () => {
     const allCategories: SearchCategory[] = ['artist', 'album', 'track', 'playlist', 'genre'];
-    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(
-      userId,
-      query,
-      allCategories,
-    );
+    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(userId, query, allCategories);
     const allResults: LibrarySearchSuggestionsData = {
       results: [
         { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'private' },

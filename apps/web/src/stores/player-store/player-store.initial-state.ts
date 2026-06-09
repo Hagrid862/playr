@@ -22,6 +22,7 @@ export const playerStorePlaybackInitialSlice: Pick<
   | 'playbackDevices'
   | 'isQueueOpen'
   | 'sidebarView'
+  | 'isPlayerExpanded'
 > = {
   currentTrack: null,
   isPlaying: false,
@@ -41,6 +42,7 @@ export const playerStorePlaybackInitialSlice: Pick<
   playbackDevices: [],
   isQueueOpen: false,
   sidebarView: 'queue',
+  isPlayerExpanded: false,
 };
 
 export const playerStorePersistedDefaults: Pick<
