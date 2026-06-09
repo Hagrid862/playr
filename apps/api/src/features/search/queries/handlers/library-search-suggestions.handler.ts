@@ -8,6 +8,10 @@ export class LibrarySearchSuggestionsHandler implements IQueryHandler<LibrarySea
   constructor(private readonly searchSuggestionsService: SearchSuggestionsService) {}
 
   async execute(query: LibrarySearchSuggestionsQuery): Promise<LibrarySearchSuggestionsResults> {
-    return this.searchSuggestionsService.librarySearchSuggestions(query.userId, query.query, query.categories);
+    return this.searchSuggestionsService.librarySearchSuggestions(
+      query.userId,
+      query.query,
+      query.categories,
+    );
   }
 }

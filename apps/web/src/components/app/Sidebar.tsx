@@ -11,11 +11,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
-} from '@/components/ui/sidebar';
+} from '../ui/sidebar';
+import { Spinner } from '../ui/spinner';
 import { useAuthStore } from '@/stores/auth.store';
 import {
   BooksIcon,
-  CircleNotchIcon,
   DiscIcon,
   GridFourIcon,
   HouseIcon,
@@ -65,7 +65,11 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/app/search" activeProps={{ 'data-active': 'true' }}>
+                  <Link
+                    to="/app/search"
+                    activeOptions={{ exact: false }}
+                    activeProps={{ 'data-active': 'true' }}
+                  >
                     <MagnifyingGlassIcon />
                     <span>Search</span>
                   </Link>
@@ -198,7 +202,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} disabled={logoutIsLoading}>
-              {logoutIsLoading && <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {logoutIsLoading && <Spinner className="mr-2" />}
               <SignOutIcon />
               <span>Log out</span>
             </SidebarMenuButton>

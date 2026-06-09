@@ -38,27 +38,22 @@ function AlbumLayout() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <PageHeader
-        title={title}
-        actions={
-          isIndex ? (
-            <Button variant="outline" asChild>
-              <Link to="/app/library/albums/create">
-                <PlusIcon />
-                Add Album
-              </Link>
-            </Button>
-          ) : album?.visibility === 'private' && isDetail && albumId ? (
-            <Button variant="outline" asChild>
-              <Link to="/app/library/albums/$id/add-content" params={{ id: albumId }}>
-                <PlusIcon />
-                Add Content
-              </Link>
-            </Button>
-          ) : null
-        }
-        showBackButton={!isIndex}
-      />
+      {!isIndex && (
+        <PageHeader
+          title={title}
+          actions={
+            album?.visibility === 'private' && isDetail && albumId ? (
+              <Button variant="outline" asChild>
+                <Link to="/app/library/albums/$id/add-content" params={{ id: albumId }}>
+                  <PlusIcon />
+                  Add Content
+                </Link>
+              </Button>
+            ) : null
+          }
+          showBackButton={!isIndex}
+        />
+      )}
       <div className="flex-1">
         <Outlet />
       </div>

@@ -22,5 +22,9 @@ export const createExtendedPrismaClient = (connectionString: string) => {
   return new PrismaClient({ adapter }).$extends(withPgTrgm());
 };
 
-export type ExtendedPrismaClient = ReturnType<typeof createExtendedPrismaClient>;
-export type PrismaTransactionClient = Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
+export type ExtendedPrismaClient = ReturnType<
+  typeof createExtendedPrismaClient
+>;
+export type PrismaTransactionClient = Parameters<
+  Parameters<PrismaClient["$transaction"]>[0]
+>[0];

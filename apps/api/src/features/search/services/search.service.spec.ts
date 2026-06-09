@@ -26,10 +26,7 @@ describe('SearchService', () => {
     });
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SearchService,
-        { provide: PrismaService, useValue: prismaService },
-      ],
+      providers: [SearchService, { provide: PrismaService, useValue: prismaService }],
     }).compile();
 
     service = module.get<SearchService>(SearchService);
@@ -37,19 +34,25 @@ describe('SearchService', () => {
 
   describe('search', () => {
     it('should throw BadRequestException when query is too short', async () => {
-      const searchQuery: SearchQuery = { query: 'a', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
+      const searchQuery: SearchQuery = {
+        query: 'a',
+        page: 1,
+        pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
+      };
 
-      await expect(service.search('user-123', searchQuery)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.search('user-123', searchQuery)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException when query is empty', async () => {
-      const searchQuery: SearchQuery = { query: '', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
+      const searchQuery: SearchQuery = {
+        query: '',
+        page: 1,
+        pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
+      };
 
-      await expect(service.search('user-123', searchQuery)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.search('user-123', searchQuery)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw UnauthorizedException when userId is null (unauthenticated)', async () => {
@@ -60,9 +63,7 @@ describe('SearchService', () => {
         filters: { categories: [], visibility: 'public' },
       };
 
-      await expect(service.search(null, searchQuery)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.search(null, searchQuery)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should return results with pagination metadata for authenticated user', async () => {
@@ -279,7 +280,11 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { album: { releaseDateFrom: '2020-01-01' }, categories: ['album'], visibility: 'public' },
+        filters: {
+          album: { releaseDateFrom: '2020-01-01' },
+          categories: ['album'],
+          visibility: 'public',
+        },
         page: 1,
         pageSize: 20,
       };
@@ -294,7 +299,11 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { album: { releaseDateTo: '2023-12-31' }, categories: ['album'], visibility: 'public' },
+        filters: {
+          album: { releaseDateTo: '2023-12-31' },
+          categories: ['album'],
+          visibility: 'public',
+        },
         page: 1,
         pageSize: 20,
       };
@@ -354,7 +363,11 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { playlist: { isCollaborative: true }, categories: ['playlist'], visibility: 'public' },
+        filters: {
+          playlist: { isCollaborative: true },
+          categories: ['playlist'],
+          visibility: 'public',
+        },
         page: 1,
         pageSize: 20,
       };
@@ -451,7 +464,10 @@ describe('SearchService', () => {
         query: 'test',
         page: 1,
         pageSize: 20,
-        filters: { categories: ['artist', 'album', 'track', 'playlist', 'genre'], visibility: 'public' },
+        filters: {
+          categories: ['artist', 'album', 'track', 'playlist', 'genre'],
+          visibility: 'public',
+        },
       };
       await service.search('user-123', searchQuery);
 
@@ -597,7 +613,12 @@ describe('SearchService', () => {
 
   describe('librarySearch', () => {
     it('should throw BadRequestException when query is too short', async () => {
-      const searchQuery: SearchQuery = { query: 'a', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
+      const searchQuery: SearchQuery = {
+        query: 'a',
+        page: 1,
+        pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
+      };
 
       await expect(service.librarySearch('user-123', searchQuery)).rejects.toThrow(
         BadRequestException,
@@ -605,7 +626,12 @@ describe('SearchService', () => {
     });
 
     it('should throw BadRequestException when query is empty', async () => {
-      const searchQuery: SearchQuery = { query: '', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
+      const searchQuery: SearchQuery = {
+        query: '',
+        page: 1,
+        pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
+      };
 
       await expect(service.librarySearch('user-123', searchQuery)).rejects.toThrow(
         BadRequestException,
@@ -779,7 +805,10 @@ describe('SearchService', () => {
         query: 'test',
         page: 1,
         pageSize: 20,
-        filters: { categories: ['artist', 'album', 'track', 'playlist', 'genre'], visibility: 'public' },
+        filters: {
+          categories: ['artist', 'album', 'track', 'playlist', 'genre'],
+          visibility: 'public',
+        },
       };
       await service.librarySearch('user-123', searchQuery);
 

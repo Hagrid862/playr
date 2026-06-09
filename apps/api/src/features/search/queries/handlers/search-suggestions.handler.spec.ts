@@ -83,7 +83,12 @@ describe('SearchSuggestionsHandler', () => {
           albumType: 'album',
         },
         { id: 'track-1', name: 'Track', type: SearchResultType.Track, visibility: 'public' },
-        { id: 'playlist-1', name: 'Playlist', type: SearchResultType.Playlist, visibility: 'public' },
+        {
+          id: 'playlist-1',
+          name: 'Playlist',
+          type: SearchResultType.Playlist,
+          visibility: 'public',
+        },
       ],
       loggedIn: true,
     };

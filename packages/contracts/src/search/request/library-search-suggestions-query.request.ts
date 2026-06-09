@@ -11,7 +11,10 @@ export const SearchSuggestionsCategoriesSchema = z.enum([
 export const LibrarySearchSuggestionsQuerySchema = z.object({
   query: z.string().min(3, "Query must be at least 3 characters long"),
   categories: z
-    .union([SearchSuggestionsCategoriesSchema, z.array(SearchSuggestionsCategoriesSchema)])
+    .union([
+      SearchSuggestionsCategoriesSchema,
+      z.array(SearchSuggestionsCategoriesSchema),
+    ])
     .transform((val) => (Array.isArray(val) ? val : val ? [val] : undefined))
     .optional(),
 });

@@ -3,6 +3,11 @@ import { cn } from '@/lib/utils';
 import { DiscIcon } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu.tsx';
 
 export function MediaCard({
   coverUrl,
@@ -15,6 +20,7 @@ export function MediaCard({
   coverSlot,
   routeParams,
   contextMenu,
+  subtitleAlign = 'left',
 }: {
   coverUrl: string | undefined;
   title: string;
@@ -22,6 +28,7 @@ export function MediaCard({
   id: string;
   link: string;
   coverStyle?: 'circle' | 'square';
+  subtitleAlign?: 'left' | 'right';
   placeholderIcon?: ReactNode;
   /** When set, replaces the default cover image / placeholder area. */
   coverSlot?: ReactNode;
@@ -33,6 +40,7 @@ export function MediaCard({
   const params = routeParams ?? { id };
   const linkEl = (
     <Link
+      key={id}
       to={link}
       params={params}
       className="group/artist relative block p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
@@ -55,7 +63,10 @@ export function MediaCard({
       </div>
       <div className="pt-4">
         <h3 className="line-clamp-1 text-sm font-semibold">{title}</h3>
-        <p className="line-clamp-1 text-xs text-muted-foreground">{subtitle ?? 'Unknown'}</p>
+        <p className={cn(
+          "line-clamp-1 text-xs text-muted-foreground",
+          subtitleAlign === 'right' ? 'text-right' : 'text-left'
+        )}>{subtitle ?? 'Unknown'}</p>
       </div>
     </Link>
   );

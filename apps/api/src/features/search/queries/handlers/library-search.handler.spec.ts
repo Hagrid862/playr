@@ -103,7 +103,14 @@ describe('LibrarySearchHandler', () => {
 
     const result = await handler.execute(searchQuery);
 
-    expect(result).toEqual({ results: [], total: 0, page: 1, pageSize: 20, filters: null, orderBy: null });
+    expect(result).toEqual({
+      results: [],
+      total: 0,
+      page: 1,
+      pageSize: 20,
+      filters: null,
+      orderBy: null,
+    });
   });
 
   it('should return all result types from searchService', async () => {

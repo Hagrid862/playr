@@ -1,4 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { PageHeader } from '@/components/app/PageHeader';
+import { SearchInput } from '@/components/search/SearchInput';
+import { PlayrLogo } from '@/components/app/PlayrLogo.tsx';
 
 export const Route = createFileRoute('/app/')({
   component: App,
@@ -6,9 +9,10 @@ export const Route = createFileRoute('/app/')({
 
 function App() {
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="text-muted-foreground">Welcome to your dashboard.</p>
+    <div className="flex flex-col gap-4 p-4">
+      <PageHeader title={<PlayrLogo />} description="Home" centerActions>
+        <SearchInput className="max-w-xl" />
+      </PageHeader>
     </div>
   );
 }

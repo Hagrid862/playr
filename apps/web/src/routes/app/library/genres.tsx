@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLibraryGenresInfinite } from '@/hooks/api/library-genres/useLibraryGenresInfinite';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -46,39 +46,8 @@ function GenresLayout() {
     if (isRoot) {
       return (
         <div className="flex flex-col gap-4 p-4 pb-40 max-md:pb-[max(10rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))]">
-          <PageHeader title="Genres" description={isLoading ? undefined : countsSubtitle} />
           <div className="flex flex-col gap-1">
-            {isLoading ? (
-              <div className="flex flex-col gap-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-12 w-full animate-pulse rounded-lg bg-accent/50" />
-                ))}
-              </div>
-            ) : (
-              genres.map((genre) => (
-                <Link
-                  key={genre.id}
-                  to="/app/library/genres/$genreId"
-                  params={{ genreId: genre.id }}
-                  className="flex h-14 items-center rounded-xl px-4 text-lg font-medium transition-colors hover:bg-accent/50 active:scale-[0.98]"
-                >
-                  {genre.name}
-                </Link>
-              ))
-            )}
-            {genres.length > 0 && genresHasMore ? (
-              <div className="flex justify-center py-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => genresQuery.fetchNextPage()}
-                  disabled={genresQuery.isFetchingNextPage}
-                  className="text-xs"
-                >
-                  {genresQuery.isFetchingNextPage ? 'Loading...' : 'Load more'}
-                </Button>
-              </div>
-            ) : null}
+            <Outlet />
           </div>
         </div>
       );
@@ -103,7 +72,7 @@ function GenresLayout() {
               {isLoading ? (
                 <div className="flex flex-col gap-2 px-2">
                   {[...Array(8)].map((_, i) => (
-                    <div key={i} className="h-10 w-full animate-pulse rounded-lg bg-accent/50" />
+                    <Skeleton key={i} className="h-10 w-full rounded-lg bg-accent/50" />
                   ))}
                 </div>
               ) : (

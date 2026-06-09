@@ -1,27 +1,39 @@
+import { Spinner } from '@/components/ui/spinner';
+import { useLibraryGenres } from '@/hooks/api/library-genres/useLibraryGenres';
 import { createFileRoute } from '@tanstack/react-router';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { MusicNotesIcon } from '@phosphor-icons/react';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 
 export const Route = createFileRoute('/app/library/genres/')({
-  component: GenresIndex,
+  component: RouteComponent,
 });
 
-function GenresIndex() {
-  const isMobile = useIsMobile();
+function RouteComponent() {
+  const { data: genresResponse, isLoading } = useLibraryGenres({ page: 1, limit: 100 });
+  const genres = genresResponse?.data?.items || [];
 
-  if (isMobile) {
-    return null; // The layout handles the list view
+  if (isLoading) {
+    return (
+      <div className="flex h-[400px] flex-col items-center justify-center gap-4">
+        <Spinner className="size-8 text-primary" />
+        <p className="text-muted-foreground animate-pulse">Fetching your genres...</p>
+      </div>
+    );
   }
 
-  return (
-    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-accent/50 text-accent-foreground">
-        <MusicNotesIcon size={40} weight="duotone" />
+  if (genres.length === 0) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl p-12 text-center backdrop-blur-sm">
+        <div className="mb-6 rounded-full bg-stone-800/50 p-6 ring-1 ring-white/5">
+          <MagnifyingGlassIcon className="size-12 text-muted-foreground" weight="duotone" />
+        </div>
+        <h3 className="mb-2 text-xl font-semibold text-white">No genres found</h3>
+        <p className="mb-8 max-w-sm text-muted-foreground leading-relaxed">
+          Your private library is empty. Add your first genre to start organizing your personal
+          collection.
+        </p>
       </div>
-      <h2 className="text-2xl font-bold">Select a Genre</h2>
-      <p className="mt-2 max-w-xs text-muted-foreground">
-        Pick a genre from the list on the left to see your albums and songs.
-      </p>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }
