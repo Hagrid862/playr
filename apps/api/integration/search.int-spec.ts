@@ -113,7 +113,9 @@ describe('SearchController (Integration)', () => {
         .expect(200);
 
       expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.results).toBeDefined();
+      expect(Array.isArray(response.body.data.results)).toBe(true);
+      expect(response.body.data.loggedIn).toBe(true);
     });
 
     it('should return empty array when no results found', async () => {
@@ -129,7 +131,8 @@ describe('SearchController (Integration)', () => {
         .query({ query: 'nonexistent' })
         .expect(200);
 
-      expect(response.body.data).toEqual([]);
+      expect(response.body.data.results).toEqual([]);
+      expect(response.body.data.loggedIn).toBe(true);
     });
 
     it('should handle query with special characters', async () => {
@@ -229,7 +232,8 @@ describe('SearchController (Integration)', () => {
         .expect(200);
 
       expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.results).toBeDefined();
+      expect(Array.isArray(response.body.data.results)).toBe(true);
     });
 
     it('should return empty array when no results found', async () => {
@@ -245,7 +249,7 @@ describe('SearchController (Integration)', () => {
         .query({ query: 'nonexistent' })
         .expect(200);
 
-      expect(response.body.data).toEqual([]);
+      expect(response.body.data.results).toEqual([]);
     });
 
     it('should filter by single category', async () => {

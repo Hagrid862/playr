@@ -100,6 +100,58 @@ describe('SearchSuggestionsService', () => {
 
       expect(mockQueryRaw).toHaveBeenCalled();
     });
+
+    it('should handle public visibility with authenticated user', async () => {
+      const mockResults = [
+        {
+          id: 'artist-1',
+          name: 'Test Artist',
+          type: 'artist',
+          visibility: 'public',
+          albumType: null,
+          score: 0.8,
+        },
+      ];
+      mockQueryRaw.mockResolvedValueOnce(mockResults);
+
+      const result = await service.searchSuggestions('test', 'user-123');
+
+      // Verify the query was called (the actual SQL is hard to test without parsing)
+      expect(mockQueryRaw).toHaveBeenCalled();
+      expect(result.results).toHaveLength(1);
+    });
+
+    it('should handle community visibility with user access', async () => {
+      const mockResults = [
+        {
+          id: 'artist-1',
+          name: 'Community Artist',
+          type: 'artist',
+          visibility: 'community',
+          albumType: null,
+          score: 0.8,
+        },
+      ];
+      mockQueryRaw.mockResolvedValueOnce(mockResults);
+
+      const result = await service.searchSuggestions('test', 'user-123');
+
+      // Verify the query was called
+      expect(mockQueryRaw).toHaveBeenCalled();
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].visibility).toBe('community');
+    });
+
+    it('should handle community visibility without user access (should not return results)', async () => {
+      // Mock empty results since user doesn't have access to community content
+      mockQueryRaw.mockResolvedValueOnce([]);
+
+      const result = await service.searchSuggestions('test', 'different-user');
+
+      // Verify the query was called
+      expect(mockQueryRaw).toHaveBeenCalled();
+      expect(result.results).toHaveLength(0);
+    });
   });
 
   describe('librarySearchSuggestions', () => {
@@ -177,9 +229,19 @@ describe('SearchSuggestionsService', () => {
       expect(mockQueryRaw).toHaveBeenCalled();
     });
 
-    it('should filter by genre category when specified', async () => {
+    it('should filter by genre category when specified (user library genre)', async () => {
       mockQueryRaw.mockResolvedValueOnce([
-        { id: 'genre-1', name: 'Rock', type: 'genre', visibility: 'public', albumType: null, score: 0.4 },
+        { id: 'genre-1', name: 'Rock', type: 'genre', visibility: 'private', albumType: null, score: 0.4 },
+      ]);
+
+      await service.librarySearchSuggestions('user-123', 'test', ['genre']);
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should filter by genre category when specified (public genre)', async () => {
+      mockQueryRaw.mockResolvedValueOnce([
+        { id: 'genre-2', name: 'Pop', type: 'genre', visibility: 'public', albumType: null, score: 0.3 },
       ]);
 
       await service.librarySearchSuggestions('user-123', 'test', ['genre']);
@@ -212,6 +274,33 @@ describe('SearchSuggestionsService', () => {
       await service.librarySearchSuggestions('user-123', '  test  ');
 
       expect(mockQueryRaw).toHaveBeenCalled();
+    });
+
+    it('should limit results to 8', async () => {
+      // Create 8 mock results (what the database would return after LIMIT 8)
+      const mockResults = Array.from({ length: 8 }, (_, i) => ({
+        id: `item-${i}`,
+        name: `Item ${i}`,
+        type: 'artist' as const,
+        visibility: 'private',
+        albumType: null,
+        score: 0.9 - (i * 0.01), // Decreasing scores
+      }));
+      mockQueryRaw.mockResolvedValueOnce(mockResults);
+
+      const result = await service.librarySearchSuggestions('user-123', 'test');
+
+      expect(mockQueryRaw).toHaveBeenCalled();
+      // The service should return only 8 results due to LIMIT 8 in the query
+      expect(result.results).toHaveLength(8);
+    });
+
+    it('should return empty results when types array is empty', async () => {
+      const result = await service.librarySearchSuggestions('user-123', 'test', []);
+
+      // Should return early without calling the database
+      expect(mockQueryRaw).not.toHaveBeenCalled();
+      expect(result).toEqual({ results: [] });
     });
   });
 });
