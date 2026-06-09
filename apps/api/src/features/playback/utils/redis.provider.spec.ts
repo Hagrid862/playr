@@ -5,14 +5,21 @@ import { Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+type MockRedisClient = {
+  on: ReturnType<typeof vi.fn>;
+  quit: ReturnType<typeof vi.fn>;
+};
+
+function createMockRedisClient(): MockRedisClient {
+  return {
+    on: vi.fn(),
+    quit: vi.fn().mockResolvedValue('OK'),
+  };
+}
+
 vi.mock('ioredis', () => {
   return {
-    default: vi.fn().mockImplementation(function () {
-      return {
-        on: vi.fn(),
-        quit: vi.fn().mockResolvedValue('OK'),
-      };
-    }),
+    default: vi.fn().mockImplementation(createMockRedisClient),
   };
 });
 
@@ -31,7 +38,7 @@ function createConfigServiceMock(overrides: Record<string, unknown> = {}) {
 
 describe('RedisProvider', () => {
   let provider: RedisProvider;
-  let redisMock: ReturnType<typeof vi.fn>;
+  let redisMock: MockRedisClient;
 
   async function createProvider(configOverrides: Record<string, unknown> = {}) {
     vi.mocked(Redis).mockClear();
@@ -47,7 +54,7 @@ describe('RedisProvider', () => {
     }).compile();
 
     provider = module.get<RedisProvider>(RedisProvider);
-    redisMock = vi.mocked(Redis).mock.results.at(-1)?.value;
+    redisMock = vi.mocked(Redis).mock.results.at(-1)?.value as MockRedisClient;
   }
 
   beforeEach(async () => {
@@ -87,7 +94,9 @@ describe('RedisProvider', () => {
 
   it('should log an error when redis client emits an error', () => {
     const loggerSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    const errorCallback = redisMock.on.mock.calls.find((call: unknown[]) => call[0] === 'error')[1];
+    const errorCallback = redisMock.on.mock.calls.find((call) => call[0] === 'error')?.[1] as (
+      error: Error,
+    ) => void;
 
     const testError = new Error('Test redis error');
     errorCallback(testError);
