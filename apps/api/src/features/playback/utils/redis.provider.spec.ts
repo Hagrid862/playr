@@ -16,31 +16,42 @@ vi.mock('ioredis', () => {
   };
 });
 
+function createConfigServiceMock(overrides: Record<string, unknown> = {}) {
+  const values: Record<string, unknown> = {
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: 6379,
+    REDIS_PASSWORD: undefined,
+    ...overrides,
+  };
+
+  return {
+    get: vi.fn((key: string) => values[key]),
+  };
+}
+
 describe('RedisProvider', () => {
   let provider: RedisProvider;
-  let configService: ConfigService;
-  let redisMock: any;
+  let redisMock: ReturnType<typeof vi.fn>;
 
-  beforeEach(async () => {
+  async function createProvider(configOverrides: Record<string, unknown> = {}) {
+    vi.mocked(Redis).mockClear();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisProvider,
         {
           provide: ConfigService,
-          useValue: {
-            getOrThrow: vi.fn((key: string) => {
-              if (key === 'REDIS_HOST') return 'localhost';
-              if (key === 'REDIS_PORT') return 6379;
-              throw new Error(`Unexpected key: ${key}`);
-            }),
-          },
+          useValue: createConfigServiceMock(configOverrides),
         },
       ],
     }).compile();
 
     provider = module.get<RedisProvider>(RedisProvider);
-    configService = module.get<ConfigService>(ConfigService);
-    redisMock = (Redis as any).mock.results[0].value;
+    redisMock = vi.mocked(Redis).mock.results.at(-1)?.value;
+  }
+
+  beforeEach(async () => {
+    await createProvider();
   });
 
   afterEach(() => {
@@ -51,14 +62,23 @@ describe('RedisProvider', () => {
     expect(provider).toBeDefined();
   });
 
-  it('should initialize redis client with correct config', () => {
+  it('should initialize redis client without password when REDIS_PASSWORD is unset', () => {
     expect(Redis).toHaveBeenCalledWith({
       host: 'localhost',
       port: 6379,
       keyPrefix: 'playr:playback:',
     });
-    expect(configService.getOrThrow).toHaveBeenCalledWith('REDIS_HOST');
-    expect(configService.getOrThrow).toHaveBeenCalledWith('REDIS_PORT');
+  });
+
+  it('should initialize redis client with password when REDIS_PASSWORD is set', async () => {
+    await createProvider({ REDIS_PASSWORD: 'redis-secret' });
+
+    expect(Redis).toHaveBeenCalledWith({
+      host: 'localhost',
+      port: 6379,
+      password: 'redis-secret',
+      keyPrefix: 'playr:playback:',
+    });
   });
 
   it('should register an error event listener', () => {
@@ -67,7 +87,7 @@ describe('RedisProvider', () => {
 
   it('should log an error when redis client emits an error', () => {
     const loggerSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    const errorCallback = redisMock.on.mock.calls.find((call: any) => call[0] === 'error')[1];
+    const errorCallback = redisMock.on.mock.calls.find((call: unknown[]) => call[0] === 'error')[1];
 
     const testError = new Error('Test redis error');
     errorCallback(testError);

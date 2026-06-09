@@ -2,6 +2,7 @@ import { Global, Inject, Logger, Module, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
 import { Env } from '../config/env.schema';
+import { getRedisConnectionOptions } from './redis-connection';
 
 @Global()
 @Module({
@@ -12,8 +13,7 @@ import { Env } from '../config/env.schema';
       useFactory: (configService: ConfigService<Env>) => {
         const logger = new Logger('RedisModule');
         const redis = new Redis({
-          host: configService.get('REDIS_HOST', { infer: true }),
-          port: configService.get('REDIS_PORT', { infer: true }),
+          ...getRedisConnectionOptions(configService),
           lazyConnect: true,
           maxRetriesPerRequest: 3,
         });

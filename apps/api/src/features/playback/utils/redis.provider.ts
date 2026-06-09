@@ -1,4 +1,5 @@
 import { Env } from '@/common/config/env.schema';
+import { getRedisConnectionOptions } from '@/common/redis/redis-connection';
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -10,8 +11,7 @@ export class RedisProvider implements OnModuleDestroy {
 
   constructor(private readonly configService: ConfigService<Env>) {
     this.client = new Redis({
-      host: this.configService.getOrThrow('REDIS_HOST'),
-      port: this.configService.getOrThrow('REDIS_PORT'),
+      ...getRedisConnectionOptions(this.configService),
       keyPrefix: 'playr:playback:',
     });
 

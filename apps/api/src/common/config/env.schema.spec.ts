@@ -71,6 +71,7 @@ describe('envSchema', () => {
     const result = validateEnv(validConfig);
     expect(result.MAIL_USER).toBeUndefined();
     expect(result.MAIL_PASS).toBeUndefined();
+    expect(result.REDIS_PASSWORD).toBeUndefined();
   });
 
   it('should include provided optional fields', () => {
@@ -78,11 +79,13 @@ describe('envSchema', () => {
       ...validConfig,
       MAIL_USER: 'test-user',
       MAIL_PASS: 'test-pass',
+      REDIS_PASSWORD: 'redis-secret',
     };
 
     const result = validateEnv(config);
     expect(result.MAIL_USER).toBe('test-user');
     expect(result.MAIL_PASS).toBe('test-pass');
+    expect(result.REDIS_PASSWORD).toBe('redis-secret');
   });
 
   it('should validate S3_PUBLIC_URL if provided', () => {

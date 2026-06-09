@@ -12,6 +12,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { Env, validateEnv } from './common/config/env.schema';
+import { getRedisConnectionOptions } from './common/redis/redis-connection';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { FeaturesModule } from './features/features.module';
 import { SharedModule } from './shared/shared.module';
@@ -61,10 +62,7 @@ function throttlingDisabled(): boolean {
     BullModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService<Env>) => ({
-        connection: {
-          host: configService.get('REDIS_HOST', { infer: true }),
-          port: configService.get('REDIS_PORT', { infer: true }),
-        },
+        connection: getRedisConnectionOptions(configService),
       }),
     }),
     MailerModule.forRootAsync({
