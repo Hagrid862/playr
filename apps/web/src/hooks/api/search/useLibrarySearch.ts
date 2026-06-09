@@ -3,9 +3,12 @@ import type { LibrarySearchQuery, LibrarySearchResultsResponse } from '@repo/con
 import { getLibrarySearch } from './requests/getLibrarySearch';
 
 export const useLibrarySearch = (query: LibrarySearchQuery, options?: { enabled?: boolean }) => {
+  const trimmedQuery = query.query?.trim() ?? '';
+  const normalizedQuery = { ...query, query: trimmedQuery };
+
   return useQuery<LibrarySearchResultsResponse, Error>({
-    queryKey: ['library', 'search', query],
-    queryFn: () => getLibrarySearch(query),
-    enabled: options?.enabled !== false && !!query.query && query.query.length >= 3,
+    queryKey: ['library', 'search', normalizedQuery],
+    queryFn: () => getLibrarySearch(normalizedQuery),
+    enabled: options?.enabled !== false && trimmedQuery.length >= 3,
   });
 };

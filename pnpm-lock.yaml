@@ -69,6 +69,7 @@ overrides:
   lodash: ^4.18.1
   path-to-regexp: ^8.4.0
   vite: ^7.3.2
+  js-cookie: ^3.0.7
 
 importers:
 
@@ -333,7 +334,7 @@ importers:
         version: 2.2.0
       '@nestjs/cli':
         specifier: ^11.0.18
-        version: 11.0.21(@swc/core@1.15.24)(@types/node@22.19.17)
+        version: 11.0.21(@swc/core@1.15.24)(@types/node@22.19.17)(esbuild@0.27.7)
       '@nestjs/schematics':
         specifier: ^11.0.0
         version: 11.0.10(chokidar@4.0.3)(typescript@5.9.3)
@@ -411,7 +412,7 @@ importers:
         version: 7.2.2
       ts-loader:
         specifier: ^9.5.2
-        version: 9.5.7(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24))
+        version: 9.5.7(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24)(esbuild@0.27.7))
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.15.24)(@types/node@22.19.17)(typescript@5.9.3)
@@ -6091,8 +6092,9 @@ packages:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
 
-  js-cookie@2.2.1:
-    resolution: {integrity: sha512-HvdH2LzI/EAZcUwA8+0nKNtWHqS+ZmijLA30RwZA0bo7ToCckjK5MkGhjED9KoRcXO6BaGI3I9UIzSA1FKFPOQ==}
+  js-cookie@3.0.7:
+    resolution: {integrity: sha512-z/wZZgDrkNV1eA0ULjM/F9/50Ya8fbzgKneSpoPsXSGd0KnpdtHfOZWK+GcwLk+EZbS4F9RBhU+K2RgzuDaItw==}
+    engines: {node: '>=20'}
 
   js-stringify@1.0.2:
     resolution: {integrity: sha512-rtS5ATOo2Q5k1G+DADISilDA6lv79zIiwFd6CcjuIxGKLFm5C+RLImRscVap9k55i+MOZwgliw+NejvkLuGD5g==}
@@ -10090,7 +10092,7 @@ snapshots:
       bullmq: 5.73.0
       tslib: 2.8.1
 
-  '@nestjs/cli@11.0.21(@swc/core@1.15.24)(@types/node@22.19.17)':
+  '@nestjs/cli@11.0.21(@swc/core@1.15.24)(@types/node@22.19.17)(esbuild@0.27.7)':
     dependencies:
       '@angular-devkit/core': 19.2.24(chokidar@4.0.3)
       '@angular-devkit/schematics': 19.2.24(chokidar@4.0.3)
@@ -10101,14 +10103,14 @@ snapshots:
       chokidar: 4.0.3
       cli-table3: 0.6.5
       commander: 4.1.1
-      fork-ts-checker-webpack-plugin: 9.1.0(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24))
+      fork-ts-checker-webpack-plugin: 9.1.0(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24)(esbuild@0.27.7))
       glob: 13.0.6
       node-emoji: 1.11.0
       ora: 5.4.1
       tsconfig-paths: 4.2.0
       tsconfig-paths-webpack-plugin: 4.2.0
       typescript: 5.9.3
-      webpack: 5.106.0(@swc/core@1.15.24)
+      webpack: 5.106.0(@swc/core@1.15.24)(esbuild@0.27.7)
       webpack-node-externals: 3.0.0
     optionalDependencies:
       '@swc/core': 1.15.24
@@ -14068,7 +14070,7 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  fork-ts-checker-webpack-plugin@9.1.0(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24)):
+  fork-ts-checker-webpack-plugin@9.1.0(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24)(esbuild@0.27.7)):
     dependencies:
       '@babel/code-frame': 7.29.0
       chalk: 4.1.2
@@ -14083,7 +14085,7 @@ snapshots:
       semver: 7.7.4
       tapable: 2.3.2
       typescript: 5.9.3
-      webpack: 5.106.0(@swc/core@1.15.24)
+      webpack: 5.106.0(@swc/core@1.15.24)(esbuild@0.27.7)
 
   form-data@4.0.5:
     dependencies:
@@ -14684,7 +14686,7 @@ snapshots:
 
   joycon@3.1.1: {}
 
-  js-cookie@2.2.1: {}
+  js-cookie@3.0.7: {}
 
   js-stringify@1.0.2:
     optional: true
@@ -16661,7 +16663,7 @@ snapshots:
       copy-to-clipboard: 3.3.3
       fast-deep-equal: 3.1.3
       fast-shallow-equal: 1.0.0
-      js-cookie: 2.2.1
+      js-cookie: 3.0.7
       nano-css: 5.6.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
@@ -17400,15 +17402,16 @@ snapshots:
 
   tapable@2.3.2: {}
 
-  terser-webpack-plugin@5.4.0(@swc/core@1.15.24)(webpack@5.106.0(@swc/core@1.15.24)):
+  terser-webpack-plugin@5.4.0(@swc/core@1.15.24)(esbuild@0.27.7)(webpack@5.106.0(@swc/core@1.15.24)(esbuild@0.27.7)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.46.1
-      webpack: 5.106.0(@swc/core@1.15.24)
+      webpack: 5.106.0(@swc/core@1.15.24)(esbuild@0.27.7)
     optionalDependencies:
       '@swc/core': 1.15.24
+      esbuild: 0.27.7
 
   terser-webpack-plugin@5.4.0(webpack@5.106.0):
     dependencies:
@@ -17506,7 +17509,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  ts-loader@9.5.7(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24)):
+  ts-loader@9.5.7(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.15.24)(esbuild@0.27.7)):
     dependencies:
       chalk: 4.1.2
       enhanced-resolve: 5.20.1
@@ -17514,7 +17517,7 @@ snapshots:
       semver: 7.7.4
       source-map: 0.7.6
       typescript: 5.9.3
-      webpack: 5.106.0(@swc/core@1.15.24)
+      webpack: 5.106.0(@swc/core@1.15.24)(esbuild@0.27.7)
 
   ts-node@10.9.2(@swc/core@1.15.24)(@types/node@22.19.17)(typescript@5.9.3):
     dependencies:
@@ -17918,7 +17921,7 @@ snapshots:
       - uglify-js
     optional: true
 
-  webpack@5.106.0(@swc/core@1.15.24):
+  webpack@5.106.0(@swc/core@1.15.24)(esbuild@0.27.7):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -17942,7 +17945,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.2
-      terser-webpack-plugin: 5.4.0(@swc/core@1.15.24)(webpack@5.106.0(@swc/core@1.15.24))
+      terser-webpack-plugin: 5.4.0(@swc/core@1.15.24)(esbuild@0.27.7)(webpack@5.106.0(@swc/core@1.15.24)(esbuild@0.27.7))
       watchpack: 2.5.1
       webpack-sources: 3.3.4
     transitivePeerDependencies:

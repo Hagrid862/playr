@@ -29,7 +29,7 @@ describe('SearchPreferencesStore', () => {
     const store = useSearchPreferencesStore.getState();
     store.addSearchToHistory('query1');
     expect(useSearchPreferencesStore.getState().searchHistory).toEqual(['query1']);
-    
+
     store.addSearchToHistory('query2');
     expect(useSearchPreferencesStore.getState().searchHistory).toEqual(['query2', 'query1']);
   });

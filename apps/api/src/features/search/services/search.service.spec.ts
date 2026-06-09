@@ -946,7 +946,7 @@ describe('SearchService', () => {
       expect(mockQueryRaw).not.toHaveBeenCalled();
     });
 
-    it('should cover all code paths (uncovered lines 89-92, 199-200, 514-515, 199-203)', async () => {
+    it('should cover all code paths', async () => {
       // 1. Lines 89-92: search with empty/missing categories
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
       mockQueryRaw.mockResolvedValueOnce([]);

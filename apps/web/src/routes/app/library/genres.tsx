@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { CompactSearch } from '@/components/search/CompactSearch';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/library/genres')({
   component: GenresLayout,
@@ -20,6 +22,7 @@ function formatLoadedOfTotal(loaded: number, total: number | undefined, pluralNo
 }
 
 function GenresLayout() {
+  usePersistentNavigation('genres', '/app/library/genres');
   const isMobile = useIsMobile();
   const location = useLocation();
   const isRoot =
@@ -55,19 +58,23 @@ function GenresLayout() {
     return <Outlet />;
   }
 
-  // Desktop Layout — edge-to-edge in the main column; scroll lives in the panes, not the shell
   return (
-    <div className="-mx-4 -mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* First Column: Genre List */}
-        <div className="flex w-64 shrink-0 flex-col border-r bg-card/50 backdrop-blur-sm">
-          <div className="px-4 pb-3 pt-4">
-            <h1 className="text-2xl font-bold tracking-tight">Genres</h1>
-            {!isLoading && genres.length > 0 ? (
-              <p className="mt-1 text-xs text-muted-foreground">{countsSubtitle}</p>
-            ) : null}
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden w-full h-full max-w-full">
+      <div className="flex min-h-0 flex-1 overflow-hidden items-stretch h-full w-full max-w-full">
+        <div className="flex w-64 shrink-0 flex-col border-r bg-card/50 backdrop-blur-sm h-full min-h-full">
+          <div className="px-4 pb-3 pt-4 flex flex-col gap-2 shrink-0">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Genres</h1>
+              {!isLoading && genres.length > 0 ? (
+                <p className="mt-1 text-xs text-muted-foreground">{countsSubtitle}</p>
+              ) : null}
+            </div>
+            <div className="flex justify-start [&_div.box-border]:max-w-[224px] [&_div.absolute]:w-56 term-container">
+              <CompactSearch category="genre" />
+            </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-24 custom-scrollbar">
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-24 custom-scrollbar h-full">
             <div className="flex flex-col gap-1">
               {isLoading ? (
                 <div className="flex flex-col gap-2 px-2">
@@ -111,14 +118,13 @@ function GenresLayout() {
           </div>
         </div>
 
-        {/* Second Column: Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto pb-24 custom-scrollbar">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-24 custom-scrollbar h-full w-full">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="h-full"
+            className="h-full w-full"
           >
             <Outlet />
           </motion.div>

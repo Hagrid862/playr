@@ -1,4 +1,3 @@
-import { PageHeader } from '@/components/app/PageHeader';
 import { MediaCard } from '@/components/library/MediaCard';
 import { SongCard } from '@/components/library/SongCard';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,6 @@ import { useDeleteLibraryTrack } from '@/hooks/api/library-tracks/useDeleteLibra
 import { useLibraryAlbumsInfinite } from '@/hooks/api/library-albums/useLibraryAlbumsInfinite';
 import { useLibraryGenre } from '@/hooks/api/library-genres/useLibraryGenre';
 import { useLibraryTracksInfinite } from '@/hooks/api/library-tracks/useLibraryTracksInfinite';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { UNKNOWN_ARTIST_LABEL } from '@/lib/display-constants';
 import { zodTrackToPlaybackTrack } from '@/lib/playback/playback-mappers';
 import { usePlayerStore } from '@/stores/player-store/player.store';
@@ -40,7 +38,6 @@ function formatLoadedOfTotal(loaded: number, total: number | undefined, pluralNo
 
 function GenreDetail() {
   const { genreId } = Route.useParams();
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [trackToDelete, setTrackToDelete] = useState<{ id: string; title: string } | null>(null);
 
@@ -139,14 +136,10 @@ function GenreDetail() {
 
   return (
     <div className="flex min-h-0 flex-col gap-8 px-4 pb-40 max-md:pb-[max(10rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))] md:px-6 md:pb-40 md:pt-8">
-      {isMobile ? (
-        <PageHeader title={genre?.name ?? 'Genre'} description={countsSubtitle} showBackButton />
-      ) : (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-4xl font-black tracking-tight">{genre?.name}</h2>
-          <p className="text-muted-foreground">{countsSubtitle}</p>
-        </div>
-      )}
+      <div className="flex flex-col gap-2">
+        <h2 className="text-4xl font-black tracking-tight">{genre?.name}</h2>
+        <p className="text-muted-foreground">{countsSubtitle}</p>
+      </div>
 
       {/* Albums Section */}
       <section className="flex flex-col gap-4">

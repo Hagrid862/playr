@@ -1,5 +1,3 @@
-import { PageHeader } from '@/components/app/PageHeader';
-import { TrackAudioStatusIcon } from '@/components/library/TrackAudioStatusIcon';
 import { AddToPlaylistSubmenu } from '@/components/playlists/AddToPlaylistSubmenu';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,14 +39,19 @@ import {
   PlayIcon,
   QueueIcon,
   TrashIcon,
+  WarningIcon,
 } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { type VirtualItem, useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/app/library/songs/')({
   component: LibrarySongsPage,
+  staticData: {
+    title: 'Songs',
+    description: 'Library',
+  },
 });
 
 const PAGE_SIZE = 100;
@@ -59,12 +62,12 @@ const COL_COUNT = 6;
 /** Space between the rounded header card and the first track row (desktop table). */
 const DESKTOP_HEADER_BODY_GAP_CLASS = 'h-4 min-h-4';
 
-/** Sticky thead only; rounding + surface live on header cells (see row class). */
+/** Sticky thead only; rounding and surface live on header cells (see row class). */
 const songsTableHeaderStickyClass =
   'sticky top-0 z-20 border-0 bg-background p-0 shadow-none [&_tr]:border-0';
 
 /**
- * Header row chrome: with `border-separate`, rounding + border on the end cells
+ * Header row chrome: with `border-separate`, rounding and border on the end cells
  * (`border-collapse: collapse` ignores radius on thead/tr in browsers).
  */
 const songsTableHeaderRowClass =
@@ -74,7 +77,7 @@ const songsTableHeaderRowClass =
 const songsTablePlaybackRowShadowClass =
   'shadow-[inset_0_0_0_100vmax_rgb(255_255_255/0.06)] hover:shadow-[inset_0_0_0_100vmax_rgb(255_255_255/0.06)] active:shadow-[inset_0_0_0_100vmax_rgb(255_255_255/0.06)]';
 
-/** Same inset geometry at rest (alpha 0) so hover/active can interpolate; `shadow-none`→inset does not animate. */
+/** The same inset geometry at rest (alpha 0) so hover/active can interpolate; `shadow-none`→inset does not animate. */
 const songsTableDataRowClass =
   'relative z-0 overflow-hidden rounded-xl border-b-0 bg-transparent shadow-[inset_0_0_0_100vmax_rgb(41_37_36/0)] transition-shadow duration-300 ease-out hover:z-10 [&>td]:border-0 [&>td]:bg-transparent';
 
@@ -268,7 +271,7 @@ function LibrarySongsDesktopInitialLoadShell({
   return (
     <div className={desktopScrollClass}>
       <div className="relative min-w-0">
-        <table className="w-full min-w-[44rem] table-fixed border-separate border-spacing-0 caption-bottom text-sm">
+        <table className="w-full min-w-176 table-fixed border-separate border-spacing-0 caption-bottom text-sm">
           <LibrarySongsDesktopTableChrome sortState={sortState} onSortColumn={onSortColumn} />
           <TableBody>
             <TableRow
@@ -288,7 +291,7 @@ function LibrarySongsDesktopInitialLoadShell({
                       className="absolute inset-0 scale-150 rounded-full bg-primary/10 blur-2xl motion-safe:animate-pulse"
                       aria-hidden
                     />
-                    <div className="relative flex size-16 items-center justify-center rounded-2xl border border-primary/25 bg-gradient-to-b from-card to-muted/40 shadow-md ring-1 ring-white/5">
+                    <div className="relative flex size-16 items-center justify-center rounded-2xl border border-primary/25 bg-linear-to-b from-card to-muted/40 shadow-md ring-1 ring-white/5">
                       <DiscIcon className="size-9 text-primary/75" weight="duotone" />
                     </div>
                   </div>
@@ -387,7 +390,7 @@ function LibrarySongsVirtualList({
     return (
       <div ref={scrollRef} className={mobileScrollClass}>
         <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
-          {virtualizer.getVirtualItems().map((virtualRow) => {
+          {virtualizer.getVirtualItems().map((virtualRow: VirtualItem) => {
             const track = tracks[virtualRow.index];
             if (!track) return null;
             const { isProcessing, isFailed, isDisabled } = getTrackPlayability(track);
@@ -430,11 +433,15 @@ function LibrarySongsVirtualList({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <TrackAudioStatusIcon
-                            isProcessing={isProcessing}
-                            isFailed={isFailed}
-                            iconClassName="shrink-0"
-                          />
+                          {isProcessing ? (
+                            <Spinner className="size-4 shrink-0" aria-label="Processing" />
+                          ) : isFailed ? (
+                            <WarningIcon
+                              className="size-4 shrink-0 text-amber-500"
+                              weight="fill"
+                              aria-label="Processing failed"
+                            />
+                          ) : null}
                           <span className="line-clamp-2 font-semibold text-foreground">
                             {track.title}
                           </span>
@@ -481,7 +488,7 @@ function LibrarySongsVirtualList({
   return (
     <div ref={scrollRef} className={desktopScrollClass}>
       <div className="relative min-w-0">
-        <table className="w-full min-w-[44rem] table-fixed border-separate border-spacing-0 caption-bottom text-sm">
+        <table className="w-full min-w-176 table-fixed border-separate border-spacing-0 caption-bottom text-sm">
           <LibrarySongsDesktopTableChrome sortState={sortState} onSortColumn={onSortColumn} />
           <TableBody>
             <TableRow
@@ -503,7 +510,7 @@ function LibrarySongsVirtualList({
                 />
               </TableRow>
             ) : null}
-            {virtualizer.getVirtualItems().map((virtualRow) => {
+            {virtualizer.getVirtualItems().map((virtualRow: VirtualItem) => {
               const track = tracks[virtualRow.index];
               if (!track) return null;
               const { isProcessing, isFailed, isDisabled } = getTrackPlayability(track);
@@ -543,11 +550,15 @@ function LibrarySongsVirtualList({
                       </TableCell>
                       <TableCell className="overflow-hidden px-3 py-2 align-middle">
                         <div className="flex min-w-0 items-center gap-2">
-                          <TrackAudioStatusIcon
-                            isProcessing={isProcessing}
-                            isFailed={isFailed}
-                            iconClassName="shrink-0"
-                          />
+                          {isProcessing ? (
+                            <Spinner className="size-4 shrink-0" aria-label="Processing" />
+                          ) : isFailed ? (
+                            <WarningIcon
+                              className="size-4 shrink-0 text-amber-500"
+                              weight="fill"
+                              aria-label="Processing failed"
+                            />
+                          ) : null}
                           <span className="min-w-0 truncate font-medium">{track.title}</span>
                         </div>
                       </TableCell>
@@ -647,7 +658,7 @@ function LibrarySongsPage() {
     const pages = tracksQuery.data?.pages;
     if (!pages?.length) return [];
     return pages.flatMap((page) => page.data?.items ?? []);
-  }, [tracksQuery.data]);
+  }, [tracksQuery.data?.pages]);
 
   const tracks = useMemo(() => {
     if (sortState) return rawTracks;
@@ -662,14 +673,7 @@ function LibrarySongsPage() {
     setLastKnownTotal(totalFromFirstPage);
   }
 
-  const displayTotal = typeof totalFromFirstPage === 'number' ? totalFromFirstPage : lastKnownTotal;
-
-  const countsSubtitle = useMemo(() => {
-    if (displayTotal == null) return undefined;
-    return `${displayTotal} ${displayTotal === 1 ? 'song' : 'songs'}`;
-  }, [displayTotal]);
-
-  const hasNextPage = tracksQuery.hasNextPage === true;
+  const hasNextPage = tracksQuery.hasNextPage;
   const isInitialLoad = tracksQuery.isPending && tracksQuery.data === undefined;
   const isError = tracksQuery.isError;
 
@@ -722,14 +726,13 @@ function LibrarySongsPage() {
   const paddedShellClass =
     'flex min-h-0 flex-1 flex-col gap-4 px-4 pt-4 pb-0 max-md:pb-[env(safe-area-inset-bottom,0px)]';
 
-  /** Loaded list: no bottom shell padding so the list meets the viewport edge (player overlays). */
+  /** Loaded list: no bottom shell padding, so the list meets the viewport edge (player overlays). */
   const songsLoadedShellClass =
     'flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden px-4 pt-4 pb-0 max-md:pb-[env(safe-area-inset-bottom,0px)]';
 
   if (isError) {
     return (
       <div className={paddedShellClass}>
-        <PageHeader title="Songs" />
         <p className="text-sm text-destructive">Could not load songs. Try again later.</p>
       </div>
     );
@@ -740,9 +743,8 @@ function LibrarySongsPage() {
       return (
         <>
           <div className={paddedShellClass}>
-            <PageHeader title="Songs" description={countsSubtitle} />
-            <div className="flex min-h-[min(360px,52dvh)] flex-1 flex-col items-center justify-center gap-5 rounded-2xl border border-border/30 bg-gradient-to-b from-card/90 via-card/50 to-muted/15 px-6 py-16 shadow-sm ring-1 ring-white/[0.04] dark:ring-white/[0.06]">
-              <div className="flex size-[4.5rem] items-center justify-center rounded-2xl border border-border/35 bg-background/70 shadow-inner">
+            <div className="flex min-h-[min(360px,52dvh)] flex-1 flex-col items-center justify-center gap-5 rounded-2xl border border-border/30 bg-linear-to-b from-card/90 via-card/50 to-muted/15 px-6 py-16 shadow-sm ring-1 ring-white/4 dark:ring-white/6">
+              <div className="flex size-18 items-center justify-center rounded-2xl border border-border/35 bg-background/70 shadow-inner">
                 <DiscIcon className="size-10 text-muted-foreground/85" weight="duotone" />
               </div>
               <Spinner className="size-8 text-primary" aria-label="Loading songs" />
@@ -759,7 +761,6 @@ function LibrarySongsPage() {
     return (
       <>
         <div className={songsLoadedShellClass}>
-          <PageHeader title="Songs" description={countsSubtitle} />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <LibrarySongsDesktopInitialLoadShell
               sortState={sortState}
@@ -775,7 +776,6 @@ function LibrarySongsPage() {
   if (tracks.length === 0) {
     return (
       <div className={paddedShellClass}>
-        <PageHeader title="Songs" description={countsSubtitle} />
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/40 bg-stone-900/10 py-16">
           <p className="text-sm font-medium text-muted-foreground">No songs in your library.</p>
         </div>
@@ -785,43 +785,11 @@ function LibrarySongsPage() {
 
   if (isMobile) {
     return (
-      <>
-        <div className={songsLoadedShellClass}>
-          <PageHeader title="Songs" description={countsSubtitle} />
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <LibrarySongsVirtualList
-              key="mobile"
-              variant="mobile"
-              tracks={tracks}
-              playbackTracks={playbackTracks}
-              playTrack={playTrack}
-              addToQueue={addToQueue}
-              playNext={playNext}
-              onEditTrack={handleEditTrack}
-              onRequestDeleteTrack={setTrackToDelete}
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-              hasNextPage={hasNextPage}
-              isFetchingNextPage={tracksQuery.isFetchingNextPage}
-              fetchNextPage={tracksQuery.fetchNextPage}
-              sortState={sortState}
-              onSortColumn={handleSortColumn}
-            />
-          </div>
-        </div>
-        {deleteTrackDialog}
-      </>
-    );
-  }
-
-  return (
-    <>
       <div className={songsLoadedShellClass}>
-        <PageHeader title="Songs" description={countsSubtitle} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <LibrarySongsVirtualList
-            key="desktop"
-            variant="desktop"
+            key="mobile"
+            variant="mobile"
             tracks={tracks}
             playbackTracks={playbackTracks}
             playTrack={playTrack}
@@ -838,8 +806,34 @@ function LibrarySongsPage() {
             onSortColumn={handleSortColumn}
           />
         </div>
+        {deleteTrackDialog}
+      </div>
+    );
+  }
+
+  return (
+    <div className={songsLoadedShellClass}>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <LibrarySongsVirtualList
+          key="desktop"
+          variant="desktop"
+          tracks={tracks}
+          playbackTracks={playbackTracks}
+          playTrack={playTrack}
+          addToQueue={addToQueue}
+          playNext={playNext}
+          onEditTrack={handleEditTrack}
+          onRequestDeleteTrack={setTrackToDelete}
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={tracksQuery.isFetchingNextPage}
+          fetchNextPage={tracksQuery.fetchNextPage}
+          sortState={sortState}
+          onSortColumn={handleSortColumn}
+        />
       </div>
       {deleteTrackDialog}
-    </>
+    </div>
   );
 }

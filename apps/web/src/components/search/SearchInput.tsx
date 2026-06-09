@@ -1,13 +1,13 @@
 import { useSearchSuggestions } from '@/hooks/api/search/useSearchSuggestions';
 import { useLibrarySearchSuggestions } from '@/hooks/api/search/useLibrarySearchSuggestions';
 import { cn } from '@/lib/utils';
-import { MagnifyingGlassIcon, WarningIcon } from '@phosphor-icons/react';
+import { MagnifyingGlassIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { useClickAway } from 'react-use';
 import { Input } from '../ui/input';
-import { useNavigate } from '@tanstack/react-router';
-import { type SearchCategory, type SearchSuggestionsResult } from '@repo/contracts';
-import { useSearchPreferencesStore, type SearchScope } from '@/stores/search-preferences.store';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { type SearchSuggestionsResult } from '@repo/contracts';
+import { useSearchPreferencesStore } from '@/stores/search-preferences.store';
 import { SearchScopeToggle } from './SearchScopeToggle';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -15,9 +15,6 @@ interface SearchInputProps {
   className?: string;
   initialValue?: string;
   onSearch?: (query: string) => void;
-  lockedScope?: SearchScope;
-  simple?: boolean;
-  lockedCategory?: SearchCategory;
   placeholder?: string;
   size?: 'default' | 'sm';
   hideDropdown?: boolean;
@@ -27,14 +24,12 @@ export function SearchInput({
   className,
   initialValue = '',
   onSearch,
-  lockedScope,
-  simple = false,
-  lockedCategory,
   placeholder,
   size = 'default',
   hideDropdown = false,
 }: SearchInputProps) {
   const [query, setQuery] = useState(initialValue);
+  const searchParams = useSearch({ strict: false });
   const [isOpen, setIsOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,11 +37,15 @@ export function SearchInput({
   const navigate = useNavigate();
   const { searchScope } = useSearchPreferencesStore();
 
-  const currentScope = simple ? 'library' : lockedScope || searchScope;
+  const currentScope = searchScope;
 
   useEffect(() => {
-    // If we're already on the search page and the scope changes,
-    // trigger a new search to refresh results
+    if ((searchParams as any)?.query) {
+      setQuery((searchParams as any).query);
+    }
+  }, [(searchParams as any)?.query]);
+
+  useEffect(() => {
     if (window.location.pathname.includes('/app/search') && query.trim().length >= 3) {
       handleSearch();
     }
@@ -66,7 +65,6 @@ export function SearchInput({
     };
   }, [query]);
 
-  // Handle both global and library suggestions
   const globalSuggestions = useSearchSuggestions(
     { query: debouncedQuery },
     {
@@ -76,7 +74,7 @@ export function SearchInput({
   );
 
   const librarySuggestions = useLibrarySearchSuggestions(
-    { query: debouncedQuery, categories: lockedCategory ? [lockedCategory] : undefined },
+    { query: debouncedQuery },
     {
       enabled:
         !hideDropdown && currentScope === 'library' && isOpen && debouncedQuery.trim().length >= 3,
@@ -119,6 +117,24 @@ export function SearchInput({
     }
   };
 
+  const handleClear = () => {
+    setQuery('');
+    setIsOpen(false);
+    inputRef.current?.focus();
+
+    // Jeśli jesteśmy na podstronie wyszukiwania, wyczyszczenie inputa resetuje stan wyszukiwania w URL
+    if (window.location.pathname.includes('/app/search')) {
+      navigate({
+        to: '/app/search',
+        search: (prev: any) => ({
+          ...prev,
+          query: undefined,
+          page: undefined,
+        }),
+      });
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -126,13 +142,14 @@ export function SearchInput({
   };
 
   const showDropdown = !hideDropdown && isOpen && debouncedQuery.trim().length > 0;
+  const showClearButton = query.length > 0 && !isFetching;
 
   return (
     <div ref={containerRef} className={cn('flex items-center gap-2 w-full', className)}>
       <div className="relative flex-1">
         <MagnifyingGlassIcon
           className={cn(
-            'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors',
+            'absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
             size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
           )}
           onClick={() => handleSearch()}
@@ -151,10 +168,30 @@ export function SearchInput({
             (currentScope === 'all' ? 'Search on Playr...' : 'Search in your library...')
           }
           className={cn(
-            'pl-9 pr-9 bg-stone-900/50 border-white/10 focus:bg-stone-900 transition-all rounded-xl',
-            size === 'sm' ? 'h-8 text-xs pl-8 pr-8' : 'h-10 text-sm',
+            'pl-9 bg-stone-900/50 border-white/10 focus:bg-stone-900 transition-all',
+            size === 'sm' ? 'h-8 text-xs pl-8' : 'h-10 text-sm',
+            // Zwiększamy prawy padding, jeśli wyświetla się krzyżyk lub spinner, by tekst na nie nie nachodził
+            showClearButton || isFetching
+              ? size === 'sm'
+                ? 'pr-8'
+                : 'pr-9'
+              : size === 'sm'
+                ? 'pr-4'
+                : 'pr-4',
           )}
         />
+
+        {/* Przycisk czyszczenia pola tekstowego o identycznym pozycjonowaniu co lupa */}
+        {showClearButton && (
+          <XIcon
+            className={cn(
+              'absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-white transition-colors z-10',
+              size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
+            )}
+            onClick={handleClear}
+          />
+        )}
+
         {isFetching && (
           <Spinner
             className={cn(
@@ -165,7 +202,7 @@ export function SearchInput({
         )}
 
         {showDropdown && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-stone-900 border border-white/10 rounded-xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-stone-900 border border-white/10 shadow-2xl rounded-lg z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-2 min-h-[40px]">
               {debouncedQuery.trim().length < 3 ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">
@@ -199,7 +236,7 @@ export function SearchInput({
                               query: result.name,
                               filters: {
                                 ...prev.filters,
-                                visibility: currentScope === 'library' ? 'private' : 'public',
+                                visibility: currentScope === 'library' ? 'private' : undefined,
                               },
                             }),
                           });
@@ -259,7 +296,7 @@ export function SearchInput({
         )}
       </div>
 
-      {!simple && <SearchScopeToggle lockedScope={lockedScope} />}
+      <SearchScopeToggle />
     </div>
   );
 }

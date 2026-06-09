@@ -3,11 +3,6 @@ import { cn } from '@/lib/utils';
 import { DiscIcon } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu.tsx';
 
 export function MediaCard({
   coverUrl,
@@ -63,10 +58,14 @@ export function MediaCard({
       </div>
       <div className="pt-4">
         <h3 className="line-clamp-1 text-sm font-semibold">{title}</h3>
-        <p className={cn(
-          "line-clamp-1 text-xs text-muted-foreground",
-          subtitleAlign === 'right' ? 'text-right' : 'text-left'
-        )}>{subtitle ?? 'Unknown'}</p>
+        <p
+          className={cn(
+            'line-clamp-1 text-xs text-muted-foreground',
+            subtitleAlign === 'right' ? 'text-right' : 'text-left',
+          )}
+        >
+          {subtitle ?? 'Unknown'}
+        </p>
       </div>
     </Link>
   );

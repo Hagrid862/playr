@@ -1,9 +1,6 @@
 import { SearchSuggestionsService } from '@/features/search/services/search-suggestions.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  LibrarySearchSuggestionsData,
-  SearchResultType,
-} from '@repo/contracts';
+import { LibrarySearchSuggestionsData, SearchResultType, SearchCategory } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LibrarySearchSuggestionsQuery } from '../impl/library-search-suggestions.query';
@@ -15,8 +12,8 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   const userId = 'user-123';
   const query = 'test query';
-  const categories = ['artist', 'album'] as const;
-  const searchQuery = new LibrarySearchSuggestionsQuery(userId, query, categories as any);
+  const categories: SearchCategory[] = ['artist', 'album'];
+  const searchQuery = new LibrarySearchSuggestionsQuery(userId, query, categories);
 
   const mockData: LibrarySearchSuggestionsData = {
     results: [
@@ -100,8 +97,12 @@ describe('LibrarySearchSuggestionsHandler', () => {
   });
 
   it('should handle all categories', async () => {
-    const allCategories = ['artist', 'album', 'track', 'playlist', 'genre'] as const;
-    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(userId, query, allCategories as any);
+    const allCategories: SearchCategory[] = ['artist', 'album', 'track', 'playlist', 'genre'];
+    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(
+      userId,
+      query,
+      allCategories,
+    );
     const allResults: LibrarySearchSuggestionsData = {
       results: [
         { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'private' },

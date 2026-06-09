@@ -14,23 +14,27 @@ function RouteComponent() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[400px] flex-col items-center justify-center gap-4">
-        <Spinner className="size-8 text-primary" />
-        <p className="text-muted-foreground animate-pulse">Loading playlists…</p>
+      <div className="flex flex-col gap-8">
+        <div className="flex h-[400px] flex-col items-center justify-center gap-4">
+          <Spinner className="size-8 text-primary" />
+          <p className="text-muted-foreground animate-pulse">Loading playlists…</p>
+        </div>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl p-12 text-center backdrop-blur-sm">
-        <div className="mb-6 rounded-full bg-stone-800/50 p-6 ring-1 ring-white/5">
-          <PlaylistIcon className="size-12 text-muted-foreground" weight="duotone" />
+      <div className="flex flex-col gap-8">
+        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl p-12 text-center backdrop-blur-sm">
+          <div className="mb-6 rounded-full bg-stone-800/50 p-6 ring-1 ring-white/5">
+            <PlaylistIcon className="size-12 text-muted-foreground" weight="duotone" />
+          </div>
+          <h3 className="mb-2 text-xl font-semibold text-white">No playlists yet</h3>
+          <p className="mb-2 max-w-sm text-muted-foreground leading-relaxed">
+            Create a playlist from the button above, or favorite songs from the player.
+          </p>
         </div>
-        <h3 className="mb-2 text-xl font-semibold text-white">No playlists yet</h3>
-        <p className="mb-2 max-w-sm text-muted-foreground leading-relaxed">
-          Create a playlist from the button above, or favorite songs from the player.
-        </p>
       </div>
     );
   }

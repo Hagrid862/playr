@@ -1,18 +1,21 @@
+import { SubHeader } from '@/components/app/SubHeader';
 import { createFileRoute } from '@tanstack/react-router';
-import { PageHeader } from '@/components/app/PageHeader';
-import { SearchInput } from '@/components/search/SearchInput';
-import { PlayrLogo } from '@/components/app/PlayrLogo.tsx';
+import { usePersistentNavigation } from '@/hooks/usePersistentNavigation';
 
 export const Route = createFileRoute('/app/')({
   component: App,
+  staticData: {
+    title: 'Home',
+    description: 'Welcome to Playr',
+  },
 });
 
 function App() {
+  usePersistentNavigation('home', '/app');
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <PageHeader title={<PlayrLogo />} description="Home" centerActions>
-        <SearchInput className="max-w-xl" />
-      </PageHeader>
+    <div className="flex flex-col gap-4">
+      <SubHeader title="Home" />
+      <div className="p-4">{/* Home content */}</div>
     </div>
   );
 }

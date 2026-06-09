@@ -27,7 +27,7 @@ export function SearchScopeToggle({ className }: SearchScopeToggleProps) {
     <TooltipProvider>
       <div
         className={cn(
-          'flex items-center bg-stone-900 border border-white/10 rounded-xl p-1 h-10',
+          'flex items-center bg-stone-900 border border-white/10 rounded-lg p-1 h-10',
           className,
         )}
       >
