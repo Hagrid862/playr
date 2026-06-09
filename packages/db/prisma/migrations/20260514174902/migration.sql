@@ -1,2 +1,2 @@
--- CreateEnum
-CREATE TYPE "OtpCodeType" AS ENUM ('emailVerification', 'passwordReset');
+-- OtpCodeType was already created in migration 20260514174243.
+-- This migration is intentionally a no-op to preserve migration history.
