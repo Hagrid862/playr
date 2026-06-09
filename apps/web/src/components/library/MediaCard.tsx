@@ -16,10 +16,12 @@ export function MediaCard({
   routeParams,
   contextMenu,
   subtitleAlign = 'left',
+  onClick,
+  as = 'link',
 }: {
   coverUrl: string | undefined;
   title: string;
-  subtitle: string | undefined;
+  subtitle: ReactNode;
   id: string;
   link: string;
   coverStyle?: 'circle' | 'square';
@@ -31,15 +33,17 @@ export function MediaCard({
   routeParams?: Record<string, string>;
   /** Right-click menu content (wrapped in `ContextMenuContent`). */
   contextMenu?: ReactNode;
+  /** Custom click handler for the card. */
+  onClick?: (e: React.MouseEvent) => void;
+  /** Whether to render as a Link or a div. Defaults to 'link'. */
+  as?: 'link' | 'div';
 }) {
   const params = routeParams ?? { id };
-  const linkEl = (
-    <Link
-      key={id}
-      to={link}
-      params={params}
-      className="group/artist relative block p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer"
-    >
+  const className =
+    'group/artist relative block p-2 rounded-lg overflow-hidden transition-all transition-150 transform hover:scale-[1.02] active:scale-[1.00] hover:bg-stone-800/30 active:bg-stone-800/45 cursor-pointer';
+
+  const content = (
+    <>
       <div
         className={cn(
           'aspect-square w-full overflow-hidden bg-stone-800',
@@ -58,17 +62,28 @@ export function MediaCard({
       </div>
       <div className="pt-4">
         <h3 className="line-clamp-1 text-sm font-semibold">{title}</h3>
-        <p
+        <div
           className={cn(
             'line-clamp-1 text-xs text-muted-foreground',
             subtitleAlign === 'right' ? 'text-right' : 'text-left',
           )}
         >
           {subtitle ?? 'Unknown'}
-        </p>
+        </div>
       </div>
-    </Link>
+    </>
   );
+
+  const linkEl =
+    as === 'link' ? (
+      <Link key={id} to={link} params={params} onClick={onClick} className={className}>
+        {content}
+      </Link>
+    ) : (
+      <div key={id} onClick={onClick} className={className}>
+        {content}
+      </div>
+    );
 
   if (!contextMenu) {
     return linkEl;
