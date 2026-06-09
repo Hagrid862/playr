@@ -8,6 +8,7 @@ export * from "./library-genres";
 export * from "./library-tracks";
 export * from "./library-playlists";
 export * from "./playback";
+export * from "./search";
 
 export * from "./api";
 export * from "./utils";

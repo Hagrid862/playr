@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SearchModule } from './search/search.module';
 import { AudioProcessingModule } from './audio-processing/audio-processing.module';
 import { AuthModule } from './auth/auth.module';
 import { AlbumsModule } from './library-albums/library-albums.module';
@@ -8,7 +9,6 @@ import { LibraryTracksModule } from './library-tracks/library-tracks.module';
 import { LibraryPlaylistsModule } from './library-playlists/library-playlists.module';
 import { LibraryModule } from './library/library.module';
 import { PlaybackModule } from './playback/playback.module';
-import { ListenHistoryModule } from './listen-history/listen-history.module';
 
 @Module({
   imports: [
@@ -21,6 +21,7 @@ import { ListenHistoryModule } from './listen-history/listen-history.module';
     LibraryPlaylistsModule,
     AudioProcessingModule,
     PlaybackModule,
+    SearchModule,
     ListenHistoryModule,
   ],
   controllers: [],
