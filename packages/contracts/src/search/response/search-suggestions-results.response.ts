@@ -19,16 +19,17 @@ export const SearchSuggestionResultSchema = z.object({
   albumType: z.enum(AlbumType).nullable().optional(),
 });
 
-export const SearchSuggestionsResultsSchema = z
-  .array(SearchSuggestionResultSchema)
-  .refine(
+export const SearchSuggestionsResultsSchema = z.object({
+  results: z.array(SearchSuggestionResultSchema).refine(
     (data) => {
       return data.length <= 8;
     },
     {
       message: "Total number of search results must be <= 8",
     },
-  );
+  ),
+  loggedIn: z.boolean(),
+});
 
 export type SearchSuggestionsResult = z.infer<
   typeof SearchSuggestionResultSchema

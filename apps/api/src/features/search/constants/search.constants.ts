@@ -1,0 +1,1 @@
+export const FUZZY_SEARCH_SIMILARITY = 0.2;

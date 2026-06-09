@@ -8,10 +8,15 @@ import { AppModule } from './app.module';
 import { getCorsOrigin } from './common/config/cors-config';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import * as qs from 'qs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
+
+  app.getHttpAdapter().getInstance().set('query parser', (str: string) => {
+    return qs.parse(str, { allowDots: true });
+  });
 
   app.use(cookieParser());
   app.useGlobalFilters(new GlobalExceptionFilter(app.get(ConfigService)));

@@ -37,7 +37,7 @@ describe('SearchService', () => {
 
   describe('search', () => {
     it('should throw BadRequestException when query is too short', async () => {
-      const searchQuery: SearchQuery = { query: 'a', page: 1, pageSize: 20 };
+      const searchQuery: SearchQuery = { query: 'a', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
 
       await expect(service.search('user-123', searchQuery)).rejects.toThrow(
         BadRequestException,
@@ -45,7 +45,7 @@ describe('SearchService', () => {
     });
 
     it('should throw BadRequestException when query is empty', async () => {
-      const searchQuery: SearchQuery = { query: '', page: 1, pageSize: 20 };
+      const searchQuery: SearchQuery = { query: '', page: 1, pageSize: 20, filters: { categories: [], visibility: 'public' } };
 
       await expect(service.search('user-123', searchQuery)).rejects.toThrow(
         BadRequestException,
@@ -78,15 +78,16 @@ describe('SearchService', () => {
         query: 'test',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search('user-123', searchQuery);
 
-      expect(result.data).toHaveLength(2);
+      expect(result.results).toHaveLength(2);
       expect(result.total).toBe(2);
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(20);
-      expect(result.data[0].id).toBe('artist-1');
-      expect(result.data[1].id).toBe('album-1');
+      expect(result.results[0].id).toBe('artist-1');
+      expect(result.results[1].id).toBe('album-1');
     });
 
     it('should return only public results when userId is null (unauthenticated)', async () => {
@@ -107,20 +108,21 @@ describe('SearchService', () => {
         query: 'public',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search(null, searchQuery);
 
-      expect(result.data).toHaveLength(1);
+      expect(result.results).toHaveLength(1);
       expect(result.total).toBe(1);
     });
 
-    it('should apply type filter when specified', async () => {
+    it('should apply categories filter when specified', async () => {
       mockQueryRaw.mockResolvedValueOnce([]);
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]);
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { types: ['artist'] },
+        filters: { categories: ['artist'], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -135,7 +137,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { visibility: 'public' },
+        filters: { visibility: 'public', categories: [] },
         page: 1,
         pageSize: 20,
       };
@@ -150,7 +152,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { artist: { verified: true } },
+        filters: { artist: { verified: true }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -165,7 +167,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { album: { type: 'single' } },
+        filters: { album: { type: 'single' }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -180,7 +182,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { track: { explicit: false } },
+        filters: { track: { explicit: false }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -195,7 +197,7 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { playlist: { isPublic: true } },
+        filters: { playlist: { isPublic: true }, categories: [], visibility: 'public' },
         page: 1,
         pageSize: 20,
       };
@@ -213,6 +215,7 @@ describe('SearchService', () => {
         orderBy: { field: 'name', direction: 'desc' },
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       await service.search('user-123', searchQuery);
 
@@ -225,14 +228,14 @@ describe('SearchService', () => {
 
       const searchQuery: SearchQuery = {
         query: 'test',
-        filters: { types: ['track'] },
+        filters: { categories: ['track'], visibility: 'public' },
         orderBy: { field: 'duration', direction: 'desc' },
         page: 1,
         pageSize: 20,
       };
       const result = await service.search('user-123', searchQuery);
 
-      expect(result.filters).toEqual({ types: ['track'] });
+      expect(result.filters).toEqual({ categories: ['track'] });
       expect(result.orderBy).toEqual({ field: 'duration', direction: 'desc' });
     });
 
@@ -244,6 +247,7 @@ describe('SearchService', () => {
         query: 'test',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search('user-123', searchQuery);
 
@@ -259,13 +263,14 @@ describe('SearchService', () => {
         query: 'test',
         page: 3,
         pageSize: 10,
+        filters: { categories: [], visibility: 'public' },
       };
       await service.search('user-123', searchQuery);
 
       expect(mockQueryRaw).toHaveBeenCalled();
     });
 
-    it('should return empty data array when no results found', async () => {
+    it('should return empty results array when no results found', async () => {
       mockQueryRaw.mockResolvedValueOnce([{ total: BigInt(0) }]); // count query
       mockQueryRaw.mockResolvedValueOnce([]);                       // results query
 
@@ -273,10 +278,11 @@ describe('SearchService', () => {
         query: 'nonexistent',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       const result = await service.search('user-123', searchQuery);
 
-      expect(result.data).toEqual([]);
+      expect(result.results).toEqual([]);
       expect(result.total).toBe(0);
     });
 
@@ -288,6 +294,7 @@ describe('SearchService', () => {
         query: '  test  ',
         page: 1,
         pageSize: 20,
+        filters: { categories: [], visibility: 'public' },
       };
       await service.search('user-123', searchQuery);
 

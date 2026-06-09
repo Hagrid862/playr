@@ -14,16 +14,19 @@ describe('SearchSuggestionsHandler', () => {
   const userId = 'user-123';
   const searchQuery = new SearchSuggestionsQuery(query, userId);
 
-  const mockResults: SearchSuggestionsResults = [
-    { id: 'artist-1', name: 'Test Artist', type: SearchResultType.Artist, visibility: 'public' },
-    {
-      id: 'album-1',
-      name: 'Test Album',
-      type: SearchResultType.Album,
-      visibility: 'public',
-      albumType: 'album',
-    },
-  ];
+  const mockResults: SearchSuggestionsResults = {
+    results: [
+      { id: 'artist-1', name: 'Test Artist', type: SearchResultType.Artist, visibility: 'public' },
+      {
+        id: 'album-1',
+        name: 'Test Album',
+        type: SearchResultType.Album,
+        visibility: 'public',
+        albumType: 'album',
+      },
+    ],
+    loggedIn: true,
+  };
 
   beforeEach(async () => {
     suggestionsService = createMock<SearchSuggestionsService>();
@@ -60,32 +63,35 @@ describe('SearchSuggestionsHandler', () => {
     expect(suggestionsService.searchSuggestions).toHaveBeenCalledWith(query, undefined);
   });
 
-  it('should return empty array when suggestionsService returns empty array', async () => {
-    suggestionsService.searchSuggestions.mockResolvedValue([]);
+  it('should return empty results when suggestionsService returns empty results', async () => {
+    suggestionsService.searchSuggestions.mockResolvedValue({ results: [], loggedIn: false });
 
     const result = await handler.execute(searchQuery);
 
-    expect(result).toEqual([]);
+    expect(result).toEqual({ results: [], loggedIn: false });
   });
 
-  it('should return all result types from suggestionsService', async () => {
-    const mixedResults: SearchSuggestionsResults = [
-      { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'public' },
-      {
-        id: 'album-1',
-        name: 'Album',
-        type: SearchResultType.Album,
-        visibility: 'public',
-        albumType: 'album',
-      },
-      { id: 'track-1', name: 'Track', type: SearchResultType.Track, visibility: 'public' },
-      { id: 'playlist-1', name: 'Playlist', type: SearchResultType.Playlist, visibility: 'public' },
-    ];
+  it('should return all result categories from suggestionsService', async () => {
+    const mixedResults: SearchSuggestionsResults = {
+      results: [
+        { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'public' },
+        {
+          id: 'album-1',
+          name: 'Album',
+          type: SearchResultType.Album,
+          visibility: 'public',
+          albumType: 'album',
+        },
+        { id: 'track-1', name: 'Track', type: SearchResultType.Track, visibility: 'public' },
+        { id: 'playlist-1', name: 'Playlist', type: SearchResultType.Playlist, visibility: 'public' },
+      ],
+      loggedIn: true,
+    };
     suggestionsService.searchSuggestions.mockResolvedValue(mixedResults);
 
     const result = await handler.execute(searchQuery);
 
-    expect(result).toHaveLength(4);
+    expect(result.results).toHaveLength(4);
     expect(result).toEqual(mixedResults);
   });
 });

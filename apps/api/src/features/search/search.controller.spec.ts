@@ -2,6 +2,7 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest';
 import { QueryBus } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { userBuilder } from '@repo/testing';
 import { SearchSuggestionsQueryRequestDto } from './dto/search-suggestions-query.request.dto';
 import { LibrarySearchSuggestionsQueryRequestDto } from './dto/library-search-suggestions-query.request.dto';
 import { SearchQueryRequestDto } from './dto/search-query.request.dto';
@@ -31,7 +32,7 @@ describe('SearchController', () => {
       const queryDto = createMock<SearchSuggestionsQueryRequestDto>({
         query: 'test',
       });
-      const user: User = { id: 'user-123' } as User;
+      const user: User = userBuilder();
       const expectedResult = [
         { id: 'artist-1', name: 'Test Artist', type: 'artist', visibility: 'public' },
       ];
@@ -62,7 +63,7 @@ describe('SearchController', () => {
       const queryDto = createMock<SearchSuggestionsQueryRequestDto>({
         query: 'rock band',
       });
-      const user: User = { id: 'user-456' } as User;
+      const user: User = userBuilder();
       queryBus.execute.mockResolvedValue([]);
 
       await controller.searchSuggestions(queryDto, user);
@@ -79,7 +80,7 @@ describe('SearchController', () => {
         query: 'jazz',
         categories: ['artist', 'album'],
       });
-      const user: User = { id: 'user-789' } as User;
+      const user: User = userBuilder();
       const expectedResult = [
         { id: 'artist-1', name: 'Jazz Artist', type: 'artist', visibility: 'private' },
       ];
@@ -123,7 +124,7 @@ describe('SearchController', () => {
       );
     });
 
-    it('should execute LibrarySearchSuggestionsQuery with all category types', async () => {
+    it('should execute LibrarySearchSuggestionsQuery with all categories', async () => {
       const queryDto = createMock<LibrarySearchSuggestionsQueryRequestDto>({
         query: 'music',
         categories: ['artist', 'album', 'track', 'playlist', 'genre'],
@@ -165,7 +166,7 @@ describe('SearchController', () => {
         page: 1,
         pageSize: 20,
       });
-      const user: User = { id: 'user-123' } as User;
+      const user: User = userBuilder();
       const expectedResult = {
         data: [],
         total: 0,
@@ -200,7 +201,7 @@ describe('SearchController', () => {
       };
       queryBus.execute.mockResolvedValue(expectedResult);
 
-      await controller.search(queryDto, null);
+      await controller.search(queryDto, userBuilder());
 
       expect(queryBus.execute).toHaveBeenCalledWith(
         new SearchQueryImpl(null, expect.objectContaining({ query: 'rock' })),
@@ -211,7 +212,7 @@ describe('SearchController', () => {
       const queryDto = createMock<SearchQueryRequestDto>({
         query: 'jazz',
         filters: {
-          types: ['artist'],
+          categories: ['artist'],
           visibility: 'public',
         },
         orderBy: {
@@ -221,7 +222,7 @@ describe('SearchController', () => {
         page: 2,
         pageSize: 10,
       });
-      const user: User = { id: 'user-456' } as User;
+      const user: User = userBuilder();
       queryBus.execute.mockResolvedValue({
         data: [],
         total: 0,
@@ -236,7 +237,7 @@ describe('SearchController', () => {
       expect(queryBus.execute).toHaveBeenCalledWith(
         new SearchQueryImpl('user-456', expect.objectContaining({
           query: 'jazz',
-          filters: expect.objectContaining({ types: ['artist'] }),
+          filters: expect.objectContaining({ categories: ['artist'] }),
           orderBy: expect.objectContaining({ field: 'name', direction: 'desc' }),
           page: 2,
           pageSize: 10,
@@ -248,7 +249,7 @@ describe('SearchController', () => {
       const queryDto = createMock<SearchQueryRequestDto>({
         query: 'electronic',
       });
-      const user: User = { id: 'user-789' } as User;
+      const user: User = userBuilder();
       const expectedResult = {
         data: [
           { id: 'artist-1', name: 'Daft Punk', type: 'artist', visibility: 'public', score: 0.9 },
