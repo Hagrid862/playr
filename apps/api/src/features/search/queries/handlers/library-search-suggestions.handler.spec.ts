@@ -1,8 +1,7 @@
 import { SearchSuggestionsService } from '@/features/search/services/search-suggestions.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  LibrarySearchSuggestionsResults,
-  SearchSuggestionsCategories,
+  LibrarySearchSuggestionsData,
   SearchResultType,
 } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
@@ -16,10 +15,10 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   const userId = 'user-123';
   const query = 'test query';
-  const categories: SearchSuggestionsCategories[] = ['artist', 'album'];
-  const searchQuery = new LibrarySearchSuggestionsQuery(userId, query, categories);
+  const categories = ['artist', 'album'] as const;
+  const searchQuery = new LibrarySearchSuggestionsQuery(userId, query, categories as any);
 
-  const mockResults: LibrarySearchSuggestionsResults = {
+  const mockData: LibrarySearchSuggestionsData = {
     results: [
       { id: 'artist-1', name: 'Test Artist', type: SearchResultType.Artist, visibility: 'private' },
       {
@@ -50,7 +49,7 @@ describe('LibrarySearchSuggestionsHandler', () => {
   });
 
   it('should call suggestionsService.librarySearchSuggestions with userId, query, and categories', async () => {
-    suggestionsService.librarySearchSuggestions.mockResolvedValue(mockResults);
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(mockData);
 
     const result = await handler.execute(searchQuery);
 
@@ -59,12 +58,12 @@ describe('LibrarySearchSuggestionsHandler', () => {
       query,
       categories,
     );
-    expect(result).toEqual(mockResults);
+    expect(result).toEqual(mockData);
   });
 
   it('should call suggestionsService.librarySearchSuggestions with undefined categories when not provided', async () => {
     const queryWithoutCategories = new LibrarySearchSuggestionsQuery(userId, query);
-    suggestionsService.librarySearchSuggestions.mockResolvedValue(mockResults);
+    suggestionsService.librarySearchSuggestions.mockResolvedValue(mockData);
 
     await handler.execute(queryWithoutCategories);
 
@@ -85,7 +84,7 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   it('should handle single category filter', async () => {
     const singleCategoryQuery = new LibrarySearchSuggestionsQuery(userId, query, ['track']);
-    const trackResults: LibrarySearchSuggestionsResults = {
+    const trackResults: LibrarySearchSuggestionsData = {
       results: [
         { id: 'track-1', name: 'Test Track', type: SearchResultType.Track, visibility: 'private' },
       ],
@@ -101,15 +100,9 @@ describe('LibrarySearchSuggestionsHandler', () => {
   });
 
   it('should handle all categories', async () => {
-    const allCategories: SearchSuggestionsCategories[] = [
-      'artist',
-      'album',
-      'track',
-      'playlist',
-      'genre',
-    ];
-    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(userId, query, allCategories);
-    const allResults: LibrarySearchSuggestionsResults = {
+    const allCategories = ['artist', 'album', 'track', 'playlist', 'genre'] as const;
+    const allCategoriesQuery = new LibrarySearchSuggestionsQuery(userId, query, allCategories as any);
+    const allResults: LibrarySearchSuggestionsData = {
       results: [
         { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'private' },
         {
@@ -143,7 +136,7 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   it('should handle playlist category', async () => {
     const playlistQuery = new LibrarySearchSuggestionsQuery(userId, query, ['playlist']);
-    const playlistResults: LibrarySearchSuggestionsResults = {
+    const playlistResults: LibrarySearchSuggestionsData = {
       results: [
         {
           id: 'playlist-1',
@@ -165,7 +158,7 @@ describe('LibrarySearchSuggestionsHandler', () => {
 
   it('should handle genre category', async () => {
     const genreQuery = new LibrarySearchSuggestionsQuery(userId, query, ['genre']);
-    const genreResults: LibrarySearchSuggestionsResults = {
+    const genreResults: LibrarySearchSuggestionsData = {
       results: [
         { id: 'genre-1', name: 'Rock', type: SearchResultType.Genre, visibility: 'public' },
       ],

@@ -3,11 +3,13 @@ import { SearchQueryImpl } from '../impl/search.query';
 import { SearchService } from '../../services/search.service';
 import { SearchResultsResponse } from '@repo/contracts';
 
+type searchData = SearchResultsResponse['data'];
+
 @QueryHandler(SearchQueryImpl)
 export class SearchHandler implements IQueryHandler<SearchQueryImpl> {
   constructor(private readonly searchService: SearchService) {}
 
-  async execute(query: SearchQueryImpl): Promise<SearchResultsResponse> {
+  async execute(query: SearchQueryImpl): Promise<searchData> {
     return this.searchService.search(query.userId, query.searchQuery);
   }
 }

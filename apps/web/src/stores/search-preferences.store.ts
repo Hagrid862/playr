@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create, StateCreator } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { idbStorage } from './idb-storage';
 
@@ -15,24 +15,23 @@ interface SearchPreferencesState {
   clearHistory: () => void;
 }
 
+export const createSearchPreferencesStore: StateCreator<SearchPreferencesState> = (set) => ({
+  viewType: 'grid',
+  setViewType: (viewType) => set({ viewType }),
+  searchScope: 'all',
+  setSearchScope: (searchScope) => set({ searchScope }),
+  searchHistory: [],
+  // TODO: Replace this frontend-only search history with a server-side implementation later.
+  addSearchToHistory: (query) =>
+    set((state) => ({
+      searchHistory: [query, ...state.searchHistory.filter((q) => q !== query)].slice(0, 10),
+    })),
+  clearHistory: () => set({ searchHistory: [] }),
+});
+
 export const useSearchPreferencesStore = create<SearchPreferencesState>()(
-  persist(
-    (set) => ({
-      viewType: 'grid',
-      setViewType: (viewType) => set({ viewType }),
-      searchScope: 'all',
-      setSearchScope: (searchScope) => set({ searchScope }),
-      searchHistory: [],
-      // TODO: Replace this frontend-only search history with a server-side implementation later.
-      addSearchToHistory: (query) =>
-        set((state) => ({
-          searchHistory: [query, ...state.searchHistory.filter((q) => q !== query)].slice(0, 10),
-        })),
-      clearHistory: () => set({ searchHistory: [] }),
-    }),
-    {
-      name: 'search-preferences-storage',
-      storage: idbStorage,
-    },
-  ),
+  persist(createSearchPreferencesStore, {
+    name: 'search-preferences-storage',
+    storage: idbStorage,
+  }),
 );

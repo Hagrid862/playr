@@ -1,6 +1,6 @@
 import { SearchService } from '@/features/search/services/search.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LibrarySearchResultsResponse, SearchResultType } from '@repo/contracts';
+import { LibrarySearchResultsData } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LibrarySearchQueryImpl } from '../impl/library-search.query';
@@ -18,12 +18,12 @@ describe('LibrarySearchHandler', () => {
     pageSize: 20,
   });
 
-  const mockResults: LibrarySearchResultsResponse = {
+  const mockData: LibrarySearchResultsData = {
     results: [
       {
         id: 'artist-1',
         name: 'Test Artist',
-        type: SearchResultType.Artist,
+        type: 'artist',
         visibility: 'private',
         score: 0.9,
         coverUrl: null,
@@ -36,15 +36,13 @@ describe('LibrarySearchHandler', () => {
       {
         id: 'album-1',
         name: 'Test Album',
-        type: SearchResultType.Album,
+        type: 'album',
         visibility: 'private',
         score: 0.8,
         coverUrl: 'https://example.com/cover.jpg',
         avatarUrl: null,
         albumType: 'album',
         releaseDate: '2024-01-01T00:00:00.000Z',
-        totalTracks: 10,
-        totalDuration: 3600,
         description: null,
       },
     ],
@@ -70,20 +68,20 @@ describe('LibrarySearchHandler', () => {
   });
 
   it('should call searchService.librarySearch with userId and searchQuery', async () => {
-    searchService.librarySearch.mockResolvedValue(mockResults);
+    searchService.librarySearch.mockResolvedValue(mockData);
 
     const result = await handler.execute(searchQuery);
 
     expect(searchService.librarySearch).toHaveBeenCalledWith(userId, searchQuery.searchQuery);
-    expect(result).toEqual(mockResults);
+    expect(result).toEqual(mockData);
   });
 
   it('should return results from searchService', async () => {
-    searchService.librarySearch.mockResolvedValue(mockResults);
+    searchService.librarySearch.mockResolvedValue(mockData);
 
     const result = await handler.execute(searchQuery);
 
-    expect(result).toEqual(mockResults);
+    expect(result).toEqual(mockData);
     expect(result.results).toHaveLength(2);
     expect(result.total).toBe(2);
     expect(result.page).toBe(1);
@@ -91,7 +89,7 @@ describe('LibrarySearchHandler', () => {
   });
 
   it('should return empty results when searchService returns empty results', async () => {
-    const emptyResults: LibrarySearchResultsResponse = {
+    const emptyResults: LibrarySearchResultsData = {
       results: [],
       total: 0,
       page: 1,
@@ -114,12 +112,12 @@ describe('LibrarySearchHandler', () => {
   });
 
   it('should return all result types from searchService', async () => {
-    const allTypeResults: LibrarySearchResultsResponse = {
+    const allTypeResults: LibrarySearchResultsData = {
       results: [
         {
           id: 'artist-1',
           name: 'Artist',
-          type: SearchResultType.Artist,
+          type: 'artist',
           visibility: 'private',
           score: 0.9,
           coverUrl: null,
@@ -132,46 +130,38 @@ describe('LibrarySearchHandler', () => {
         {
           id: 'album-1',
           name: 'Album',
-          type: SearchResultType.Album,
+          type: 'album',
           visibility: 'private',
           score: 0.8,
           coverUrl: null,
           avatarUrl: null,
           albumType: 'album',
           releaseDate: '2024-01-01T00:00:00.000Z',
-          totalTracks: 10,
-          totalDuration: 3600,
           description: null,
         },
         {
           id: 'track-1',
           name: 'Track',
-          type: SearchResultType.Track,
+          type: 'track',
           visibility: 'private',
           score: 0.7,
           coverUrl: null,
           avatarUrl: null,
           albumType: null,
           duration: 180,
-          trackNumber: 1,
-          diskNumber: 1,
           explicit: true,
           listenedCount: 100,
-          albumId: 'album-1',
-          lyrics: null,
         },
         {
           id: 'playlist-1',
           name: 'Playlist',
-          type: SearchResultType.Playlist,
+          type: 'playlist',
           visibility: 'private',
           score: 0.6,
           coverUrl: null,
           avatarUrl: null,
           albumType: null,
-          isPublic: true,
           description: null,
-          trackCount: 20,
         },
       ],
       total: 4,
@@ -198,7 +188,7 @@ describe('LibrarySearchHandler', () => {
       page: 2,
       pageSize: 10,
     });
-    searchService.librarySearch.mockResolvedValue(mockResults);
+    searchService.librarySearch.mockResolvedValue(mockData);
 
     await handler.execute(queryWithFilters);
 

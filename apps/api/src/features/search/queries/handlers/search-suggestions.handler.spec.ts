@@ -1,6 +1,6 @@
 import { SearchSuggestionsService } from '@/features/search/services/search-suggestions.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { SearchSuggestionsResults, SearchResultType } from '@repo/contracts';
+import { SearchSuggestionsData, SearchResultType } from '@repo/contracts';
 import { createMock, DeepMocked } from '@repo/testing/nestjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchSuggestionsQuery } from '../impl/search-suggestions.query';
@@ -14,7 +14,7 @@ describe('SearchSuggestionsHandler', () => {
   const userId = 'user-123';
   const searchQuery = new SearchSuggestionsQuery(query, userId);
 
-  const mockResults: SearchSuggestionsResults = {
+  const mockData: SearchSuggestionsData = {
     results: [
       { id: 'artist-1', name: 'Test Artist', type: SearchResultType.Artist, visibility: 'public' },
       {
@@ -46,17 +46,17 @@ describe('SearchSuggestionsHandler', () => {
   });
 
   it('should call suggestionsService.searchSuggestions with query and userId', async () => {
-    suggestionsService.searchSuggestions.mockResolvedValue(mockResults);
+    suggestionsService.searchSuggestions.mockResolvedValue(mockData);
 
     const result = await handler.execute(searchQuery);
 
     expect(suggestionsService.searchSuggestions).toHaveBeenCalledWith(query, userId);
-    expect(result).toEqual(mockResults);
+    expect(result).toEqual(mockData);
   });
 
   it('should call suggestionsService.searchSuggestions with undefined userId when not provided', async () => {
     const queryWithoutUser = new SearchSuggestionsQuery(query);
-    suggestionsService.searchSuggestions.mockResolvedValue(mockResults);
+    suggestionsService.searchSuggestions.mockResolvedValue(mockData);
 
     await handler.execute(queryWithoutUser);
 
@@ -72,7 +72,7 @@ describe('SearchSuggestionsHandler', () => {
   });
 
   it('should return all result categories from suggestionsService', async () => {
-    const mixedResults: SearchSuggestionsResults = {
+    const mixedResults: SearchSuggestionsData = {
       results: [
         { id: 'artist-1', name: 'Artist', type: SearchResultType.Artist, visibility: 'public' },
         {
