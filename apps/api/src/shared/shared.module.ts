@@ -1,4 +1,8 @@
 import { Global, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Resend } from 'resend';
+import { Env } from '@/common/config/env.schema';
+import { RESEND_CLIENT } from '@/shared/constants/resend.constants';
 import { AlbumAccessGuard } from './guards/album-access.guard';
 import { ArtistAccessGuard } from './guards/artist-access.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -30,6 +34,7 @@ import { LibraryStorageQuotaService } from './services/library-storage-quota.ser
 import { StorageService } from './services/storage.service';
 import { UnitOfWorkService } from './services/unit-of-work.service';
 import { MailService } from '@/shared/services/mail.service';
+import { MailTemplateService } from '@/shared/services/mail-template.service';
 
 @Global()
 @Module({
@@ -44,6 +49,15 @@ import { MailService } from '@/shared/services/mail.service';
     HashingService,
     StorageService,
     LibraryStorageQuotaService,
+    MailTemplateService,
+    {
+      provide: RESEND_CLIENT,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<Env>) => {
+        const apiKey = configService.get('RESEND_API_KEY', { infer: true });
+        return apiKey ? new Resend(apiKey) : null;
+      },
+    },
     MailService,
     GenreNormalizationService,
     GenreResolutionService,

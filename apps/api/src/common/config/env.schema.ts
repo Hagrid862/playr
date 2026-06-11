@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const envSchema = z.object({
+const envSchemaBase = z.object({
   PORT: z.coerce.number().default(8000),
   DATABASE_URL: z.string().url(),
 
@@ -19,8 +19,9 @@ export const envSchema = z.object({
   S3_PRIVATE_BUCKET: z.string().min(1),
   S3_PUBLIC_URL: z.url().optional(),
 
-  // Mail
-  MAIL_HOST: z.string().min(1),
+  // Mail — use RESEND_API_KEY (production) or MAIL_HOST SMTP (local Mailhog)
+  RESEND_API_KEY: z.string().min(1).optional(),
+  MAIL_HOST: z.string().min(1).optional(),
   MAIL_PORT: z.coerce.number().default(1025),
   MAIL_USER: z.string().optional(),
   MAIL_PASS: z.string().optional(),
@@ -49,7 +50,17 @@ export const envSchema = z.object({
     .default(5 * 1024 * 1024 * 1024),
 });
 
-export type Env = z.infer<typeof envSchema>;
+export const envSchema = envSchemaBase.superRefine((data, ctx) => {
+  if (!data.RESEND_API_KEY && !data.MAIL_HOST) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Either RESEND_API_KEY or MAIL_HOST must be set',
+      path: ['RESEND_API_KEY'],
+    });
+  }
+});
+
+export type Env = z.infer<typeof envSchemaBase>;
 
 export const validateEnv = (config: Record<string, unknown>) => {
   const result = envSchema.safeParse(config);
