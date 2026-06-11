@@ -97,4 +97,22 @@ describe('envSchema', () => {
     const result = validateEnv(config);
     expect(result.S3_PUBLIC_URL).toBe('https://cdn.example.com');
   });
+
+  it('should validate when only RESEND_API_KEY is set (production)', () => {
+    const { MAIL_HOST: _mailHost, ...withoutMailHost } = validConfig;
+    const config = {
+      ...withoutMailHost,
+      RESEND_API_KEY: 're_test_key',
+    };
+
+    const result = validateEnv(config);
+    expect(result.RESEND_API_KEY).toBe('re_test_key');
+    expect(result.MAIL_HOST).toBeUndefined();
+  });
+
+  it('should throw when neither RESEND_API_KEY nor MAIL_HOST is set', () => {
+    const { MAIL_HOST: _mailHost, ...withoutMailHost } = validConfig;
+
+    expect(() => validateEnv(withoutMailHost)).toThrow('Invalid environment variables');
+  });
 });
