@@ -14,7 +14,7 @@ vi.mock('@phosphor-icons/react', () => ({
 describe('GuestOverlay', () => {
   it('renders the branding and main text', () => {
     customRender(<GuestOverlay />);
-    
+
     expect(screen.getByText('Playr')).toBeInTheDocument();
     expect(screen.getByText('Your music, your way')).toBeInTheDocument();
     expect(screen.getByText(/Stream your favorite songs/)).toBeInTheDocument();
@@ -22,10 +22,10 @@ describe('GuestOverlay', () => {
 
   it('renders login and register links', () => {
     customRender(<GuestOverlay />);
-    
+
     const getStartedLink = screen.getByRole('link', { name: /get started/i });
     const signInLink = screen.getByRole('link', { name: /sign in/i });
-    
+
     expect(getStartedLink).toHaveAttribute('href', '/auth/register');
     expect(signInLink).toHaveAttribute('href', '/auth/login');
   });

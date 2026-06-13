@@ -37,8 +37,7 @@ function AppLayout() {
           onMobileSearchToggle={handleMobileSearchToggle}
         />
         <div className="flex-1 relative">
-...
-
+          ...
           <MobileSearchOverlay isOpen={mobileSearchExpanded} onClose={handleMobileSearchClose} />
           {/* Full-page Player overlay — slides up from bottom, header stays visible */}
           <PlayerFullPage />
