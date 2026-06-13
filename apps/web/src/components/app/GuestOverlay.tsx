@@ -29,11 +29,11 @@ export function GuestOverlay() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md animate-in slide-in-from-bottom-4 duration-700 delay-500 fill-mode-both">
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto items-center justify-center animate-in slide-in-from-bottom-4 duration-700 delay-500 fill-mode-both">
           <Button
             asChild
             size="lg"
-            className="flex-1 text-xl h-16 md:h-20 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-1"
+            className="w-full max-w-[240px] sm:max-w-none sm:flex-1 text-xl py-4 h-auto sm:h-16 md:h-20 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-1"
           >
             <Link to="/auth/register">Get Started</Link>
           </Button>
@@ -41,7 +41,7 @@ export function GuestOverlay() {
             asChild
             variant="outline"
             size="lg"
-            className="flex-1 text-xl h-16 md:h-20 rounded-lg bg-stone-800/30 border-white/10 hover:bg-stone-800/60 transition-all hover:-translate-y-1"
+            className="w-full max-w-[240px] sm:max-w-none sm:flex-1 text-xl py-4 h-auto sm:h-16 md:h-20 rounded-lg bg-stone-800/30 border-white/10 hover:bg-stone-800/60 transition-all hover:-translate-y-1"
           >
             <Link to="/auth/login">Sign In</Link>
           </Button>
