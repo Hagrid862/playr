@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useLogin } from '@/hooks/api/auth';
 import { useLoginForm } from '@/hooks/forms/useLoginForm';
 import { useAuthStore } from '@/stores/auth.store';
+import { ArrowLeftIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { SyntheticEvent } from 'react';
 import { toast } from 'sonner';
@@ -48,7 +49,14 @@ export function RouteComponent() {
   };
 
   return (
-    <div className="flex min-h-screen w-full justify-center bg-background">
+    <div className="flex min-h-screen w-full justify-center bg-background relative">
+      <div className="absolute top-4 left-4 md:top-8 md:left-8">
+        <Button variant="ghost" size="icon" asChild className="h-10 w-10">
+          <Link to="/app">
+            <ArrowLeftIcon size={24} />
+          </Link>
+        </Button>
+      </div>
       <div className="flex w-full max-w-480 flex-col items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>

@@ -12,7 +12,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useRegister } from '@/hooks/api/auth';
 import { useRegisterForm } from '@/hooks/forms/useRegisterForm';
-import { CircleNotchIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, CircleNotchIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type SyntheticEvent } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
@@ -61,7 +61,14 @@ export function RouteComponent() {
   };
 
   return (
-    <div className="flex min-h-screen w-full justify-center bg-background px-4 py-8">
+    <div className="flex min-h-screen w-full justify-center bg-background px-4 py-8 relative">
+      <div className="absolute top-4 left-4 md:top-8 md:left-8">
+        <Button variant="ghost" size="icon" asChild className="h-10 w-10">
+          <Link to="/app">
+            <ArrowLeftIcon size={24} />
+          </Link>
+        </Button>
+      </div>
       <div className="flex w-full max-w-480 flex-col items-center justify-center">
         <Card className="w-full max-w-md lg:max-w-4xl overflow-hidden pt-0 pb-0 gap-0">
           <CardContent className="p-0">
