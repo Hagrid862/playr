@@ -1,4 +1,3 @@
-import LandingPage from '@/components/landingPage';
 import { useAuthStore } from '@/stores/auth.store';
 import { createFileRoute, Navigate } from '@tanstack/react-router';
 
@@ -15,10 +14,8 @@ function App() {
     const userEmail = user.emailAddresses?.[0]?.email ?? '';
     if (userEmail) {
       return <Navigate to="/auth/verify-email" search={{ email: userEmail }} />;
-    } else {
-      return <Navigate to="/auth/login" />;
     }
   }
 
-  return <LandingPage />;
+  return <Navigate to="/app" />;
 }
